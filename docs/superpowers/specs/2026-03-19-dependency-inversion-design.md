@@ -288,8 +288,8 @@ export interface IMembershipRepository {
   }): Promise<MembershipRow>;
 
   updateStatus(membershipId: string, data: {
-    status: string;
-    isActive: boolean;
+    status?: string;
+    isActive?: boolean;
     joinedAt?: Date | null;
     leftAt?: Date | null;
   }): Promise<MembershipRow | undefined>;
@@ -390,7 +390,7 @@ Each service's constructor dependencies, for clarity during implementation:
 |---------|-------------|
 | `UserService` | `IUserRepository` |
 | `AcademyService` | `IAcademyRepository`, `RepoFactory<IMembershipRepository>` |
-| `ClassService` | `IClassRepository`, `IMembershipRepository` |
+| `ClassService` | `IClassRepository`, `IMembershipRepository`, `IAcademyRepository` |
 | `MembershipService` | `IMembershipRepository`, `IAcademyRepository` |
 
 Notes on `MembershipService`:
