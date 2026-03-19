@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
+import { HttpError } from "../lib/http-error.js";
 
 export function errorHandler(
   err: unknown,
@@ -6,7 +7,10 @@ export function errorHandler(
   res: Response,
   _next: NextFunction,
 ): void {
+  if (err instanceof HttpError) {
+    res.status(err.statusCode).json({ error: err.message });
+    return;
+  }
   const message = err instanceof Error ? err.message : "Internal Server Error";
-  const status = 500;
-  res.status(status).json({ error: message });
+  res.status(500).json({ error: message });
 }

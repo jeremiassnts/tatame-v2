@@ -4,6 +4,7 @@
 - Monorepo: **pnpm** workspaces + **Turborepo**
 - Database: **PostgreSQL** + **Drizzle** in `packages/db`
 - API: `apps/api` (modular Express); **Clerk** — `clerkMiddleware` when `CLERK_SECRET_KEY` is set; webhook `POST /v1/auth/webhooks/clerk` (raw body) with `CLERK_WEBHOOK_SIGNING_SECRET`; `GET /v1/users/me` + `POST /v1/users/me/role` (first login / onboarding role); `authorize(...roles)` sets `req.appAuth` from `user_roles`
+- **Academy / membership** — `GET/POST/PATCH /v1/academies`, `GET ?q=` search; `POST /v1/memberships/requests`, `GET /v1/memberships/pending?academyId=`, `PATCH .../approve|reject|block|unblock`, `POST /v1/memberships/leave`. Pending rows use `is_active: false`; exactly one `is_active` membership per user.
 - Redis (`node-redis` v4) for check-in locks only — `apps/api/src/lib/redis.ts`, `lock.ts`
 - Local stack: `docker compose up -d` (Postgres + Redis) — URLs in `.env.example`
 - After schema changes: `pnpm db:generate`, then `pnpm db:migrate` with `DATABASE_URL` set
