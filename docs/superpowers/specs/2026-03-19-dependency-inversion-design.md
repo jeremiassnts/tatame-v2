@@ -86,7 +86,7 @@ export interface IClassRepository {
 ```
 
 Rules:
-- Return types use `{Module}Row` derived from `InferSelectModel<typeof table>` for convenience, but the interface itself does not import or depend on Drizzle at runtime.
+- Return types use `{Module}Row` derived from `InferSelectModel<typeof table>` for convenience. This is a type-only import — it creates no runtime dependency on Drizzle, but does couple the type definition to the ORM's type system. This is an intentional pragmatic trade-off to avoid duplicating type definitions manually.
 - No business logic in repository methods — only data access (queries, inserts, updates).
 - Each interface file also exports the row types that the service will use.
 
@@ -241,6 +241,69 @@ Rules:
 - Pure helper functions (`normalizeTime`, `assertEndAfterStart`) remain as free functions in the service file — they have no external dependencies.
 - `HttpError` is a domain-level utility shared across services — it stays as a direct import.
 
+## Multi-Tenant Scoping Convention
+
+Repository methods that operate on a single row by ID (e.g., `update`, `updateStatus`, `delete`) do NOT include `academyId` in their WHERE clause. The service is responsible for loading and verifying the row belongs to the correct academy BEFORE calling the mutation method. This avoids duplicating authorization logic in the repository layer.
+
+Repository methods that return lists (e.g., `findByAcademyId`, `findPendingByAcademy`) always scope by `academyId` since they are inherently academy-scoped queries.
+
+## IMembershipRepository Interface
+
+The membership module is the most complex. Its interface handles memberships, cross-table JOINs with users, and transactional operations:
+
+```typescript
+// membership.repository.ts
+import type { InferSelectModel } from "drizzle-orm";
+import type { academyMemberships } from "@tatame/db";
+
+export type MembershipRow = InferSelectModel<typeof academyMemberships>;
+
+export type PendingMembershipWithUser = MembershipRow & {
+  userName: string;
+  userEmail: string;
+};
+
+export interface IMembershipRepository {
+  // Single-row lookups
+  findById(membershipId: string): Promise<MembershipRow | undefined>;
+  findActiveByUser(userId: string): Promise<MembershipRow | undefined>;
+  findActiveByUserAndAcademy(userId: string, academyId: string): Promise<MembershipRow | undefined>;
+
+  // Guard queries for requestMembership
+  existsBlockedOrRejected(userId: string, academyId: string): Promise<boolean>;
+  existsPending(userId: string, academyId: string): Promise<boolean>;
+
+  // Lists
+  findPendingByAcademy(academyId: string): Promise<PendingMembershipWithUser[]>;
+
+  // Mutations
+  create(data: {
+    academyId: string;
+    userId: string;
+    role: "instructor" | "student";
+    status: "pending";
+    isActive: false;
+  }): Promise<MembershipRow>;
+
+  updateStatus(membershipId: string, data: {
+    status: string;
+    isActive: boolean;
+    joinedAt?: Date | null;
+    leftAt?: Date | null;
+  }): Promise<MembershipRow | undefined>;
+
+  rejectAllPendingExcept(userId: string, excludeMembershipId: string): Promise<void>;
+
+  deleteById(membershipId: string): Promise<void>;
+}
+```
+
+Notes:
+- `findPendingByAcademy` returns `PendingMembershipWithUser` — the repository handles the JOIN with the users table internally. The service does not need to know about the JOIN.
+- `existsBlockedOrRejected` and `existsPending` are boolean guard methods. They encapsulate the specific WHERE conditions without leaking query details to the service.
+- `rejectAllPendingExcept` encapsulates the bulk update used during approval. This is a data operation, not business logic — the service decides WHEN to call it.
+- `leaveActiveMembership` needs to check academy ownership. The service injects `IAcademyRepository` for the ownership lookup, then calls `this.membershipRepo.updateStatus(...)` for the actual mutation.
+
 ## Cross-Module Dependency Resolution
 
 When a service needs data from another module:
@@ -291,6 +354,8 @@ The 4 implemented modules, listed with their current service functions that will
 - `getActiveRoleForUser` → `UserService.getActiveRole()`
 - `assignInitialUserRole` → `UserService.assignInitialRole()`
 
+**Clerk types:** The current `upsertUserFromClerk` receives `UserJSON` from `@clerk/backend` and extracts email/name. To avoid coupling the service to Clerk, the webhook handler (in the route/controller layer) should transform `UserJSON` into a plain domain DTO (e.g., `{ clerkUserId: string; email: string; name: string; profileImageUrl: string | null }`) before passing it to the service. The Clerk-specific extraction logic (`primaryEmail`, `displayName`) moves to the handler or a small adapter function in the route file.
+
 ### 2. academy
 - `createAcademyWithManagerMembership` → `AcademyService.createWithManagerMembership()`
 - `getAcademyById` → `AcademyService.getById()`
@@ -317,29 +382,116 @@ The 4 implemented modules, listed with their current service functions that will
 
 ## Transaction Handling
 
-Some operations currently use `db.transaction()` (e.g., `createAcademyWithManagerMembership`, `approveMembership`). Since transactions require the same database connection:
+Two transaction scenarios exist in the codebase:
 
-- The repository interface exposes a `withTransaction(fn)` method that accepts a callback.
-- Inside the callback, the repository provides a transactional version of itself.
-- The service calls `this.repo.withTransaction(async (txRepo) => { ... })`.
+### Single-repo transactions (e.g., `approveMembership`)
+
+The `approveMembership` operation rejects other pending memberships and approves the target — both on the `academyMemberships` table. This is handled within a single repository.
+
+The repository interface exposes a `withTransaction(fn)` method. The service receives a transactional copy of the same repository:
 
 ```typescript
 // In the interface
-interface IAcademyRepository {
+interface IMembershipRepository {
   // ...
-  withTransaction<T>(fn: (txRepo: IAcademyRepository) => Promise<T>): Promise<T>;
+  withTransaction<T>(fn: (txRepo: IMembershipRepository) => Promise<T>): Promise<T>;
 }
 
 // In the Postgres implementation
-async withTransaction<T>(fn: (txRepo: IAcademyRepository) => Promise<T>): Promise<T> {
+async withTransaction<T>(fn: (txRepo: IMembershipRepository) => Promise<T>): Promise<T> {
   return this.db.transaction(async (tx) => {
-    const txRepo = new PostgresAcademyRepository(tx as unknown as Database);
+    const txRepo = new PostgresMembershipRepository(tx as unknown as Database);
     return fn(txRepo);
+  });
+}
+
+// In the service
+async approve(membershipId: string, managerUserId: string) {
+  const m = await this.membershipRepo.findById(membershipId);
+  if (!m) throw new HttpError(404, "Membership not found");
+  // ... validation ...
+
+  return this.membershipRepo.withTransaction(async (txRepo) => {
+    await txRepo.rejectAllPendingExcept(m.userId, membershipId);
+    return txRepo.updateStatus(membershipId, {
+      status: "active", isActive: true, joinedAt: new Date(),
+    });
   });
 }
 ```
 
-For operations that span multiple repositories in a single transaction, the route file can create a shared transactional `db` and pass it to both repositories. Alternatively, the primary service's `withTransaction` can accept a factory to create the secondary transactional repo. This keeps the service unaware of the concrete database while still enabling atomic operations.
+### Cross-repo transactions (e.g., `createAcademyWithManagerMembership`)
+
+The `createAcademyWithManagerMembership` operation inserts into both `academies` and `academyMemberships` atomically. This spans two repositories.
+
+The `withTransaction` callback receives a factory function that creates transactional copies of any repository from the shared transaction handle. The service declares which repos it needs:
+
+```typescript
+// Shared transaction support type (in a common types file or lib/)
+export type RepoFactory<T> = (db: Database) => T;
+
+// In IAcademyRepository
+interface IAcademyRepository {
+  // ...
+  withTransaction<T>(
+    fn: (txRepo: IAcademyRepository, createRepo: <R>(factory: RepoFactory<R>) => R) => Promise<T>,
+  ): Promise<T>;
+}
+
+// In PostgresAcademyRepository
+async withTransaction<T>(
+  fn: (txRepo: IAcademyRepository, createRepo: <R>(factory: RepoFactory<R>) => R) => Promise<T>,
+): Promise<T> {
+  return this.db.transaction(async (tx) => {
+    const txDb = tx as unknown as Database;
+    const txRepo = new PostgresAcademyRepository(txDb);
+    const createRepo = <R>(factory: RepoFactory<R>): R => factory(txDb);
+    return fn(txRepo, createRepo);
+  });
+}
+
+// In AcademyService
+constructor(
+  private readonly academyRepo: IAcademyRepository,
+  private readonly membershipRepoFactory: RepoFactory<IMembershipRepository>,
+) {}
+
+async createWithManagerMembership(ownerUserId: string, body: CreateAcademyBody) {
+  return this.academyRepo.withTransaction(async (txAcademyRepo, createRepo) => {
+    const created = await txAcademyRepo.create({ ownerId: ownerUserId, ...body });
+    const txMembershipRepo = createRepo(this.membershipRepoFactory);
+    await txMembershipRepo.create({
+      academyId: created.id,
+      userId: ownerUserId,
+      role: "manager" as const,
+      // ... remaining fields
+    });
+    return created;
+  });
+}
+```
+
+In the route wiring, the factory is simply the repository constructor:
+
+```typescript
+const db = getDb();
+const academyService = new AcademyService(
+  new PostgresAcademyRepository(db),
+  (txDb) => new PostgresMembershipRepository(txDb), // factory
+);
+```
+
+In tests, the factory returns the mock repository directly (ignoring the db argument):
+
+```typescript
+const mockMembershipRepo = new MockedMembershipRepository();
+const service = new AcademyService(
+  mockAcademyRepo,
+  () => mockMembershipRepo, // factory returns mock regardless
+);
+```
+
+This pattern keeps the service unaware of the concrete database while enabling atomic cross-repo operations. Only repositories that are needed within transactions require factories — regular cross-module dependencies are injected as plain interfaces.
 
 ## What Does NOT Change
 
