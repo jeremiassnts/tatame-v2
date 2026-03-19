@@ -30,3 +30,12 @@ export {
   type PendingMembershipItem,
   type RequestMembershipBody,
 } from "./membership.schema.js";
+export {
+  classIdParamSchema,
+  classTimeStringSchema,
+  createClassBodySchema,
+  listClassesQuerySchema,
+  updateClassBodySchema,
+  type CreateClassBody,
+  type UpdateClassBody,
+} from "./class.schema.js";
