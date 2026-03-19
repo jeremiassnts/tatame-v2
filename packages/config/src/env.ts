@@ -10,6 +10,12 @@ const envSchema = z.object({
   API_PORT: z.coerce.number().int().positive().default(3001),
   API_PUBLIC_URL: z.string().url().optional(),
   CLERK_SECRET_KEY: z.string().optional(),
+  CLERK_PUBLISHABLE_KEY: z.string().optional(),
+  /** Comma-separated origins for session JWT `azp` validation (e.g. Expo app, Next.js URL) */
+  CLERK_AUTHORIZED_PARTIES: z.string().optional(),
+  /** From Clerk Dashboard → Webhooks → signing secret (preferred env name for @clerk/backend) */
+  CLERK_WEBHOOK_SIGNING_SECRET: z.string().optional(),
+  /** @deprecated use CLERK_WEBHOOK_SIGNING_SECRET — still read as fallback */
   CLERK_WEBHOOK_SECRET: z.string().optional(),
 });
 

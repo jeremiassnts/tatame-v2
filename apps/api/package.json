@@ -10,6 +10,8 @@
     "lint": "echo \"no lint configured\""
   },
   "dependencies": {
+    "@clerk/backend": "^3.2.1",
+    "@clerk/express": "^2.0.5",
     "@tatame/config": "workspace:*",
     "@tatame/db": "workspace:*",
     "@tatame/types": "workspace:*",
