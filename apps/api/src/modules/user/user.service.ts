@@ -1,6 +1,7 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { UserJSON } from "@clerk/backend";
-import { users, type Database } from "@tatame/db";
+import type { Role } from "@tatame/types";
+import { userRoles, users, type Database } from "@tatame/db";
 
 function primaryEmail(data: UserJSON): string | undefined {
   const list = data.email_addresses ?? [];
@@ -53,4 +54,59 @@ export async function deleteUserByClerkId(
   clerkUserId: string,
 ): Promise<void> {
   await db.delete(users).where(eq(users.clerkUserId, clerkUserId));
+}
+
+export async function getUserByClerkId(
+  db: Database,
+  clerkUserId: string,
+) {
+  const [row] = await db
+    .select()
+    .from(users)
+    .where(eq(users.clerkUserId, clerkUserId))
+    .limit(1);
+  return row ?? null;
+}
+
+export async function getActiveRoleForUser(
+  db: Database,
+  internalUserId: string,
+): Promise<Role | null> {
+  const [row] = await db
+    .select({ role: userRoles.role })
+    .from(userRoles)
+    .where(
+      and(eq(userRoles.userId, internalUserId), eq(userRoles.isActive, true)),
+    )
+    .limit(1);
+  if (!row?.role) return null;
+  return row.role as Role;
+}
+
+/**
+ * MVP: one active role per user (spec §2). Rejects if an active row already exists.
+ * @returns whether a new row was inserted
+ */
+export async function assignInitialUserRole(
+  db: Database,
+  internalUserId: string,
+  role: Role,
+): Promise<boolean> {
+  const existing = await db
+    .select({ id: userRoles.id })
+    .from(userRoles)
+    .where(
+      and(eq(userRoles.userId, internalUserId), eq(userRoles.isActive, true)),
+    )
+    .limit(1);
+  if (existing.length > 0) return false;
+
+  await db.insert(userRoles).values({
+    userId: internalUserId,
+    role,
+    isActive: true,
+    startedAt: new Date(),
+    endedAt: null,
+  });
+  return true;
 }

@@ -1,3 +1,4 @@
+import "./express-augment.js";
 import cors from "cors";
 import express from "express";
 import { clerkMiddleware } from "@clerk/express";
