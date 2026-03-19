@@ -1,0 +1,26 @@
+{
+  "name": "@tatame/config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "echo \"no lint configured\""
+  },
+  "dependencies": {
+    "@tatame/types": "workspace:*",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.7",
+    "typescript": "^5.7.3"
+  }
+}

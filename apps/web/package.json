@@ -1,0 +1,10 @@
+{
+  "name": "@tatame/web",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node -e \"console.log('web: Next.js scaffold pending')\"",
+    "dev": "node -e \"console.log('Run Next.js init when ready')\"",
+    "lint": "echo \"no lint configured\""
+  }
+}

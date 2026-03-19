@@ -1,0 +1,17 @@
+{
+  "name": "tatame",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "db:generate": "pnpm --filter @tatame/db generate",
+    "db:migrate": "pnpm --filter @tatame/db migrate",
+    "db:studio": "pnpm --filter @tatame/db studio"
+  },
+  "devDependencies": {
+    "turbo": "^2.4.4",
+    "typescript": "^5.7.3"
+  }
+}

@@ -29,6 +29,7 @@ Roles are stored in a `user_roles` history table with an `is_active` flag. Only 
 Each user (instructor or student) can have **one active academy membership** at a time. Memberships are tracked in `academy_memberships` with history (via `is_active`, `joined_at`, `left_at`).
 
 **Membership flow:**
+
 1. User searches for an academy
 2. User requests to join → status = `pending`
 3. Manager approves → status = `active`
@@ -66,21 +67,25 @@ tatame-v2/
 ### Shared Packages
 
 **`packages/types`**
+
 - Enums: `Role`, `MembershipStatus`, `PaymentMethod`, `Belt`, `SubscriptionStatus`, `DayOfWeek`
 - DTOs: response types for API endpoints
 - Types inferred from Zod schemas via `z.infer<>`
 
 **`packages/validators`**
+
 - Zod schemas for every API request/response
 - Organized per module (e.g., `academy.schema.ts`, `checkin.schema.ts`)
 - Consumed by API (request validation), mobile (form validation), web (form validation)
 
 **`packages/config`**
+
 - Type-safe environment variable parsing with Zod
 - Shared constants: belt order, max stripes per belt, day-of-week mapping
 - API base URL per environment
 
 **`packages/db`**
+
 - Drizzle ORM schema definitions (all tables)
 - Migration files
 - Drizzle client factory
@@ -121,6 +126,7 @@ apps/api/src/
 ```
 
 Each module follows the pattern:
+
 - `module.routes.ts` — route definitions
 - `module.controller.ts` — request handling
 - `module.service.ts` — business logic
@@ -147,61 +153,61 @@ REST with conventional resource-based routes. Request/response contracts defined
 
 ### 6.1 users
 
-| column | type | description |
-|---|---|---|
-| id | uuid (pk) | internal user id |
-| clerk_user_id | text (unique) | Clerk identity |
-| email | text (unique) | user email |
-| name | text | display name |
-| profile_image_url | text | from Clerk |
-| phone | text | optional |
-| instagram | text | optional, username |
-| birth_date | date | optional |
-| created_at | timestamp | |
-| updated_at | timestamp | |
+| column            | type          | description        |
+| ----------------- | ------------- | ------------------ |
+| id                | uuid (pk)     | internal user id   |
+| clerk_user_id     | text (unique) | Clerk identity     |
+| email             | text (unique) | user email         |
+| name              | text          | display name       |
+| profile_image_url | text          | from Clerk         |
+| phone             | text          | optional           |
+| instagram         | text          | optional, username |
+| birth_date        | date          | optional           |
+| created_at        | timestamp     |                    |
+| updated_at        | timestamp     |                    |
 
 ### 6.2 user_roles
 
-| column | type | description |
-|---|---|---|
-| id | uuid (pk) | |
-| user_id | uuid (fk users) | |
-| role | enum (manager, instructor, student) | |
-| is_active | boolean | only one active at a time |
-| started_at | timestamp | when role was assigned |
-| ended_at | timestamp | null if active |
+| column     | type                                | description               |
+| ---------- | ----------------------------------- | ------------------------- |
+| id         | uuid (pk)                           |                           |
+| user_id    | uuid (fk users)                     |                           |
+| role       | enum (manager, instructor, student) |                           |
+| is_active  | boolean                             | only one active at a time |
+| started_at | timestamp                           | when role was assigned    |
+| ended_at   | timestamp                           | null if active            |
 
 **Constraint:** unique partial index on `(user_id)` where `is_active = true`
 
 ### 6.3 academies
 
-| column | type | description |
-|---|---|---|
-| id | uuid (pk) | |
-| owner_id | uuid (fk users) | the manager who created it |
-| name | text | |
-| logo_url | text | |
-| address | text | |
-| contact_email | text | |
-| contact_phone | text | |
-| founded_at | date | academy founding date |
-| created_at | timestamp | |
-| updated_at | timestamp | |
+| column        | type            | description                |
+| ------------- | --------------- | -------------------------- |
+| id            | uuid (pk)       |                            |
+| owner_id      | uuid (fk users) | the manager who created it |
+| name          | text            |                            |
+| logo_url      | text            |                            |
+| address       | text            |                            |
+| contact_email | text            |                            |
+| contact_phone | text            |                            |
+| founded_at    | date            | academy founding date      |
+| created_at    | timestamp       |                            |
+| updated_at    | timestamp       |                            |
 
 ### 6.4 academy_memberships
 
-| column | type | description |
-|---|---|---|
-| id | uuid (pk) | |
-| academy_id | uuid (fk academies) | |
-| user_id | uuid (fk users) | |
-| role | enum (manager, instructor, student) | role in this academy |
-| status | enum (pending, active, rejected, blocked) | |
-| is_active | boolean | only one active membership per user |
-| joined_at | timestamp | when approved |
-| left_at | timestamp | null if active |
-| created_at | timestamp | |
-| updated_at | timestamp | |
+| column     | type                                      | description                         |
+| ---------- | ----------------------------------------- | ----------------------------------- |
+| id         | uuid (pk)                                 |                                     |
+| academy_id | uuid (fk academies)                       |                                     |
+| user_id    | uuid (fk users)                           |                                     |
+| role       | enum (manager, instructor, student)       | role in this academy                |
+| status     | enum (pending, active, rejected, blocked) |                                     |
+| is_active  | boolean                                   | only one active membership per user |
+| joined_at  | timestamp                                 | when approved                       |
+| left_at    | timestamp                                 | null if active                      |
+| created_at | timestamp                                 |                                     |
+| updated_at | timestamp                                 |                                     |
 
 **Constraint:** unique partial index on `(user_id)` where `is_active = true`
 
@@ -209,20 +215,20 @@ REST with conventional resource-based routes. Request/response contracts defined
 
 ### 6.5 classes
 
-| column | type | description |
-|---|---|---|
-| id | uuid (pk) | |
-| academy_id | uuid (fk academies) | |
-| instructor_id | uuid (fk users) | who teaches |
-| name | text | e.g., "Fundamentals" |
-| description | text | optional |
-| day_of_week | smallint (0-6) | 0=Sunday, 6=Saturday |
-| start_time | time | |
-| end_time | time | |
-| capacity | smallint | max students per session, null = unlimited |
-| is_active | boolean | allows temporary suspension without deletion |
-| created_at | timestamp | |
-| updated_at | timestamp | |
+| column        | type                | description                                  |
+| ------------- | ------------------- | -------------------------------------------- |
+| id            | uuid (pk)           |                                              |
+| academy_id    | uuid (fk academies) |                                              |
+| instructor_id | uuid (fk users)     | who teaches                                  |
+| name          | text                | e.g., "Fundamentals"                         |
+| description   | text                | optional                                     |
+| day_of_week   | smallint (0-6)      | 0=Sunday, 6=Saturday                         |
+| start_time    | time                |                                              |
+| end_time      | time                |                                              |
+| capacity      | smallint            | max students per session, null = unlimited   |
+| is_active     | boolean             | allows temporary suspension without deletion |
+| created_at    | timestamp           |                                              |
+| updated_at    | timestamp           |                                              |
 
 **Index:** `(academy_id, day_of_week)` for schedule queries
 
@@ -230,81 +236,83 @@ REST with conventional resource-based routes. Request/response contracts defined
 
 ### 6.6 checkins
 
-| column | type | description |
-|---|---|---|
-| id | uuid (pk) | |
-| class_id | uuid (fk classes) | |
-| user_id | uuid (fk users) | student |
-| checked_in_at | timestamp | |
-| date | date | the specific date of the check-in |
-| week_reference | date | Monday of the calendar week |
+| column         | type              | description                       |
+| -------------- | ----------------- | --------------------------------- |
+| id             | uuid (pk)         |                                   |
+| class_id       | uuid (fk classes) |                                   |
+| user_id        | uuid (fk users)   | student                           |
+| checked_in_at  | timestamp         |                                   |
+| date           | date              | the specific date of the check-in |
+| week_reference | date              | Monday of the calendar week       |
 
 **Indexes:**
+
 - `(user_id, week_reference)` for weekly count queries
 - `(class_id, date)` for class capacity count queries
 
 **Constraints:**
+
 - unique index on `(user_id, class_id, date)` — no duplicate check-ins to same class on same date
 
 ### 6.7 subscription_plans
 
-| column | type | description |
-|---|---|---|
-| id | uuid (pk) | |
-| academy_id | uuid (fk academies) | |
-| name | text | e.g., "Gold Plan" |
-| recurrence_months | smallint | 1, 3, 6, 12 |
-| price_cents | integer | price in cents |
-| weekly_checkin_limit | smallint | null = unlimited |
-| is_active | boolean | manager can deactivate |
-| created_at | timestamp | |
-| updated_at | timestamp | |
+| column               | type                | description            |
+| -------------------- | ------------------- | ---------------------- |
+| id                   | uuid (pk)           |                        |
+| academy_id           | uuid (fk academies) |                        |
+| name                 | text                | e.g., "Gold Plan"      |
+| recurrence_months    | smallint            | 1, 3, 6, 12            |
+| price_cents          | integer             | price in cents         |
+| weekly_checkin_limit | smallint            | null = unlimited       |
+| is_active            | boolean             | manager can deactivate |
+| created_at           | timestamp           |                        |
+| updated_at           | timestamp           |                        |
 
 ### 6.8 student_subscriptions
 
-| column | type | description |
-|---|---|---|
-| id | uuid (pk) | |
-| user_id | uuid (fk users) | |
-| plan_id | uuid (fk subscription_plans) | |
-| status | enum (active, expired, cancelled) | derived from expires_at at runtime |
-| starts_at | date | |
-| expires_at | date | |
-| created_at | timestamp | |
-| updated_at | timestamp | |
+| column     | type                              | description                        |
+| ---------- | --------------------------------- | ---------------------------------- |
+| id         | uuid (pk)                         |                                    |
+| user_id    | uuid (fk users)                   |                                    |
+| plan_id    | uuid (fk subscription_plans)      |                                    |
+| status     | enum (active, expired, cancelled) | derived from expires_at at runtime |
+| starts_at  | date                              |                                    |
+| expires_at | date                              |                                    |
+| created_at | timestamp                         |                                    |
+| updated_at | timestamp                         |                                    |
 
 **Subscription expiry:** Evaluated lazily at runtime. When querying a subscription, check `expires_at < today` — if true, treat as expired regardless of the `status` column. The `status` column serves as a cache and is updated opportunistically (e.g., when the subscription is accessed).
 
 ### 6.9 payments
 
-| column | type | description |
-|---|---|---|
-| id | uuid (pk) | |
-| subscription_id | uuid (fk student_subscriptions) | |
-| user_id | uuid (fk users) | student |
-| academy_id | uuid (fk academies) | |
-| amount_cents | integer | amount paid |
-| method | enum (manual, stripe) | |
-| confirmed_by | uuid (fk users) | manager who confirmed (null for stripe) |
-| stripe_payment_id | text | null for manual |
-| reference_month | date | first day of the billing period month |
-| notes | text | optional |
-| paid_at | timestamp | when payment was made |
-| created_at | timestamp | |
+| column            | type                            | description                             |
+| ----------------- | ------------------------------- | --------------------------------------- |
+| id                | uuid (pk)                       |                                         |
+| subscription_id   | uuid (fk student_subscriptions) |                                         |
+| user_id           | uuid (fk users)                 | student                                 |
+| academy_id        | uuid (fk academies)             |                                         |
+| amount_cents      | integer                         | amount paid                             |
+| method            | enum (manual, stripe)           |                                         |
+| confirmed_by      | uuid (fk users)                 | manager who confirmed (null for stripe) |
+| stripe_payment_id | text                            | null for manual                         |
+| reference_month   | date                            | first day of the billing period month   |
+| notes             | text                            | optional                                |
+| paid_at           | timestamp                       | when payment was made                   |
+| created_at        | timestamp                       |                                         |
 
 ### 6.10 belt_promotions
 
-| column | type | description |
-|---|---|---|
-| id | uuid (pk) | |
-| user_id | uuid (fk users) | student |
-| academy_id | uuid (fk academies) | |
-| promoted_by | uuid (fk users) | manager or instructor |
-| belt | enum (white, blue, purple, brown, black) | |
-| stripes | smallint | 0-4 for white through brown, 0-10 for black |
-| is_current | boolean | only one current per user |
-| promoted_at | timestamp | |
-| notes | text | optional |
+| column      | type                                     | description                                 |
+| ----------- | ---------------------------------------- | ------------------------------------------- |
+| id          | uuid (pk)                                |                                             |
+| user_id     | uuid (fk users)                          | student                                     |
+| academy_id  | uuid (fk academies)                      |                                             |
+| promoted_by | uuid (fk users)                          | manager or instructor                       |
+| belt        | enum (white, blue, purple, brown, black) |                                             |
+| stripes     | smallint                                 | 0-4 for white through brown, 0-10 for black |
+| is_current  | boolean                                  | only one current per user                   |
+| promoted_at | timestamp                                |                                             |
+| notes       | text                                     | optional                                    |
 
 **Constraint:** unique partial index on `(user_id)` where `is_current = true`
 
@@ -388,6 +396,7 @@ Students with an **expired payment** (no payment record for the current billing 
 Backend manages all authorization using our own tables.
 
 **Middleware:** `authorize(...allowedRoles)`
+
 1. Reads `user_id` from Clerk JWT
 2. Queries active role from `user_roles`
 3. Rejects if role not in `allowedRoles`
@@ -395,19 +404,19 @@ Backend manages all authorization using our own tables.
 
 **Permission matrix:**
 
-| Action | Manager | Instructor | Student |
-|---|---|---|---|
-| Create academy | yes | — | — |
-| Edit academy | own | — | — |
-| Create/edit class | yes | own classes | — |
-| Approve/reject member | yes | — | — |
-| Block/unblock member | yes | — | — |
-| Check in to class | — | — | yes |
-| Confirm payment | yes | — | — |
-| Promote belt/stripe | yes | yes | — |
-| View schedule | yes | yes | yes |
-| Manage subscription plans | yes | — | — |
-| Select subscription plan | — | — | yes |
+| Action                    | Manager | Instructor  | Student |
+| ------------------------- | ------- | ----------- | ------- |
+| Create academy            | yes     | —           | —       |
+| Edit academy              | own     | —           | —       |
+| Create/edit class         | yes     | own classes | —       |
+| Approve/reject member     | yes     | —           | —       |
+| Block/unblock member      | yes     | —           | —       |
+| Check in to class         | —       | —           | yes     |
+| Confirm payment           | yes     | —           | —       |
+| Promote belt/stripe       | yes     | yes         | —       |
+| View schedule             | yes     | yes         | yes     |
+| Manage subscription plans | yes     | —           | —       |
+| Select subscription plan  | —       | —           | yes     |
 
 **Academy-scoped authorization:** Most actions are scoped to an academy. The middleware verifies the user has an active membership in the target academy.
 
@@ -430,6 +439,7 @@ Backend manages all authorization using our own tables.
 ### Navigation
 
 Expo Router (file-based routing) with route groups:
+
 - `(onboarding)/` — welcome, user type selection (shown only on first launch, before auth)
 - `(auth)/` — login, signup
 - `(app)/` — main screens, protected by auth
@@ -438,6 +448,7 @@ Expo Router (file-based routing) with route groups:
 ### Onboarding Persistence
 
 On first launch, the app checks localStorage for a `userType` key:
+
 - **Not found** → navigate to `(onboarding)/` flow
 - **Found** → skip onboarding, navigate to `(auth)/` or `(app)/` based on auth state
 
@@ -446,6 +457,7 @@ After onboarding, `userType` is saved to localStorage (`manager`, `instructor`, 
 ### Forced Update Check
 
 On app launch (when online):
+
 - Call a `/version` endpoint or use Expo Updates
 - Compare current app version against minimum required version
 - If outdated → block with "please update" screen pointing to the app store
@@ -510,6 +522,7 @@ On app launch (when online):
 ## 13. Clerk Webhook Idempotency
 
 Clerk may retry webhooks. All webhook handlers must be idempotent:
+
 - Use Clerk's `svix_id` header for deduplication, or
 - Use `ON CONFLICT (clerk_user_id) DO UPDATE` for user sync operations
 

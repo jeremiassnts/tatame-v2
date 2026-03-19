@@ -1,0 +1,10 @@
+{
+  "name": "@tatame/mobile",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node -e \"console.log('mobile: Expo scaffold pending')\"",
+    "dev": "node -e \"console.log('Run Expo init when designs are ready')\"",
+    "lint": "echo \"no lint configured\""
+  }
+}
