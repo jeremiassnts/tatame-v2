@@ -15,15 +15,19 @@ import {
 } from "../../middleware/academy-context.js";
 import { authorize } from "../../middleware/authorize.js";
 import { validateBody } from "../../middleware/validate.js";
-import {
-  createClass,
-  deactivateClass,
-  getClassInActiveAcademy,
-  listClassesForActiveAcademy,
-  updateClass,
-} from "./class.service.js";
+import { PostgresAcademyRepository } from "../academy/academy.repository.postgres.js";
+import { PostgresMembershipRepository } from "../membership/membership.repository.postgres.js";
+import { PostgresClassRepository } from "./class.repository.postgres.js";
+import { ClassService } from "./class.service.js";
 
 export const classRouter = Router();
+
+const db = getDb();
+const classService = new ClassService(
+  new PostgresClassRepository(db),
+  new PostgresMembershipRepository(db),
+  new PostgresAcademyRepository(db),
+);
 
 function classCtx(req: Request) {
   const a = req.appAuth!;
@@ -45,8 +49,7 @@ classRouter.get(
       if (!query.success) {
         throw new HttpError(400, "Invalid query");
       }
-      const db = getDb();
-      const items = await listClassesForActiveAcademy(db, classCtx(req), query.data);
+      const items = await classService.list(classCtx(req), query.data);
       res.json({ items });
     } catch (e) {
       next(e);
@@ -65,9 +68,7 @@ classRouter.get(
       if (!params.success) {
         throw new HttpError(400, "Invalid class id");
       }
-      const db = getDb();
-      const row = await getClassInActiveAcademy(
-        db,
+      const row = await classService.getById(
         classCtx(req),
         params.data.classId,
       );
@@ -87,8 +88,7 @@ classRouter.post(
   async (req, res, next) => {
     try {
       const body = req.validatedBody as CreateClassBody;
-      const db = getDb();
-      const created = await createClass(db, classCtx(req), body);
+      const created = await classService.create(classCtx(req), body);
       res.status(201).json(created);
     } catch (e) {
       next(e);
@@ -109,9 +109,7 @@ classRouter.patch(
         throw new HttpError(400, "Invalid class id");
       }
       const body = req.validatedBody as UpdateClassBody;
-      const db = getDb();
-      const updated = await updateClass(
-        db,
+      const updated = await classService.update(
         classCtx(req),
         params.data.classId,
         body,
@@ -134,9 +132,7 @@ classRouter.delete(
       if (!params.success) {
         throw new HttpError(400, "Invalid class id");
       }
-      const db = getDb();
-      const updated = await deactivateClass(
-        db,
+      const updated = await classService.deactivate(
         classCtx(req),
         params.data.classId,
       );

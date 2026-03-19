@@ -10,19 +10,18 @@ import { getDb } from "../../lib/db.js";
 import { HttpError } from "../../lib/http-error.js";
 import { attachActiveAcademyContext } from "../../middleware/academy-context.js";
 import { authorize } from "../../middleware/authorize.js";
-import { requireSession } from "../../middleware/require-session.js";
 import { validateBody } from "../../middleware/validate.js";
-import {
-  approveMembership,
-  blockMembership,
-  leaveActiveMembership,
-  listPendingMembershipsForAcademy,
-  rejectMembership,
-  requestMembership,
-  unblockMembership,
-} from "./membership.service.js";
+import { PostgresAcademyRepository } from "../academy/academy.repository.postgres.js";
+import { PostgresMembershipRepository } from "./membership.repository.postgres.js";
+import { MembershipService } from "./membership.service.js";
 
 export const membershipRouter = Router();
+
+const db = getDb();
+const membershipService = new MembershipService(
+  new PostgresMembershipRepository(db),
+  new PostgresAcademyRepository(db),
+);
 
 membershipRouter.post(
   "/requests",
@@ -34,9 +33,7 @@ membershipRouter.post(
       const { academyId } = req.validatedBody as RequestMembershipBody;
       const userId = req.appAuth!.userId;
       const role = req.appAuth!.role;
-      const db = getDb();
-      const created = await requestMembership(
-        db,
+      const created = await membershipService.request(
         userId,
         role as "instructor" | "student",
         academyId,
@@ -59,9 +56,7 @@ membershipRouter.get(
         throw new HttpError(400, "Query academyId (uuid) is required");
       }
       const managerUserId = req.appAuth!.userId;
-      const db = getDb();
-      const items = await listPendingMembershipsForAcademy(
-        db,
+      const items = await membershipService.listPending(
         query.data.academyId,
         managerUserId,
       );
@@ -82,9 +77,7 @@ membershipRouter.patch(
       if (!params.success) {
         throw new HttpError(400, "Invalid membership id");
       }
-      const db = getDb();
-      const updated = await approveMembership(
-        db,
+      const updated = await membershipService.approve(
         params.data.membershipId,
         req.appAuth!.userId,
       );
@@ -105,9 +98,7 @@ membershipRouter.patch(
       if (!params.success) {
         throw new HttpError(400, "Invalid membership id");
       }
-      const db = getDb();
-      const updated = await rejectMembership(
-        db,
+      const updated = await membershipService.reject(
         params.data.membershipId,
         req.appAuth!.userId,
       );
@@ -128,9 +119,7 @@ membershipRouter.patch(
       if (!params.success) {
         throw new HttpError(400, "Invalid membership id");
       }
-      const db = getDb();
-      const updated = await blockMembership(
-        db,
+      const updated = await membershipService.block(
         params.data.membershipId,
         req.appAuth!.userId,
       );
@@ -151,9 +140,7 @@ membershipRouter.patch(
       if (!params.success) {
         throw new HttpError(400, "Invalid membership id");
       }
-      const db = getDb();
-      await unblockMembership(
-        db,
+      await membershipService.unblock(
         params.data.membershipId,
         req.appAuth!.userId,
       );
@@ -170,8 +157,7 @@ membershipRouter.post(
   attachActiveAcademyContext,
   async (req, res, next) => {
     try {
-      const db = getDb();
-      const updated = await leaveActiveMembership(db, req.appAuth!.userId);
+      const updated = await membershipService.leave(req.appAuth!.userId);
       res.json(updated);
     } catch (e) {
       next(e);

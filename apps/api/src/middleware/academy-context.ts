@@ -1,6 +1,8 @@
 import type { NextFunction, Request, Response } from "express";
 import { getDb } from "../lib/db.js";
-import { getActiveMembership } from "../modules/membership/membership.service.js";
+import { PostgresMembershipRepository } from "../modules/membership/membership.repository.postgres.js";
+
+const membershipRepo = new PostgresMembershipRepository(getDb());
 
 /**
  * After `authorize`, loads `academy_memberships` where `is_active` and merges
@@ -19,7 +21,7 @@ export function attachActiveAcademyContext(
       return;
     }
     try {
-      const row = await getActiveMembership(getDb(), auth.userId);
+      const row = await membershipRepo.findActiveByUser(auth.userId);
       if (row) {
         req.appAuth = {
           ...auth,

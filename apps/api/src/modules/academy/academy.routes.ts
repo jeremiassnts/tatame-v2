@@ -12,20 +12,22 @@ import { attachActiveAcademyContext } from "../../middleware/academy-context.js"
 import { authorize } from "../../middleware/authorize.js";
 import { requireSession } from "../../middleware/require-session.js";
 import { validateBody } from "../../middleware/validate.js";
-import {
-  createAcademyWithManagerMembership,
-  getAcademyById,
-  searchAcademiesByName,
-  updateAcademy,
-} from "./academy.service.js";
+import { PostgresMembershipRepository } from "../membership/membership.repository.postgres.js";
+import { PostgresAcademyRepository } from "./academy.repository.postgres.js";
+import { AcademyService } from "./academy.service.js";
 
 export const academyRouter = Router();
+
+const db = getDb();
+const academyService = new AcademyService(
+  new PostgresAcademyRepository(db),
+  (txDb) => new PostgresMembershipRepository(txDb),
+);
 
 academyRouter.get("/", requireSession, async (req, res, next) => {
   try {
     const q = typeof req.query.q === "string" ? req.query.q : "";
-    const db = getDb();
-    const rows = await searchAcademiesByName(db, q);
+    const rows = await academyService.searchByName(q);
     res.json({ items: rows });
   } catch (e) {
     next(e);
@@ -38,8 +40,7 @@ academyRouter.get("/:academyId", requireSession, async (req, res, next) => {
     if (!params.success) {
       throw new HttpError(400, "Invalid academy id");
     }
-    const db = getDb();
-    const row = await getAcademyById(db, params.data.academyId);
+    const row = await academyService.getById(params.data.academyId);
     if (!row) {
       throw new HttpError(404, "Academy not found");
     }
@@ -58,8 +59,7 @@ academyRouter.post(
     try {
       const body = req.validatedBody as CreateAcademyBody;
       const userId = req.appAuth!.userId;
-      const db = getDb();
-      const created = await createAcademyWithManagerMembership(db, userId, body);
+      const created = await academyService.createWithManagerMembership(userId, body);
       res.status(201).json(created);
     } catch (e) {
       next(e);
@@ -83,9 +83,7 @@ academyRouter.patch(
         throw new HttpError(400, "At least one field is required");
       }
       const userId = req.appAuth!.userId;
-      const db = getDb();
-      const updated = await updateAcademy(
-        db,
+      const updated = await academyService.update(
         params.data.academyId,
         userId,
         body,

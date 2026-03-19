@@ -1,13 +1,15 @@
-import { and, eq, inArray } from "drizzle-orm";
-import {
-  academyMemberships,
-  classes,
-  type Database,
-} from "@tatame/db";
 import type { CreateClassBody, UpdateClassBody } from "@tatame/validators";
 import type { Role } from "@tatame/types";
 import { HttpError } from "../../lib/http-error.js";
-import { assertManagerOwnsAcademy } from "../academy/academy.service.js";
+import type { IAcademyRepository } from "../academy/academy.repository.js";
+import type { IMembershipRepository } from "../membership/membership.repository.js";
+import type { IClassRepository } from "./class.repository.js";
+
+export type ClassAuthContext = {
+  userId: string;
+  role: Role;
+  activeAcademyId: string;
+};
 
 function normalizeTime(t: string): string {
   const parts = t.split(":");
@@ -27,132 +29,59 @@ function assertEndAfterStart(start: string, end: string): void {
   }
 }
 
-async function assertUserCanTeachInAcademy(
-  db: Database,
-  academyId: string,
-  userId: string,
-): Promise<void> {
-  const [row] = await db
-    .select({ id: academyMemberships.id })
-    .from(academyMemberships)
-    .where(
-      and(
-        eq(academyMemberships.academyId, academyId),
-        eq(academyMemberships.userId, userId),
-        eq(academyMemberships.isActive, true),
-        eq(academyMemberships.status, "active"),
-        inArray(academyMemberships.role, ["instructor", "manager"]),
-      ),
-    )
-    .limit(1);
-  if (!row) {
-    throw new HttpError(
-      400,
-      "instructorId must be an active instructor or manager in this academy",
-    );
-  }
-}
+export class ClassService {
+  constructor(
+    private readonly classRepo: IClassRepository,
+    private readonly membershipRepo: IMembershipRepository,
+    private readonly academyRepo: IAcademyRepository,
+  ) {}
 
-export type ClassAuthContext = {
-  userId: string;
-  role: Role;
-  activeAcademyId: string;
-};
-
-export async function listClassesForActiveAcademy(
-  db: Database,
-  ctx: ClassAuthContext,
-  query: { dayOfWeek?: number; includeInactive?: boolean },
-) {
-  const { activeAcademyId, role, userId } = ctx;
-
-  const includeInactive =
-    role === "manager" ? Boolean(query.includeInactive) : false;
-
-  const conditions = [eq(classes.academyId, activeAcademyId)];
-
-  if (!includeInactive) {
-    conditions.push(eq(classes.isActive, true));
-  }
-
-  if (query.dayOfWeek !== undefined) {
-    conditions.push(eq(classes.dayOfWeek, query.dayOfWeek));
-  }
-
-  if (role === "instructor") {
-    conditions.push(eq(classes.instructorId, userId));
-  }
-
-  const whereClause =
-    conditions.length === 1
-      ? conditions[0]
-      : and(...conditions);
-
-  return db
-    .select()
-    .from(classes)
-    .where(whereClause)
-    .orderBy(classes.dayOfWeek, classes.startTime);
-}
-
-export async function getClassInActiveAcademy(
-  db: Database,
-  ctx: ClassAuthContext,
-  classId: string,
-) {
-  const [row] = await db
-    .select()
-    .from(classes)
-    .where(
-      and(eq(classes.id, classId), eq(classes.academyId, ctx.activeAcademyId)),
-    )
-    .limit(1);
-
-  if (!row) {
-    throw new HttpError(404, "Class not found");
-  }
-
-  if (ctx.role === "student" && !row.isActive) {
-    throw new HttpError(404, "Class not found");
-  }
-
-  if (ctx.role === "instructor" && row.instructorId !== ctx.userId) {
-    throw new HttpError(403, "You can only view your own classes");
-  }
-
-  return row;
-}
-
-export async function createClass(
-  db: Database,
-  ctx: ClassAuthContext,
-  body: CreateClassBody,
-) {
-  const { activeAcademyId, role, userId } = ctx;
-
-  const startTime = normalizeTime(body.startTime);
-  const endTime = normalizeTime(body.endTime);
-  assertEndAfterStart(startTime, endTime);
-
-  let instructorId = body.instructorId;
-
-  if (role === "manager") {
-    await assertManagerOwnsAcademy(db, userId, activeAcademyId);
-    await assertUserCanTeachInAcademy(db, activeAcademyId, instructorId);
-  } else if (role === "instructor") {
-    if (instructorId !== userId) {
-      throw new HttpError(403, "Instructors can only create classes for themselves");
-    }
-    await assertUserCanTeachInAcademy(db, activeAcademyId, userId);
-  } else {
-    throw new HttpError(403, "Forbidden");
-  }
-
-  const [created] = await db
-    .insert(classes)
-    .values({
-      academyId: activeAcademyId,
+  async list(
+    ctx: ClassAuthContext,
+    query: { dayOfWeek?: number; includeInactive?: boolean },
+  ) {
+    const includeInactive =
+      ctx.role === "manager" ? Boolean(query.includeInactive) : false;
+    const instructorId = ctx.role === "instructor" ? ctx.userId : undefined;
+    return this.classRepo.findByAcademyId(ctx.activeAcademyId, {
+      dayOfWeek: query.dayOfWeek,
+      includeInactive,
       instructorId,
+    });
+  }
+
+  async getById(ctx: ClassAuthContext, classId: string) {
+    const row = await this.classRepo.findById(classId, ctx.activeAcademyId);
+    if (!row) throw new HttpError(404, "Class not found");
+    if (ctx.role === "student" && !row.isActive) {
+      throw new HttpError(404, "Class not found");
+    }
+    if (ctx.role === "instructor" && row.instructorId !== ctx.userId) {
+      throw new HttpError(403, "You can only view your own classes");
+    }
+    return row;
+  }
+
+  async create(ctx: ClassAuthContext, body: CreateClassBody) {
+    const startTime = normalizeTime(body.startTime);
+    const endTime = normalizeTime(body.endTime);
+    assertEndAfterStart(startTime, endTime);
+
+    if (ctx.role === "manager") {
+      await this.assertManagerOwnsAcademy(ctx.userId, ctx.activeAcademyId);
+      await this.assertCanTeach(ctx.activeAcademyId, body.instructorId);
+    } else if (ctx.role === "instructor") {
+      if (body.instructorId !== ctx.userId) {
+        throw new HttpError(403, "Instructors can only create classes for themselves");
+      }
+      await this.assertCanTeach(ctx.activeAcademyId, ctx.userId);
+    } else {
+      throw new HttpError(403, "Forbidden");
+    }
+
+    const created = await this.classRepo.create({
+      academyId: ctx.activeAcademyId,
+      instructorId: body.instructorId,
       name: body.name,
       description: body.description ?? null,
       dayOfWeek: body.dayOfWeek,
@@ -160,71 +89,41 @@ export async function createClass(
       endTime,
       capacity: body.capacity ?? null,
       isActive: true,
-    })
-    .returning();
-
-  if (!created) {
-    throw new HttpError(500, "Failed to create class");
+    });
+    return created;
   }
-  return created;
-}
 
-async function loadClassForMutation(
-  db: Database,
-  ctx: ClassAuthContext,
-  classId: string,
-) {
-  const row = await getClassInActiveAcademy(db, ctx, classId);
-  if (ctx.role === "manager") {
-    await assertManagerOwnsAcademy(db, ctx.userId, ctx.activeAcademyId);
-  } else if (ctx.role === "instructor") {
-    if (row.instructorId !== ctx.userId) {
-      throw new HttpError(403, "You can only edit your own classes");
+  async update(ctx: ClassAuthContext, classId: string, body: UpdateClassBody) {
+    if (Object.keys(body).length === 0) {
+      throw new HttpError(400, "At least one field is required");
     }
-  } else {
-    throw new HttpError(403, "Forbidden");
-  }
-  return row;
-}
 
-export async function updateClass(
-  db: Database,
-  ctx: ClassAuthContext,
-  classId: string,
-  body: UpdateClassBody,
-) {
-  if (Object.keys(body).length === 0) {
-    throw new HttpError(400, "At least one field is required");
-  }
+    const existing = await this.loadForMutation(ctx, classId);
 
-  const existing = await loadClassForMutation(db, ctx, classId);
+    const startTime =
+      body.startTime !== undefined
+        ? normalizeTime(body.startTime)
+        : String(existing.startTime);
+    const endTime =
+      body.endTime !== undefined
+        ? normalizeTime(body.endTime)
+        : String(existing.endTime);
+    assertEndAfterStart(startTime, endTime);
 
-  const startTime =
-    body.startTime !== undefined
-      ? normalizeTime(body.startTime)
-      : String(existing.startTime);
-  const endTime =
-    body.endTime !== undefined
-      ? normalizeTime(body.endTime)
-      : String(existing.endTime);
-  assertEndAfterStart(startTime, endTime);
-
-  let nextInstructorId = existing.instructorId;
-  if (body.instructorId !== undefined) {
-    if (ctx.role === "instructor" && body.instructorId !== ctx.userId) {
-      throw new HttpError(403, "Instructors cannot reassign the instructor");
+    let nextInstructorId = existing.instructorId;
+    if (body.instructorId !== undefined) {
+      if (ctx.role === "instructor" && body.instructorId !== ctx.userId) {
+        throw new HttpError(403, "Instructors cannot reassign the instructor");
+      }
+      nextInstructorId = body.instructorId;
+      await this.assertCanTeach(ctx.activeAcademyId, nextInstructorId);
     }
-    nextInstructorId = body.instructorId;
-    await assertUserCanTeachInAcademy(db, ctx.activeAcademyId, nextInstructorId);
-  }
 
-  if (ctx.role === "instructor" && body.isActive !== undefined) {
-    throw new HttpError(403, "Only managers can change class active status");
-  }
+    if (ctx.role === "instructor" && body.isActive !== undefined) {
+      throw new HttpError(403, "Only managers can change class active status");
+    }
 
-  const [updated] = await db
-    .update(classes)
-    .set({
+    const updated = await this.classRepo.update(classId, {
       ...(body.name !== undefined ? { name: body.name } : {}),
       ...(body.description !== undefined ? { description: body.description } : {}),
       ...(body.dayOfWeek !== undefined ? { dayOfWeek: body.dayOfWeek } : {}),
@@ -233,32 +132,56 @@ export async function updateClass(
       ...(body.capacity !== undefined ? { capacity: body.capacity } : {}),
       ...(body.instructorId !== undefined ? { instructorId: nextInstructorId } : {}),
       ...(body.isActive !== undefined ? { isActive: body.isActive } : {}),
-      updatedAt: new Date(),
-    })
-    .where(eq(classes.id, classId))
-    .returning();
+    });
 
-  if (!updated) {
-    throw new HttpError(404, "Class not found");
+    if (!updated) {
+      throw new HttpError(404, "Class not found");
+    }
+    return updated;
   }
-  return updated;
-}
 
-export async function deactivateClass(
-  db: Database,
-  ctx: ClassAuthContext,
-  classId: string,
-) {
-  await loadClassForMutation(db, ctx, classId);
+  async deactivate(ctx: ClassAuthContext, classId: string) {
+    await this.loadForMutation(ctx, classId);
 
-  const [updated] = await db
-    .update(classes)
-    .set({ isActive: false, updatedAt: new Date() })
-    .where(eq(classes.id, classId))
-    .returning();
-
-  if (!updated) {
-    throw new HttpError(404, "Class not found");
+    const updated = await this.classRepo.update(classId, { isActive: false });
+    if (!updated) {
+      throw new HttpError(404, "Class not found");
+    }
+    return updated;
   }
-  return updated;
+
+  private async loadForMutation(ctx: ClassAuthContext, classId: string) {
+    const row = await this.getById(ctx, classId);
+    if (ctx.role === "manager") {
+      await this.assertManagerOwnsAcademy(ctx.userId, ctx.activeAcademyId);
+    } else if (ctx.role === "instructor") {
+      if (row.instructorId !== ctx.userId) {
+        throw new HttpError(403, "You can only edit your own classes");
+      }
+    } else {
+      throw new HttpError(403, "Forbidden");
+    }
+    return row;
+  }
+
+  private async assertManagerOwnsAcademy(userId: string, academyId: string) {
+    const academy = await this.academyRepo.findById(academyId);
+    if (!academy) throw new HttpError(404, "Academy not found");
+    if (academy.ownerId !== userId) {
+      throw new HttpError(403, "You do not manage this academy");
+    }
+  }
+
+  private async assertCanTeach(academyId: string, userId: string) {
+    const m = await this.membershipRepo.findActiveByUserAndAcademy(
+      userId,
+      academyId,
+    );
+    if (!m || !["instructor", "manager"].includes(m.role)) {
+      throw new HttpError(
+        400,
+        "instructorId must be an active instructor or manager in this academy",
+      );
+    }
+  }
 }

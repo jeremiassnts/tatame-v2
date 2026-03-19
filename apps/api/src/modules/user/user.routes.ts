@@ -9,13 +9,13 @@ import type { SetInitialRoleBody } from "@tatame/validators";
 import { getDb } from "../../lib/db.js";
 import { requireSession } from "../../middleware/require-session.js";
 import { validateBody } from "../../middleware/validate.js";
-import {
-  assignInitialUserRole,
-  getActiveRoleForUser,
-  getUserByClerkId,
-} from "./user.service.js";
+import { PostgresUserRepository } from "./user.repository.postgres.js";
+import { UserService } from "./user.service.js";
 
 export const userRouter = Router();
+
+const db = getDb();
+const userService = new UserService(new PostgresUserRepository(db));
 
 userRouter.get("/me", requireSession, async (req, res, next) => {
   try {
@@ -25,8 +25,7 @@ userRouter.get("/me", requireSession, async (req, res, next) => {
       return;
     }
 
-    const db = getDb();
-    const row = await getUserByClerkId(db, clerkUserId);
+    const row = await userService.getByClerkId(clerkUserId);
 
     if (!row) {
       res.status(404).json({
@@ -35,7 +34,7 @@ userRouter.get("/me", requireSession, async (req, res, next) => {
       return;
     }
 
-    const activeRole = await getActiveRoleForUser(db, row.id);
+    const activeRole = await userService.getActiveRole(row.id);
 
     const body = {
       id: row.id,
@@ -65,8 +64,7 @@ userRouter.post(
         return;
       }
 
-      const db = getDb();
-      const userRow = await getUserByClerkId(db, clerkUserId);
+      const userRow = await userService.getByClerkId(clerkUserId);
       if (!userRow) {
         res.status(404).json({
           error: "User not provisioned yet; wait for Clerk webhook sync",
@@ -74,7 +72,7 @@ userRouter.post(
         return;
       }
 
-      const created = await assignInitialUserRole(db, userRow.id, role);
+      const created = await userService.assignInitialRole(userRow.id, role);
       if (!created) {
         res.status(409).json({
           error: "Role already set; MVP does not allow switching roles",

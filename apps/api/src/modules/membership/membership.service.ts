@@ -1,95 +1,52 @@
-import { and, eq, inArray, ne } from "drizzle-orm";
-import {
-  academies,
-  academyMemberships,
-  users,
-  type Database,
-} from "@tatame/db";
 import { HttpError } from "../../lib/http-error.js";
-import { assertManagerOwnsAcademy } from "../academy/academy.service.js";
+import type { IAcademyRepository } from "../academy/academy.repository.js";
+import type { IMembershipRepository } from "./membership.repository.js";
 
-export async function getActiveMembership(db: Database, userId: string) {
-  const [row] = await db
-    .select()
-    .from(academyMemberships)
-    .where(
-      and(
-        eq(academyMemberships.userId, userId),
-        eq(academyMemberships.isActive, true),
-      ),
-    )
-    .limit(1);
-  return row ?? null;
-}
+export class MembershipService {
+  constructor(
+    private readonly membershipRepo: IMembershipRepository,
+    private readonly academyRepo: IAcademyRepository,
+  ) {}
 
-async function loadMembership(db: Database, membershipId: string) {
-  const [row] = await db
-    .select()
-    .from(academyMemberships)
-    .where(eq(academyMemberships.id, membershipId))
-    .limit(1);
-  return row ?? null;
-}
-
-export async function requestMembership(
-  db: Database,
-  userId: string,
-  role: "instructor" | "student",
-  academyId: string,
-) {
-  const [academy] = await db
-    .select({ id: academies.id })
-    .from(academies)
-    .where(eq(academies.id, academyId))
-    .limit(1);
-  if (!academy) {
-    throw new HttpError(404, "Academy not found");
+  async getActive(userId: string) {
+    return (await this.membershipRepo.findActiveByUser(userId)) ?? null;
   }
 
-  const active = await getActiveMembership(db, userId);
-  if (active) {
-    throw new HttpError(
-      409,
-      "You already have an active academy membership; leave before joining another",
+  async request(
+    userId: string,
+    role: "instructor" | "student",
+    academyId: string,
+  ) {
+    const academy = await this.academyRepo.findById(academyId);
+    if (!academy) {
+      throw new HttpError(404, "Academy not found");
+    }
+
+    const active = await this.membershipRepo.findActiveByUser(userId);
+    if (active) {
+      throw new HttpError(
+        409,
+        "You already have an active academy membership; leave before joining another",
+      );
+    }
+
+    const blocked = await this.membershipRepo.existsBlockedOrRejected(
+      userId,
+      academyId,
     );
-  }
+    if (blocked) {
+      throw new HttpError(
+        403,
+        "Cannot request again for this academy until a manager unblocks you",
+      );
+    }
 
-  const [blocked] = await db
-    .select({ id: academyMemberships.id })
-    .from(academyMemberships)
-    .where(
-      and(
-        eq(academyMemberships.userId, userId),
-        eq(academyMemberships.academyId, academyId),
-        inArray(academyMemberships.status, ["blocked", "rejected"]),
-      ),
-    )
-    .limit(1);
-  if (blocked) {
-    throw new HttpError(
-      403,
-      "Cannot request again for this academy until a manager unblocks you",
-    );
-  }
+    const pending = await this.membershipRepo.existsPending(userId, academyId);
+    if (pending) {
+      throw new HttpError(409, "You already have a pending request for this academy");
+    }
 
-  const [pending] = await db
-    .select({ id: academyMemberships.id })
-    .from(academyMemberships)
-    .where(
-      and(
-        eq(academyMemberships.userId, userId),
-        eq(academyMemberships.academyId, academyId),
-        eq(academyMemberships.status, "pending"),
-      ),
-    )
-    .limit(1);
-  if (pending) {
-    throw new HttpError(409, "You already have a pending request for this academy");
-  }
-
-  const [created] = await db
-    .insert(academyMemberships)
-    .values({
+    return this.membershipRepo.create({
       academyId,
       userId,
       role,
@@ -97,217 +54,136 @@ export async function requestMembership(
       isActive: false,
       joinedAt: null,
       leftAt: null,
-    })
-    .returning();
-
-  if (!created) {
-    throw new HttpError(500, "Failed to create membership request");
-  }
-  return created;
-}
-
-export async function listPendingMembershipsForAcademy(
-  db: Database,
-  academyId: string,
-  managerUserId: string,
-) {
-  await assertManagerOwnsAcademy(db, managerUserId, academyId);
-
-  const rows = await db
-    .select({
-      membership: academyMemberships,
-      userName: users.name,
-      userEmail: users.email,
-    })
-    .from(academyMemberships)
-    .innerJoin(users, eq(academyMemberships.userId, users.id))
-    .where(
-      and(
-        eq(academyMemberships.academyId, academyId),
-        eq(academyMemberships.status, "pending"),
-      ),
-    );
-
-  return rows.map((r) => ({
-    ...r.membership,
-    userName: r.userName,
-    userEmail: r.userEmail,
-  }));
-}
-
-export async function approveMembership(
-  db: Database,
-  membershipId: string,
-  managerUserId: string,
-) {
-  const m = await loadMembership(db, membershipId);
-  if (!m) {
-    throw new HttpError(404, "Membership not found");
-  }
-  await assertManagerOwnsAcademy(db, managerUserId, m.academyId);
-
-  if (m.status !== "pending") {
-    throw new HttpError(409, "Only pending memberships can be approved");
+    });
   }
 
-  const targetActive = await getActiveMembership(db, m.userId);
-  if (targetActive) {
-    throw new HttpError(
-      409,
-      "User already has an active membership elsewhere",
-    );
+  async listPending(academyId: string, managerUserId: string) {
+    await this.assertManagerOwnsAcademy(managerUserId, academyId);
+    return this.membershipRepo.findPendingByAcademy(academyId);
   }
 
-  return db.transaction(async (tx) => {
-    await tx
-      .update(academyMemberships)
-      .set({
-        status: "rejected",
-        updatedAt: new Date(),
-      })
-      .where(
-        and(
-          eq(academyMemberships.userId, m.userId),
-          eq(academyMemberships.status, "pending"),
-          ne(academyMemberships.id, membershipId),
-        ),
+  async approve(membershipId: string, managerUserId: string) {
+    const m = await this.membershipRepo.findById(membershipId);
+    if (!m) {
+      throw new HttpError(404, "Membership not found");
+    }
+    await this.assertManagerOwnsAcademy(managerUserId, m.academyId);
+
+    if (m.status !== "pending") {
+      throw new HttpError(409, "Only pending memberships can be approved");
+    }
+
+    const targetActive = await this.membershipRepo.findActiveByUser(m.userId);
+    if (targetActive) {
+      throw new HttpError(
+        409,
+        "User already has an active membership elsewhere",
       );
+    }
 
-    const [updated] = await tx
-      .update(academyMemberships)
-      .set({
+    return this.membershipRepo.withTransaction(async (txRepo) => {
+      await txRepo.rejectAllPendingExcept(m.userId, membershipId);
+      const updated = await txRepo.updateStatus(membershipId, {
         status: "active",
         isActive: true,
         joinedAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(eq(academyMemberships.id, membershipId))
-      .returning();
+      });
+      if (!updated) {
+        throw new HttpError(500, "Failed to approve membership");
+      }
+      return updated;
+    });
+  }
 
-    if (!updated) {
-      throw new HttpError(500, "Failed to approve membership");
+  async reject(membershipId: string, managerUserId: string) {
+    const m = await this.membershipRepo.findById(membershipId);
+    if (!m) {
+      throw new HttpError(404, "Membership not found");
     }
-    return updated;
-  });
-}
+    await this.assertManagerOwnsAcademy(managerUserId, m.academyId);
 
-export async function rejectMembership(
-  db: Database,
-  membershipId: string,
-  managerUserId: string,
-) {
-  const m = await loadMembership(db, membershipId);
-  if (!m) {
-    throw new HttpError(404, "Membership not found");
-  }
-  await assertManagerOwnsAcademy(db, managerUserId, m.academyId);
+    if (m.status !== "pending") {
+      throw new HttpError(409, "Only pending memberships can be rejected");
+    }
 
-  if (m.status !== "pending") {
-    throw new HttpError(409, "Only pending memberships can be rejected");
-  }
-
-  const [updated] = await db
-    .update(academyMemberships)
-    .set({
+    const updated = await this.membershipRepo.updateStatus(membershipId, {
       status: "rejected",
       isActive: false,
-      updatedAt: new Date(),
-    })
-    .where(eq(academyMemberships.id, membershipId))
-    .returning();
-
-  if (!updated) {
-    throw new HttpError(500, "Failed to reject membership");
-  }
-  return updated;
-}
-
-export async function blockMembership(
-  db: Database,
-  membershipId: string,
-  managerUserId: string,
-) {
-  const m = await loadMembership(db, membershipId);
-  if (!m) {
-    throw new HttpError(404, "Membership not found");
-  }
-  await assertManagerOwnsAcademy(db, managerUserId, m.academyId);
-
-  if (m.status !== "pending" && m.status !== "active") {
-    throw new HttpError(409, "Only pending or active memberships can be blocked");
+    });
+    if (!updated) {
+      throw new HttpError(500, "Failed to reject membership");
+    }
+    return updated;
   }
 
-  const now = new Date();
-  const [updated] = await db
-    .update(academyMemberships)
-    .set({
+  async block(membershipId: string, managerUserId: string) {
+    const m = await this.membershipRepo.findById(membershipId);
+    if (!m) {
+      throw new HttpError(404, "Membership not found");
+    }
+    await this.assertManagerOwnsAcademy(managerUserId, m.academyId);
+
+    if (m.status !== "pending" && m.status !== "active") {
+      throw new HttpError(409, "Only pending or active memberships can be blocked");
+    }
+
+    const now = new Date();
+    const updated = await this.membershipRepo.updateStatus(membershipId, {
       status: "blocked",
       isActive: false,
       leftAt: m.isActive ? now : m.leftAt,
-      updatedAt: now,
-    })
-    .where(eq(academyMemberships.id, membershipId))
-    .returning();
-
-  if (!updated) {
-    throw new HttpError(500, "Failed to block membership");
-  }
-  return updated;
-}
-
-/** Removes blocked/rejected row so the user may send a new request (spec §3). */
-export async function unblockMembership(
-  db: Database,
-  membershipId: string,
-  managerUserId: string,
-) {
-  const m = await loadMembership(db, membershipId);
-  if (!m) {
-    throw new HttpError(404, "Membership not found");
-  }
-  await assertManagerOwnsAcademy(db, managerUserId, m.academyId);
-
-  if (m.status !== "blocked" && m.status !== "rejected") {
-    throw new HttpError(409, "Only blocked or rejected memberships can be unblocked");
+    });
+    if (!updated) {
+      throw new HttpError(500, "Failed to block membership");
+    }
+    return updated;
   }
 
-  await db
-    .delete(academyMemberships)
-    .where(eq(academyMemberships.id, membershipId));
-}
+  async unblock(membershipId: string, managerUserId: string) {
+    const m = await this.membershipRepo.findById(membershipId);
+    if (!m) {
+      throw new HttpError(404, "Membership not found");
+    }
+    await this.assertManagerOwnsAcademy(managerUserId, m.academyId);
 
-export async function leaveActiveMembership(db: Database, userId: string) {
-  const active = await getActiveMembership(db, userId);
-  if (!active) {
-    throw new HttpError(404, "No active membership to leave");
+    if (m.status !== "blocked" && m.status !== "rejected") {
+      throw new HttpError(409, "Only blocked or rejected memberships can be unblocked");
+    }
+
+    await this.membershipRepo.deleteById(membershipId);
   }
 
-  const academy = await db
-    .select({ ownerId: academies.ownerId })
-    .from(academies)
-    .where(eq(academies.id, active.academyId))
-    .limit(1)
-    .then((r) => r[0]);
+  async leave(userId: string) {
+    const active = await this.membershipRepo.findActiveByUser(userId);
+    if (!active) {
+      throw new HttpError(404, "No active membership to leave");
+    }
 
-  if (academy?.ownerId === userId) {
-    throw new HttpError(
-      403,
-      "Academy owners cannot leave their own academy in MVP",
-    );
-  }
+    const academy = await this.academyRepo.findById(active.academyId);
+    if (academy?.ownerId === userId) {
+      throw new HttpError(
+        403,
+        "Academy owners cannot leave their own academy in MVP",
+      );
+    }
 
-  const [updated] = await db
-    .update(academyMemberships)
-    .set({
+    const updated = await this.membershipRepo.updateStatus(active.id, {
       isActive: false,
       leftAt: new Date(),
-      updatedAt: new Date(),
-    })
-    .where(eq(academyMemberships.id, active.id))
-    .returning();
-
-  if (!updated) {
-    throw new HttpError(500, "Failed to leave membership");
+    });
+    if (!updated) {
+      throw new HttpError(500, "Failed to leave membership");
+    }
+    return updated;
   }
-  return updated;
+
+  private async assertManagerOwnsAcademy(userId: string, academyId: string) {
+    const academy = await this.academyRepo.findById(academyId);
+    if (!academy) {
+      throw new HttpError(404, "Academy not found");
+    }
+    if (academy.ownerId !== userId) {
+      throw new HttpError(403, "You do not manage this academy");
+    }
+  }
 }

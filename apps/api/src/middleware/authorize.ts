@@ -1,12 +1,12 @@
-import type { NextFunction, Request, Response } from "express";
 import { getAuth } from "@clerk/express";
+import type { NextFunction, Request, Response } from "express";
 import type { Role } from "@tatame/types";
 import { loadEnv } from "@tatame/config";
 import { getDb } from "../lib/db.js";
-import {
-  getActiveRoleForUser,
-  getUserByClerkId,
-} from "../modules/user/user.service.js";
+import { PostgresUserRepository } from "../modules/user/user.repository.postgres.js";
+import { UserService } from "../modules/user/user.service.js";
+
+const userService = new UserService(new PostgresUserRepository(getDb()));
 
 /** Loads internal user id + active `user_roles` row; sets `req.appAuth` when allowed (spec §8). */
 export function authorize(...allowed: Role[]) {
@@ -25,14 +25,13 @@ export function authorize(...allowed: Role[]) {
       }
 
       try {
-        const db = getDb();
-        const userRow = await getUserByClerkId(db, clerkUserId);
+        const userRow = await userService.getByClerkId(clerkUserId);
         if (!userRow) {
           res.status(403).json({ error: "User not provisioned" });
           return;
         }
 
-        const activeRole = await getActiveRoleForUser(db, userRow.id);
+        const activeRole = await userService.getActiveRole(userRow.id);
         if (!activeRole) {
           res.status(403).json({ error: "No active role; complete onboarding first" });
           return;

@@ -1,11 +1,31 @@
+import type { UserJSON } from "@clerk/backend";
 import type { Request, Response } from "express";
 import { verifyWebhook } from "@clerk/express/webhooks";
 import { clerkWebhookSigningSecret, loadEnv } from "@tatame/config";
 import { getDb } from "../../lib/db.js";
-import {
-  deleteUserByClerkId,
-  upsertUserFromClerk,
-} from "../user/user.service.js";
+import { PostgresUserRepository } from "../user/user.repository.postgres.js";
+import { UserService } from "../user/user.service.js";
+
+function primaryEmail(data: UserJSON): string | undefined {
+  const list = data.email_addresses ?? [];
+  const primaryId = data.primary_email_address_id;
+  const chosen = primaryId
+    ? list.find((e) => e.id === primaryId)
+    : list[0];
+  return chosen?.email_address;
+}
+
+function displayName(data: UserJSON): string {
+  const parts = [data.first_name, data.last_name].filter(
+    (x): x is string => Boolean(x?.trim()),
+  );
+  if (parts.length) return parts.join(" ");
+  if (data.username) return data.username;
+  return primaryEmail(data) ?? "User";
+}
+
+const db = getDb();
+const userService = new UserService(new PostgresUserRepository(db));
 
 export async function handleClerkWebhook(
   req: Request,
@@ -22,17 +42,25 @@ export async function handleClerkWebhook(
 
   try {
     const evt = await verifyWebhook(req, { signingSecret });
-    const db = getDb();
 
     if (evt.type === "user.created" || evt.type === "user.updated") {
-      await upsertUserFromClerk(db, evt.data);
+      const email = primaryEmail(evt.data);
+      if (!email) {
+        throw new Error("Clerk user has no email; cannot upsert into users");
+      }
+      await userService.upsertFromClerk({
+        clerkUserId: evt.data.id,
+        email,
+        name: displayName(evt.data),
+        profileImageUrl: evt.data.image_url ?? null,
+      });
       res.json({ received: true });
       return;
     }
 
     if (evt.type === "user.deleted") {
       const id = evt.data.id;
-      if (id) await deleteUserByClerkId(db, id);
+      if (id) await userService.deleteByClerkId(id);
       res.json({ received: true });
       return;
     }
