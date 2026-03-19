@@ -358,7 +358,7 @@ Check-in limits reset on a **calendar week basis (Monday to Sunday)**. The `week
 
 ### Payment Grace Period
 
-Students with an **expired payment** (no payment record for the current billing period) can still check in for **3 days** after the payment due date. During this grace period, the app shows a warning to the student that their payment is overdue. After the 3-day grace period, check-ins are blocked until payment is confirmed.
+Students with an **expired payment** (no payment record for the current billing period) can still check in for **3 days** after their subscription's `expires_at` date. During this grace period, the app shows a warning to the student that their payment is overdue. After the 3-day grace period, check-ins are blocked until payment is confirmed.
 
 ---
 
@@ -491,13 +491,19 @@ On app launch (when online):
 14. **No academy deletion** — academies cannot be deleted in MVP
 15. **Class cancellations** — out of scope for MVP, communicated informally
 
-## 12. Clerk Webhook Idempotency
+## 12. Edge Case Behaviors
+
+- **Manager deletes Clerk account:** Block account deletion for managers with active academies. The manager must transfer ownership or the feature is deferred — for MVP, managers simply cannot delete their account while they own an academy.
+- **Subscription plan deactivated:** Existing active subscriptions on that plan continue until their `expires_at`. The plan simply becomes unavailable for new selections.
+- **Instructor attendance:** Instructors are not tracked for check-in attendance. They are assumed present when teaching their class.
+
+## 13. Clerk Webhook Idempotency
 
 Clerk may retry webhooks. All webhook handlers must be idempotent:
 - Use Clerk's `svix_id` header for deduplication, or
 - Use `ON CONFLICT (clerk_user_id) DO UPDATE` for user sync operations
 
-## 13. Out of Scope (MVP)
+## 14. Out of Scope (MVP)
 
 - Stripe payment integration (manual payments only)
 - Role switching (delete account and re-register)
