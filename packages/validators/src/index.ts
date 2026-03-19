@@ -56,3 +56,21 @@ export {
   referenceMonthSchema,
   type ConfirmManualPaymentBody,
 } from "./payment.schema.js";
+export {
+  checkinResponseSchema,
+  createCheckinBodySchema,
+  createCheckinResponseSchema,
+  type CreateCheckinBody,
+  type CreateCheckinResponse,
+} from "./checkin.schema.js";
+export {
+  beltPromotionResponseSchema,
+  beltSchema,
+  listGraduationsQuerySchema,
+  promoteStudentBeltBodySchema,
+  registerInitialBeltBodySchema,
+  type BeltPromotionResponse,
+  type ListGraduationsQuery,
+  type PromoteStudentBeltBody,
+  type RegisterInitialBeltBody,
+} from "./graduation.schema.js";

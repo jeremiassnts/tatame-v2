@@ -16,6 +16,8 @@
     "lint": "echo \"no lint configured\""
   },
   "dependencies": {
+    "@tatame/config": "workspace:*",
+    "@tatame/types": "workspace:*",
     "zod": "^3.24.1"
   },
   "devDependencies": {

@@ -20,4 +20,10 @@ export interface IPaymentRepository {
     academyId: string,
     opts: { subscriptionId?: string; userId?: string },
   ): Promise<PaymentRow[]>;
+
+  /** `referenceMonth` is YYYY-MM-01 (billing period). */
+  existsForSubscriptionReferenceMonth(
+    subscriptionId: string,
+    referenceMonth: string,
+  ): Promise<boolean>;
 }

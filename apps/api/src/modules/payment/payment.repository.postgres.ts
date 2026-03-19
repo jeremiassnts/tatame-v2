@@ -54,4 +54,21 @@ export class PostgresPaymentRepository implements IPaymentRepository {
       .where(whereClause)
       .orderBy(desc(payments.paidAt));
   }
+
+  async existsForSubscriptionReferenceMonth(
+    subscriptionId: string,
+    referenceMonth: string,
+  ): Promise<boolean> {
+    const [row] = await this.db
+      .select({ id: payments.id })
+      .from(payments)
+      .where(
+        and(
+          eq(payments.subscriptionId, subscriptionId),
+          eq(payments.referenceMonth, referenceMonth),
+        ),
+      )
+      .limit(1);
+    return !!row;
+  }
 }

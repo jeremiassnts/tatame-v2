@@ -114,6 +114,12 @@ importers:
 
   packages/validators:
     dependencies:
+      '@tatame/config':
+        specifier: workspace:*
+        version: link:../config
+      '@tatame/types':
+        specifier: workspace:*
+        version: link:../types
       zod:
         specifier: ^3.24.1
         version: 3.25.76
