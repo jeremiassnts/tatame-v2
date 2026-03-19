@@ -6,11 +6,34 @@ This document describes every screen needed for the MVP, organized by applicatio
 
 ## Mobile App (React Native + Expo)
 
+### Onboarding Flow
+
+Shown only on first app launch (no `userType` in localStorage). After completion, the selected user type is persisted to localStorage and the user is sent to the auth flow. On subsequent launches, the app skips directly to auth.
+
+#### M-ONBOARD-01: Welcome
+
+- First screen the user sees on a fresh install
+- App logo and branding
+- Brief tagline / welcome message
+- "Continue" button → M-ONBOARD-02
+
+#### M-ONBOARD-02: User Type Selection
+
+- "What best describes you?"
+- Three options with icons and brief descriptions: Manager, Instructor, Student
+- Tapping an option highlights it
+- "Continue" button (enabled after selection)
+- Saves selected user type to localStorage
+- After selection → M-AUTH-01
+
+---
+
 ### Authentication Flow
+
+On app launch, if `userType` exists in localStorage but user is not logged in, the auth flow starts here. The user type from onboarding is carried through signup and used to assign the role after first login.
 
 #### M-AUTH-01: Welcome / Landing
 
-- First screen the user sees when opening the app (not logged in)
 - App logo and branding
 - "Sign In" button
 - "Sign Up" button
@@ -19,22 +42,16 @@ This document describes every screen needed for the MVP, organized by applicatio
 
 - Clerk-managed sign up screen (email or social login)
 - Name, email, password fields (or social auth options)
-- After successful signup → M-AUTH-03
+- After successful signup → automatic sign in → role assignment using userType from localStorage → role-specific onboarding
 
 #### M-AUTH-03: Sign In
 
 - Clerk-managed sign in screen
 - Email + password or social login
 - Forgot password link
-- After successful login → M-AUTH-04 (if no role) or role-specific home (if role exists)
-
-#### M-AUTH-04: Role Selection
-
-- Shown only once after first login (user has no active role)
-- Three options: Manager, Instructor, Student
-- Brief description of each role
-- Confirmation step ("You selected Manager. This cannot be changed. Continue?")
-- After selection → role-specific onboarding
+- After successful login:
+  - If user has no active role → assign role from localStorage userType → role-specific onboarding
+  - If user already has a role → role-specific home
 
 ---
 
@@ -459,7 +476,8 @@ This document describes every screen needed for the MVP, organized by applicatio
 
 | Section | Count |
 |---|---|
-| Mobile — Auth Flow | 4 |
+| Mobile — Onboarding Flow | 2 |
+| Mobile — Auth Flow | 3 |
 | Mobile — System | 1 |
 | Mobile — Manager | 18 |
 | Mobile — Instructor | 10 |
@@ -467,7 +485,7 @@ This document describes every screen needed for the MVP, organized by applicatio
 | Mobile — Shared | 2 |
 | Web — Public | 3 |
 | Web — Dashboard | 8 |
-| **Total** | **59** |
+| **Total** | **60** |
 
 ---
 

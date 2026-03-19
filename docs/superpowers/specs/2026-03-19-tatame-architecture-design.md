@@ -375,12 +375,13 @@ Students with an **expired payment** (no payment record for the current billing 
 
 ### Registration Flow
 
-1. User signs up via Clerk (email or social)
-2. Webhook creates record in `users` table
-3. User opens app → selects role (manager, instructor, student)
-4. Role saved in `user_roles` with `is_active = true`
-5. Manager → can create an academy immediately
-6. Instructor/Student → must search and request to join an academy
+1. First launch → onboarding: welcome screen, then user type selection (manager, instructor, student)
+2. Selected user type saved to localStorage — skipped on subsequent launches
+3. User signs up via Clerk (email or social)
+4. Webhook creates record in `users` table
+5. After first login, app reads userType from localStorage → role saved in `user_roles` with `is_active = true`
+6. Manager → can create an academy immediately
+7. Instructor/Student → must search and request to join an academy
 
 ### Authorization
 
@@ -429,9 +430,18 @@ Backend manages all authorization using our own tables.
 ### Navigation
 
 Expo Router (file-based routing) with route groups:
-- `(auth)/` — login, signup, role selection
+- `(onboarding)/` — welcome, user type selection (shown only on first launch, before auth)
+- `(auth)/` — login, signup
 - `(app)/` — main screens, protected by auth
 - Role-based conditional rendering within `(app)/`
+
+### Onboarding Persistence
+
+On first launch, the app checks localStorage for a `userType` key:
+- **Not found** → navigate to `(onboarding)/` flow
+- **Found** → skip onboarding, navigate to `(auth)/` or `(app)/` based on auth state
+
+After onboarding, `userType` is saved to localStorage (`manager`, `instructor`, or `student`). This value is consumed once after first login to assign the user's role via the API, then the role is managed server-side.
 
 ### Forced Update Check
 
