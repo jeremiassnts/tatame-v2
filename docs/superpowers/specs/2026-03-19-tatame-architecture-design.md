@@ -201,8 +201,11 @@ REST with conventional resource-based routes. Request/response contracts defined
 | joined_at | timestamp | when approved |
 | left_at | timestamp | null if active |
 | created_at | timestamp | |
+| updated_at | timestamp | |
 
 **Constraint:** unique partial index on `(user_id)` where `is_active = true`
+
+**Note:** Manager's membership is auto-created with `status = active` (skips `pending`) when they create an academy.
 
 ### 6.5 classes
 
@@ -216,10 +219,14 @@ REST with conventional resource-based routes. Request/response contracts defined
 | day_of_week | smallint (0-6) | 0=Sunday, 6=Saturday |
 | start_time | time | |
 | end_time | time | |
+| capacity | smallint | max students per session, null = unlimited |
+| is_active | boolean | allows temporary suspension without deletion |
 | created_at | timestamp | |
 | updated_at | timestamp | |
 
 **Index:** `(academy_id, day_of_week)` for schedule queries
+
+**Note:** Class cancellations for specific dates are out of scope for MVP. Managers can communicate cancellations informally.
 
 ### 6.6 checkins
 
@@ -229,10 +236,15 @@ REST with conventional resource-based routes. Request/response contracts defined
 | class_id | uuid (fk classes) | |
 | user_id | uuid (fk users) | student |
 | checked_in_at | timestamp | |
+| date | date | the specific date of the check-in |
 | week_reference | date | Monday of the calendar week |
 
-**Index:** `(user_id, week_reference)` for weekly count queries
-**Constraint:** unique index on `(user_id, class_id, week_reference)` — no duplicate check-ins to same class in same week
+**Indexes:**
+- `(user_id, week_reference)` for weekly count queries
+- `(class_id, date)` for class capacity count queries
+
+**Constraints:**
+- unique index on `(user_id, class_id, date)` — no duplicate check-ins to same class on same date
 
 ### 6.7 subscription_plans
 
@@ -255,10 +267,13 @@ REST with conventional resource-based routes. Request/response contracts defined
 | id | uuid (pk) | |
 | user_id | uuid (fk users) | |
 | plan_id | uuid (fk subscription_plans) | |
-| status | enum (active, expired, cancelled) | |
+| status | enum (active, expired, cancelled) | derived from expires_at at runtime |
 | starts_at | date | |
 | expires_at | date | |
 | created_at | timestamp | |
+| updated_at | timestamp | |
+
+**Subscription expiry:** Evaluated lazily at runtime. When querying a subscription, check `expires_at < today` — if true, treat as expired regardless of the `status` column. The `status` column serves as a cache and is updated opportunistically (e.g., when the subscription is accessed).
 
 ### 6.9 payments
 
@@ -310,26 +325,40 @@ REST with conventional resource-based routes. Request/response contracts defined
 
 ### Check-in Lock Flow
 
-**Lock key:** `checkin:lock:{user_id}:{week_reference}`
+**Lock key:** `checkin:lock:{class_id}:{date}`
 
-1. Student requests check-in
-2. **Validate:** class is within 12h window before class end time
-3. **Validate:** student has an active subscription
-4. **Acquire lock** with 5s TTL
+The lock is scoped per class per date. This serializes all check-in attempts for a given class session, allowing us to safely check both class capacity and the user's weekly limit within the same critical section.
+
+1. Student requests check-in for a class
+2. **Validate:** current time is within the check-in window (see below)
+3. **Validate:** student has an active subscription (or is within the 3-day grace period)
+4. **Acquire lock** on `checkin:lock:{class_id}:{date}` with 5s TTL
 5. If acquired:
-   - Query week's check-in count from DB
-   - If `weekly_checkin_limit` is null (unlimited) → allow
-   - If count < limit → insert check-in, release lock
-   - If count >= limit → reject, release lock
+   - Query today's check-in count for this class → check against `capacity`
+   - If capacity is null (unlimited) or count < capacity:
+     - Query week's check-in count for this user → check against `weekly_checkin_limit`
+     - If weekly limit is null (unlimited) or count < limit → insert check-in, release lock
+     - If count >= weekly limit → reject ("weekly limit reached"), release lock
+   - If count >= capacity → reject ("class is full"), release lock
 6. If lock not acquired → retry once after 500ms, then fail with "try again"
 
-### 12-Hour Check-in Window
+**Redis failure fallback:** If Redis is unavailable (connection refused), check-ins are blocked entirely. The system does not fall back to database-level locking — Redis availability is a requirement for check-in operations.
 
-A student can check in to a class starting **12 hours before the class end time**. For example, a class ending at 20:00 on Monday allows check-in from 08:00 Monday onward.
+### Check-in Window
+
+A student can check in to a class starting **12 hours before the class start time**, up until the **class end time**.
+
+Example: a class from 19:00 to 20:00 on Monday allows check-in from 07:00 Monday until 20:00 Monday.
+
+**Implementation note:** Classes that cross midnight (e.g., ending at 02:00) require careful date boundary handling. A class ending at 02:00 Tuesday with start at 23:00 Monday allows check-in from 11:00 Monday until 02:00 Tuesday.
 
 ### Weekly Limit
 
 Check-in limits reset on a **calendar week basis (Monday to Sunday)**. The `week_reference` field stores the Monday date of the current week. Managers can create plans with unlimited check-ins (`weekly_checkin_limit = null`).
+
+### Payment Grace Period
+
+Students with an **expired payment** (no payment record for the current billing period) can still check in for **3 days** after the payment due date. During this grace period, the app shows a warning to the student that their payment is overdue. After the 3-day grace period, check-ins are blocked until payment is confirmed.
 
 ---
 
@@ -448,12 +477,32 @@ On app launch (when online):
 
 1. **One role per user** — chosen at first login, no switching in MVP
 2. **One active academy per user** — must leave before joining another
-3. **Membership approval** — manager must approve instructors and students
+3. **Membership approval** — manager must approve instructors and students; manager's own membership is auto-approved
 4. **Rejected = blocked** — rejected users cannot re-request unless unblocked by manager
-5. **Classes are recurring** — each class is one day of week + one time slot
-6. **Check-in window** — 12 hours before class end time
+5. **Classes are recurring** — each class is one day of week + one time slot, with optional capacity limit
+6. **Check-in window** — opens 12 hours before class start time, closes at class end time
 7. **Weekly check-in limit** — calendar week (Mon-Sun), can be unlimited
-8. **Check-in atomicity** — Redis lock prevents exceeding weekly limit
+8. **Check-in atomicity** — Redis lock per class/date prevents exceeding both class capacity and weekly limit
 9. **Payments are manual in MVP** — manager confirms payment, history tracked
-10. **Belt promotions** — student sets initial belt, only manager/instructor can promote after that
-11. **Stripes** — 0-4 for white through brown, 0-10 for black belt
+10. **Payment grace period** — 3 days after due date, student can still check in with a warning
+11. **Subscription expiry** — evaluated lazily at runtime via `expires_at`
+12. **Belt promotions** — student sets initial belt, only manager/instructor can promote after that
+13. **Stripes** — 0-4 for white through brown, 0-10 for black belt
+14. **No academy deletion** — academies cannot be deleted in MVP
+15. **Class cancellations** — out of scope for MVP, communicated informally
+
+## 12. Clerk Webhook Idempotency
+
+Clerk may retry webhooks. All webhook handlers must be idempotent:
+- Use Clerk's `svix_id` header for deduplication, or
+- Use `ON CONFLICT (clerk_user_id) DO UPDATE` for user sync operations
+
+## 13. Out of Scope (MVP)
+
+- Stripe payment integration (manual payments only)
+- Role switching (delete account and re-register)
+- Multi-academy membership
+- Class cancellations for specific dates
+- Academy deletion
+- Redis caching (locks only)
+- Offline mutations
