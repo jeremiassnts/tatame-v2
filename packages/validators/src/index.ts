@@ -39,3 +39,20 @@ export {
   type CreateClassBody,
   type UpdateClassBody,
 } from "./class.schema.js";
+export {
+  createSubscriptionPlanBodySchema,
+  listPlansQuerySchema,
+  planIdParamSchema,
+  recurrenceMonthsSchema,
+  selectStudentPlanBodySchema,
+  updateSubscriptionPlanBodySchema,
+  type CreateSubscriptionPlanBody,
+  type SelectStudentPlanBody,
+  type UpdateSubscriptionPlanBody,
+} from "./subscription.schema.js";
+export {
+  confirmManualPaymentBodySchema,
+  listPaymentsQuerySchema,
+  referenceMonthSchema,
+  type ConfirmManualPaymentBody,
+} from "./payment.schema.js";

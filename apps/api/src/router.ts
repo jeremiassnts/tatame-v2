@@ -10,6 +10,7 @@ import { checkinRouter } from "./modules/checkin/checkin.routes.js";
 import { classRouter } from "./modules/class/class.routes.js";
 import { graduationRouter } from "./modules/graduation/graduation.routes.js";
 import { membershipRouter } from "./modules/membership/membership.routes.js";
+import { paymentRouter } from "./modules/payment/payment.routes.js";
 import { subscriptionRouter } from "./modules/subscription/subscription.routes.js";
 import { userRouter } from "./modules/user/user.routes.js";
 
@@ -61,4 +62,5 @@ apiRouter.use("/checkins", checkinRouter);
 apiRouter.use("/memberships", membershipRouter);
 apiRouter.use("/graduations", graduationRouter);
 apiRouter.use("/subscriptions", subscriptionRouter);
+apiRouter.use("/payments", paymentRouter);
 apiRouter.use("/users", userRouter);
