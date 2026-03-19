@@ -280,9 +280,11 @@ export interface IMembershipRepository {
   create(data: {
     academyId: string;
     userId: string;
-    role: "instructor" | "student";
-    status: "pending";
-    isActive: false;
+    role: string;
+    status: string;
+    isActive: boolean;
+    joinedAt?: Date | null;
+    leftAt?: Date | null;
   }): Promise<MembershipRow>;
 
   updateStatus(membershipId: string, data: {
@@ -379,6 +381,24 @@ The 4 implemented modules, listed with their current service functions that will
 - `blockMembership` → `MembershipService.block()`
 - `unblockMembership` → `MembershipService.unblock()`
 - `leaveActiveMembership` → `MembershipService.leave()`
+
+## Service Constructor Dependencies
+
+Each service's constructor dependencies, for clarity during implementation:
+
+| Service | Dependencies |
+|---------|-------------|
+| `UserService` | `IUserRepository` |
+| `AcademyService` | `IAcademyRepository`, `RepoFactory<IMembershipRepository>` |
+| `ClassService` | `IClassRepository`, `IMembershipRepository` |
+| `MembershipService` | `IMembershipRepository`, `IAcademyRepository` |
+
+Notes on `MembershipService`:
+- `request()` needs `IAcademyRepository.findById()` to verify the academy exists before creating a pending membership.
+- `listPending()` needs `IAcademyRepository` to verify manager ownership via `findById()` + owner check.
+- `leave()` needs `IAcademyRepository.findById()` to check if the user is the academy owner (owners cannot leave).
+- `approve()`, `reject()`, `block()`, `unblock()` need `IAcademyRepository` to verify manager ownership.
+- The ownership check (`assertManagerOwnsAcademy`) becomes a private method on `MembershipService` that uses the injected `IAcademyRepository`.
 
 ## Transaction Handling
 
