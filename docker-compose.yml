@@ -10,5 +10,14 @@ services:
     volumes:
       - tatame_pg_data:/var/lib/postgresql/data
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - tatame_redis_data:/data
+    command: redis-server --appendonly yes
+
 volumes:
   tatame_pg_data:
+  tatame_redis_data:

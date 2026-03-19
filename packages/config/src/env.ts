@@ -5,6 +5,8 @@ const envSchema = z.object({
     .enum(["development", "production", "test"])
     .default("development"),
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
+  /** Required for check-in (spec §7); optional for other routes / local dev */
+  REDIS_URL: z.string().url().optional(),
   API_PORT: z.coerce.number().int().positive().default(3001),
   API_PUBLIC_URL: z.string().url().optional(),
   CLERK_SECRET_KEY: z.string().optional(),

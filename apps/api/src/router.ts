@@ -1,7 +1,9 @@
 import { sql } from "drizzle-orm";
 import { Router } from "express";
+import { loadEnv } from "@tatame/config";
 import { healthResponseSchema } from "@tatame/validators";
 import { getDb } from "./lib/db.js";
+import { getRedis } from "./lib/redis.js";
 import { academyRouter } from "./modules/academy/academy.routes.js";
 import { authRouter } from "./modules/auth/auth.routes.js";
 import { checkinRouter } from "./modules/checkin/checkin.routes.js";
@@ -20,12 +22,35 @@ apiRouter.get("/health", (_req, res) => {
 });
 
 apiRouter.get("/ready", async (_req, res) => {
+  let database: "up" | "down" = "down";
   try {
     const db = getDb();
     await db.execute(sql`select 1`);
-    res.json({ ok: true, database: "up" });
+    database = "up";
   } catch {
-    res.status(503).json({ ok: false, database: "down" });
+    return res
+      .status(503)
+      .json({ ok: false, database, redis: "skipped" as const });
+  }
+
+  const env = loadEnv();
+  if (!env.REDIS_URL) {
+    return res.json({ ok: true, database, redis: "skipped" as const });
+  }
+
+  try {
+    const redis = await getRedis();
+    if (!redis) {
+      return res
+        .status(503)
+        .json({ ok: false, database, redis: "down" as const });
+    }
+    await redis.ping();
+    return res.json({ ok: true, database, redis: "up" as const });
+  } catch {
+    return res
+      .status(503)
+      .json({ ok: false, database, redis: "down" as const });
   }
 });
 
