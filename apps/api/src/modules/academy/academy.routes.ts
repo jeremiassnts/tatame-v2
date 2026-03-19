@@ -8,6 +8,7 @@ import {
 } from "@tatame/validators";
 import { getDb } from "../../lib/db.js";
 import { HttpError } from "../../lib/http-error.js";
+import { attachActiveAcademyContext } from "../../middleware/academy-context.js";
 import { authorize } from "../../middleware/authorize.js";
 import { requireSession } from "../../middleware/require-session.js";
 import { validateBody } from "../../middleware/validate.js";
@@ -51,6 +52,7 @@ academyRouter.get("/:academyId", requireSession, async (req, res, next) => {
 academyRouter.post(
   "/",
   authorize(Role.Manager),
+  attachActiveAcademyContext,
   validateBody(createAcademyBodySchema),
   async (req, res, next) => {
     try {
@@ -68,6 +70,7 @@ academyRouter.post(
 academyRouter.patch(
   "/:academyId",
   authorize(Role.Manager),
+  attachActiveAcademyContext,
   validateBody(updateAcademyBodySchema),
   async (req, res, next) => {
     try {

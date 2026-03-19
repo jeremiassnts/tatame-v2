@@ -8,6 +8,7 @@ import {
 } from "@tatame/validators";
 import { getDb } from "../../lib/db.js";
 import { HttpError } from "../../lib/http-error.js";
+import { attachActiveAcademyContext } from "../../middleware/academy-context.js";
 import { authorize } from "../../middleware/authorize.js";
 import { requireSession } from "../../middleware/require-session.js";
 import { validateBody } from "../../middleware/validate.js";
@@ -26,6 +27,7 @@ export const membershipRouter = Router();
 membershipRouter.post(
   "/requests",
   authorize(Role.Instructor, Role.Student),
+  attachActiveAcademyContext,
   validateBody(requestMembershipBodySchema),
   async (req, res, next) => {
     try {
@@ -49,6 +51,7 @@ membershipRouter.post(
 membershipRouter.get(
   "/pending",
   authorize(Role.Manager),
+  attachActiveAcademyContext,
   async (req, res, next) => {
     try {
       const query = pendingQuerySchema.safeParse(req.query);
@@ -72,6 +75,7 @@ membershipRouter.get(
 membershipRouter.patch(
   "/:membershipId/approve",
   authorize(Role.Manager),
+  attachActiveAcademyContext,
   async (req, res, next) => {
     try {
       const params = membershipIdParamSchema.safeParse(req.params);
@@ -94,6 +98,7 @@ membershipRouter.patch(
 membershipRouter.patch(
   "/:membershipId/reject",
   authorize(Role.Manager),
+  attachActiveAcademyContext,
   async (req, res, next) => {
     try {
       const params = membershipIdParamSchema.safeParse(req.params);
@@ -116,6 +121,7 @@ membershipRouter.patch(
 membershipRouter.patch(
   "/:membershipId/block",
   authorize(Role.Manager),
+  attachActiveAcademyContext,
   async (req, res, next) => {
     try {
       const params = membershipIdParamSchema.safeParse(req.params);
@@ -138,6 +144,7 @@ membershipRouter.patch(
 membershipRouter.patch(
   "/:membershipId/unblock",
   authorize(Role.Manager),
+  attachActiveAcademyContext,
   async (req, res, next) => {
     try {
       const params = membershipIdParamSchema.safeParse(req.params);
@@ -160,6 +167,7 @@ membershipRouter.patch(
 membershipRouter.post(
   "/leave",
   authorize(Role.Instructor, Role.Student),
+  attachActiveAcademyContext,
   async (req, res, next) => {
     try {
       const db = getDb();
