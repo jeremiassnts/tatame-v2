@@ -90,40 +90,18 @@ withTransaction<T>(
 
 Where `RepoFactory<R> = (db: Database) => R`. The calling code passes lambdas like `(txDb) => new PostgresMembershipRepository(txDb)`.
 
-The in-memory implementation ignores the factory parameter and returns pre-registered in-memory repos:
+The in-memory implementation **ignores the factory argument** and returns the single `InMemoryMembershipRepository` instance wired in the constructor (same instance the test passes to `AcademyService` as `membershipRepoFactory` target). Implemented in `academy.repository.in-memory.ts`.
 
 ```ts
-class InMemoryAcademyRepository implements IAcademyRepository {
-  private inMemoryRepos: Map<Function, unknown>;
+const membershipRepo = new InMemoryMembershipRepository(membershipRows, userRepo);
+const academyRepo = new InMemoryAcademyRepository(academyRows, membershipRepo);
 
-  constructor(repoMap: Map<Function, unknown>) {
-    this.inMemoryRepos = repoMap;
-  }
-
-  async withTransaction<T>(
-    fn: (txRepo: IAcademyRepository, createRepo: <R>(factory: RepoFactory<R>) => R) => Promise<T>,
-  ): Promise<T> {
-    const createRepo = <R>(factory: RepoFactory<R>): R => {
-      // Look up by Postgres constructor to find the in-memory equivalent
-      // e.g., PostgresMembershipRepository → InMemoryMembershipRepository
-      return this.inMemoryRepos.get(factory) as R
-        ?? (() => { throw new Error("No in-memory repo registered for factory"); })();
-    };
-    return fn(this, createRepo);
-  }
-}
+new AcademyService(academyRepo, () => membershipRepo);
 ```
 
-In tests, the repo map is set up once:
+`withTransaction` calls `fn(this, createRepo)` where `createRepo` casts that shared `membershipRepo` to `R`. No DB transaction or repo cloning — adequate for unit tests of `AcademyService.createWithManagerMembership`.
 
-```ts
-const membershipRepo = new InMemoryMembershipRepository();
-const repoMap = new Map();
-repoMap.set(PostgresMembershipRepository, membershipRepo);
-const academyRepo = new InMemoryAcademyRepository(repoMap);
-```
-
-Note: This works because the service calls `createRepo((db) => new PostgresMembershipRepository(db))`. The factory function's identity won't match, so instead the in-memory `createRepo` should match by a simpler mechanism — for example, the test setup registers factories by repo interface name or the in-memory `withTransaction` simply passes a registry lookup function that ignores the factory entirely and returns the correct pre-built in-memory repo. The exact lookup strategy is an implementation detail; what matters is the type signature matches.
+Note: The service calls `createRepo((db) => new PostgresMembershipRepository(db))`; the factory’s identity is irrelevant in-memory. Alternative designs (e.g. `Map` keyed by Postgres class) are equivalent if they return the same shared membership store.
 
 **Important distinction:** Only `IAcademyRepository.withTransaction` uses the `createRepo` parameter. `IMembershipRepository.withTransaction` has a simpler signature — `fn: (txRepo: IMembershipRepository) => Promise<T>` — with no `createRepo`. Its in-memory implementation simply passes `this`:
 
