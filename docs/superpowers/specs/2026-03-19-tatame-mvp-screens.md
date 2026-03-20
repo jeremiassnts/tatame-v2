@@ -474,18 +474,18 @@ On app launch, if `userType` exists in localStorage but user is not logged in, t
 
 ## Screen Count Summary
 
-| Section | Count |
-|---|---|
-| Mobile — Onboarding Flow | 2 |
-| Mobile — Auth Flow | 3 |
-| Mobile — System | 1 |
-| Mobile — Manager | 18 |
-| Mobile — Instructor | 10 |
-| Mobile — Student | 13 |
-| Mobile — Shared | 2 |
-| Web — Public | 3 |
-| Web — Dashboard | 8 |
-| **Total** | **60** |
+| Section                  | Count  |
+| ------------------------ | ------ |
+| Mobile — Onboarding Flow | 2      |
+| Mobile — Auth Flow       | 3      |
+| Mobile — System          | 1      |
+| Mobile — Manager         | 18     |
+| Mobile — Instructor      | 10     |
+| Mobile — Student         | 13     |
+| Mobile — Shared          | 2      |
+| Web — Public             | 3      |
+| Web — Dashboard          | 8      |
+| **Total**                | **60** |
 
 ---
 
