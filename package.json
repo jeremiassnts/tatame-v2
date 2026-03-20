@@ -5,6 +5,8 @@
   "scripts": {
     "build": "turbo run build",
     "test": "turbo run test",
+    "test:unit": "turbo run test:unit",
+    "test:integration": "turbo run test:integration",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "db:generate": "pnpm --filter @tatame/db generate",

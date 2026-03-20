@@ -12,6 +12,7 @@ concurrency:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -30,5 +31,8 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Test
-        run: pnpm test
+      - name: Test (unit)
+        run: pnpm test:unit
+
+      - name: Test (integration)
+        run: pnpm test:integration
