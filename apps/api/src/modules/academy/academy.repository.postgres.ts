@@ -56,6 +56,15 @@ export class PostgresAcademyRepository implements IAcademyRepository {
     return row;
   }
 
+  async existsByOwner(userId: string): Promise<boolean> {
+    const [row] = await this.db
+      .select({ id: academies.id })
+      .from(academies)
+      .where(eq(academies.ownerId, userId))
+      .limit(1);
+    return !!row;
+  }
+
   async withTransaction<T>(
     fn: (
       txRepo: IAcademyRepository,

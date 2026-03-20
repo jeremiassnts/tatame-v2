@@ -31,6 +31,8 @@ export interface IAcademyRepository {
     }>,
   ): Promise<AcademyRow | undefined>;
 
+  existsByOwner(userId: string): Promise<boolean>;
+
   withTransaction<T>(
     fn: (
       txRepo: IAcademyRepository,
