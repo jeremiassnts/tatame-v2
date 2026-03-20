@@ -51,4 +51,78 @@ describe("UserService", () => {
     const svc = new UserService(repo);
     expect(await svc.getActiveRole(randomUUID())).toBeNull();
   });
+
+  // ─── Webhook idempotency ────────────────────────────────────
+
+  it("upsert is idempotent — calling twice with same clerkUserId updates instead of duplicating", async () => {
+    const repo = new InMemoryUserRepository();
+    const svc = new UserService(repo);
+
+    await svc.upsertFromClerk({
+      clerkUserId: "clerk_idem",
+      email: "first@example.com",
+      name: "First",
+      profileImageUrl: null,
+    });
+
+    // Second call with same clerkUserId but updated data
+    await svc.upsertFromClerk({
+      clerkUserId: "clerk_idem",
+      email: "updated@example.com",
+      name: "Updated Name",
+      profileImageUrl: "https://img.example.com/photo.jpg",
+    });
+
+    const user = await svc.getByClerkId("clerk_idem");
+    expect(user).not.toBeNull();
+    expect(user!.email).toBe("updated@example.com");
+    expect(user!.name).toBe("Updated Name");
+    expect(user!.profileImageUrl).toBe("https://img.example.com/photo.jpg");
+  });
+
+  it("upsert called twice with identical data is a no-op (idempotent)", async () => {
+    const repo = new InMemoryUserRepository();
+    const svc = new UserService(repo);
+
+    const data = {
+      clerkUserId: "clerk_same",
+      email: "same@example.com",
+      name: "Same",
+      profileImageUrl: null,
+    };
+
+    await svc.upsertFromClerk(data);
+    const userAfterFirst = await svc.getByClerkId("clerk_same");
+
+    await svc.upsertFromClerk(data);
+    const userAfterSecond = await svc.getByClerkId("clerk_same");
+
+    // Same user, same id — not duplicated
+    expect(userAfterSecond!.id).toBe(userAfterFirst!.id);
+    expect(userAfterSecond!.email).toBe("same@example.com");
+  });
+
+  it("upsert with different clerkUserIds creates separate users", async () => {
+    const repo = new InMemoryUserRepository();
+    const svc = new UserService(repo);
+
+    await svc.upsertFromClerk({
+      clerkUserId: "clerk_a",
+      email: "a@example.com",
+      name: "A",
+      profileImageUrl: null,
+    });
+    await svc.upsertFromClerk({
+      clerkUserId: "clerk_b",
+      email: "b@example.com",
+      name: "B",
+      profileImageUrl: null,
+    });
+
+    const a = await svc.getByClerkId("clerk_a");
+    const b = await svc.getByClerkId("clerk_b");
+    expect(a!.id).not.toBe(b!.id);
+    expect(a!.email).toBe("a@example.com");
+    expect(b!.email).toBe("b@example.com");
+  });
 });
