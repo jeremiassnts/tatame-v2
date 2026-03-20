@@ -16,6 +16,13 @@ import { userRouter } from "./modules/user/user.routes.js";
 
 export const apiRouter = Router();
 
+apiRouter.get("/version", (_req, res) => {
+  const env = loadEnv();
+  res.json({
+    minMobileVersion: env.MIN_MOBILE_VERSION,
+  });
+});
+
 apiRouter.get("/health", (_req, res) => {
   const body = { ok: true as const, service: "tatame-api" };
   const parsed = healthResponseSchema.safeParse(body);
