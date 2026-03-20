@@ -9,7 +9,7 @@
     "start": "node dist/server.js",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "echo \"no lint configured\""
+    "lint": "eslint ."
   },
   "dependencies": {
     "@clerk/backend": "^3.2.1",
@@ -25,15 +25,19 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@faker-js/faker": "^9.9.0",
     "@testcontainers/postgresql": "^10.16.0",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/node": "^22.10.7",
     "@types/supertest": "^6.0.2",
+    "eslint": "^10.0.3",
+    "globals": "^17.4.0",
     "supertest": "^7.0.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
+    "typescript-eslint": "^8.57.1",
     "vitest": "^3.0.5"
   }
 }

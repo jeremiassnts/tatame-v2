@@ -19,8 +19,9 @@ export async function getRedis(): Promise<RedisClientType | null> {
   if (!REDIS_URL) return null;
   if (!client) {
     client = createClient({ url: REDIS_URL });
-    client.on("error", (err) => {
-      console.error("[redis]", err.message);
+    client.on("error", (err: unknown) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[redis]", msg);
     });
   }
   if (!client.isOpen) await client.connect();

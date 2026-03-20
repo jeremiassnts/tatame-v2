@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  makeAcademy,
   makeClass,
   makeMembership,
   makePayment,
@@ -45,7 +44,6 @@ describe("CheckinService", () => {
   it("checkIn succeeds for student with subscription and capacity", async () => {
     const academyId = randomUUID();
     const userId = randomUUID();
-    const academy = makeAcademy({ id: academyId });
     const plan = makeSubscriptionPlan({ academyId });
     const planRepo = new InMemorySubscriptionPlanRepository([plan]);
     const sub = makeStudentSubscription({
