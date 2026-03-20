@@ -354,6 +354,14 @@ makeUserRole(overrides?)      // returns full user_roles row type
 
 Each factory generates valid defaults with unique UUIDs and realistic timestamps. Overrides allow customizing any field. Return types match `InferSelectModel<typeof table>` from Drizzle, including all timestamp fields.
 
+### Fake values (Faker)
+
+Whenever tests or factories need **synthetic or varied dummy data** (names, emails, addresses, prose, numeric jitter, dates, UUIDs, etc.), use **[faker-js/faker](https://github.com/faker-js/faker)** (`@faker-js/faker`). Prefer Faker over hand-rolled random strings or ad-hoc `Math.random` so data stays readable and consistent with one API.
+
+- Import the default English instance: `import { faker } from "@faker-js/faker"`.
+- Use **`faker.seed(n)`** in a test file when a deterministic sequence is required (e.g. snapshot-like assertions or debugging ordering).
+- Domain enums and invariants (belt progression, membership status transitions) still follow product rules; Faker fills *incidental* fields, not business-invalid combinations unless the test intends to assert validation.
+
 ## Migrations for Tests
 
 The existing `packages/db/drizzle/0000_init.sql` contains the full schema DDL. For integration tests:
@@ -370,6 +378,7 @@ Currently there is only one migration file (`0000_init.sql`). The setup reads al
 ```
 devDependencies:
   @testcontainers/postgresql   # Postgres container management
+  @faker-js/faker            # Realistic fake data in factories / tests (see Factories → Fake values)
 ```
 
 `vitest`, `supertest`, and `postgres` are already available.
