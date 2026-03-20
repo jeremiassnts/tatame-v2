@@ -35,7 +35,9 @@ export class InMemoryCheckinRepository implements ICheckinRepository {
         r.date === data.date,
     );
     if (dup) {
-      throw new Error("CHECKIN_DUPLICATE_USER_CLASS_DATE");
+      const err = new Error("duplicate checkin");
+      (err as NodeJS.ErrnoException).code = "23505";
+      throw err;
     }
     const t = new Date();
     const row: CheckinRow = {
