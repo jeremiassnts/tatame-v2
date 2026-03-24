@@ -295,6 +295,8 @@ git commit -m "feat(api): extend /me response with activeAcademy for managers"
 
 ## Task 3: Backend — Upload Module (Cloudflare R2)
 
+**Status:** ✅ Completed
+
 **Files:**
 - Modify: `packages/config/src/env.ts`
 - Create: `packages/validators/src/upload.schema.ts`
@@ -304,7 +306,7 @@ git commit -m "feat(api): extend /me response with activeAcademy for managers"
 - Create: `apps/api/src/modules/upload/upload.routes.ts`
 - Modify: `apps/api/src/router.ts`
 
-- [ ] **Step 1: Add R2 env vars to config**
+- [x] **Step 1: Add R2 env vars to config**
 
 In `packages/config/src/env.ts`, add to `envSchema`:
 
@@ -316,7 +318,7 @@ R2_BUCKET_NAME: z.string().optional(),
 R2_PUBLIC_URL: z.string().url().optional(),
 ```
 
-- [ ] **Step 2: Create upload Zod schema**
+- [x] **Step 2: Create upload Zod schema**
 
 Create `packages/validators/src/upload.schema.ts`:
 
@@ -330,7 +332,7 @@ export const uploadImageResponseSchema = z.object({
 export type UploadImageResponse = z.infer<typeof uploadImageResponseSchema>;
 ```
 
-- [ ] **Step 3: Export from validators index**
+- [x] **Step 3: Export from validators index**
 
 In `packages/validators/src/index.ts`, add:
 
@@ -341,7 +343,7 @@ export {
 } from "./upload.schema.js";
 ```
 
-- [ ] **Step 4: Create R2 client config**
+- [x] **Step 4: Create R2 client config**
 
 Create `apps/api/src/modules/upload/upload.config.ts`:
 
@@ -383,7 +385,7 @@ export function getR2Config() {
 }
 ```
 
-- [ ] **Step 5: Create upload service**
+- [x] **Step 5: Create upload service**
 
 Create `apps/api/src/modules/upload/upload.service.ts`:
 
@@ -434,7 +436,7 @@ export class UploadService {
 }
 ```
 
-- [ ] **Step 6: Create upload routes**
+- [x] **Step 6: Create upload routes**
 
 Create `apps/api/src/modules/upload/upload.routes.ts`:
 
@@ -486,7 +488,7 @@ uploadRouter.post(
 );
 ```
 
-- [ ] **Step 7: Register upload router**
+- [x] **Step 7: Register upload router**
 
 In `apps/api/src/router.ts`, add import and registration:
 
@@ -498,7 +500,7 @@ import { uploadRouter } from "./modules/upload/upload.routes.js";
 apiRouter.use("/uploads", uploadRouter);
 ```
 
-- [ ] **Step 8: Build and verify**
+- [x] **Step 8: Build and verify**
 
 ```bash
 cd /Volumes/ExternalDisk1/repos/tatame-v2
@@ -508,7 +510,7 @@ pnpm --filter @tatame/api build
 ```
 Expected: no type errors.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add packages/config/src/env.ts \

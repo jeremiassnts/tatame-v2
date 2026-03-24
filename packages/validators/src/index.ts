@@ -3,6 +3,10 @@ export {
   type HealthResponse,
 } from "./health.schema.js";
 export {
+  uploadImageResponseSchema,
+  type UploadImageResponse,
+} from "./upload.schema.js";
+export {
   activeAcademySchema,
   roleEnumSchema,
   setInitialRoleBodySchema,
