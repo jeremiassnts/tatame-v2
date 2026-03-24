@@ -61,18 +61,20 @@
 
 ## Task 1: Install Dependencies
 
+**Status:** ✅ Completed
+
 **Files:**
 - Modify: `apps/mobile/package.json`
 - Modify: `apps/api/package.json`
 
-- [ ] **Step 1: Install mobile dependencies**
+- [x] **Step 1: Install mobile dependencies**
 
 ```bash
 cd /Volumes/ExternalDisk1/repos/tatame-v2
 pnpm --filter @tatame/mobile add @tanstack/react-query react-hook-form @hookform/resolvers expo-image-picker @react-native-community/datetimepicker
 ```
 
-- [ ] **Step 2: Install API dependencies**
+- [x] **Step 2: Install API dependencies**
 
 ```bash
 cd /Volumes/ExternalDisk1/repos/tatame-v2
@@ -80,7 +82,7 @@ pnpm --filter @tatame/api add multer @aws-sdk/client-s3
 pnpm --filter @tatame/api add -D @types/multer
 ```
 
-- [ ] **Step 3: Verify installation**
+- [x] **Step 3: Verify installation**
 
 ```bash
 cd /Volumes/ExternalDisk1/repos/tatame-v2
@@ -88,7 +90,7 @@ pnpm install
 ```
 Expected: no errors, lock file updated.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/mobile/package.json apps/api/package.json pnpm-lock.yaml
@@ -99,6 +101,8 @@ git commit -m "chore: add dependencies for manager core screens"
 
 ## Task 2: Backend — Extend `/me` with `activeAcademy`
 
+**Status:** ✅ Completed
+
 **Files:**
 - Modify: `packages/validators/src/user.schema.ts`
 - Modify: `packages/validators/src/index.ts`
@@ -108,7 +112,7 @@ git commit -m "chore: add dependencies for manager core screens"
 - Modify: `apps/api/src/modules/user/user.routes.ts`
 - Test: `apps/api/src/modules/user/__tests__/user.routes.test.ts` (if exists)
 
-- [ ] **Step 1: Update `userMeResponseSchema` in validators**
+- [x] **Step 1: Update `userMeResponseSchema` in validators**
 
 In `packages/validators/src/user.schema.ts`, add the `activeAcademy` field:
 
@@ -134,7 +138,7 @@ export const userMeResponseSchema = z.object({
 });
 ```
 
-- [ ] **Step 2: Export new types from validators index**
+- [x] **Step 2: Export new types from validators index**
 
 In `packages/validators/src/index.ts`, add to the user exports:
 
@@ -152,7 +156,7 @@ export {
 } from "./user.schema.js";
 ```
 
-- [ ] **Step 3: Add `findActiveAcademyForManager` to user repository interface**
+- [x] **Step 3: Add `findActiveAcademyForManager` to user repository interface**
 
 In `apps/api/src/modules/user/user.repository.ts`, add:
 
@@ -164,7 +168,7 @@ findActiveAcademyForManager(userId: string): Promise<{
 } | undefined>;
 ```
 
-- [ ] **Step 4: Implement in Postgres repository**
+- [x] **Step 4: Implement in Postgres repository**
 
 In `apps/api/src/modules/user/user.repository.postgres.ts`, update the imports at the top of the file:
 
@@ -203,7 +207,7 @@ async findActiveAcademyForManager(userId: string): Promise<{
 }
 ```
 
-- [ ] **Step 5: Add method to UserService**
+- [x] **Step 5: Add method to UserService**
 
 In `apps/api/src/modules/user/user.service.ts`, add:
 
@@ -213,7 +217,7 @@ async getActiveAcademyForManager(userId: string) {
 }
 ```
 
-- [ ] **Step 6: Update `/me` route to include `activeAcademy`**
+- [x] **Step 6: Update `/me` route to include `activeAcademy`**
 
 In `apps/api/src/modules/user/user.routes.ts`, update the GET `/me` handler:
 
@@ -259,7 +263,7 @@ userRouter.get("/me", requireSession, async (req, res, next) => {
 });
 ```
 
-- [ ] **Step 7: Build and verify**
+- [x] **Step 7: Build and verify**
 
 ```bash
 cd /Volumes/ExternalDisk1/repos/tatame-v2
@@ -268,7 +272,7 @@ pnpm --filter @tatame/api build
 ```
 Expected: no type errors.
 
-- [ ] **Step 8: Run existing tests**
+- [x] **Step 8: Run existing tests**
 
 ```bash
 cd /Volumes/ExternalDisk1/repos/tatame-v2
@@ -276,7 +280,7 @@ pnpm --filter @tatame/api test
 ```
 Expected: all existing tests pass (update any snapshots if needed for the new `activeAcademy` field).
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add packages/validators/src/user.schema.ts packages/validators/src/index.ts \
