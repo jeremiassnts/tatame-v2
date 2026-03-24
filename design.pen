@@ -717,7 +717,7 @@
               "name": "timeLabel",
               "fill": "$--text-primary",
               "content": "9:41",
-              "fontFamily": "Inter",
+              "fontFamily": "Poppins",
               "fontSize": 16,
               "fontWeight": "600"
             },
@@ -788,25 +788,7 @@
               "name": "Logo",
               "width": 88,
               "height": 88,
-              "fill": {
-                "type": "gradient",
-                "gradientType": "linear",
-                "enabled": true,
-                "rotation": 180,
-                "size": {
-                  "height": 1
-                },
-                "colors": [
-                  {
-                    "color": "#A078E8",
-                    "position": 0
-                  },
-                  {
-                    "color": "#7C5CBF",
-                    "position": 1
-                  }
-                ]
-              },
+              "fill": "$--bg-elevated",
               "cornerRadius": 22,
               "layout": "vertical",
               "justifyContent": "center",
@@ -839,7 +821,7 @@
                   "name": "appTitle",
                   "fill": "$--text-primary",
                   "content": "TATAME",
-                  "fontFamily": "Sora",
+                  "fontFamily": "Poppins",
                   "fontSize": 32,
                   "fontWeight": "700",
                   "letterSpacing": -1
@@ -848,10 +830,10 @@
                   "type": "text",
                   "id": "ecSEk",
                   "name": "appTag",
-                  "fill": "$--text-secondary",
+                  "fill": "$--text-muted",
                   "content": "Sua academia na palma da mão",
                   "textAlign": "center",
-                  "fontFamily": "Inter",
+                  "fontFamily": "Poppins",
                   "fontSize": 15,
                   "fontWeight": "normal"
                 }
@@ -899,7 +881,7 @@
                   "name": "signInLabel",
                   "fill": "#FFFFFF",
                   "content": "Entrar",
-                  "fontFamily": "Inter",
+                  "fontFamily": "Poppins",
                   "fontSize": 16,
                   "fontWeight": "600"
                 }
@@ -927,7 +909,7 @@
                   "name": "signUpLabel",
                   "fill": "$--text-primary",
                   "content": "Criar conta",
-                  "fontFamily": "Inter",
+                  "fontFamily": "Poppins",
                   "fontSize": 16,
                   "fontWeight": "600"
                 }
@@ -959,7 +941,7 @@
                   "name": "divText",
                   "fill": "$--text-muted",
                   "content": "ou continue com",
-                  "fontFamily": "Inter",
+                  "fontFamily": "Poppins",
                   "fontSize": 12,
                   "fontWeight": "normal"
                 },
@@ -1013,7 +995,7 @@
                       "name": "googleLabel",
                       "fill": "$--text-primary",
                       "content": "Google",
-                      "fontFamily": "Inter",
+                      "fontFamily": "Poppins",
                       "fontSize": 14,
                       "fontWeight": "500"
                     }
@@ -1052,7 +1034,7 @@
                       "name": "appleLabel",
                       "fill": "$--text-primary",
                       "content": "Apple",
-                      "fontFamily": "Inter",
+                      "fontFamily": "Poppins",
                       "fontSize": 14,
                       "fontWeight": "500"
                     }
@@ -1104,7 +1086,7 @@
               "name": "time",
               "fill": "$--text-primary",
               "content": "9:41",
-              "fontFamily": "Inter",
+              "fontFamily": "Poppins",
               "fontSize": 16,
               "fontWeight": "600"
             },
@@ -1216,7 +1198,7 @@
                   "name": "title",
                   "fill": "$--text-primary",
                   "content": "Criar conta",
-                  "fontFamily": "Sora",
+                  "fontFamily": "Poppins",
                   "fontSize": 28,
                   "fontWeight": "700",
                   "letterSpacing": -1
@@ -1225,9 +1207,9 @@
                   "type": "text",
                   "id": "6pQDx",
                   "name": "subtitle",
-                  "fill": "$--text-secondary",
+                  "fill": "$--text-muted",
                   "content": "Preencha seus dados para começar",
-                  "fontFamily": "Inter",
+                  "fontFamily": "Poppins",
                   "fontSize": 15,
                   "fontWeight": "normal"
                 }
@@ -1255,7 +1237,7 @@
                       "name": "nameLabel",
                       "fill": "$--text-secondary",
                       "content": "Nome completo",
-                      "fontFamily": "Inter",
+                      "fontFamily": "Poppins",
                       "fontSize": 13,
                       "fontWeight": "500"
                     },
@@ -1284,7 +1266,7 @@
                           "name": "namePlaceholder",
                           "fill": "$--text-muted",
                           "content": "Digite seu nome",
-                          "fontFamily": "Inter",
+                          "fontFamily": "Poppins",
                           "fontSize": 15,
                           "fontWeight": "normal"
                         }
@@ -1306,7 +1288,7 @@
                       "name": "emailLabel",
                       "fill": "$--text-secondary",
                       "content": "E-mail",
-                      "fontFamily": "Inter",
+                      "fontFamily": "Poppins",
                       "fontSize": 13,
                       "fontWeight": "500"
                     },
@@ -1335,7 +1317,7 @@
                           "name": "emailPlaceholder",
                           "fill": "$--text-muted",
                           "content": "seu@email.com",
-                          "fontFamily": "Inter",
+                          "fontFamily": "Poppins",
                           "fontSize": 15,
                           "fontWeight": "normal"
                         }
@@ -1357,7 +1339,7 @@
                       "name": "passLabel",
                       "fill": "$--text-secondary",
                       "content": "Senha",
-                      "fontFamily": "Inter",
+                      "fontFamily": "Poppins",
                       "fontSize": 13,
                       "fontWeight": "500"
                     },
@@ -1387,7 +1369,7 @@
                           "name": "passPlaceholder",
                           "fill": "$--text-muted",
                           "content": "Mínimo 8 caracteres",
-                          "fontFamily": "Inter",
+                          "fontFamily": "Poppins",
                           "fontSize": 15,
                           "fontWeight": "normal"
                         },
@@ -1440,7 +1422,7 @@
                       "name": "ctaLabel",
                       "fill": "#FFFFFF",
                       "content": "Criar conta",
-                      "fontFamily": "Inter",
+                      "fontFamily": "Poppins",
                       "fontSize": 16,
                       "fontWeight": "600"
                     }
@@ -1472,7 +1454,7 @@
                       "name": "dText",
                       "fill": "$--text-muted",
                       "content": "ou",
-                      "fontFamily": "Inter",
+                      "fontFamily": "Poppins",
                       "fontSize": 12,
                       "fontWeight": "normal"
                     },
@@ -1526,7 +1508,7 @@
                           "name": "gLabel",
                           "fill": "$--text-primary",
                           "content": "Google",
-                          "fontFamily": "Inter",
+                          "fontFamily": "Poppins",
                           "fontSize": 14,
                           "fontWeight": "500"
                         }
@@ -1565,7 +1547,7 @@
                           "name": "aLabel",
                           "fill": "$--text-primary",
                           "content": "Apple",
-                          "fontFamily": "Inter",
+                          "fontFamily": "Poppins",
                           "fontSize": 14,
                           "fontWeight": "500"
                         }
@@ -1590,7 +1572,7 @@
                       "name": "loginText",
                       "fill": "$--text-secondary",
                       "content": "Já tem uma conta?",
-                      "fontFamily": "Inter",
+                      "fontFamily": "Poppins",
                       "fontSize": 14,
                       "fontWeight": "normal"
                     },
@@ -1600,7 +1582,7 @@
                       "name": "loginAction",
                       "fill": "$--accent-primary",
                       "content": "Entrar",
-                      "fontFamily": "Inter",
+                      "fontFamily": "Poppins",
                       "fontSize": 14,
                       "fontWeight": "600"
                     }
@@ -1652,7 +1634,7 @@
               "name": "tm",
               "fill": "$--text-primary",
               "content": "9:41",
-              "fontFamily": "Inter",
+              "fontFamily": "Poppins",
               "fontSize": 16,
               "fontWeight": "600"
             },
@@ -1764,7 +1746,7 @@
                   "name": "title",
                   "fill": "$--text-primary",
                   "content": "Bem-vindo de volta",
-                  "fontFamily": "Sora",
+                  "fontFamily": "Poppins",
                   "fontSize": 28,
                   "fontWeight": "700",
                   "letterSpacing": -1
@@ -1773,9 +1755,9 @@
                   "type": "text",
                   "id": "OFMK7",
                   "name": "subtitle",
-                  "fill": "$--text-secondary",
+                  "fill": "$--text-muted",
                   "content": "Entre com sua conta para continuar",
-                  "fontFamily": "Inter",
+                  "fontFamily": "Poppins",
                   "fontSize": 15,
                   "fontWeight": "normal"
                 }
@@ -1803,7 +1785,7 @@
                       "name": "emailLabel",
                       "fill": "$--text-secondary",
                       "content": "E-mail",
-                      "fontFamily": "Inter",
+                      "fontFamily": "Poppins",
                       "fontSize": 13,
                       "fontWeight": "500"
                     },
@@ -1832,7 +1814,7 @@
                           "name": "emailVal",
                           "fill": "$--text-muted",
                           "content": "seu@email.com",
-                          "fontFamily": "Inter",
+                          "fontFamily": "Poppins",
                           "fontSize": 15,
                           "fontWeight": "normal"
                         }
@@ -1854,7 +1836,7 @@
                       "name": "passLabel",
                       "fill": "$--text-secondary",
                       "content": "Senha",
-                      "fontFamily": "Inter",
+                      "fontFamily": "Poppins",
                       "fontSize": 13,
                       "fontWeight": "500"
                     },
@@ -1884,7 +1866,7 @@
                           "name": "passVal",
                           "fill": "$--text-primary",
                           "content": "••••••••",
-                          "fontFamily": "Inter",
+                          "fontFamily": "Poppins",
                           "fontSize": 15,
                           "fontWeight": "normal"
                         },
@@ -1915,7 +1897,7 @@
                       "name": "forgotLink",
                       "fill": "$--accent-primary",
                       "content": "Esqueceu a senha?",
-                      "fontFamily": "Inter",
+                      "fontFamily": "Poppins",
                       "fontSize": 13,
                       "fontWeight": "500"
                     }
@@ -1956,7 +1938,7 @@
                       "name": "ctaLabel",
                       "fill": "#FFFFFF",
                       "content": "Entrar",
-                      "fontFamily": "Inter",
+                      "fontFamily": "Poppins",
                       "fontSize": 16,
                       "fontWeight": "600"
                     }
@@ -1988,7 +1970,7 @@
                       "name": "dt",
                       "fill": "$--text-muted",
                       "content": "ou",
-                      "fontFamily": "Inter",
+                      "fontFamily": "Poppins",
                       "fontSize": 12,
                       "fontWeight": "normal"
                     },
@@ -2042,7 +2024,7 @@
                           "name": "gLbl",
                           "fill": "$--text-primary",
                           "content": "Google",
-                          "fontFamily": "Inter",
+                          "fontFamily": "Poppins",
                           "fontSize": 14,
                           "fontWeight": "500"
                         }
@@ -2081,7 +2063,7 @@
                           "name": "aLbl",
                           "fill": "$--text-primary",
                           "content": "Apple",
-                          "fontFamily": "Inter",
+                          "fontFamily": "Poppins",
                           "fontSize": 14,
                           "fontWeight": "500"
                         }
@@ -2106,7 +2088,7 @@
                       "name": "linkText",
                       "fill": "$--text-secondary",
                       "content": "Não tem uma conta?",
-                      "fontFamily": "Inter",
+                      "fontFamily": "Poppins",
                       "fontSize": 14,
                       "fontWeight": "normal"
                     },
@@ -2116,7 +2098,7 @@
                       "name": "linkAction",
                       "fill": "$--accent-primary",
                       "content": "Criar conta",
-                      "fontFamily": "Inter",
+                      "fontFamily": "Poppins",
                       "fontSize": 14,
                       "fontWeight": "600"
                     }
@@ -2141,7 +2123,7 @@
       "type": "frame",
       "id": "xRTPP",
       "x": 0,
-      "y": 2210,
+      "y": 2209,
       "name": "M-SYS-01: Force Update",
       "clip": true,
       "width": 402,
@@ -43843,6 +43825,488 @@
                   "fontFamily": "Inter",
                   "fontSize": 13,
                   "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "YHqfF",
+      "x": 1448,
+      "y": 1109,
+      "name": "M-AUTH-04: Email Verification",
+      "clip": true,
+      "width": 402,
+      "height": 874,
+      "fill": "$--bg-page",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "5Ykw6",
+          "name": "Status Bar",
+          "width": "fill_container",
+          "height": 62,
+          "padding": [
+            0,
+            24
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "GQkBp",
+              "name": "time",
+              "fill": "$--text-primary",
+              "content": "9:41",
+              "fontFamily": "Poppins",
+              "fontSize": 16,
+              "fontWeight": "600"
+            },
+            {
+              "type": "frame",
+              "id": "OUSNA",
+              "name": "icons",
+              "gap": 6,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "kSfvW",
+                  "name": "s1",
+                  "width": 16,
+                  "height": 16,
+                  "iconFontName": "signal",
+                  "iconFontFamily": "lucide",
+                  "fill": "$--text-primary"
+                },
+                {
+                  "type": "icon_font",
+                  "id": "SCAB0",
+                  "name": "s2",
+                  "width": 16,
+                  "height": 16,
+                  "iconFontName": "wifi",
+                  "iconFontFamily": "lucide",
+                  "fill": "$--text-primary"
+                },
+                {
+                  "type": "icon_font",
+                  "id": "FMrgr",
+                  "name": "s3",
+                  "width": 16,
+                  "height": 16,
+                  "iconFontName": "battery-full",
+                  "iconFontFamily": "lucide",
+                  "fill": "$--text-primary"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "MlHW4",
+          "name": "Content Wrapper",
+          "width": "fill_container",
+          "height": "fill_container",
+          "layout": "vertical",
+          "gap": 28,
+          "padding": [
+            8,
+            24,
+            24,
+            24
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "iNGWZ",
+              "name": "Nav Row",
+              "width": "fill_container",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "9aFkR",
+                  "name": "Back Button",
+                  "width": 40,
+                  "height": 40,
+                  "fill": "$--bg-card",
+                  "cornerRadius": 12,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "$--border-default"
+                  },
+                  "layout": "vertical",
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "QF9WY",
+                      "name": "backIcon",
+                      "width": 20,
+                      "height": 20,
+                      "iconFontName": "arrow-left",
+                      "iconFontFamily": "lucide",
+                      "fill": "$--text-primary"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "vKVqL",
+              "name": "Header",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 16,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "MI7vc",
+                  "name": "title",
+                  "fill": "$--text-primary",
+                  "content": "Verificar e-mail",
+                  "fontFamily": "Poppins",
+                  "fontSize": 28,
+                  "fontWeight": "700",
+                  "letterSpacing": -1
+                },
+                {
+                  "type": "frame",
+                  "id": "z5v03",
+                  "name": "Subtitle Group",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 4,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "kCX0p",
+                      "fill": "$--text-muted",
+                      "content": "Enviamos um código de 6 dígitos para",
+                      "fontFamily": "Poppins",
+                      "fontSize": 15,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "R4oJY",
+                      "fill": "$--text-primary",
+                      "content": "seu@email.com",
+                      "fontFamily": "Poppins",
+                      "fontSize": 15,
+                      "fontWeight": "600"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "dWnXY",
+              "name": "Code Input Area",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 24,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Jd1pq",
+                  "name": "Code Digits",
+                  "width": "fill_container",
+                  "gap": 12,
+                  "justifyContent": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "66spA",
+                      "name": "Digit 1",
+                      "width": 48,
+                      "height": 56,
+                      "fill": "$--bg-card",
+                      "cornerRadius": 12,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 2,
+                        "fill": "$--accent-primary"
+                      },
+                      "layout": "vertical",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "pgemJ",
+                          "name": "t1",
+                          "fill": "$--text-primary",
+                          "fontFamily": "Poppins",
+                          "fontSize": 24,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "1FIEk",
+                      "name": "Digit 2",
+                      "width": 48,
+                      "height": 56,
+                      "fill": "$--bg-card",
+                      "cornerRadius": 12,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$--border-default"
+                      },
+                      "layout": "vertical",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "FyMqy",
+                          "name": "t2",
+                          "fill": "$--text-primary",
+                          "fontFamily": "Poppins",
+                          "fontSize": 24,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "DkZDG",
+                      "name": "Digit 3",
+                      "width": 48,
+                      "height": 56,
+                      "fill": "$--bg-card",
+                      "cornerRadius": 12,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$--border-default"
+                      },
+                      "layout": "vertical",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "AFlQk",
+                          "name": "t3",
+                          "fill": "$--text-primary",
+                          "fontFamily": "Poppins",
+                          "fontSize": 24,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "6qsq5",
+                      "name": "Digit 4",
+                      "width": 48,
+                      "height": 56,
+                      "fill": "$--bg-card",
+                      "cornerRadius": 12,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$--border-default"
+                      },
+                      "layout": "vertical",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "CV841",
+                          "name": "t4",
+                          "fill": "$--text-primary",
+                          "fontFamily": "Poppins",
+                          "fontSize": 24,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "klCRt",
+                      "name": "Digit 5",
+                      "width": 48,
+                      "height": 56,
+                      "fill": "$--bg-card",
+                      "cornerRadius": 12,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$--border-default"
+                      },
+                      "layout": "vertical",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "IerEe",
+                          "name": "t5",
+                          "fill": "$--text-primary",
+                          "fontFamily": "Poppins",
+                          "fontSize": 24,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ImRg3",
+                      "name": "Digit 6",
+                      "width": 48,
+                      "height": 56,
+                      "fill": "$--bg-card",
+                      "cornerRadius": 12,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$--border-default"
+                      },
+                      "layout": "vertical",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "GiMmu",
+                          "name": "t6",
+                          "fill": "$--text-primary",
+                          "fontFamily": "Poppins",
+                          "fontSize": 24,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "IphFz",
+                  "name": "Timer Row",
+                  "width": "fill_container",
+                  "gap": 6,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "bnIWF",
+                      "name": "timerIcon",
+                      "width": 14,
+                      "height": 14,
+                      "iconFontName": "timer",
+                      "iconFontFamily": "lucide",
+                      "fill": "$--text-muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "1NnuX",
+                      "name": "timerText",
+                      "fill": "$--text-muted",
+                      "content": "Código expira em 05:00",
+                      "fontFamily": "Poppins",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "VE1et",
+                  "name": "Resend Row",
+                  "width": "fill_container",
+                  "gap": 2,
+                  "justifyContent": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "hSKzB",
+                      "name": "resendText",
+                      "fill": "$--text-secondary",
+                      "content": "Não recebeu o código?",
+                      "fontFamily": "Poppins",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "w4Z0w",
+                      "name": "resendAction",
+                      "fill": "$--accent-primary",
+                      "content": "Reenviar",
+                      "fontFamily": "Poppins",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "7wRzv",
+              "name": "Spacer",
+              "width": "fill_container",
+              "height": "fill_container"
+            },
+            {
+              "type": "frame",
+              "id": "1tFJh",
+              "name": "Bottom Area",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 16,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "jEBnX",
+                  "name": "Verify Button",
+                  "width": "fill_container",
+                  "height": 56,
+                  "fill": "$--accent-primary",
+                  "cornerRadius": 12,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "wYvHJ",
+                      "name": "ctaLabel",
+                      "fill": "#FFFFFF",
+                      "content": "Verificar",
+                      "fontFamily": "Poppins",
+                      "fontSize": 16,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 3,
+                  "id": "fN2GT",
+                  "name": "Home Indicator",
+                  "fill": "$--text-muted",
+                  "width": 134,
+                  "height": 5
                 }
               ]
             }
