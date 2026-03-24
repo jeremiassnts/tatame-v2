@@ -906,6 +906,8 @@ git commit -m "feat(mobile): add API client and TanStack Query setup"
 
 ## Task 6: Mobile — Hooks + Academy Context
 
+**Status:** ✅ Completed
+
 **Files:**
 - Create: `apps/mobile/lib/academy-context.tsx`
 - Create: `apps/mobile/lib/hooks/use-user.ts`
@@ -970,7 +972,7 @@ export function useCurrentUser() {
 }
 ```
 
-- [ ] **Step 3: Create academy hooks**
+- [x] **Step 3: Create academy hooks**
 
 Create `apps/mobile/lib/hooks/use-academy.ts`:
 
@@ -1031,7 +1033,7 @@ export function useUpdateAcademy(academyId: string) {
 }
 ```
 
-- [ ] **Step 4: Create upload hook**
+- [x] **Step 4: Create upload hook**
 
 Create `apps/mobile/lib/hooks/use-upload.ts`:
 
@@ -1049,7 +1051,7 @@ export function useUploadImage() {
 }
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/mobile/lib/academy-context.tsx apps/mobile/lib/hooks/
