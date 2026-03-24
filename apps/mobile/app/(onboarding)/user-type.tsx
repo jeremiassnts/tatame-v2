@@ -69,12 +69,14 @@ export default function UserTypeScreen() {
                 }`}
               >
                 {isSelected ? (
-                  <LinearGradient
-                    colors={["#A078E8", "#7C5CBF"]}
-                    className="h-12 w-12 items-center justify-center rounded-xl"
-                  >
-                    <Icon size={24} color="#FFFFFF" />
-                  </LinearGradient>
+                  <View className="h-12 w-12 overflow-hidden rounded-xl">
+                    <LinearGradient
+                      colors={["#A078E8", "#7C5CBF"]}
+                      className="flex-1 items-center justify-center"
+                    >
+                      <Icon size={24} color="#FFFFFF" />
+                    </LinearGradient>
+                  </View>
                 ) : (
                   <View className="h-12 w-12 items-center justify-center rounded-xl bg-[#242424]">
                     <Icon size={24} color="#ABABAB" />
