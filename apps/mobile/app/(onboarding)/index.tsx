@@ -1,4 +1,4 @@
-import { View, Text } from "react-native";
+import { View, Text, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { GradientButton } from "@/components/GradientButton";
@@ -10,8 +10,13 @@ export default function WelcomeScreen() {
     <SafeAreaView className="flex-1 bg-background" edges={["bottom"]}>
       {/* Content — centered */}
       <View className="flex-1 items-center justify-center px-10">
-        {/* Logo placeholder — replace with <Image> for your logo */}
-        <View className="h-[120px] w-[120px] items-center justify-center rounded-3xl bg-[#242424]" />
+        <View className="h-[120px] w-[120px] items-center justify-center rounded-3xl bg-[#242424]">
+          <Image
+            source={require("@/assets/images/icon.png")}
+            className="h-[80px] w-[80px]"
+            resizeMode="contain"
+          />
+        </View>
 
         <View className="mt-8 items-center gap-3">
           <Text
