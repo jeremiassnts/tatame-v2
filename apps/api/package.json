@@ -21,6 +21,7 @@
     "@tatame/types": "workspace:*",
     "@tatame/validators": "workspace:*",
     "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
     "drizzle-orm": "^0.38.4",
     "express": "^4.21.2",
     "redis": "^4.7.0",

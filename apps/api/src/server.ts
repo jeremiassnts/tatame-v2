@@ -1,3 +1,4 @@
+import "./env-bootstrap.js";
 import { loadEnv } from "@tatame/config";
 import { createApp } from "./app.js";
 

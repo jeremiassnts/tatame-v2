@@ -11,7 +11,8 @@
     "lint": "turbo run lint",
     "db:generate": "pnpm --filter @tatame/db generate",
     "db:migrate": "pnpm --filter @tatame/db migrate",
-    "db:studio": "pnpm --filter @tatame/db studio"
+    "db:studio": "pnpm --filter @tatame/db studio",
+    "api:dev": "pnpm --filter @tatame/api dev"
   },
   "devDependencies": {
     "turbo": "^2.4.4",
