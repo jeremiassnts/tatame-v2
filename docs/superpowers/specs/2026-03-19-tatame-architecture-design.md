@@ -424,12 +424,13 @@ Backend manages all authorization using our own tables.
 
 ## 9. Mobile App Architecture
 
-**Stack:** React Native + Expo (managed workflow) + Clerk Expo SDK + Gluestack UI
+**Stack:** React Native + Expo (managed workflow) + Clerk Expo SDK + NativeWind v4
 
 ### UI Components
 
-- **Gluestack** for all UI primitives (buttons, inputs, cards, etc.)
-- **Custom modal-based select** — opens a modal with a scrollable list. No native select or Gluestack select component.
+- **NativeWind** (Tailwind CSS for RN) for all styling — replaces Gluestack
+- **Poppins** as single font family (400, 500, 600, 700)
+- **Custom modal-based select** — opens a modal with a scrollable list. No native select component.
 
 ### State Management
 
