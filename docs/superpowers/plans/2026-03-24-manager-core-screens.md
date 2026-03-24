@@ -2200,7 +2200,9 @@ git commit -m "feat(mobile): add M-MGR-03 Academy Settings screen"
 
 ## Task 12: Verify Full Build + Final Commit
 
-- [ ] **Step 1: Build all packages**
+**Status:** ✅ Completed (automated checks); Step 4 remains a local manual checklist.
+
+- [x] **Step 1: Build all packages**
 
 ```bash
 cd /Volumes/ExternalDisk1/repos/tatame-v2
@@ -2208,14 +2210,14 @@ pnpm build
 ```
 Expected: all packages build without errors.
 
-- [ ] **Step 2: Run API tests**
+- [x] **Step 2: Run API tests**
 
 ```bash
 pnpm --filter @tatame/api test
 ```
 Expected: all tests pass.
 
-- [ ] **Step 3: Type-check mobile**
+- [x] **Step 3: Type-check mobile**
 
 ```bash
 cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/mobile
@@ -2237,7 +2239,7 @@ Verify:
 - Settings pre-fills and saves changes
 - Tab navigation works between tabs
 
-- [ ] **Step 5: Final commit if any fixes were needed**
+- [x] **Step 5: Final commit if any fixes were needed** — N/A (no fixes required after Steps 1–3).
 
 ```bash
 git add -A
