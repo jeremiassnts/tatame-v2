@@ -41,6 +41,7 @@ describe("User routes integration", () => {
     expect(me.body).toMatchObject({
       activeRole: "student",
       clerkUserId: INTEGRATION_CLERK_USER_ID,
+      activeAcademy: null,
     });
   });
 });

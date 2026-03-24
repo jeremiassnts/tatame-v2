@@ -3,10 +3,12 @@ export {
   type HealthResponse,
 } from "./health.schema.js";
 export {
+  activeAcademySchema,
   roleEnumSchema,
   setInitialRoleBodySchema,
   setInitialRoleResponseSchema,
   userMeResponseSchema,
+  type ActiveAcademy,
   type SetInitialRoleBody,
   type SetInitialRoleResponse,
   type UserMeResponse,

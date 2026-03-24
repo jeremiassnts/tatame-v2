@@ -26,4 +26,10 @@ export interface IUserRepository {
     startedAt: Date;
     endedAt: Date | null;
   }): Promise<void>;
+
+  findActiveAcademyForManager(userId: string): Promise<{
+    id: string;
+    name: string;
+    logoUrl: string | null;
+  } | undefined>;
 }

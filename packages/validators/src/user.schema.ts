@@ -15,6 +15,14 @@ export const setInitialRoleResponseSchema = z.object({
 
 export type SetInitialRoleResponse = z.infer<typeof setInitialRoleResponseSchema>;
 
+export const activeAcademySchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  logoUrl: z.string().nullable(),
+});
+
+export type ActiveAcademy = z.infer<typeof activeAcademySchema>;
+
 export const userMeResponseSchema = z.object({
   id: z.string().uuid(),
   clerkUserId: z.string(),
@@ -23,6 +31,8 @@ export const userMeResponseSchema = z.object({
   profileImageUrl: z.string().nullable(),
   /** Null until `POST /users/me/role` (spec §8). */
   activeRole: roleEnumSchema.nullable(),
+  /** Non-null for managers who own an academy. */
+  activeAcademy: activeAcademySchema.nullable(),
 });
 
 export type UserMeResponse = z.infer<typeof userMeResponseSchema>;

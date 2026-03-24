@@ -82,4 +82,8 @@ export class InMemoryUserRepository implements IUserRepository {
       endedAt: data.endedAt,
     });
   }
+
+  async findActiveAcademyForManager(_userId: string): Promise<undefined> {
+    return undefined;
+  }
 }

@@ -66,6 +66,7 @@ describe("createApp integration", () => {
       email: row.email,
       name: row.name,
       activeRole: null,
+      activeAcademy: null,
     });
   });
 });

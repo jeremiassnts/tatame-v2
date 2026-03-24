@@ -39,4 +39,8 @@ export class UserService {
     });
     return true;
   }
+
+  async getActiveAcademyForManager(userId: string) {
+    return (await this.userRepo.findActiveAcademyForManager(userId)) ?? null;
+  }
 }

@@ -1,5 +1,11 @@
 import { and, eq } from "drizzle-orm";
-import { users, userRoles, type Database } from "@tatame/db";
+import {
+  academies,
+  academyMemberships,
+  users,
+  userRoles,
+  type Database,
+} from "@tatame/db";
 import type { IUserRepository, UserRow } from "./user.repository.js";
 
 export class PostgresUserRepository implements IUserRepository {
@@ -79,5 +85,30 @@ export class PostgresUserRepository implements IUserRepository {
       startedAt: data.startedAt,
       endedAt: data.endedAt,
     });
+  }
+
+  async findActiveAcademyForManager(userId: string): Promise<{
+    id: string;
+    name: string;
+    logoUrl: string | null;
+  } | undefined> {
+    const [row] = await this.db
+      .select({
+        id: academies.id,
+        name: academies.name,
+        logoUrl: academies.logoUrl,
+      })
+      .from(academyMemberships)
+      .innerJoin(academies, eq(academies.id, academyMemberships.academyId))
+      .where(
+        and(
+          eq(academyMemberships.userId, userId),
+          eq(academyMemberships.role, "manager"),
+          eq(academyMemberships.status, "active"),
+          eq(academyMemberships.isActive, true),
+        ),
+      )
+      .limit(1);
+    return row ?? undefined;
   }
 }

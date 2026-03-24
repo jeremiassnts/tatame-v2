@@ -36,6 +36,11 @@ userRouter.get("/me", requireSession, async (req, res, next) => {
 
     const activeRole = await userService.getActiveRole(row.id);
 
+    let activeAcademy = null;
+    if (activeRole === "manager") {
+      activeAcademy = await userService.getActiveAcademyForManager(row.id);
+    }
+
     const body = {
       id: row.id,
       clerkUserId: row.clerkUserId,
@@ -43,6 +48,7 @@ userRouter.get("/me", requireSession, async (req, res, next) => {
       name: row.name,
       profileImageUrl: row.profileImageUrl,
       activeRole,
+      activeAcademy,
     };
     const parsed = userMeResponseSchema.safeParse(body);
     res.json(parsed.success ? parsed.data : body);
