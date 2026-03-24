@@ -10,6 +10,26 @@ Implement 4 authentication screens (Welcome Landing, Sign Up, Sign In, Email Ver
 - **expo-web-browser** — required for OAuth flows
 - **expo-secure-store** — Clerk token cache
 
+## File Structure
+
+```
+app/(auth)/
+  _layout.tsx       # Stack navigator, no header
+  index.tsx         # M-AUTH-01: Welcome Landing
+  sign-up.tsx       # M-AUTH-02: Sign Up
+  sign-in.tsx       # M-AUTH-03: Sign In
+  verify-email.tsx  # M-AUTH-04: Email Verification
+
+components/
+  SocialButtons.tsx
+  Divider.tsx
+  BackButton.tsx
+  FormInput.tsx
+
+lib/
+  clerk-token-cache.ts  # expo-secure-store adapter for Clerk
+```
+
 ## Screens
 
 ### M-AUTH-01: Welcome Landing (frame `sh9aY`)
@@ -77,32 +97,39 @@ Implement 4 authentication screens (Welcome Landing, Sign Up, Sign In, Email Ver
 - Placeholder: #525252, 15px
 - Value: white, 15px
 - Optional right icon (eye-off for password toggle)
-- Props: `label`, `placeholder`, `value`, `onChangeText`, `secureTextEntry`, `keyboardType`, `autoCapitalize`
+- Props: `label`, `placeholder`, `value`, `onChangeText`, `secureTextEntry`, `keyboardType`, `autoCapitalize`, `error?` (string, displayed in red below input when present)
 
 ## Clerk Integration
 
+### Token Cache (`lib/clerk-token-cache.ts`)
+Adapter wrapping `expo-secure-store` for Clerk's `tokenCache` interface:
+```ts
+{ getToken(key), saveToken(key, value), clearToken(key) }
+```
+
 ### Provider Setup (`app/_layout.tsx`)
-- `ClerkProvider` wrapping app with `publishableKey` from env
-- `ClerkLoaded` to prevent flash
-- Token cache using `expo-secure-store`
+Nesting order: `ClerkProvider` → `ClerkLoaded` → `SafeAreaProvider` → `StatusBar` + `Slot`
 
 ### Root Redirect (`app/index.tsx`)
-- Check `useAuth().isSignedIn`
-- Check AsyncStorage `userType`
-- No userType → `(onboarding)`
-- Not signed in → `(auth)`
-- Signed in → `(app)`
+- Check AsyncStorage `userType` — if missing → `(onboarding)`
+- Check `useAuth().isSignedIn` — if false → `(auth)`
+- If signed in → `(app)`
+
+### Onboarding → Auth Transition
+After user selects role type and taps "Continuar" on user-type screen, navigate to `/(auth)` (Welcome Landing).
 
 ### Sign Up Flow (`useSignUp()`)
-1. `signUp.create({ emailAddress, password, firstName: name })`
+1. `signUp.create({ emailAddress, password, firstName: fullName })` — send full name as `firstName` (Clerk allows this; backend `users` table has single `name` field synced from Clerk)
 2. `signUp.prepareEmailAddressVerification({ strategy: "email_code" })`
-3. Navigate to verify-email, pass email as param
+3. Navigate to verify-email, pass email as route param
 
 ### Email Verification Flow
 1. User enters 6-digit code
 2. `signUp.attemptEmailAddressVerification({ code })`
 3. If `status === "complete"`: `setActive({ session: signUp.createdSessionId })`
-4. Save userType via API (`POST /v1/users/me/role`) then navigate to `(app)`
+4. Clerk webhook creates user in backend → then call `POST /v1/users/me/role` with `userType` from AsyncStorage
+5. On role assignment success → navigate to `(app)`
+6. On role assignment failure → retry up to 2 times, then show error alert and keep user on current screen (they are signed in, can retry on next app launch)
 
 ### Sign In Flow (`useSignIn()`)
 1. `signIn.create({ identifier: email, password })`
@@ -111,16 +138,24 @@ Implement 4 authentication screens (Welcome Landing, Sign Up, Sign In, Email Ver
 
 ### OAuth Flow (`useOAuth()`)
 1. `startOAuthFlow({ redirectUrl })` with `expo-web-browser`
-2. If `createdSessionId`: `setActive({ session: createdSessionId })`
-3. Navigate to `(app)`
-4. Used for both Google (`oauth_google`) and Apple (`oauth_apple`)
+2. If user cancels or provider errors → do nothing (stay on current screen)
+3. If `createdSessionId`: `setActive({ session: createdSessionId })`
+4. Check if user has role (via `GET /v1/users/me`) — if no active role, call `POST /v1/users/me/role` with `userType` from AsyncStorage
+5. Navigate to `(app)`
+6. Used for both Google (`oauth_google`) and Apple (`oauth_apple`)
+
+### Loading States
+- All CTA buttons: show `ActivityIndicator` and disable while async operation is in flight
+- Prevents double-submission on sign up, sign in, verify, and OAuth
 
 ### Error Handling
-- Invalid credentials → show inline error below form
+- Invalid credentials → show inline error below form (red text)
 - Email already exists → show inline error
-- Invalid verification code → show inline error
-- Network error → show generic toast/alert
+- Invalid verification code → show inline error below digit boxes
+- Network error → show `Alert.alert` with generic message
 - Rate limit → show "tente novamente em X segundos"
+- OAuth cancelled → no-op (user stays on screen)
+- OAuth provider error → show `Alert.alert`
 
 ## Environment
 - `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` in `.env` (user already has this)
