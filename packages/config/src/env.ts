@@ -19,6 +19,11 @@ const envSchema = z.object({
   CLERK_WEBHOOK_SIGNING_SECRET: z.string().optional(),
   /** @deprecated use CLERK_WEBHOOK_SIGNING_SECRET — still read as fallback */
   CLERK_WEBHOOK_SECRET: z.string().optional(),
+  R2_ACCOUNT_ID: z.string().optional(),
+  R2_ACCESS_KEY_ID: z.string().optional(),
+  R2_SECRET_ACCESS_KEY: z.string().optional(),
+  R2_BUCKET_NAME: z.string().optional(),
+  R2_PUBLIC_URL: z.string().url().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -12,6 +12,7 @@ import { graduationRouter } from "./modules/graduation/graduation.routes.js";
 import { membershipRouter } from "./modules/membership/membership.routes.js";
 import { paymentRouter } from "./modules/payment/payment.routes.js";
 import { subscriptionRouter } from "./modules/subscription/subscription.routes.js";
+import { uploadRouter } from "./modules/upload/upload.routes.js";
 import { userRouter } from "./modules/user/user.routes.js";
 
 export const apiRouter = Router();
@@ -71,3 +72,4 @@ apiRouter.use("/graduations", graduationRouter);
 apiRouter.use("/subscriptions", subscriptionRouter);
 apiRouter.use("/payments", paymentRouter);
 apiRouter.use("/users", userRouter);
+apiRouter.use("/uploads", uploadRouter);

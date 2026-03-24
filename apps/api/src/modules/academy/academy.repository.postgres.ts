@@ -1,5 +1,11 @@
-import { eq, ilike } from "drizzle-orm";
-import { academies, type Database } from "@tatame/db";
+import { and, count, eq, ilike } from "drizzle-orm";
+import {
+  academies,
+  academyMemberships,
+  classes,
+  subscriptionPlans,
+  type Database,
+} from "@tatame/db";
 import type { AcademyRow, IAcademyRepository } from "./academy.repository.js";
 import type { RepoFactory } from "../../lib/repo-factory.js";
 
@@ -63,6 +69,56 @@ export class PostgresAcademyRepository implements IAcademyRepository {
       .where(eq(academies.ownerId, userId))
       .limit(1);
     return !!row;
+  }
+
+  async getStats(academyId: string, currentDayOfWeek: number) {
+    const [[membersRow], [pendingRow], [classesRow], [plansRow]] =
+      await Promise.all([
+        this.db
+          .select({ c: count() })
+          .from(academyMemberships)
+          .where(
+            and(
+              eq(academyMemberships.academyId, academyId),
+              eq(academyMemberships.status, "active"),
+            ),
+          ),
+        this.db
+          .select({ c: count() })
+          .from(academyMemberships)
+          .where(
+            and(
+              eq(academyMemberships.academyId, academyId),
+              eq(academyMemberships.status, "pending"),
+            ),
+          ),
+        this.db
+          .select({ c: count() })
+          .from(classes)
+          .where(
+            and(
+              eq(classes.academyId, academyId),
+              eq(classes.dayOfWeek, currentDayOfWeek),
+              eq(classes.isActive, true),
+            ),
+          ),
+        this.db
+          .select({ c: count() })
+          .from(subscriptionPlans)
+          .where(
+            and(
+              eq(subscriptionPlans.academyId, academyId),
+              eq(subscriptionPlans.isActive, true),
+            ),
+          ),
+      ]);
+
+    return {
+      activeMembers: Number(membersRow?.c ?? 0),
+      pendingRequests: Number(pendingRow?.c ?? 0),
+      classesToday: Number(classesRow?.c ?? 0),
+      activePlans: Number(plansRow?.c ?? 0),
+    };
   }
 
   async withTransaction<T>(

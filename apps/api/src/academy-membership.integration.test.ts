@@ -42,6 +42,15 @@ describe("Academy & membership integration", () => {
     expect(created.status).toBe(201);
     const academyId = created.body.id as string;
 
+    const stats = await request(app).get(`/v1/academies/${academyId}/stats`);
+    expect(stats.status).toBe(200);
+    expect(stats.body).toMatchObject({
+      activeMembers: 1,
+      pendingRequests: 0,
+      activePlans: 0,
+    });
+    expect(typeof stats.body.classesToday).toBe("number");
+
     const listed = await request(app).get("/v1/academies").query({ q: "Integr" });
     expect(listed.status).toBe(200);
     expect(listed.body.items?.length).toBeGreaterThanOrEqual(1);
