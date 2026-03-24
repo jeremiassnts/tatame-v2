@@ -1216,13 +1216,15 @@ git commit -m "feat(mobile): add manager tab navigator with placeholders"
 
 ## Task 8: Mobile — Shared Components (ImagePickerField, DatePickerField, StatCard, ClassCard)
 
+**Status:** ✅ Completed
+
 **Files:**
 - Create: `apps/mobile/components/ImagePickerField.tsx`
 - Create: `apps/mobile/components/DatePickerField.tsx`
 - Create: `apps/mobile/components/StatCard.tsx`
 - Create: `apps/mobile/components/ClassCard.tsx`
 
-- [ ] **Step 1: Update GradientButton with disabled and loading props**
+- [x] **Step 1: Update GradientButton with disabled and loading props**
 
 Modify `apps/mobile/components/GradientButton.tsx`:
 
@@ -1265,7 +1267,7 @@ export function GradientButton({ label, onPress, disabled, loading }: GradientBu
 }
 ```
 
-- [ ] **Step 2: Create ImagePickerField component**
+- [x] **Step 2: Create ImagePickerField component**
 
 Create `apps/mobile/components/ImagePickerField.tsx`:
 
@@ -1329,7 +1331,7 @@ export function ImagePickerField({
 }
 ```
 
-- [ ] **Step 3: Create DatePickerField**
+- [x] **Step 3: Create DatePickerField**
 
 Create `apps/mobile/components/DatePickerField.tsx`:
 
@@ -1407,7 +1409,7 @@ export function DatePickerField({
 }
 ```
 
-- [ ] **Step 4: Create StatCard**
+- [x] **Step 4: Create StatCard**
 
 Create `apps/mobile/components/StatCard.tsx`:
 
@@ -1437,7 +1439,7 @@ export function StatCard({ icon: Icon, count, label }: StatCardProps) {
 }
 ```
 
-- [ ] **Step 5: Create ClassCard**
+- [x] **Step 5: Create ClassCard**
 
 Create `apps/mobile/components/ClassCard.tsx`:
 
@@ -1481,7 +1483,7 @@ export function ClassCard({
 }
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/mobile/components/GradientButton.tsx apps/mobile/components/ImagePickerField.tsx \
