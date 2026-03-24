@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "Tatame",
+    "slug": "tatame",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "tatame",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.tatame.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0C0C0C"
+      },
+      "package": "com.tatame.app"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ]
+  }
+}
