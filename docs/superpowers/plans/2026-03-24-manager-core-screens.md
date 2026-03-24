@@ -699,12 +699,14 @@ git commit -m "feat(api): add GET /academies/:id/stats endpoint for manager dash
 
 ## Task 5: Mobile — API Client + TanStack Query Setup
 
+**Status:** ✅ Completed — also added `academy-context`, `use-user`, and minimal routes so redirects and `tsc` succeed (Task 7 replaces manager shell with tabs).
+
 **Files:**
 - Create: `apps/mobile/lib/api.ts`
 - Create: `apps/mobile/lib/query-client.ts`
 - Modify: `apps/mobile/app/(app)/_layout.tsx`
 
-- [ ] **Step 1: Create API client**
+- [x] **Step 1: Create API client**
 
 Create `apps/mobile/lib/api.ts`:
 
@@ -794,7 +796,7 @@ export function useApi() {
 }
 ```
 
-- [ ] **Step 2: Create query client**
+- [x] **Step 2: Create query client**
 
 Create `apps/mobile/lib/query-client.ts`:
 
@@ -811,7 +813,7 @@ export const queryClient = new QueryClient({
 });
 ```
 
-- [ ] **Step 3: Update `(app)/_layout.tsx` with QueryClientProvider**
+- [x] **Step 3: Update `(app)/_layout.tsx` with QueryClientProvider**
 
 Replace `apps/mobile/app/(app)/_layout.tsx` with:
 
@@ -885,7 +887,7 @@ function AppRouter() {
 }
 ```
 
-- [ ] **Step 4: Verify no type errors**
+- [x] **Step 4: Verify no type errors**
 
 ```bash
 cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/mobile
@@ -893,7 +895,7 @@ npx tsc --noEmit
 ```
 Expected: will have errors for missing hooks files — that's OK, we create them next.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/mobile/lib/api.ts apps/mobile/lib/query-client.ts apps/mobile/app/\(app\)/_layout.tsx
@@ -910,7 +912,9 @@ git commit -m "feat(mobile): add API client and TanStack Query setup"
 - Create: `apps/mobile/lib/hooks/use-academy.ts`
 - Create: `apps/mobile/lib/hooks/use-upload.ts`
 
-- [ ] **Step 1: Create academy context**
+**Note:** Steps 1–2 were shipped with Task 5 (`lib/academy-context.tsx`, `lib/hooks/use-user.ts`).
+
+- [x] **Step 1: Create academy context**
 
 Create `apps/mobile/lib/academy-context.tsx`:
 
@@ -947,7 +951,7 @@ export function useAcademyContext(): AcademyContextValue {
 }
 ```
 
-- [ ] **Step 2: Create user hook**
+- [x] **Step 2: Create user hook**
 
 Create `apps/mobile/lib/hooks/use-user.ts`:
 
