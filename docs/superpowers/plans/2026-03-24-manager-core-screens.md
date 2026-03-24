@@ -1936,10 +1936,12 @@ git commit -m "feat(mobile): add M-MGR-02 Manager Dashboard screen"
 
 ## Task 11: Mobile — M-MGR-03 Academy Settings
 
+**Status:** ✅ Completed
+
 **Files:**
 - Create: `apps/mobile/app/(app)/(manager)/(home)/settings.tsx`
 
-- [ ] **Step 1: Create the settings screen**
+- [x] **Step 1: Create the settings screen**
 
 Create `apps/mobile/app/(app)/(manager)/(home)/settings.tsx`:
 
@@ -2187,7 +2189,7 @@ export default function AcademySettingsScreen() {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/app/\(app\)/\(manager\)/\(home\)/settings.tsx
