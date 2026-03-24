@@ -1727,10 +1727,12 @@ git commit -m "feat(mobile): add M-MGR-01 Create Academy screen"
 
 ## Task 10: Mobile — M-MGR-02 Manager Dashboard
 
+**Status:** ✅ Completed
+
 **Files:**
 - Create: `apps/mobile/app/(app)/(manager)/(home)/index.tsx`
 
-- [ ] **Step 1: Create the dashboard screen**
+- [x] **Step 1: Create the dashboard screen**
 
 Create `apps/mobile/app/(app)/(manager)/(home)/index.tsx`:
 
@@ -1748,7 +1750,6 @@ import {
 } from "lucide-react-native";
 import { useAcademyContext } from "@/lib/academy-context";
 import { useAcademyStats } from "@/lib/hooks/use-academy";
-import { useCurrentUser } from "@/lib/hooks/use-user";
 import { useApi } from "@/lib/api";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { StatCard } from "@/components/StatCard";
@@ -1759,7 +1760,6 @@ export default function ManagerDashboard() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { academyId, academyName, academyLogoUrl } = useAcademyContext();
-  const { data: user } = useCurrentUser();
   const { data: stats } = useAcademyStats(academyId);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -1772,7 +1772,7 @@ export default function ManagerDashboard() {
     queryKey: ["classes", academyId, dayOfWeek],
     queryFn: () =>
       api.get<{ items: Array<{ id: string; name: string; startTime: string; endTime: string }> }>(
-        `/classes?academyId=${academyId}&dayOfWeek=${dayOfWeek}`,
+        `/classes?dayOfWeek=${dayOfWeek}`,
       ),
   });
 
@@ -1925,7 +1925,7 @@ export default function ManagerDashboard() {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/app/\(app\)/\(manager\)/\(home\)/index.tsx
