@@ -523,6 +523,8 @@ git commit -m "feat(api): add image upload module with Cloudflare R2"
 
 ## Task 4: Backend — Academy Stats Endpoint
 
+**Status:** ✅ Completed
+
 **Files:**
 - Modify: `packages/validators/src/academy.schema.ts`
 - Modify: `packages/validators/src/index.ts`
@@ -531,7 +533,7 @@ git commit -m "feat(api): add image upload module with Cloudflare R2"
 - Modify: `apps/api/src/modules/academy/academy.service.ts`
 - Modify: `apps/api/src/modules/academy/academy.routes.ts`
 
-- [ ] **Step 1: Add stats schema to validators**
+- [x] **Step 1: Add stats schema to validators**
 
 In `packages/validators/src/academy.schema.ts`, add:
 
@@ -546,7 +548,7 @@ export const academyStatsResponseSchema = z.object({
 export type AcademyStatsResponse = z.infer<typeof academyStatsResponseSchema>;
 ```
 
-- [ ] **Step 2: Export from validators index**
+- [x] **Step 2: Export from validators index**
 
 In `packages/validators/src/index.ts`, update the academy exports block:
 
@@ -564,7 +566,7 @@ export {
 } from "./academy.schema.js";
 ```
 
-- [ ] **Step 3: Add `getStats` to academy repository interface**
+- [x] **Step 3: Add `getStats` to academy repository interface**
 
 In `apps/api/src/modules/academy/academy.repository.ts`, add:
 
@@ -577,9 +579,9 @@ getStats(academyId: string, currentDayOfWeek: number): Promise<{
 }>;
 ```
 
-- [ ] **Step 4: Implement `getStats` in Postgres repository**
+- [x] **Step 4: Implement `getStats` in Postgres repository**
 
-In `apps/api/src/modules/academy/academy.repository.postgres.ts`, add imports for `count`, `and`, `sql` from `drizzle-orm` and `academyMemberships`, `classes`, `subscriptionPlans` from `@tatame/db`, then add:
+In `apps/api/src/modules/academy/academy.repository.postgres.ts`, add imports for `and` and `count` from `drizzle-orm` (keep existing `eq` / `ilike`) and `academyMemberships`, `classes`, `subscriptionPlans` from `@tatame/db`, then add:
 
 ```typescript
 async getStats(academyId: string, currentDayOfWeek: number) {
@@ -633,7 +635,7 @@ async getStats(academyId: string, currentDayOfWeek: number) {
 }
 ```
 
-- [ ] **Step 5: Add `getStats` to AcademyService**
+- [x] **Step 5: Add `getStats` to AcademyService**
 
 In `apps/api/src/modules/academy/academy.service.ts`, add:
 
@@ -645,7 +647,7 @@ async getStats(academyId: string, ownerUserId: string) {
 }
 ```
 
-- [ ] **Step 6: Add stats route**
+- [x] **Step 6: Add stats route**
 
 In `apps/api/src/modules/academy/academy.routes.ts`, add the route after the existing `GET /:academyId` route:
 
@@ -675,7 +677,7 @@ academyRouter.get(
 
 **Important:** This route must be placed BEFORE the `POST /` route to avoid route conflicts. Insert it after the `GET /:academyId` handler.
 
-- [ ] **Step 7: Build and run tests**
+- [x] **Step 7: Build and run tests**
 
 ```bash
 cd /Volumes/ExternalDisk1/repos/tatame-v2
@@ -685,7 +687,7 @@ pnpm --filter @tatame/api test
 ```
 Expected: build succeeds, all tests pass.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add packages/validators/src/academy.schema.ts packages/validators/src/index.ts \

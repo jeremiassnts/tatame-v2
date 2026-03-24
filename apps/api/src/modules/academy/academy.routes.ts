@@ -50,6 +50,28 @@ academyRouter.get("/:academyId", requireSession, async (req, res, next) => {
   }
 });
 
+academyRouter.get(
+  "/:academyId/stats",
+  authorize(Role.Manager),
+  attachActiveAcademyContext,
+  async (req, res, next) => {
+    try {
+      const params = academyIdParamSchema.safeParse(req.params);
+      if (!params.success) {
+        throw new HttpError(400, "Invalid academy id");
+      }
+      const userId = req.appAuth!.userId;
+      const stats = await academyService.getStats(
+        params.data.academyId,
+        userId,
+      );
+      res.json(stats);
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
 academyRouter.post(
   "/",
   authorize(Role.Manager),

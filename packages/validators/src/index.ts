@@ -20,9 +20,11 @@ export {
 export {
   academyIdParamSchema,
   academyResponseSchema,
+  academyStatsResponseSchema,
   createAcademyBodySchema,
   updateAcademyBodySchema,
   type AcademyResponse,
+  type AcademyStatsResponse,
   type CreateAcademyBody,
   type UpdateAcademyBody,
 } from "./academy.schema.js";

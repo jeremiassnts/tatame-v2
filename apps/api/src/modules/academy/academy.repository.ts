@@ -33,6 +33,13 @@ export interface IAcademyRepository {
 
   existsByOwner(userId: string): Promise<boolean>;
 
+  getStats(academyId: string, currentDayOfWeek: number): Promise<{
+    activeMembers: number;
+    pendingRequests: number;
+    classesToday: number;
+    activePlans: number;
+  }>;
+
   withTransaction<T>(
     fn: (
       txRepo: IAcademyRepository,

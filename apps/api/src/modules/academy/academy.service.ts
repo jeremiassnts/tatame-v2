@@ -47,6 +47,12 @@ export class AcademyService {
     return this.academyRepo.searchByName(term, limit);
   }
 
+  async getStats(academyId: string, ownerUserId: string) {
+    await this.assertManagerOwnsAcademy(ownerUserId, academyId);
+    const currentDayOfWeek = new Date().getDay(); // 0=Sunday
+    return this.academyRepo.getStats(academyId, currentDayOfWeek);
+  }
+
   async update(academyId: string, ownerUserId: string, body: UpdateAcademyBody) {
     await this.assertManagerOwnsAcademy(ownerUserId, academyId);
 

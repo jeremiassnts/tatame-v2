@@ -71,6 +71,23 @@ export class InMemoryAcademyRepository implements IAcademyRepository {
     return this.rows.some((a) => a.ownerId === userId);
   }
 
+  async getStats(
+    _academyId: string,
+    _currentDayOfWeek: number,
+  ): Promise<{
+    activeMembers: number;
+    pendingRequests: number;
+    classesToday: number;
+    activePlans: number;
+  }> {
+    return {
+      activeMembers: 0,
+      pendingRequests: 0,
+      classesToday: 0,
+      activePlans: 0,
+    };
+  }
+
   async withTransaction<T>(
     fn: (
       txRepo: IAcademyRepository,

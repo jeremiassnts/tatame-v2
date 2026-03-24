@@ -37,3 +37,12 @@ export const academyResponseSchema = z.object({
 });
 
 export type AcademyResponse = z.infer<typeof academyResponseSchema>;
+
+export const academyStatsResponseSchema = z.object({
+  activeMembers: z.number().int().min(0),
+  pendingRequests: z.number().int().min(0),
+  classesToday: z.number().int().min(0),
+  activePlans: z.number().int().min(0),
+});
+
+export type AcademyStatsResponse = z.infer<typeof academyStatsResponseSchema>;
