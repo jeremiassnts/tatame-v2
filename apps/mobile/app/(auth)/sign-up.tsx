@@ -1,0 +1,158 @@
+import { useState } from "react";
+import { View, Text, Pressable, Alert, ActivityIndicator } from "react-native";
+import { useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useSignUp, useOAuth } from "@clerk/clerk-expo";
+import * as WebBrowser from "expo-web-browser";
+import { BackButton } from "@/components/BackButton";
+import { FormInput } from "@/components/FormInput";
+import { Divider } from "@/components/Divider";
+import { SocialButtons } from "@/components/SocialButtons";
+
+WebBrowser.maybeCompleteAuthSession();
+
+type ClerkError = {
+  errors?: Array<{
+    longMessage?: string;
+    meta?: { paramName?: string };
+  }>;
+};
+
+export default function SignUpScreen() {
+  const router = useRouter();
+  const { signUp } = useSignUp();
+  const { startOAuthFlow: startGoogle } = useOAuth({ strategy: "oauth_google" });
+  const { startOAuthFlow: startApple } = useOAuth({ strategy: "oauth_apple" });
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+
+  const handleSignUp = async () => {
+    if (!signUp) return;
+    setErrors({});
+    setLoading(true);
+    try {
+      await signUp.create({
+        emailAddress: email,
+        password,
+        firstName: name,
+      });
+      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+      router.push({ pathname: "/(auth)/verify-email", params: { email } });
+    } catch (error) {
+      const err = error as ClerkError;
+      if (err.errors?.length) {
+        const mapped: Record<string, string> = {};
+        for (const e of err.errors) {
+          if (e.meta?.paramName === "email_address") mapped.email = e.longMessage ?? "";
+          else if (e.meta?.paramName === "password") mapped.password = e.longMessage ?? "";
+          else if (e.meta?.paramName === "first_name") mapped.name = e.longMessage ?? "";
+          else mapped.general = e.longMessage ?? "Nao foi possivel criar a conta.";
+        }
+        setErrors(mapped);
+      } else {
+        Alert.alert("Erro", "Nao foi possivel criar a conta. Tente novamente.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOAuth = async (start: typeof startGoogle) => {
+    try {
+      const result = await start();
+      if (result.createdSessionId && result.setActive) {
+        await result.setActive({ session: result.createdSessionId });
+        router.replace("/(app)");
+      }
+    } catch {
+      // cancelled
+    }
+  };
+
+  return (
+    <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
+      <View className="flex-1 gap-7 px-6 pt-2">
+        <BackButton />
+
+        <View className="gap-2">
+          <Text
+            className="font-poppins-bold text-primary"
+            style={{ fontSize: 28, letterSpacing: -1 }}
+          >
+            Criar conta
+          </Text>
+          <Text className="font-poppins text-[15px] text-[#525252]">
+            Preencha seus dados para comecar
+          </Text>
+        </View>
+
+        <View className="gap-4">
+          <FormInput
+            label="Nome completo"
+            placeholder="Digite seu nome"
+            value={name}
+            onChangeText={setName}
+            autoCapitalize="words"
+            error={errors.name}
+          />
+          <FormInput
+            label="E-mail"
+            placeholder="seu@email.com"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            error={errors.email}
+          />
+          <FormInput
+            label="Senha"
+            placeholder="Minimo 8 caracteres"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            error={errors.password}
+          />
+        </View>
+
+        {errors.general ? (
+          <Text className="font-poppins text-sm text-red-500">{errors.general}</Text>
+        ) : null}
+
+        <View className="flex-1" />
+
+        <View className="gap-4 pb-2">
+          <Pressable
+            onPress={handleSignUp}
+            disabled={loading}
+            className="h-14 items-center justify-center rounded-xl bg-accent"
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text className="font-poppins-semibold text-base text-white">Criar conta</Text>
+            )}
+          </Pressable>
+
+          <Divider />
+
+          <SocialButtons
+            onGooglePress={() => handleOAuth(startGoogle)}
+            onApplePress={() => handleOAuth(startApple)}
+            disabled={loading}
+          />
+
+          <View className="flex-row items-center justify-center gap-1 py-2">
+            <Text className="font-poppins text-sm text-muted">Ja tem uma conta?</Text>
+            <Pressable onPress={() => router.replace("/(auth)/sign-in")}>
+              <Text className="font-poppins-semibold text-sm text-accent">Entrar</Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+}

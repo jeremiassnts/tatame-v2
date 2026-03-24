@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Building2, GraduationCap, User } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
 import { GradientButton } from "@/components/GradientButton";
 
 const ROLES = [
@@ -31,10 +32,11 @@ type UserType = (typeof ROLES)[number]["key"];
 
 export default function UserTypeScreen() {
   const [selected, setSelected] = useState<UserType>("manager");
+  const router = useRouter();
 
   const handleContinue = async () => {
     await AsyncStorage.setItem("userType", selected);
-    // TODO: navigate to auth flow once implemented
+    router.replace("/(auth)");
   };
 
   return (

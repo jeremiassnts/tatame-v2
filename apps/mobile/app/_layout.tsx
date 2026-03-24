@@ -6,6 +6,8 @@ import { Slot } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { ClerkProvider, ClerkLoaded } from "@clerk/clerk-expo";
+import { tokenCache } from "@/lib/clerk-token-cache";
 import {
   useFonts,
   Poppins_400Regular,
@@ -15,6 +17,9 @@ import {
 } from "@expo-google-fonts/poppins";
 
 SplashScreen.preventAutoHideAsync();
+const publishableKey =
+  (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env
+    ?.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "";
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -39,9 +44,13 @@ export default function RootLayout() {
   }
 
   return (
-    <SafeAreaProvider>
-      <StatusBar style="light" />
-      <Slot />
-    </SafeAreaProvider>
+    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+      <ClerkLoaded>
+        <SafeAreaProvider>
+          <StatusBar style="light" />
+          <Slot />
+        </SafeAreaProvider>
+      </ClerkLoaded>
+    </ClerkProvider>
   );
 }
