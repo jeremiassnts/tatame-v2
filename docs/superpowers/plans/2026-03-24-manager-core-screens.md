@@ -1496,10 +1496,12 @@ git commit -m "feat(mobile): update GradientButton and add shared components for
 
 ## Task 9: Mobile — M-MGR-01 Create Academy Screen
 
+**Status:** ✅ Completed
+
 **Files:**
 - Create: `apps/mobile/app/(app)/create-academy.tsx`
 
-- [ ] **Step 1: Create the screen**
+- [x] **Step 1: Create the screen**
 
 Create `apps/mobile/app/(app)/create-academy.tsx`:
 
@@ -1714,7 +1716,7 @@ export default function CreateAcademyScreen() {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/app/\(app\)/create-academy.tsx
