@@ -1062,6 +1062,8 @@ git commit -m "feat(mobile): add academy context and API hooks"
 
 ## Task 7: Mobile — Manager Tab Navigator + Home Stack
 
+**Status:** ✅ Completed
+
 **Files:**
 - Create: `apps/mobile/app/(app)/(manager)/_layout.tsx`
 - Create: `apps/mobile/app/(app)/(manager)/(home)/_layout.tsx`
@@ -1072,7 +1074,7 @@ git commit -m "feat(mobile): add academy context and API hooks"
 - Create: `apps/mobile/app/(app)/(manager)/(classes)/_layout.tsx`
 - Create: `apps/mobile/app/(app)/(manager)/(more)/_layout.tsx`
 
-- [ ] **Step 1: Create manager tab navigator**
+- [x] **Step 1: Create manager tab navigator**
 
 Create `apps/mobile/app/(app)/(manager)/_layout.tsx`:
 
@@ -1139,7 +1141,7 @@ export default function ManagerLayout() {
 }
 ```
 
-- [ ] **Step 2: Create home stack layout**
+- [x] **Step 2: Create home stack layout**
 
 Create `apps/mobile/app/(app)/(manager)/(home)/_layout.tsx`:
 
@@ -1159,7 +1161,7 @@ export default function HomeLayout() {
 }
 ```
 
-- [ ] **Step 3: Create placeholder layouts and screens for other tabs**
+- [x] **Step 3: Create placeholder layouts and screens for other tabs**
 
 Create `apps/mobile/app/(app)/(manager)/(members)/_layout.tsx`:
 
@@ -1203,7 +1205,7 @@ Create `apps/mobile/app/(app)/(manager)/(more)/_layout.tsx` — same as members 
 
 Create `apps/mobile/app/(app)/(manager)/(more)/index.tsx` — same as members placeholder (change function name to `MorePlaceholder`).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/mobile/app/\(app\)/\(manager\)/
