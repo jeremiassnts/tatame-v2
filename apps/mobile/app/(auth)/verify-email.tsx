@@ -1,12 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { View, Text, TextInput, Pressable, Alert, ActivityIndicator } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAuth, useSignUp } from "@clerk/clerk-expo";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useSignUp } from "@clerk/clerk-expo";
 import { Timer } from "lucide-react-native";
 import { BackButton } from "@/components/BackButton";
-import { syncUser } from "@/lib/api";
+import { useAuthComplete } from "@/lib/hooks/use-auth-complete";
 
 const CODE_LENGTH = 6;
 const EXPIRY_SECONDS = 5 * 60;
@@ -16,10 +15,9 @@ type ClerkError = {
 };
 
 export default function VerifyEmailScreen() {
-  const router = useRouter();
   const { email } = useLocalSearchParams<{ email?: string }>();
-  const { getToken } = useAuth();
   const { signUp, setActive } = useSignUp();
+  const { completeAuth } = useAuthComplete();
 
   const [code, setCode] = useState<string[]>(Array(CODE_LENGTH).fill(""));
   const [error, setError] = useState("");
@@ -66,17 +64,12 @@ export default function VerifyEmailScreen() {
     setLoading(true);
     try {
       const result = await signUp.attemptEmailAddressVerification({ code: codeStr });
-      if (result.status === "complete" && setActive) {
-        await setActive({ session: result.createdSessionId });
-        const token = await getToken();
-        if (!token) {
-          setError("Sessão inválida. Tente novamente.");
-          return;
-        }
-        const userType = await AsyncStorage.getItem("userType");
+      if (result.status === "complete") {
         try {
-          await syncUser(token, userType);
-          router.replace("/(app)");
+          await completeAuth({
+            createdSessionId: result.createdSessionId,
+            setActive,
+          });
         } catch {
           setError("Não foi possível sincronizar. Tente novamente.");
         }
