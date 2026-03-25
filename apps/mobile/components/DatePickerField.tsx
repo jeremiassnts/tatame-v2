@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { View, Text, Pressable, Platform } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Calendar } from "lucide-react-native";
+import { useState } from "react";
+import { Platform, Pressable, Text, View } from "react-native";
 
 type DatePickerFieldProps = {
   label: string;
@@ -21,7 +21,7 @@ export function DatePickerField({
   const dateValue = value ? new Date(value + "T00:00:00") : new Date();
 
   const formatDisplay = (dateStr: string | null) => {
-    if (!dateStr) return "Select date";
+    if (!dateStr) return "Selecione a data";
     const [y, m, d] = dateStr.split("-");
     return `${d}/${m}/${y}`;
   };
@@ -43,9 +43,8 @@ export function DatePickerField({
       </Text>
       <Pressable
         onPress={() => setShow(true)}
-        className={`h-[52px] flex-row items-center rounded-xl border px-4 ${
-          error ? "border-red-500" : "border-surface-border"
-        } bg-surface`}
+        className={`h-[52px] flex-row items-center rounded-xl border px-4 ${error ? "border-red-500" : "border-surface-border"
+          } bg-surface`}
       >
         <Calendar size={18} color="#525252" style={{ marginRight: 8 }} />
         <Text
