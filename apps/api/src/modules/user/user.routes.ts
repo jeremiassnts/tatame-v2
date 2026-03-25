@@ -1,11 +1,11 @@
-import { Router } from "express";
 import { getAuth } from "@clerk/express";
+import type { SetInitialRoleBody } from "@tatame/validators";
 import {
   setInitialRoleBodySchema,
   setInitialRoleResponseSchema,
   userMeResponseSchema,
 } from "@tatame/validators";
-import type { SetInitialRoleBody } from "@tatame/validators";
+import { Router } from "express";
 import { getDb } from "../../lib/db.js";
 import { requireSession } from "../../middleware/require-session.js";
 import { validateBody } from "../../middleware/validate.js";
@@ -29,7 +29,7 @@ userRouter.get("/me", requireSession, async (req, res, next) => {
 
     if (!row) {
       res.status(404).json({
-        error: "User not provisioned yet; wait for Clerk webhook sync",
+        error: "Usuário não provisionado ainda; aguarde o sync do webhook do Clerk",
       });
       return;
     }
@@ -73,7 +73,7 @@ userRouter.post(
       const userRow = await userService.getByClerkId(clerkUserId);
       if (!userRow) {
         res.status(404).json({
-          error: "User not provisioned yet; wait for Clerk webhook sync",
+          error: "Usuário não provisionado ainda; aguarde o sync do webhook do Clerk",
         });
         return;
       }

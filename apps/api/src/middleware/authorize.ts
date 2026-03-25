@@ -1,7 +1,7 @@
 import { getAuth } from "@clerk/express";
-import type { NextFunction, Request, Response } from "express";
-import type { Role } from "@tatame/types";
 import { loadEnv } from "@tatame/config";
+import type { Role } from "@tatame/types";
+import type { NextFunction, Request, Response } from "express";
 import { getDb } from "../lib/db.js";
 import { PostgresUserRepository } from "../modules/user/user.repository.postgres.js";
 import { UserService } from "../modules/user/user.service.js";
@@ -15,7 +15,7 @@ export function authorize(...allowed: Role[]) {
       if (!loadEnv().CLERK_SECRET_KEY) {
         res
           .status(503)
-          .json({ error: "Clerk is not configured (CLERK_SECRET_KEY)" });
+          .json({ error: "Clerk não configurado (CLERK_SECRET_KEY)" });
         return;
       }
       const { userId: clerkUserId } = getAuth(req);

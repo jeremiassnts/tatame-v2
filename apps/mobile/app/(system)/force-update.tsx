@@ -1,7 +1,7 @@
-import { View, Text, Pressable, Linking, Platform, Alert } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Download, ExternalLink, ArrowRight } from "lucide-react-native";
 import Constants from "expo-constants";
+import { ArrowRight, Download, ExternalLink } from "lucide-react-native";
+import { Alert, Linking, Platform, Pressable, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 function getStoreUrl() {
   const env = (globalThis as { process?: { env?: Record<string, string | undefined> } })
@@ -21,13 +21,13 @@ export default function ForceUpdateScreen() {
   const handleUpdateNow = async () => {
     const storeUrl = getStoreUrl();
     if (!storeUrl) {
-      Alert.alert("Atualizacao pendente", "Link da loja ainda nao configurado.");
+      Alert.alert("Atualização pendente", "Link da loja ainda não configurado.");
       return;
     }
 
     const canOpen = await Linking.canOpenURL(storeUrl);
     if (!canOpen) {
-      Alert.alert("Erro", "Nao foi possivel abrir o link da loja.");
+      Alert.alert("Erro", "Não foi possível abrir o link da loja.");
       return;
     }
 
@@ -49,10 +49,10 @@ export default function ForceUpdateScreen() {
               className="font-poppins-bold text-center text-primary"
               style={{ fontSize: 32, letterSpacing: -1 }}
             >
-              Atualizacao disponivel
+              Atualização disponível
             </Text>
             <Text className="font-poppins text-center text-[15px] leading-6 text-muted">
-              Uma nova versao do Tatame esta disponivel. Atualize o app para continuar
+              Uma nova versão do Tatame está disponível. Atualize o app para continuar
               usando.
             </Text>
           </View>

@@ -19,7 +19,7 @@ end
 
 export class CheckinLockBusyError extends Error {
   constructor() {
-    super("Could not acquire check-in lock; try again");
+    super("Não foi possível adquirir o bloqueio de check-in; tente novamente");
     this.name = "CheckinLockBusyError";
   }
 }

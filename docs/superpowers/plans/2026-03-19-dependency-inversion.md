@@ -17,41 +17,45 @@
 ## File Map
 
 ### New files to create
-| File | Purpose |
-|------|---------|
-| `apps/api/src/lib/repo-factory.ts` | Shared `RepoFactory<T>` type |
-| `apps/api/src/modules/user/user.repository.ts` | `IUserRepository` interface + `UserRow`, `UserRoleRow` types |
-| `apps/api/src/modules/user/user.repository.postgres.ts` | `PostgresUserRepository` |
-| `apps/api/src/modules/academy/academy.repository.ts` | `IAcademyRepository` interface + `AcademyRow` type |
-| `apps/api/src/modules/academy/academy.repository.postgres.ts` | `PostgresAcademyRepository` |
-| `apps/api/src/modules/class/class.repository.ts` | `IClassRepository` interface + `ClassRow` type |
-| `apps/api/src/modules/class/class.repository.postgres.ts` | `PostgresClassRepository` |
-| `apps/api/src/modules/membership/membership.repository.ts` | `IMembershipRepository` interface + `MembershipRow`, `PendingMembershipWithUser` types |
-| `apps/api/src/modules/membership/membership.repository.postgres.ts` | `PostgresMembershipRepository` |
+
+| File                                                                | Purpose                                                                                |
+| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `apps/api/src/lib/repo-factory.ts`                                  | Shared `RepoFactory<T>` type                                                           |
+| `apps/api/src/modules/user/user.repository.ts`                      | `IUserRepository` interface + `UserRow`, `UserRoleRow` types                           |
+| `apps/api/src/modules/user/user.repository.postgres.ts`             | `PostgresUserRepository`                                                               |
+| `apps/api/src/modules/academy/academy.repository.ts`                | `IAcademyRepository` interface + `AcademyRow` type                                     |
+| `apps/api/src/modules/academy/academy.repository.postgres.ts`       | `PostgresAcademyRepository`                                                            |
+| `apps/api/src/modules/class/class.repository.ts`                    | `IClassRepository` interface + `ClassRow` type                                         |
+| `apps/api/src/modules/class/class.repository.postgres.ts`           | `PostgresClassRepository`                                                              |
+| `apps/api/src/modules/membership/membership.repository.ts`          | `IMembershipRepository` interface + `MembershipRow`, `PendingMembershipWithUser` types |
+| `apps/api/src/modules/membership/membership.repository.postgres.ts` | `PostgresMembershipRepository`                                                         |
 
 ### Files to rewrite
-| File | Change |
-|------|--------|
-| `apps/api/src/modules/user/user.service.ts` | Free functions → `UserService` class |
-| `apps/api/src/modules/academy/academy.service.ts` | Free functions → `AcademyService` class |
-| `apps/api/src/modules/class/class.service.ts` | Free functions → `ClassService` class |
+
+| File                                                    | Change                                     |
+| ------------------------------------------------------- | ------------------------------------------ |
+| `apps/api/src/modules/user/user.service.ts`             | Free functions → `UserService` class       |
+| `apps/api/src/modules/academy/academy.service.ts`       | Free functions → `AcademyService` class    |
+| `apps/api/src/modules/class/class.service.ts`           | Free functions → `ClassService` class      |
 | `apps/api/src/modules/membership/membership.service.ts` | Free functions → `MembershipService` class |
 
 ### Files to modify
-| File | Change |
-|------|--------|
-| `apps/api/src/modules/user/user.routes.ts` | Wire `UserService` with `PostgresUserRepository` |
-| `apps/api/src/modules/academy/academy.routes.ts` | Wire `AcademyService` with repos + factory |
-| `apps/api/src/modules/class/class.routes.ts` | Wire `ClassService` with repos |
-| `apps/api/src/modules/membership/membership.routes.ts` | Wire `MembershipService` with repos |
-| `apps/api/src/modules/auth/clerk-webhook.handler.ts` | Wire `UserService`, move Clerk DTO extraction here |
-| `apps/api/src/middleware/academy-context.ts` | Use `PostgresMembershipRepository` directly instead of old free function |
+
+| File                                                   | Change                                                                   |
+| ------------------------------------------------------ | ------------------------------------------------------------------------ |
+| `apps/api/src/modules/user/user.routes.ts`             | Wire `UserService` with `PostgresUserRepository`                         |
+| `apps/api/src/modules/academy/academy.routes.ts`       | Wire `AcademyService` with repos + factory                               |
+| `apps/api/src/modules/class/class.routes.ts`           | Wire `ClassService` with repos                                           |
+| `apps/api/src/modules/membership/membership.routes.ts` | Wire `MembershipService` with repos                                      |
+| `apps/api/src/modules/auth/clerk-webhook.handler.ts`   | Wire `UserService`, move Clerk DTO extraction here                       |
+| `apps/api/src/middleware/academy-context.ts`           | Use `PostgresMembershipRepository` directly instead of old free function |
 
 ---
 
 ## Task 1: Create shared RepoFactory type
 
 **Files:**
+
 - Create: `apps/api/src/lib/repo-factory.ts`
 
 - [ ] **Step 1: Create the RepoFactory type file**
@@ -80,6 +84,7 @@ git commit -m "feat(api): add shared RepoFactory type for transactional DI"
 ## Task 2: User module — repository interface + Postgres implementation
 
 **Files:**
+
 - Create: `apps/api/src/modules/user/user.repository.ts`
 - Create: `apps/api/src/modules/user/user.repository.postgres.ts`
 
@@ -174,9 +179,7 @@ export class PostgresUserRepository implements IUserRepository {
     const [row] = await this.db
       .select({ role: userRoles.role })
       .from(userRoles)
-      .where(
-        and(eq(userRoles.userId, userId), eq(userRoles.isActive, true)),
-      )
+      .where(and(eq(userRoles.userId, userId), eq(userRoles.isActive, true)))
       .limit(1);
     return row?.role;
   }
@@ -185,9 +188,7 @@ export class PostgresUserRepository implements IUserRepository {
     const [row] = await this.db
       .select({ id: userRoles.id })
       .from(userRoles)
-      .where(
-        and(eq(userRoles.userId, userId), eq(userRoles.isActive, true)),
-      )
+      .where(and(eq(userRoles.userId, userId), eq(userRoles.isActive, true)))
       .limit(1);
     return !!row;
   }
@@ -221,6 +222,7 @@ git commit -m "feat(api): add IUserRepository interface and Postgres implementat
 ## Task 3: User module — rewrite service as class
 
 **Files:**
+
 - Rewrite: `apps/api/src/modules/user/user.service.ts`
 
 - [ ] **Step 1: Rewrite `user.service.ts` as `UserService` class**
@@ -290,6 +292,7 @@ git commit -m "refactor(api): convert user service to class with constructor inj
 ## Task 4: User module — update routes
 
 **Files:**
+
 - Modify: `apps/api/src/modules/user/user.routes.ts`
 
 - [ ] **Step 1: Rewrite routes to wire `UserService` with `PostgresUserRepository`**
@@ -327,7 +330,8 @@ userRouter.get("/me", requireSession, async (req, res, next) => {
 
     if (!row) {
       res.status(404).json({
-        error: "User not provisioned yet; wait for Clerk webhook sync",
+        error:
+          "Usuário não provisionado ainda; aguarde o sync do webhook do Clerk",
       });
       return;
     }
@@ -365,7 +369,8 @@ userRouter.post(
       const userRow = await userService.getByClerkId(clerkUserId);
       if (!userRow) {
         res.status(404).json({
-          error: "User not provisioned yet; wait for Clerk webhook sync",
+          error:
+            "Usuário não provisionado ainda; aguarde o sync do webhook do Clerk",
         });
         return;
       }
@@ -400,6 +405,7 @@ git commit -m "refactor(api): wire UserService into user routes"
 ## Task 5: User module — update webhook handler (Clerk DTO extraction)
 
 **Files:**
+
 - Modify: `apps/api/src/modules/auth/clerk-webhook.handler.ts`
 
 - [ ] **Step 1: Move Clerk-specific helpers here, wire `UserService`**
@@ -419,15 +425,13 @@ import { PostgresUserRepository } from "../user/user.repository.postgres.js";
 function primaryEmail(data: UserJSON): string | undefined {
   const list = data.email_addresses ?? [];
   const primaryId = data.primary_email_address_id;
-  const chosen = primaryId
-    ? list.find((e) => e.id === primaryId)
-    : list[0];
+  const chosen = primaryId ? list.find((e) => e.id === primaryId) : list[0];
   return chosen?.email_address;
 }
 
 function displayName(data: UserJSON): string {
-  const parts = [data.first_name, data.last_name].filter(
-    (x): x is string => Boolean(x?.trim()),
+  const parts = [data.first_name, data.last_name].filter((x): x is string =>
+    Boolean(x?.trim()),
   );
   if (parts.length) return parts.join(" ");
   if (data.username) return data.username;
@@ -500,6 +504,7 @@ git commit -m "refactor(api): move Clerk DTO extraction to webhook handler, wire
 ## Task 6: Membership module — repository interface + Postgres implementation
 
 **Files:**
+
 - Create: `apps/api/src/modules/membership/membership.repository.ts`
 - Create: `apps/api/src/modules/membership/membership.repository.postgres.ts`
 
@@ -520,7 +525,10 @@ export type PendingMembershipWithUser = MembershipRow & {
 export interface IMembershipRepository {
   findById(membershipId: string): Promise<MembershipRow | undefined>;
   findActiveByUser(userId: string): Promise<MembershipRow | undefined>;
-  findActiveByUserAndAcademy(userId: string, academyId: string): Promise<MembershipRow | undefined>;
+  findActiveByUserAndAcademy(
+    userId: string,
+    academyId: string,
+  ): Promise<MembershipRow | undefined>;
 
   existsBlockedOrRejected(userId: string, academyId: string): Promise<boolean>;
   existsPending(userId: string, academyId: string): Promise<boolean>;
@@ -537,18 +545,26 @@ export interface IMembershipRepository {
     leftAt?: Date | null;
   }): Promise<MembershipRow>;
 
-  updateStatus(membershipId: string, data: {
-    status?: string;
-    isActive?: boolean;
-    joinedAt?: Date | null;
-    leftAt?: Date | null;
-  }): Promise<MembershipRow | undefined>;
+  updateStatus(
+    membershipId: string,
+    data: {
+      status?: string;
+      isActive?: boolean;
+      joinedAt?: Date | null;
+      leftAt?: Date | null;
+    },
+  ): Promise<MembershipRow | undefined>;
 
-  rejectAllPendingExcept(userId: string, excludeMembershipId: string): Promise<void>;
+  rejectAllPendingExcept(
+    userId: string,
+    excludeMembershipId: string,
+  ): Promise<void>;
 
   deleteById(membershipId: string): Promise<void>;
 
-  withTransaction<T>(fn: (txRepo: IMembershipRepository) => Promise<T>): Promise<T>;
+  withTransaction<T>(
+    fn: (txRepo: IMembershipRepository) => Promise<T>,
+  ): Promise<T>;
 }
 ```
 
@@ -557,11 +573,7 @@ export interface IMembershipRepository {
 ```typescript
 // apps/api/src/modules/membership/membership.repository.postgres.ts
 import { and, eq, inArray, ne } from "drizzle-orm";
-import {
-  academyMemberships,
-  users,
-  type Database,
-} from "@tatame/db";
+import { academyMemberships, users, type Database } from "@tatame/db";
 import type {
   IMembershipRepository,
   MembershipRow,
@@ -613,7 +625,10 @@ export class PostgresMembershipRepository implements IMembershipRepository {
     return row;
   }
 
-  async existsBlockedOrRejected(userId: string, academyId: string): Promise<boolean> {
+  async existsBlockedOrRejected(
+    userId: string,
+    academyId: string,
+  ): Promise<boolean> {
     const [row] = await this.db
       .select({ id: academyMemberships.id })
       .from(academyMemberships)
@@ -643,7 +658,9 @@ export class PostgresMembershipRepository implements IMembershipRepository {
     return !!row;
   }
 
-  async findPendingByAcademy(academyId: string): Promise<PendingMembershipWithUser[]> {
+  async findPendingByAcademy(
+    academyId: string,
+  ): Promise<PendingMembershipWithUser[]> {
     const rows = await this.db
       .select({
         membership: academyMemberships,
@@ -708,7 +725,10 @@ export class PostgresMembershipRepository implements IMembershipRepository {
     return row;
   }
 
-  async rejectAllPendingExcept(userId: string, excludeMembershipId: string): Promise<void> {
+  async rejectAllPendingExcept(
+    userId: string,
+    excludeMembershipId: string,
+  ): Promise<void> {
     await this.db
       .update(academyMemberships)
       .set({ status: "rejected", updatedAt: new Date() })
@@ -727,9 +747,13 @@ export class PostgresMembershipRepository implements IMembershipRepository {
       .where(eq(academyMemberships.id, membershipId));
   }
 
-  async withTransaction<T>(fn: (txRepo: IMembershipRepository) => Promise<T>): Promise<T> {
+  async withTransaction<T>(
+    fn: (txRepo: IMembershipRepository) => Promise<T>,
+  ): Promise<T> {
     return this.db.transaction(async (tx) => {
-      const txRepo = new PostgresMembershipRepository(tx as unknown as Database);
+      const txRepo = new PostgresMembershipRepository(
+        tx as unknown as Database,
+      );
       return fn(txRepo);
     });
   }
@@ -752,6 +776,7 @@ git commit -m "feat(api): add IMembershipRepository interface and Postgres imple
 ## Task 7: Academy module — repository interface + Postgres implementation
 
 **Files:**
+
 - Create: `apps/api/src/modules/academy/academy.repository.ts`
 - Create: `apps/api/src/modules/academy/academy.repository.postgres.ts`
 
@@ -793,7 +818,10 @@ export interface IAcademyRepository {
   ): Promise<AcademyRow | undefined>;
 
   withTransaction<T>(
-    fn: (txRepo: IAcademyRepository, createRepo: <R>(factory: RepoFactory<R>) => R) => Promise<T>,
+    fn: (
+      txRepo: IAcademyRepository,
+      createRepo: <R>(factory: RepoFactory<R>) => R,
+    ) => Promise<T>,
   ): Promise<T>;
 }
 ```
@@ -836,10 +864,7 @@ export class PostgresAcademyRepository implements IAcademyRepository {
     contactPhone: string | null;
     foundedAt: string | null;
   }): Promise<AcademyRow> {
-    const [row] = await this.db
-      .insert(academies)
-      .values(data)
-      .returning();
+    const [row] = await this.db.insert(academies).values(data).returning();
     if (!row) throw new Error("Failed to insert academy");
     return row;
   }
@@ -864,7 +889,10 @@ export class PostgresAcademyRepository implements IAcademyRepository {
   }
 
   async withTransaction<T>(
-    fn: (txRepo: IAcademyRepository, createRepo: <R>(factory: RepoFactory<R>) => R) => Promise<T>,
+    fn: (
+      txRepo: IAcademyRepository,
+      createRepo: <R>(factory: RepoFactory<R>) => R,
+    ) => Promise<T>,
   ): Promise<T> {
     return this.db.transaction(async (tx) => {
       const txDb = tx as unknown as Database;
@@ -892,6 +920,7 @@ git commit -m "feat(api): add IAcademyRepository interface and Postgres implemen
 ## Task 8: Academy module — rewrite service as class + update routes
 
 **Files:**
+
 - Rewrite: `apps/api/src/modules/academy/academy.service.ts`
 - Modify: `apps/api/src/modules/academy/academy.routes.ts`
 
@@ -911,31 +940,36 @@ export class AcademyService {
     private readonly membershipRepoFactory: RepoFactory<IMembershipRepository>,
   ) {}
 
-  async createWithManagerMembership(ownerUserId: string, body: CreateAcademyBody) {
-    return this.academyRepo.withTransaction(async (txAcademyRepo, createRepo) => {
-      const created = await txAcademyRepo.create({
-        ownerId: ownerUserId,
-        name: body.name,
-        logoUrl: body.logoUrl ?? null,
-        address: body.address ?? null,
-        contactEmail: body.contactEmail ?? null,
-        contactPhone: body.contactPhone ?? null,
-        foundedAt: body.foundedAt ?? null,
-      });
+  async createWithManagerMembership(
+    ownerUserId: string,
+    body: CreateAcademyBody,
+  ) {
+    return this.academyRepo.withTransaction(
+      async (txAcademyRepo, createRepo) => {
+        const created = await txAcademyRepo.create({
+          ownerId: ownerUserId,
+          name: body.name,
+          logoUrl: body.logoUrl ?? null,
+          address: body.address ?? null,
+          contactEmail: body.contactEmail ?? null,
+          contactPhone: body.contactPhone ?? null,
+          foundedAt: body.foundedAt ?? null,
+        });
 
-      const txMembershipRepo = createRepo(this.membershipRepoFactory);
-      await txMembershipRepo.create({
-        academyId: created.id,
-        userId: ownerUserId,
-        role: "manager",
-        status: "active",
-        isActive: true,
-        joinedAt: new Date(),
-        leftAt: null,
-      });
+        const txMembershipRepo = createRepo(this.membershipRepoFactory);
+        await txMembershipRepo.create({
+          academyId: created.id,
+          userId: ownerUserId,
+          role: "manager",
+          status: "active",
+          isActive: true,
+          joinedAt: new Date(),
+          leftAt: null,
+        });
 
-      return created;
-    });
+        return created;
+      },
+    );
   }
 
   async getById(academyId: string) {
@@ -948,15 +982,23 @@ export class AcademyService {
     return this.academyRepo.searchByName(term, limit);
   }
 
-  async update(academyId: string, ownerUserId: string, body: UpdateAcademyBody) {
+  async update(
+    academyId: string,
+    ownerUserId: string,
+    body: UpdateAcademyBody,
+  ) {
     await this.assertManagerOwnsAcademy(ownerUserId, academyId);
 
     const updated = await this.academyRepo.update(academyId, {
       ...(body.name !== undefined ? { name: body.name } : {}),
       ...(body.logoUrl !== undefined ? { logoUrl: body.logoUrl } : {}),
       ...(body.address !== undefined ? { address: body.address } : {}),
-      ...(body.contactEmail !== undefined ? { contactEmail: body.contactEmail } : {}),
-      ...(body.contactPhone !== undefined ? { contactPhone: body.contactPhone } : {}),
+      ...(body.contactEmail !== undefined
+        ? { contactEmail: body.contactEmail }
+        : {}),
+      ...(body.contactPhone !== undefined
+        ? { contactPhone: body.contactPhone }
+        : {}),
       ...(body.foundedAt !== undefined ? { foundedAt: body.foundedAt } : {}),
     });
     if (!updated) {
@@ -1042,7 +1084,10 @@ academyRouter.post(
     try {
       const body = req.validatedBody as CreateAcademyBody;
       const userId = req.appAuth!.userId;
-      const created = await academyService.createWithManagerMembership(userId, body);
+      const created = await academyService.createWithManagerMembership(
+        userId,
+        body,
+      );
       res.status(201).json(created);
     } catch (e) {
       next(e);
@@ -1096,6 +1141,7 @@ git commit -m "refactor(api): convert academy service to class, wire into routes
 ## Task 9: Class module — repository interface + Postgres implementation
 
 **Files:**
+
 - Create: `apps/api/src/modules/class/class.repository.ts`
 - Create: `apps/api/src/modules/class/class.repository.postgres.ts`
 
@@ -1184,7 +1230,10 @@ export class PostgresClassRepository implements IClassRepository {
       .orderBy(classes.dayOfWeek, classes.startTime);
   }
 
-  async findById(classId: string, academyId: string): Promise<ClassRow | undefined> {
+  async findById(
+    classId: string,
+    academyId: string,
+  ): Promise<ClassRow | undefined> {
     const [row] = await this.db
       .select()
       .from(classes)
@@ -1248,6 +1297,7 @@ git commit -m "feat(api): add IClassRepository interface and Postgres implementa
 ## Task 10: Class module — rewrite service as class + update routes
 
 **Files:**
+
 - Rewrite: `apps/api/src/modules/class/class.service.ts`
 - Modify: `apps/api/src/modules/class/class.routes.ts`
 
@@ -1293,8 +1343,12 @@ export class ClassService {
     private readonly academyRepo: IAcademyRepository,
   ) {}
 
-  async list(ctx: ClassAuthContext, query: { dayOfWeek?: number; includeInactive?: boolean }) {
-    const includeInactive = ctx.role === "manager" ? Boolean(query.includeInactive) : false;
+  async list(
+    ctx: ClassAuthContext,
+    query: { dayOfWeek?: number; includeInactive?: boolean },
+  ) {
+    const includeInactive =
+      ctx.role === "manager" ? Boolean(query.includeInactive) : false;
     const instructorId = ctx.role === "instructor" ? ctx.userId : undefined;
     return this.classRepo.findByAcademyId(ctx.activeAcademyId, {
       dayOfWeek: query.dayOfWeek,
@@ -1325,7 +1379,10 @@ export class ClassService {
       await this.assertCanTeach(ctx.activeAcademyId, body.instructorId);
     } else if (ctx.role === "instructor") {
       if (body.instructorId !== ctx.userId) {
-        throw new HttpError(403, "Instructors can only create classes for themselves");
+        throw new HttpError(
+          403,
+          "Instructors can only create classes for themselves",
+        );
       }
       await this.assertCanTeach(ctx.activeAcademyId, ctx.userId);
     } else {
@@ -1378,12 +1435,16 @@ export class ClassService {
 
     const updated = await this.classRepo.update(classId, {
       ...(body.name !== undefined ? { name: body.name } : {}),
-      ...(body.description !== undefined ? { description: body.description } : {}),
+      ...(body.description !== undefined
+        ? { description: body.description }
+        : {}),
       ...(body.dayOfWeek !== undefined ? { dayOfWeek: body.dayOfWeek } : {}),
       ...(body.startTime !== undefined ? { startTime } : {}),
       ...(body.endTime !== undefined ? { endTime } : {}),
       ...(body.capacity !== undefined ? { capacity: body.capacity } : {}),
-      ...(body.instructorId !== undefined ? { instructorId: nextInstructorId } : {}),
+      ...(body.instructorId !== undefined
+        ? { instructorId: nextInstructorId }
+        : {}),
       ...(body.isActive !== undefined ? { isActive: body.isActive } : {}),
     });
 
@@ -1426,7 +1487,10 @@ export class ClassService {
   }
 
   private async assertCanTeach(academyId: string, userId: string) {
-    const m = await this.membershipRepo.findActiveByUserAndAcademy(userId, academyId);
+    const m = await this.membershipRepo.findActiveByUserAndAcademy(
+      userId,
+      academyId,
+    );
     if (!m || !["instructor", "manager"].includes(m.role)) {
       throw new HttpError(
         400,
@@ -1604,6 +1668,7 @@ git commit -m "refactor(api): convert class service to class, wire into routes"
 ## Task 11: Membership module — rewrite service as class + update routes
 
 **Files:**
+
 - Rewrite: `apps/api/src/modules/membership/membership.service.ts`
 - Modify: `apps/api/src/modules/membership/membership.routes.ts`
 
@@ -1643,7 +1708,10 @@ export class MembershipService {
       );
     }
 
-    const blocked = await this.membershipRepo.existsBlockedOrRejected(userId, academyId);
+    const blocked = await this.membershipRepo.existsBlockedOrRejected(
+      userId,
+      academyId,
+    );
     if (blocked) {
       throw new HttpError(
         403,
@@ -1653,7 +1721,10 @@ export class MembershipService {
 
     const pending = await this.membershipRepo.existsPending(userId, academyId);
     if (pending) {
-      throw new HttpError(409, "You already have a pending request for this academy");
+      throw new HttpError(
+        409,
+        "You already have a pending request for this academy",
+      );
     }
 
     return this.membershipRepo.create({
@@ -1734,7 +1805,10 @@ export class MembershipService {
     await this.assertManagerOwnsAcademy(managerUserId, m.academyId);
 
     if (m.status !== "pending" && m.status !== "active") {
-      throw new HttpError(409, "Only pending or active memberships can be blocked");
+      throw new HttpError(
+        409,
+        "Only pending or active memberships can be blocked",
+      );
     }
 
     const now = new Date();
@@ -1757,7 +1831,10 @@ export class MembershipService {
     await this.assertManagerOwnsAcademy(managerUserId, m.academyId);
 
     if (m.status !== "blocked" && m.status !== "rejected") {
-      throw new HttpError(409, "Only blocked or rejected memberships can be unblocked");
+      throw new HttpError(
+        409,
+        "Only blocked or rejected memberships can be unblocked",
+      );
     }
 
     await this.membershipRepo.deleteById(membershipId);
@@ -1988,6 +2065,7 @@ git commit -m "refactor(api): convert membership service to class, wire into rou
 ## Task 12: Update academy-context middleware
 
 **Files:**
+
 - Modify: `apps/api/src/middleware/academy-context.ts`
 
 The middleware currently imports `getActiveMembership` as a free function from `membership.service.ts`. After the rewrite, that export no longer exists. Since the middleware only needs a simple data lookup (no business logic), it uses `PostgresMembershipRepository` directly.

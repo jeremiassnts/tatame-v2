@@ -1,11 +1,11 @@
-import { useEffect } from "react";
-import { View, ActivityIndicator, Text, Pressable } from "react-native";
-import { Stack, useRouter } from "expo-router";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "@/lib/query-client";
-import { useCurrentUser } from "@/lib/hooks/use-user";
 import { AcademyProvider } from "@/lib/academy-context";
 import { ApiError } from "@/lib/api";
+import { useCurrentUser } from "@/lib/hooks/use-user";
+import { queryClient } from "@/lib/query-client";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { Stack, useRouter } from "expo-router";
+import { useEffect } from "react";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
 export default function AppLayout() {
   return (
@@ -40,7 +40,7 @@ function AppRouter() {
 
   if (isError) {
     const message =
-      error instanceof ApiError ? error.message : "Could not load your profile";
+      error instanceof ApiError ? error.message : "Não foi possível carregar seu perfil";
     return (
       <View className="flex-1 items-center justify-center bg-background px-6">
         <Text className="mb-4 text-center text-white">{message}</Text>
@@ -48,7 +48,7 @@ function AppRouter() {
           onPress={() => void refetch()}
           className="rounded-lg bg-accent px-4 py-2"
         >
-          <Text className="font-medium text-white">Try again</Text>
+          <Text className="font-medium text-white">Tentar novamente</Text>
         </Pressable>
       </View>
     );
@@ -65,10 +65,10 @@ function AppRouter() {
   const academyContext =
     user.activeRole === "manager" && user.activeAcademy
       ? {
-          academyId: user.activeAcademy.id,
-          academyName: user.activeAcademy.name,
-          academyLogoUrl: user.activeAcademy.logoUrl,
-        }
+        academyId: user.activeAcademy.id,
+        academyName: user.activeAcademy.name,
+        academyLogoUrl: user.activeAcademy.logoUrl,
+      }
       : null;
 
   if (academyContext) {

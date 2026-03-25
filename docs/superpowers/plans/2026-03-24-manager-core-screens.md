@@ -16,46 +16,46 @@
 
 ### Backend — New/Modified Files
 
-| File | Action | Responsibility |
-|------|--------|---------------|
-| `packages/validators/src/user.schema.ts` | Modify | Add `activeAcademy` to `userMeResponseSchema` |
-| `packages/validators/src/academy.schema.ts` | Modify | Add `academyStatsResponseSchema` |
-| `packages/validators/src/upload.schema.ts` | Create | `uploadImageResponseSchema` |
-| `packages/validators/src/index.ts` | Modify | Export new schemas |
-| `packages/config/src/env.ts` | Modify | Add R2 env vars |
-| `apps/api/src/modules/user/user.repository.ts` | Modify | Add `findActiveAcademyForManager` method |
-| `apps/api/src/modules/user/user.repository.postgres.ts` | Modify | Implement `findActiveAcademyForManager` |
-| `apps/api/src/modules/user/user.service.ts` | Modify | Add `getActiveAcademyForManager` method |
-| `apps/api/src/modules/user/user.routes.ts` | Modify | Include `activeAcademy` in `/me` response |
-| `apps/api/src/modules/academy/academy.repository.ts` | Modify | Add `getStats` method |
-| `apps/api/src/modules/academy/academy.repository.postgres.ts` | Modify | Implement `getStats` |
-| `apps/api/src/modules/academy/academy.service.ts` | Modify | Add `getStats` method |
-| `apps/api/src/modules/academy/academy.routes.ts` | Modify | Add `GET /:academyId/stats` |
-| `apps/api/src/modules/upload/upload.config.ts` | Create | R2 S3 client setup |
-| `apps/api/src/modules/upload/upload.service.ts` | Create | Upload logic |
-| `apps/api/src/modules/upload/upload.routes.ts` | Create | Route with multer |
-| `apps/api/src/router.ts` | Modify | Register upload router |
+| File                                                          | Action | Responsibility                                |
+| ------------------------------------------------------------- | ------ | --------------------------------------------- |
+| `packages/validators/src/user.schema.ts`                      | Modify | Add `activeAcademy` to `userMeResponseSchema` |
+| `packages/validators/src/academy.schema.ts`                   | Modify | Add `academyStatsResponseSchema`              |
+| `packages/validators/src/upload.schema.ts`                    | Create | `uploadImageResponseSchema`                   |
+| `packages/validators/src/index.ts`                            | Modify | Export new schemas                            |
+| `packages/config/src/env.ts`                                  | Modify | Add R2 env vars                               |
+| `apps/api/src/modules/user/user.repository.ts`                | Modify | Add `findActiveAcademyForManager` method      |
+| `apps/api/src/modules/user/user.repository.postgres.ts`       | Modify | Implement `findActiveAcademyForManager`       |
+| `apps/api/src/modules/user/user.service.ts`                   | Modify | Add `getActiveAcademyForManager` method       |
+| `apps/api/src/modules/user/user.routes.ts`                    | Modify | Include `activeAcademy` in `/me` response     |
+| `apps/api/src/modules/academy/academy.repository.ts`          | Modify | Add `getStats` method                         |
+| `apps/api/src/modules/academy/academy.repository.postgres.ts` | Modify | Implement `getStats`                          |
+| `apps/api/src/modules/academy/academy.service.ts`             | Modify | Add `getStats` method                         |
+| `apps/api/src/modules/academy/academy.routes.ts`              | Modify | Add `GET /:academyId/stats`                   |
+| `apps/api/src/modules/upload/upload.config.ts`                | Create | R2 S3 client setup                            |
+| `apps/api/src/modules/upload/upload.service.ts`               | Create | Upload logic                                  |
+| `apps/api/src/modules/upload/upload.routes.ts`                | Create | Route with multer                             |
+| `apps/api/src/router.ts`                                      | Modify | Register upload router                        |
 
 ### Mobile — New/Modified Files
 
-| File | Action | Responsibility |
-|------|--------|---------------|
-| `apps/mobile/lib/api.ts` | Create | Fetch wrapper with Clerk token |
-| `apps/mobile/lib/query-client.ts` | Create | QueryClient singleton |
-| `apps/mobile/lib/hooks/use-user.ts` | Create | `useCurrentUser()` hook |
-| `apps/mobile/lib/hooks/use-academy.ts` | Create | Academy query/mutation hooks |
-| `apps/mobile/lib/hooks/use-upload.ts` | Create | `useUploadImage()` hook |
-| `apps/mobile/lib/academy-context.tsx` | Create | AcademyContext + provider + hook |
-| `apps/mobile/app/(app)/_layout.tsx` | Modify | Role-based redirect + QueryClientProvider + AcademyContext |
-| `apps/mobile/app/(app)/create-academy.tsx` | Create | M-MGR-01 screen |
-| `apps/mobile/app/(app)/(manager)/_layout.tsx` | Create | Tab navigator |
-| `apps/mobile/app/(app)/(manager)/(home)/_layout.tsx` | Create | Stack navigator |
-| `apps/mobile/app/(app)/(manager)/(home)/index.tsx` | Create | M-MGR-02 dashboard |
-| `apps/mobile/app/(app)/(manager)/(home)/settings.tsx` | Create | M-MGR-03 settings |
-| `apps/mobile/components/StatCard.tsx` | Create | Dashboard stat card |
-| `apps/mobile/components/ClassCard.tsx` | Create | Class preview card |
-| `apps/mobile/components/ImagePickerField.tsx` | Create | Image picker with preview |
-| `apps/mobile/components/DatePickerField.tsx` | Create | Date picker wrapper |
+| File                                                  | Action | Responsibility                                             |
+| ----------------------------------------------------- | ------ | ---------------------------------------------------------- |
+| `apps/mobile/lib/api.ts`                              | Create | Fetch wrapper with Clerk token                             |
+| `apps/mobile/lib/query-client.ts`                     | Create | QueryClient singleton                                      |
+| `apps/mobile/lib/hooks/use-user.ts`                   | Create | `useCurrentUser()` hook                                    |
+| `apps/mobile/lib/hooks/use-academy.ts`                | Create | Academy query/mutation hooks                               |
+| `apps/mobile/lib/hooks/use-upload.ts`                 | Create | `useUploadImage()` hook                                    |
+| `apps/mobile/lib/academy-context.tsx`                 | Create | AcademyContext + provider + hook                           |
+| `apps/mobile/app/(app)/_layout.tsx`                   | Modify | Role-based redirect + QueryClientProvider + AcademyContext |
+| `apps/mobile/app/(app)/create-academy.tsx`            | Create | M-MGR-01 screen                                            |
+| `apps/mobile/app/(app)/(manager)/_layout.tsx`         | Create | Tab navigator                                              |
+| `apps/mobile/app/(app)/(manager)/(home)/_layout.tsx`  | Create | Stack navigator                                            |
+| `apps/mobile/app/(app)/(manager)/(home)/index.tsx`    | Create | M-MGR-02 dashboard                                         |
+| `apps/mobile/app/(app)/(manager)/(home)/settings.tsx` | Create | M-MGR-03 settings                                          |
+| `apps/mobile/components/StatCard.tsx`                 | Create | Dashboard stat card                                        |
+| `apps/mobile/components/ClassCard.tsx`                | Create | Class preview card                                         |
+| `apps/mobile/components/ImagePickerField.tsx`         | Create | Image picker with preview                                  |
+| `apps/mobile/components/DatePickerField.tsx`          | Create | Date picker wrapper                                        |
 
 ---
 
@@ -64,6 +64,7 @@
 **Status:** ✅ Completed
 
 **Files:**
+
 - Modify: `apps/mobile/package.json`
 - Modify: `apps/api/package.json`
 
@@ -88,6 +89,7 @@ pnpm --filter @tatame/api add -D @types/multer
 cd /Volumes/ExternalDisk1/repos/tatame-v2
 pnpm install
 ```
+
 Expected: no errors, lock file updated.
 
 - [x] **Step 4: Commit**
@@ -104,6 +106,7 @@ git commit -m "chore: add dependencies for manager core screens"
 **Status:** ✅ Completed
 
 **Files:**
+
 - Modify: `packages/validators/src/user.schema.ts`
 - Modify: `packages/validators/src/index.ts`
 - Modify: `apps/api/src/modules/user/user.repository.ts`
@@ -174,7 +177,13 @@ In `apps/api/src/modules/user/user.repository.postgres.ts`, update the imports a
 
 ```typescript
 import { and, eq } from "drizzle-orm";
-import { users, userRoles, academyMemberships, academies, type Database } from "@tatame/db";
+import {
+  users,
+  userRoles,
+  academyMemberships,
+  academies,
+  type Database,
+} from "@tatame/db";
 import type { IUserRepository, UserRow } from "./user.repository.js";
 ```
 
@@ -234,7 +243,7 @@ userRouter.get("/me", requireSession, async (req, res, next) => {
 
     if (!row) {
       res.status(404).json({
-        error: "User not provisioned yet; wait for Clerk webhook sync",
+        error: "; wait for Clerk webhook sync",
       });
       return;
     }
@@ -270,6 +279,7 @@ cd /Volumes/ExternalDisk1/repos/tatame-v2
 pnpm --filter @tatame/validators build
 pnpm --filter @tatame/api build
 ```
+
 Expected: no type errors.
 
 - [x] **Step 8: Run existing tests**
@@ -278,6 +288,7 @@ Expected: no type errors.
 cd /Volumes/ExternalDisk1/repos/tatame-v2
 pnpm --filter @tatame/api test
 ```
+
 Expected: all existing tests pass (update any snapshots if needed for the new `activeAcademy` field).
 
 - [x] **Step 9: Commit**
@@ -298,6 +309,7 @@ git commit -m "feat(api): extend /me response with activeAcademy for managers"
 **Status:** ✅ Completed
 
 **Files:**
+
 - Modify: `packages/config/src/env.ts`
 - Create: `packages/validators/src/upload.schema.ts`
 - Modify: `packages/validators/src/index.ts`
@@ -357,7 +369,11 @@ export function getR2Client(): S3Client {
   if (client) return client;
 
   const env = loadEnv();
-  if (!env.R2_ACCOUNT_ID || !env.R2_ACCESS_KEY_ID || !env.R2_SECRET_ACCESS_KEY) {
+  if (
+    !env.R2_ACCOUNT_ID ||
+    !env.R2_ACCESS_KEY_ID ||
+    !env.R2_SECRET_ACCESS_KEY
+  ) {
     throw new Error("R2 credentials not configured");
   }
 
@@ -508,6 +524,7 @@ pnpm --filter @tatame/validators build
 pnpm --filter @tatame/config build
 pnpm --filter @tatame/api build
 ```
+
 Expected: no type errors.
 
 - [x] **Step 9: Commit**
@@ -526,6 +543,7 @@ git commit -m "feat(api): add image upload module with Cloudflare R2"
 **Status:** ✅ Completed
 
 **Files:**
+
 - Modify: `packages/validators/src/academy.schema.ts`
 - Modify: `packages/validators/src/index.ts`
 - Modify: `apps/api/src/modules/academy/academy.repository.ts`
@@ -685,6 +703,7 @@ pnpm --filter @tatame/validators build
 pnpm --filter @tatame/api build
 pnpm --filter @tatame/api test
 ```
+
 Expected: build succeeds, all tests pass.
 
 - [x] **Step 8: Commit**
@@ -702,6 +721,7 @@ git commit -m "feat(api): add GET /academies/:id/stats endpoint for manager dash
 **Status:** ✅ Completed — also added `academy-context`, `use-user`, and minimal routes so redirects and `tsc` succeed (Task 7 replaces manager shell with tabs).
 
 **Files:**
+
 - Create: `apps/mobile/lib/api.ts`
 - Create: `apps/mobile/lib/query-client.ts`
 - Modify: `apps/mobile/app/(app)/_layout.tsx`
@@ -714,8 +734,8 @@ Create `apps/mobile/lib/api.ts`:
 import { useAuth } from "@clerk/clerk-expo";
 
 const API_BASE_URL =
-  (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env
-    ?.EXPO_PUBLIC_API_URL ?? "http://localhost:3001/v1";
+  (globalThis as { process?: { env?: Record<string, string | undefined> } })
+    .process?.env?.EXPO_PUBLIC_API_URL ?? "http://localhost:3001/v1";
 
 type FetchOptions = {
   method?: string;
@@ -741,7 +761,8 @@ async function request<T>(path: string, opts: FetchOptions = {}): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method,
     headers,
-    body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
+    body:
+      body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
   });
 
   if (!res.ok) {
@@ -790,7 +811,11 @@ export function useApi() {
       const token = await getToken();
       const formData = new FormData();
       formData.append("image", file as unknown as Blob);
-      return request("/uploads/image", { method: "POST", body: formData, token });
+      return request("/uploads/image", {
+        method: "POST",
+        body: formData,
+        token,
+      });
     },
   };
 }
@@ -893,6 +918,7 @@ function AppRouter() {
 cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/mobile
 npx tsc --noEmit
 ```
+
 Expected: will have errors for missing hooks files — that's OK, we create them next.
 
 - [x] **Step 5: Commit**
@@ -909,6 +935,7 @@ git commit -m "feat(mobile): add API client and TanStack Query setup"
 **Status:** ✅ Completed
 
 **Files:**
+
 - Create: `apps/mobile/lib/academy-context.tsx`
 - Create: `apps/mobile/lib/hooks/use-user.ts`
 - Create: `apps/mobile/lib/hooks/use-academy.ts`
@@ -1065,6 +1092,7 @@ git commit -m "feat(mobile): add academy context and API hooks"
 **Status:** ✅ Completed
 
 **Files:**
+
 - Create: `apps/mobile/app/(app)/(manager)/_layout.tsx`
 - Create: `apps/mobile/app/(app)/(manager)/(home)/_layout.tsx`
 - Create: `apps/mobile/app/(app)/(manager)/(members)/index.tsx` (placeholder)
@@ -1219,6 +1247,7 @@ git commit -m "feat(mobile): add manager tab navigator with placeholders"
 **Status:** ✅ Completed
 
 **Files:**
+
 - Create: `apps/mobile/components/ImagePickerField.tsx`
 - Create: `apps/mobile/components/DatePickerField.tsx`
 - Create: `apps/mobile/components/StatCard.tsx`
@@ -1499,6 +1528,7 @@ git commit -m "feat(mobile): update GradientButton and add shared components for
 **Status:** ✅ Completed
 
 **Files:**
+
 - Create: `apps/mobile/app/(app)/create-academy.tsx`
 
 - [x] **Step 1: Create the screen**
@@ -1730,6 +1760,7 @@ git commit -m "feat(mobile): add M-MGR-01 Create Academy screen"
 **Status:** ✅ Completed
 
 **Files:**
+
 - Create: `apps/mobile/app/(app)/(manager)/(home)/index.tsx`
 
 - [x] **Step 1: Create the dashboard screen**
@@ -1939,6 +1970,7 @@ git commit -m "feat(mobile): add M-MGR-02 Manager Dashboard screen"
 **Status:** ✅ Completed
 
 **Files:**
+
 - Create: `apps/mobile/app/(app)/(manager)/(home)/settings.tsx`
 
 - [x] **Step 1: Create the settings screen**
@@ -2208,6 +2240,7 @@ git commit -m "feat(mobile): add M-MGR-03 Academy Settings screen"
 cd /Volumes/ExternalDisk1/repos/tatame-v2
 pnpm build
 ```
+
 Expected: all packages build without errors.
 
 - [x] **Step 2: Run API tests**
@@ -2215,6 +2248,7 @@ Expected: all packages build without errors.
 ```bash
 pnpm --filter @tatame/api test
 ```
+
 Expected: all tests pass.
 
 - [x] **Step 3: Type-check mobile**
@@ -2223,6 +2257,7 @@ Expected: all tests pass.
 cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/mobile
 npx tsc --noEmit
 ```
+
 Expected: no type errors.
 
 - [ ] **Step 4: Test mobile app manually**
@@ -2233,6 +2268,7 @@ pnpm dev
 ```
 
 Verify:
+
 - App redirects correctly based on role + academy status
 - Create Academy form submits successfully
 - Dashboard loads stats and today's classes

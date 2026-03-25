@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
-import { View, ActivityIndicator } from "react-native";
-import { Redirect } from "expo-router";
+import { shouldForceUpdate } from "@/lib/version";
 import { useAuth } from "@clerk/clerk-expo";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { shouldForceUpdate } from "@/lib/version";
+import { Redirect } from "expo-router";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, View } from "react-native";
 
 export default function Index() {
   const { isSignedIn, isLoaded } = useAuth();
