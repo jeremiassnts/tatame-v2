@@ -9,12 +9,10 @@ export {
 export {
   activeAcademySchema,
   roleEnumSchema,
-  setInitialRoleBodySchema,
-  setInitialRoleResponseSchema,
+  syncUserBodySchema,
   userMeResponseSchema,
   type ActiveAcademy,
-  type SetInitialRoleBody,
-  type SetInitialRoleResponse,
+  type SyncUserBody,
   type UserMeResponse,
 } from "./user.schema.js";
 export {

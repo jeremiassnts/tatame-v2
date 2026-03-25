@@ -51,6 +51,36 @@ export class ApiError extends Error {
   }
 }
 
+const MAX_SYNC_RETRIES = 3;
+
+/**
+ * Sync current Clerk user to our database. Plain function (not a hook)
+ * so it can be called from event handlers. Pass the token from getToken().
+ * Retries up to 3 times on failure before throwing.
+ */
+export async function syncUser(
+  token: string,
+  role?: string | null,
+): Promise<void> {
+  const body: Record<string, string> = {};
+  if (role) body.role = role;
+
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= MAX_SYNC_RETRIES; attempt++) {
+    try {
+      await request("/users/me/sync", { method: "POST", body, token });
+      return;
+    } catch (err) {
+      lastError = err;
+      if (err instanceof ApiError && err.status === 400) throw err;
+      if (attempt < MAX_SYNC_RETRIES) {
+        await new Promise((r) => setTimeout(r, 1000 * attempt));
+      }
+    }
+  }
+  throw lastError;
+}
+
 export function useApi() {
   const { getToken } = useAuth();
 

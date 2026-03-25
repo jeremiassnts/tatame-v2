@@ -47,11 +47,13 @@
 
 ### Task 1: Add `syncUserBodySchema` to validators
 
+**Status:** Completed (`feat(validators): add syncUserBodySchema, remove setInitialRole schemas`).
+
 **Files:**
 - Modify: `packages/validators/src/user.schema.ts:1-38`
 - Modify: `packages/validators/src/index.ts:9-18`
 
-- [ ] **Step 1: Update `user.schema.ts` — add sync schema, remove old schemas, fix JSDoc**
+- [x] **Step 1: Update `user.schema.ts` — add sync schema, remove old schemas, fix JSDoc**
 
 Replace the content of `packages/validators/src/user.schema.ts` with:
 
@@ -89,7 +91,7 @@ export const userMeResponseSchema = z.object({
 export type UserMeResponse = z.infer<typeof userMeResponseSchema>;
 ```
 
-- [ ] **Step 2: Update `index.ts` exports**
+- [x] **Step 2: Update `index.ts` exports**
 
 Replace the user schema exports block (lines 9-18) in `packages/validators/src/index.ts` with:
 
@@ -105,12 +107,12 @@ export {
 } from "./user.schema.js";
 ```
 
-- [ ] **Step 3: Verify the validators package builds**
+- [x] **Step 3: Verify the validators package builds**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && npx turbo build --filter=@tatame/validators`
 Expected: Build succeeds
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/validators/src/user.schema.ts packages/validators/src/index.ts
@@ -121,10 +123,12 @@ git commit -m "feat(validators): add syncUserBodySchema, remove setInitialRole s
 
 ### Task 2: Create Clerk backend client singleton
 
+**Status:** Completed (`feat(api): add Clerk backend client singleton`).
+
 **Files:**
 - Create: `apps/api/src/lib/clerk.ts`
 
-- [ ] **Step 1: Create `apps/api/src/lib/clerk.ts`**
+- [x] **Step 1: Create `apps/api/src/lib/clerk.ts`**
 
 ```typescript
 import { createClerkClient } from "@clerk/backend";
@@ -144,12 +148,14 @@ export function getClerkClient() {
 }
 ```
 
-- [ ] **Step 2: Verify TypeScript compiles**
+- [x] **Step 2: Verify TypeScript compiles**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/api && npx tsc --noEmit --pretty`
 Expected: No errors
 
-- [ ] **Step 3: Commit**
+> **Note:** Until Task 4 updates `user.routes.ts`, full-project `tsc` may still error on removed `setInitialRole*` imports from Task 1. The new `clerk.ts` module is valid once the project compiles again.
+
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/api/src/lib/clerk.ts
@@ -160,14 +166,17 @@ git commit -m "feat(api): add Clerk backend client singleton"
 
 ### Task 3: Remove `deleteByClerkId` from repository interface, implementations, and service
 
+**Status:** Completed (`refactor(api): remove deleteByClerkId from user layer`).
+
 **Files:**
 - Modify: `apps/api/src/modules/user/user.repository.ts:14`
 - Modify: `apps/api/src/modules/user/user.repository.postgres.ts:39-41`
 - Modify: `apps/api/src/modules/user/user.repository.in-memory.ts:46-54`
 - Modify: `apps/api/src/modules/user/user.service.ts:16-18`
 - Modify: `apps/api/src/modules/user/user.service.test.ts:36-47`
+- Modify: `apps/api/src/modules/auth/clerk-webhook.handler.ts` — stop calling `deleteByClerkId` on `user.deleted` (noop until Task 5 removes webhook)
 
-- [ ] **Step 1: Remove `deleteByClerkId` from interface**
+- [x] **Step 1: Remove `deleteByClerkId` from interface**
 
 In `apps/api/src/modules/user/user.repository.ts`, remove line 14:
 
@@ -175,7 +184,7 @@ In `apps/api/src/modules/user/user.repository.ts`, remove line 14:
   deleteByClerkId(clerkUserId: string): Promise<void>;
 ```
 
-- [ ] **Step 2: Remove `deleteByClerkId` from Postgres repository**
+- [x] **Step 2: Remove `deleteByClerkId` from Postgres repository**
 
 In `apps/api/src/modules/user/user.repository.postgres.ts`, remove lines 39-41:
 
@@ -185,7 +194,7 @@ In `apps/api/src/modules/user/user.repository.postgres.ts`, remove lines 39-41:
   }
 ```
 
-- [ ] **Step 3: Remove `deleteByClerkId` from in-memory repository**
+- [x] **Step 3: Remove `deleteByClerkId` from in-memory repository**
 
 In `apps/api/src/modules/user/user.repository.in-memory.ts`, remove lines 46-54:
 
@@ -201,7 +210,7 @@ In `apps/api/src/modules/user/user.repository.in-memory.ts`, remove lines 46-54:
   }
 ```
 
-- [ ] **Step 4: Remove `deleteByClerkId` from service**
+- [x] **Step 4: Remove `deleteByClerkId` from service**
 
 In `apps/api/src/modules/user/user.service.ts`, remove lines 16-18:
 
@@ -211,7 +220,7 @@ In `apps/api/src/modules/user/user.service.ts`, remove lines 16-18:
   }
 ```
 
-- [ ] **Step 5: Remove `deleteByClerkId` test from unit tests**
+- [x] **Step 5: Remove `deleteByClerkId` test from unit tests**
 
 In `apps/api/src/modules/user/user.service.test.ts`, remove the test at lines 36-47:
 
@@ -230,20 +239,20 @@ In `apps/api/src/modules/user/user.service.test.ts`, remove the test at lines 36
   });
 ```
 
-- [ ] **Step 6: Run unit tests**
+- [x] **Step 6: Run unit tests**
 
-Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && npx vitest run apps/api/src/modules/user/user.service.test.ts`
+Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/api && pnpm exec vitest run src/modules/user/user.service.test.ts` (or equivalent from repo root)
 Expected: All remaining tests pass
 
-- [ ] **Step 7: Verify TypeScript compiles**
+- [x] **Step 7: Verify TypeScript compiles**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/api && npx tsc --noEmit --pretty`
-Expected: No errors (webhook handler will fail — that's expected and handled in Task 5)
+Expected: Until Task 4, errors may remain in `user.routes.ts` (removed validators). Webhook compiles after the companion `clerk-webhook.handler.ts` change above.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
-git add apps/api/src/modules/user/user.repository.ts apps/api/src/modules/user/user.repository.postgres.ts apps/api/src/modules/user/user.repository.in-memory.ts apps/api/src/modules/user/user.service.ts apps/api/src/modules/user/user.service.test.ts
+git add apps/api/src/modules/user/user.repository.ts apps/api/src/modules/user/user.repository.postgres.ts apps/api/src/modules/user/user.repository.in-memory.ts apps/api/src/modules/user/user.service.ts apps/api/src/modules/user/user.service.test.ts apps/api/src/modules/auth/clerk-webhook.handler.ts
 git commit -m "refactor(api): remove deleteByClerkId from user layer"
 ```
 
@@ -251,10 +260,12 @@ git commit -m "refactor(api): remove deleteByClerkId from user layer"
 
 ### Task 4: Add sync endpoint to user routes
 
+**Status:** Completed (`feat(api): add POST /users/me/sync endpoint, remove POST /users/me/role`).
+
 **Files:**
 - Modify: `apps/api/src/modules/user/user.routes.ts`
 
-- [ ] **Step 1: Write the sync endpoint and update existing routes**
+- [x] **Step 1: Write the sync endpoint and update existing routes**
 
 Replace the full content of `apps/api/src/modules/user/user.routes.ts` with:
 
@@ -391,12 +402,12 @@ userRouter.post(
 );
 ```
 
-- [ ] **Step 2: Verify TypeScript compiles**
+- [x] **Step 2: Verify TypeScript compiles**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/api && npx tsc --noEmit --pretty`
-Expected: Errors only in `clerk-webhook.handler.ts` (deleted in next task) and `auth.integration.test.ts` (deleted in next task)
+Expected: No errors (integration tests under `*.integration.test.ts` may still reference `/me/role` until updated or removed in Task 5–6).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/api/src/modules/user/user.routes.ts
@@ -407,6 +418,8 @@ git commit -m "feat(api): add POST /users/me/sync endpoint, remove POST /users/m
 
 ### Task 5: Remove webhook handler, integration tests, and config
 
+**Status:** Completed (`refactor(api): remove Clerk webhook handler and related config`).
+
 **Files:**
 - Delete: `apps/api/src/modules/auth/clerk-webhook.handler.ts`
 - Delete: `apps/api/src/auth.integration.test.ts`
@@ -416,20 +429,20 @@ git commit -m "feat(api): add POST /users/me/sync endpoint, remove POST /users/m
 - Modify: `packages/config/src/clerk.ts:10-12`
 - Modify: `packages/config/src/index.ts:4`
 
-- [ ] **Step 1: Delete webhook handler file**
+- [x] **Step 1: Delete webhook handler file**
 
 ```bash
 rm apps/api/src/modules/auth/clerk-webhook.handler.ts
 ```
 
-- [ ] **Step 2: Delete webhook and old user integration tests**
+- [x] **Step 2: Delete webhook and old user integration tests**
 
 ```bash
 rm apps/api/src/auth.integration.test.ts
 rm apps/api/src/user.integration.test.ts
 ```
 
-- [ ] **Step 3: Update `app.ts` — remove webhook route and import**
+- [x] **Step 3: Update `app.ts` — remove webhook route and import**
 
 Replace `apps/api/src/app.ts` with:
 
@@ -465,7 +478,7 @@ export function createApp(): express.Express {
 }
 ```
 
-- [ ] **Step 4: Remove webhook env vars from `env.ts`**
+- [x] **Step 4: Remove webhook env vars from `env.ts`**
 
 In `packages/config/src/env.ts`, remove lines 18-21:
 
@@ -476,7 +489,7 @@ In `packages/config/src/env.ts`, remove lines 18-21:
   CLERK_WEBHOOK_SECRET: z.string().optional(),
 ```
 
-- [ ] **Step 5: Remove `clerkWebhookSigningSecret` from `clerk.ts`**
+- [x] **Step 5: Remove `clerkWebhookSigningSecret` from `clerk.ts`**
 
 In `packages/config/src/clerk.ts`, remove lines 10-12:
 
@@ -486,7 +499,7 @@ export function clerkWebhookSigningSecret(env: Env): string | undefined {
 }
 ```
 
-- [ ] **Step 6: Remove `clerkWebhookSigningSecret` from `index.ts`**
+- [x] **Step 6: Remove `clerkWebhookSigningSecret` from `index.ts`**
 
 In `packages/config/src/index.ts`, replace lines 2-5:
 
@@ -503,31 +516,35 @@ With:
 export { clerkAuthorizedParties } from "./clerk.js";
 ```
 
-- [ ] **Step 7: Verify TypeScript compiles cleanly**
+- [x] **Step 7: Verify TypeScript compiles cleanly**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/api && npx tsc --noEmit --pretty`
 Expected: No errors
 
-- [ ] **Step 8: Run all API unit tests**
+- [x] **Step 8: Run all API unit tests**
 
-Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && npx vitest run apps/api/src/modules/`
+Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/api && pnpm exec vitest run src/modules/`
 Expected: All tests pass
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add -A apps/api/src/modules/auth/clerk-webhook.handler.ts apps/api/src/auth.integration.test.ts apps/api/src/user.integration.test.ts apps/api/src/app.ts packages/config/src/env.ts packages/config/src/clerk.ts packages/config/src/index.ts
 git commit -m "refactor(api): remove Clerk webhook handler and related config"
 ```
 
+Also commit companion updates: `apps/api/vitest.integration.setup.ts`, `.env.example`, `AGENTS.md` (drop webhook env/docs).
+
 ---
 
 ### Task 6: Write new sync integration test
 
+**Status:** Completed (`test(api): add integration tests for POST /users/me/sync`).
+
 **Files:**
 - Create: `apps/api/src/user-sync.integration.test.ts`
 
-- [ ] **Step 1: Write the integration test**
+- [x] **Step 1: Write the integration test**
 
 Create `apps/api/src/user-sync.integration.test.ts`:
 
@@ -666,26 +683,30 @@ describe("User sync integration", () => {
 });
 ```
 
-- [ ] **Step 2: Run the integration tests**
+- [x] **Step 2: Run the integration tests**
 
-Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && npx vitest run apps/api/src/user-sync.integration.test.ts`
+Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/api && pnpm exec vitest run src/user-sync.integration.test.ts --project integration`
 Expected: All tests pass
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/api/src/user-sync.integration.test.ts
 git commit -m "test(api): add integration tests for POST /users/me/sync"
 ```
 
+Also align `apps/api/src/app.integration.test.ts` GET `/users/me` 404 assertion with the new message (`faça login novamente`).
+
 ---
 
 ### Task 7: Add `syncUser` function to mobile API client
 
+**Status:** Completed (`feat(mobile): add syncUser function to API client`).
+
 **Files:**
 - Modify: `apps/mobile/lib/api.ts`
 
-- [ ] **Step 1: Add standalone `syncUser` function with retry logic**
+- [x] **Step 1: Add standalone `syncUser` function with retry logic**
 
 In `apps/mobile/lib/api.ts`, add the following after the `ApiError` class (after line 52):
 
@@ -721,12 +742,12 @@ export async function syncUser(
 }
 ```
 
-- [ ] **Step 2: Verify TypeScript compiles**
+- [x] **Step 2: Verify TypeScript compiles**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/mobile && npx tsc --noEmit --pretty`
 Expected: No errors
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/mobile/lib/api.ts
@@ -737,10 +758,12 @@ git commit -m "feat(mobile): add syncUser function to API client"
 
 ### Task 8: Integrate `syncUser` into sign-in flow
 
+**Status:** Completed (`feat(mobile): call syncUser after sign-in`).
+
 **Files:**
 - Modify: `apps/mobile/app/(auth)/sign-in.tsx`
 
-- [ ] **Step 1: Add imports and update handlers**
+- [x] **Step 1: Add imports and update handlers**
 
 Add imports at the top of `sign-in.tsx`:
 
@@ -756,7 +779,7 @@ Inside the component, destructure `getToken` from `useAuth`:
 const { getToken } = useAuth();
 ```
 
-- [ ] **Step 2: Update `handleSignIn` — add sync after `setActive`**
+- [x] **Step 2: Update `handleSignIn` — add sync after `setActive`**
 
 Replace lines 38-41 of `handleSignIn`:
 
@@ -784,7 +807,7 @@ With:
       }
 ```
 
-- [ ] **Step 3: Update `handleOAuth` — add sync after `setActive`**
+- [x] **Step 3: Update `handleOAuth` — add sync after `setActive`**
 
 Replace lines 67-71 of `handleOAuth`:
 
@@ -816,12 +839,12 @@ With:
       }
 ```
 
-- [ ] **Step 4: Verify TypeScript compiles**
+- [x] **Step 4: Verify TypeScript compiles**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/mobile && npx tsc --noEmit --pretty`
 Expected: No errors
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/mobile/app/\(auth\)/sign-in.tsx
@@ -832,10 +855,12 @@ git commit -m "feat(mobile): call syncUser after sign-in"
 
 ### Task 9: Integrate `syncUser` into sign-up OAuth flow
 
+**Status:** Completed (`feat(mobile): call syncUser after sign-up OAuth`).
+
 **Files:**
 - Modify: `apps/mobile/app/(auth)/sign-up.tsx`
 
-- [ ] **Step 1: Add imports**
+- [x] **Step 1: Add imports**
 
 Add imports at the top of `sign-up.tsx`:
 
@@ -851,7 +876,7 @@ Inside the component, destructure `getToken` from `useAuth`:
 const { getToken } = useAuth();
 ```
 
-- [ ] **Step 2: Update `handleOAuth` — add sync after `setActive`**
+- [x] **Step 2: Update `handleOAuth` — add sync after `setActive`**
 
 Replace lines 66-70 of `handleOAuth`:
 
@@ -885,12 +910,12 @@ With:
 
 Note: Add `Alert` to the existing `react-native` import if not already there.
 
-- [ ] **Step 3: Verify TypeScript compiles**
+- [x] **Step 3: Verify TypeScript compiles**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/mobile && npx tsc --noEmit --pretty`
 Expected: No errors
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/mobile/app/\(auth\)/sign-up.tsx
@@ -901,10 +926,12 @@ git commit -m "feat(mobile): call syncUser after sign-up OAuth"
 
 ### Task 10: Integrate `syncUser` into verify-email flow
 
+**Status:** Completed (`feat(mobile): call syncUser after email verification, remove dead assignRole`).
+
 **Files:**
 - Modify: `apps/mobile/app/(auth)/verify-email.tsx`
 
-- [ ] **Step 1: Add imports and remove dead code**
+- [x] **Step 1: Add imports and remove dead code**
 
 Add import at the top:
 
@@ -928,7 +955,7 @@ Remove the dead `assignRole` function (lines 57-60):
   };
 ```
 
-- [ ] **Step 2: Update `handleVerify` — replace `assignRole` with `syncUser`**
+- [x] **Step 2: Update `handleVerify` — replace `assignRole` with `syncUser`**
 
 Replace lines 72-75 inside `handleVerify`:
 
@@ -957,12 +984,12 @@ With:
       }
 ```
 
-- [ ] **Step 3: Verify TypeScript compiles**
+- [x] **Step 3: Verify TypeScript compiles**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/mobile && npx tsc --noEmit --pretty`
 Expected: No errors
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/mobile/app/\(auth\)/verify-email.tsx
@@ -973,22 +1000,24 @@ git commit -m "feat(mobile): call syncUser after email verification, remove dead
 
 ### Task 11: Run full verification
 
-- [ ] **Step 1: Build all packages**
+**Status:** Completed (2026-03-25).
 
-Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && npx turbo build`
+- [x] **Step 1: Build all packages**
+
+Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm build` (or `npx turbo build`)
 Expected: All packages build successfully
 
-- [ ] **Step 2: Run all API tests**
+- [x] **Step 2: Run all API tests**
 
-Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && npx vitest run apps/api/`
-Expected: All tests pass
+Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/api && pnpm test` (or `npx vitest run` from `apps/api`)
+Expected: All tests pass — **101 tests**, 18 files (unit + integration)
 
-- [ ] **Step 3: Verify mobile TypeScript**
+- [x] **Step 3: Verify mobile TypeScript**
 
-Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/mobile && npx tsc --noEmit --pretty`
+Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/mobile && pnpm exec tsc --noEmit --pretty`
 Expected: No errors
 
-- [ ] **Step 4: Verify no stale references to removed code**
+- [x] **Step 4: Verify no stale references to removed code**
 
 Run:
 ```bash

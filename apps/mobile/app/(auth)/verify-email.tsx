@@ -2,10 +2,11 @@ import { useState, useRef, useEffect } from "react";
 import { View, Text, TextInput, Pressable, Alert, ActivityIndicator } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useSignUp } from "@clerk/clerk-expo";
+import { useAuth, useSignUp } from "@clerk/clerk-expo";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Timer } from "lucide-react-native";
 import { BackButton } from "@/components/BackButton";
+import { syncUser } from "@/lib/api";
 
 const CODE_LENGTH = 6;
 const EXPIRY_SECONDS = 5 * 60;
@@ -17,6 +18,7 @@ type ClerkError = {
 export default function VerifyEmailScreen() {
   const router = useRouter();
   const { email } = useLocalSearchParams<{ email?: string }>();
+  const { getToken } = useAuth();
   const { signUp, setActive } = useSignUp();
 
   const [code, setCode] = useState<string[]>(Array(CODE_LENGTH).fill(""));
@@ -54,11 +56,6 @@ export default function VerifyEmailScreen() {
     }
   };
 
-  const assignRole = async () => {
-    const userType = await AsyncStorage.getItem("userType");
-    if (!userType) return;
-  };
-
   const handleVerify = async () => {
     if (!signUp) return;
     const codeStr = code.join("");
@@ -71,8 +68,18 @@ export default function VerifyEmailScreen() {
       const result = await signUp.attemptEmailAddressVerification({ code: codeStr });
       if (result.status === "complete" && setActive) {
         await setActive({ session: result.createdSessionId });
-        await assignRole();
-        router.replace("/(app)");
+        const token = await getToken();
+        if (!token) {
+          setError("Sessão inválida. Tente novamente.");
+          return;
+        }
+        const userType = await AsyncStorage.getItem("userType");
+        try {
+          await syncUser(token, userType);
+          router.replace("/(app)");
+        } catch {
+          setError("Não foi possível sincronizar. Tente novamente.");
+        }
       }
     } catch (errorObj) {
       const err = errorObj as ClerkError;

@@ -36,10 +36,6 @@ export class PostgresUserRepository implements IUserRepository {
       });
   }
 
-  async deleteByClerkId(clerkUserId: string): Promise<void> {
-    await this.db.delete(users).where(eq(users.clerkUserId, clerkUserId));
-  }
-
   async findByClerkId(clerkUserId: string): Promise<UserRow | undefined> {
     const [row] = await this.db
       .select()
