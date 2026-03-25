@@ -758,10 +758,12 @@ git commit -m "feat(mobile): add syncUser function to API client"
 
 ### Task 8: Integrate `syncUser` into sign-in flow
 
+**Status:** Completed (`feat(mobile): call syncUser after sign-in`).
+
 **Files:**
 - Modify: `apps/mobile/app/(auth)/sign-in.tsx`
 
-- [ ] **Step 1: Add imports and update handlers**
+- [x] **Step 1: Add imports and update handlers**
 
 Add imports at the top of `sign-in.tsx`:
 
@@ -777,7 +779,7 @@ Inside the component, destructure `getToken` from `useAuth`:
 const { getToken } = useAuth();
 ```
 
-- [ ] **Step 2: Update `handleSignIn` — add sync after `setActive`**
+- [x] **Step 2: Update `handleSignIn` — add sync after `setActive`**
 
 Replace lines 38-41 of `handleSignIn`:
 
@@ -805,7 +807,7 @@ With:
       }
 ```
 
-- [ ] **Step 3: Update `handleOAuth` — add sync after `setActive`**
+- [x] **Step 3: Update `handleOAuth` — add sync after `setActive`**
 
 Replace lines 67-71 of `handleOAuth`:
 
@@ -837,12 +839,12 @@ With:
       }
 ```
 
-- [ ] **Step 4: Verify TypeScript compiles**
+- [x] **Step 4: Verify TypeScript compiles**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/mobile && npx tsc --noEmit --pretty`
 Expected: No errors
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/mobile/app/\(auth\)/sign-in.tsx
