@@ -50,7 +50,7 @@ describe("createApp integration", () => {
     const res = await request(app).get("/v1/users/me");
     expect(res.status).toBe(404);
     expect(String((res.body as { error?: string }).error)).toContain(
-      "not provisioned",
+      "faça login novamente",
     );
   });
 
