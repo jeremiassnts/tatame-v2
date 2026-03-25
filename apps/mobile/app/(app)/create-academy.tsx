@@ -3,8 +3,9 @@ import { FormInput } from "@/components/FormInput";
 import { GradientButton } from "@/components/GradientButton";
 import { ImagePickerField } from "@/components/ImagePickerField";
 import { useCreateAcademy } from "@/lib/hooks/use-academy";
-import { useCurrentUser } from "@/lib/hooks/use-user";
 import { useUploadImage } from "@/lib/hooks/use-upload";
+import { useCurrentUser } from "@/lib/hooks/use-user";
+import { useQueryClient } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createAcademyBodySchema, type CreateAcademyBody } from "@tatame/validators";
 import type { ImagePickerAsset } from "expo-image-picker";
@@ -14,15 +15,15 @@ import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
-  Platform,
   ScrollView,
   Text,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function CreateAcademyScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { data: user } = useCurrentUser();
   const createAcademy = useCreateAcademy();
   const uploadImage = useUploadImage();
@@ -72,6 +73,7 @@ export default function CreateAcademyScreen() {
         logoUrl,
         contactEmail: user.email,
       });
+      await queryClient.refetchQueries({ queryKey: ["user", "me"] });
       router.replace("/(app)/(manager)/(home)");
     } catch (e) {
       setGeneralError(
@@ -84,23 +86,19 @@ export default function CreateAcademyScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <View className="flex-1 px-6 pt-2">
-          <View className="mt-4 gap-2">
-            <Text
-              className="font-poppins-bold text-primary"
-              style={{ fontSize: 28, letterSpacing: -1 }}
-            >
-              Criar academia
-            </Text>
-            <Text className="font-poppins text-[15px] text-[#525252]">
-              Configure sua academia de Jiu-Jitsu
-            </Text>
-          </View>
-
+      <View className="flex-1 px-6 pt-2">
+        <View className="mt-4 gap-2">
+          <Text
+            className="font-poppins-bold text-primary"
+            style={{ fontSize: 28, letterSpacing: -1 }}
+          >
+            Criar academia
+          </Text>
+          <Text className="font-poppins text-[15px] text-[#525252]">
+            Configure sua academia de Jiu-Jitsu
+          </Text>
+        </View>
+        <KeyboardAvoidingView behavior="padding" className="flex-1">
           <ScrollView
             className="mt-6 flex-1"
             showsVerticalScrollIndicator={false}
@@ -174,27 +172,26 @@ export default function CreateAcademyScreen() {
               />
             </View>
           </ScrollView>
+        </KeyboardAvoidingView>
+        {generalError ? (
+          <Text className="mb-2 font-poppins text-sm text-red-500">
+            {generalError}
+          </Text>
+        ) : null}
 
-          {generalError ? (
-            <Text className="mb-2 font-poppins text-sm text-red-500">
-              {generalError}
-            </Text>
-          ) : null}
-
-          <View className="pb-2">
-            {submitting ? (
-              <View className="h-14 items-center justify-center rounded-xl bg-accent">
-                <ActivityIndicator color="#FFFFFF" />
-              </View>
-            ) : (
-              <GradientButton
-                label="Criar academia"
-                onPress={handleSubmit(onSubmit)}
-              />
-            )}
-          </View>
+        <View className="pb-2">
+          {submitting ? (
+            <View className="h-14 items-center justify-center rounded-xl bg-accent">
+              <ActivityIndicator color="#FFFFFF" />
+            </View>
+          ) : (
+            <GradientButton
+              label="Criar academia"
+              onPress={handleSubmit(onSubmit)}
+            />
+          )}
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </SafeAreaView>
   );
 }
