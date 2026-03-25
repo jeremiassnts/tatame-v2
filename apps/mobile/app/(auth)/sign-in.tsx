@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { View, Text, Pressable, Alert, ActivityIndicator } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useSignIn, useOAuth } from "@clerk/clerk-expo";
+import { useAuth, useOAuth, useSignIn } from "@clerk/clerk-expo";
 import * as WebBrowser from "expo-web-browser";
 import { BackButton } from "@/components/BackButton";
 import { FormInput } from "@/components/FormInput";
 import { Divider } from "@/components/Divider";
 import { SocialButtons } from "@/components/SocialButtons";
+import { syncUser } from "@/lib/api";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -20,6 +22,7 @@ type ClerkError = {
 
 export default function SignInScreen() {
   const router = useRouter();
+  const { getToken } = useAuth();
   const { signIn, setActive } = useSignIn();
   const { startOAuthFlow: startGoogle } = useOAuth({ strategy: "oauth_google" });
   const { startOAuthFlow: startApple } = useOAuth({ strategy: "oauth_apple" });
@@ -37,7 +40,18 @@ export default function SignInScreen() {
       const result = await signIn.create({ identifier: email, password });
       if (result.status === "complete" && setActive) {
         await setActive({ session: result.createdSessionId });
-        router.replace("/(app)");
+        const token = await getToken();
+        if (!token) {
+          setErrors({ general: "Sessão inválida. Tente novamente." });
+          return;
+        }
+        const userType = await AsyncStorage.getItem("userType");
+        try {
+          await syncUser(token, userType);
+          router.replace("/(app)");
+        } catch {
+          setErrors({ general: "Não foi possível sincronizar. Tente novamente." });
+        }
       }
     } catch (error) {
       const err = error as ClerkError;
@@ -67,7 +81,18 @@ export default function SignInScreen() {
       const result = await start();
       if (result.createdSessionId && result.setActive) {
         await result.setActive({ session: result.createdSessionId });
-        router.replace("/(app)");
+        const token = await getToken();
+        if (!token) {
+          Alert.alert("Erro", "Sessão inválida. Tente novamente.");
+          return;
+        }
+        const userType = await AsyncStorage.getItem("userType");
+        try {
+          await syncUser(token, userType);
+          router.replace("/(app)");
+        } catch {
+          Alert.alert("Erro", "Não foi possível sincronizar. Tente novamente.");
+        }
       }
     } catch {
       // cancelled
