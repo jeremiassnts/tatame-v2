@@ -33,19 +33,6 @@ describe("UserService", () => {
     expect(await svc.getActiveRole(u.id)).toBe("student");
   });
 
-  it("deleteByClerkId removes user", async () => {
-    const repo = new InMemoryUserRepository();
-    const svc = new UserService(repo);
-    await svc.upsertFromClerk({
-      clerkUserId: "x",
-      email: "x@example.com",
-      name: "X",
-      profileImageUrl: null,
-    });
-    await svc.deleteByClerkId("x");
-    expect(await svc.getByClerkId("x")).toBeNull();
-  });
-
   it("getActiveRole returns null when none", async () => {
     const repo = new InMemoryUserRepository();
     const svc = new UserService(repo);

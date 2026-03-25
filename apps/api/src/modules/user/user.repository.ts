@@ -11,8 +11,6 @@ export interface IUserRepository {
     profileImageUrl: string | null;
   }): Promise<void>;
 
-  deleteByClerkId(clerkUserId: string): Promise<void>;
-
   findByClerkId(clerkUserId: string): Promise<UserRow | undefined>;
 
   findActiveRole(userId: string): Promise<string | undefined>;

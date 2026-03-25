@@ -3,7 +3,6 @@ import type { Request, Response } from "express";
 import { verifyWebhook } from "@clerk/express/webhooks";
 import { clerkWebhookSigningSecret, loadEnv } from "@tatame/config";
 import { getDb } from "../../lib/db.js";
-import { PostgresAcademyRepository } from "../academy/academy.repository.postgres.js";
 import { PostgresUserRepository } from "../user/user.repository.postgres.js";
 import { UserService } from "../user/user.service.js";
 
@@ -27,7 +26,6 @@ function displayName(data: UserJSON): string {
 
 const db = getDb();
 const userService = new UserService(new PostgresUserRepository(db));
-const academyRepo = new PostgresAcademyRepository(db);
 
 export async function handleClerkWebhook(
   req: Request,
@@ -61,20 +59,7 @@ export async function handleClerkWebhook(
     }
 
     if (evt.type === "user.deleted") {
-      const clerkId = evt.data.id;
-      if (clerkId) {
-        const user = await userService.getByClerkId(clerkId);
-        if (user && (await academyRepo.existsByOwner(user.id))) {
-          console.warn(
-            `[clerk webhook] Blocked deletion of user ${clerkId}: owns active academies`,
-          );
-          res.status(409).json({
-            error: "Cannot delete user who owns active academies",
-          });
-          return;
-        }
-        await userService.deleteByClerkId(clerkId);
-      }
+      // DB deletion deferred (user-sync spec); webhook will be removed in a follow-up task.
       res.json({ received: true });
       return;
     }

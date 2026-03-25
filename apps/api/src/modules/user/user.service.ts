@@ -13,10 +13,6 @@ export class UserService {
     await this.userRepo.upsert(data);
   }
 
-  async deleteByClerkId(clerkUserId: string): Promise<void> {
-    await this.userRepo.deleteByClerkId(clerkUserId);
-  }
-
   async getByClerkId(clerkUserId: string) {
     return (await this.userRepo.findByClerkId(clerkUserId)) ?? null;
   }
