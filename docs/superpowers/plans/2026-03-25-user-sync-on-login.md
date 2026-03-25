@@ -926,10 +926,12 @@ git commit -m "feat(mobile): call syncUser after sign-up OAuth"
 
 ### Task 10: Integrate `syncUser` into verify-email flow
 
+**Status:** Completed (`feat(mobile): call syncUser after email verification, remove dead assignRole`).
+
 **Files:**
 - Modify: `apps/mobile/app/(auth)/verify-email.tsx`
 
-- [ ] **Step 1: Add imports and remove dead code**
+- [x] **Step 1: Add imports and remove dead code**
 
 Add import at the top:
 
@@ -953,7 +955,7 @@ Remove the dead `assignRole` function (lines 57-60):
   };
 ```
 
-- [ ] **Step 2: Update `handleVerify` — replace `assignRole` with `syncUser`**
+- [x] **Step 2: Update `handleVerify` — replace `assignRole` with `syncUser`**
 
 Replace lines 72-75 inside `handleVerify`:
 
@@ -982,12 +984,12 @@ With:
       }
 ```
 
-- [ ] **Step 3: Verify TypeScript compiles**
+- [x] **Step 3: Verify TypeScript compiles**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/mobile && npx tsc --noEmit --pretty`
 Expected: No errors
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/mobile/app/\(auth\)/verify-email.tsx
