@@ -1,5 +1,6 @@
 # Tatame — notes for agents
 
+- **Git commits** — Write all commit messages in English (subject and body).
 - Architecture spec: `docs/superpowers/specs/2026-03-19-tatame-architecture-design.md`
 - Monorepo: **pnpm** workspaces + **Turborepo**
 - Database: **PostgreSQL** + **Drizzle** in `packages/db`
