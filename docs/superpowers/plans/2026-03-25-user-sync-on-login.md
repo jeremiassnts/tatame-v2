@@ -701,10 +701,12 @@ Also align `apps/api/src/app.integration.test.ts` GET `/users/me` 404 assertion 
 
 ### Task 7: Add `syncUser` function to mobile API client
 
+**Status:** Completed (`feat(mobile): add syncUser function to API client`).
+
 **Files:**
 - Modify: `apps/mobile/lib/api.ts`
 
-- [ ] **Step 1: Add standalone `syncUser` function with retry logic**
+- [x] **Step 1: Add standalone `syncUser` function with retry logic**
 
 In `apps/mobile/lib/api.ts`, add the following after the `ApiError` class (after line 52):
 
@@ -740,12 +742,12 @@ export async function syncUser(
 }
 ```
 
-- [ ] **Step 2: Verify TypeScript compiles**
+- [x] **Step 2: Verify TypeScript compiles**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/mobile && npx tsc --noEmit --pretty`
 Expected: No errors
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/mobile/lib/api.ts
