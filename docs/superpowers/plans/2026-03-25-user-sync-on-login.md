@@ -539,10 +539,12 @@ Also commit companion updates: `apps/api/vitest.integration.setup.ts`, `.env.exa
 
 ### Task 6: Write new sync integration test
 
+**Status:** Completed (`test(api): add integration tests for POST /users/me/sync`).
+
 **Files:**
 - Create: `apps/api/src/user-sync.integration.test.ts`
 
-- [ ] **Step 1: Write the integration test**
+- [x] **Step 1: Write the integration test**
 
 Create `apps/api/src/user-sync.integration.test.ts`:
 
@@ -681,17 +683,19 @@ describe("User sync integration", () => {
 });
 ```
 
-- [ ] **Step 2: Run the integration tests**
+- [x] **Step 2: Run the integration tests**
 
-Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && npx vitest run apps/api/src/user-sync.integration.test.ts`
+Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/api && pnpm exec vitest run src/user-sync.integration.test.ts --project integration`
 Expected: All tests pass
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/api/src/user-sync.integration.test.ts
 git commit -m "test(api): add integration tests for POST /users/me/sync"
 ```
+
+Also align `apps/api/src/app.integration.test.ts` GET `/users/me` 404 assertion with the new message (`faça login novamente`).
 
 ---
 
