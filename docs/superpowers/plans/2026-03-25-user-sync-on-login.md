@@ -166,14 +166,17 @@ git commit -m "feat(api): add Clerk backend client singleton"
 
 ### Task 3: Remove `deleteByClerkId` from repository interface, implementations, and service
 
+**Status:** Completed (`refactor(api): remove deleteByClerkId from user layer`).
+
 **Files:**
 - Modify: `apps/api/src/modules/user/user.repository.ts:14`
 - Modify: `apps/api/src/modules/user/user.repository.postgres.ts:39-41`
 - Modify: `apps/api/src/modules/user/user.repository.in-memory.ts:46-54`
 - Modify: `apps/api/src/modules/user/user.service.ts:16-18`
 - Modify: `apps/api/src/modules/user/user.service.test.ts:36-47`
+- Modify: `apps/api/src/modules/auth/clerk-webhook.handler.ts` — stop calling `deleteByClerkId` on `user.deleted` (noop until Task 5 removes webhook)
 
-- [ ] **Step 1: Remove `deleteByClerkId` from interface**
+- [x] **Step 1: Remove `deleteByClerkId` from interface**
 
 In `apps/api/src/modules/user/user.repository.ts`, remove line 14:
 
@@ -181,7 +184,7 @@ In `apps/api/src/modules/user/user.repository.ts`, remove line 14:
   deleteByClerkId(clerkUserId: string): Promise<void>;
 ```
 
-- [ ] **Step 2: Remove `deleteByClerkId` from Postgres repository**
+- [x] **Step 2: Remove `deleteByClerkId` from Postgres repository**
 
 In `apps/api/src/modules/user/user.repository.postgres.ts`, remove lines 39-41:
 
@@ -191,7 +194,7 @@ In `apps/api/src/modules/user/user.repository.postgres.ts`, remove lines 39-41:
   }
 ```
 
-- [ ] **Step 3: Remove `deleteByClerkId` from in-memory repository**
+- [x] **Step 3: Remove `deleteByClerkId` from in-memory repository**
 
 In `apps/api/src/modules/user/user.repository.in-memory.ts`, remove lines 46-54:
 
@@ -207,7 +210,7 @@ In `apps/api/src/modules/user/user.repository.in-memory.ts`, remove lines 46-54:
   }
 ```
 
-- [ ] **Step 4: Remove `deleteByClerkId` from service**
+- [x] **Step 4: Remove `deleteByClerkId` from service**
 
 In `apps/api/src/modules/user/user.service.ts`, remove lines 16-18:
 
@@ -217,7 +220,7 @@ In `apps/api/src/modules/user/user.service.ts`, remove lines 16-18:
   }
 ```
 
-- [ ] **Step 5: Remove `deleteByClerkId` test from unit tests**
+- [x] **Step 5: Remove `deleteByClerkId` test from unit tests**
 
 In `apps/api/src/modules/user/user.service.test.ts`, remove the test at lines 36-47:
 
@@ -236,20 +239,20 @@ In `apps/api/src/modules/user/user.service.test.ts`, remove the test at lines 36
   });
 ```
 
-- [ ] **Step 6: Run unit tests**
+- [x] **Step 6: Run unit tests**
 
-Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && npx vitest run apps/api/src/modules/user/user.service.test.ts`
+Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/api && pnpm exec vitest run src/modules/user/user.service.test.ts` (or equivalent from repo root)
 Expected: All remaining tests pass
 
-- [ ] **Step 7: Verify TypeScript compiles**
+- [x] **Step 7: Verify TypeScript compiles**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/api && npx tsc --noEmit --pretty`
-Expected: No errors (webhook handler will fail — that's expected and handled in Task 5)
+Expected: Until Task 4, errors may remain in `user.routes.ts` (removed validators). Webhook compiles after the companion `clerk-webhook.handler.ts` change above.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
-git add apps/api/src/modules/user/user.repository.ts apps/api/src/modules/user/user.repository.postgres.ts apps/api/src/modules/user/user.repository.in-memory.ts apps/api/src/modules/user/user.service.ts apps/api/src/modules/user/user.service.test.ts
+git add apps/api/src/modules/user/user.repository.ts apps/api/src/modules/user/user.repository.postgres.ts apps/api/src/modules/user/user.repository.in-memory.ts apps/api/src/modules/user/user.service.ts apps/api/src/modules/user/user.service.test.ts apps/api/src/modules/auth/clerk-webhook.handler.ts
 git commit -m "refactor(api): remove deleteByClerkId from user layer"
 ```
 
