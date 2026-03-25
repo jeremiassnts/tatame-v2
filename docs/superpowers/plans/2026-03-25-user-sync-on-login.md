@@ -47,11 +47,13 @@
 
 ### Task 1: Add `syncUserBodySchema` to validators
 
+**Status:** Completed (`feat(validators): add syncUserBodySchema, remove setInitialRole schemas`).
+
 **Files:**
 - Modify: `packages/validators/src/user.schema.ts:1-38`
 - Modify: `packages/validators/src/index.ts:9-18`
 
-- [ ] **Step 1: Update `user.schema.ts` — add sync schema, remove old schemas, fix JSDoc**
+- [x] **Step 1: Update `user.schema.ts` — add sync schema, remove old schemas, fix JSDoc**
 
 Replace the content of `packages/validators/src/user.schema.ts` with:
 
@@ -89,7 +91,7 @@ export const userMeResponseSchema = z.object({
 export type UserMeResponse = z.infer<typeof userMeResponseSchema>;
 ```
 
-- [ ] **Step 2: Update `index.ts` exports**
+- [x] **Step 2: Update `index.ts` exports**
 
 Replace the user schema exports block (lines 9-18) in `packages/validators/src/index.ts` with:
 
@@ -105,12 +107,12 @@ export {
 } from "./user.schema.js";
 ```
 
-- [ ] **Step 3: Verify the validators package builds**
+- [x] **Step 3: Verify the validators package builds**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && npx turbo build --filter=@tatame/validators`
 Expected: Build succeeds
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/validators/src/user.schema.ts packages/validators/src/index.ts
@@ -121,10 +123,12 @@ git commit -m "feat(validators): add syncUserBodySchema, remove setInitialRole s
 
 ### Task 2: Create Clerk backend client singleton
 
+**Status:** Completed (`feat(api): add Clerk backend client singleton`).
+
 **Files:**
 - Create: `apps/api/src/lib/clerk.ts`
 
-- [ ] **Step 1: Create `apps/api/src/lib/clerk.ts`**
+- [x] **Step 1: Create `apps/api/src/lib/clerk.ts`**
 
 ```typescript
 import { createClerkClient } from "@clerk/backend";
@@ -144,12 +148,14 @@ export function getClerkClient() {
 }
 ```
 
-- [ ] **Step 2: Verify TypeScript compiles**
+- [x] **Step 2: Verify TypeScript compiles**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/api && npx tsc --noEmit --pretty`
 Expected: No errors
 
-- [ ] **Step 3: Commit**
+> **Note:** Until Task 4 updates `user.routes.ts`, full-project `tsc` may still error on removed `setInitialRole*` imports from Task 1. The new `clerk.ts` module is valid once the project compiles again.
+
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/api/src/lib/clerk.ts
