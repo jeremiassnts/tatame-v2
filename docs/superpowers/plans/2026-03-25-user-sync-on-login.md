@@ -260,10 +260,12 @@ git commit -m "refactor(api): remove deleteByClerkId from user layer"
 
 ### Task 4: Add sync endpoint to user routes
 
+**Status:** Completed (`feat(api): add POST /users/me/sync endpoint, remove POST /users/me/role`).
+
 **Files:**
 - Modify: `apps/api/src/modules/user/user.routes.ts`
 
-- [ ] **Step 1: Write the sync endpoint and update existing routes**
+- [x] **Step 1: Write the sync endpoint and update existing routes**
 
 Replace the full content of `apps/api/src/modules/user/user.routes.ts` with:
 
@@ -400,12 +402,12 @@ userRouter.post(
 );
 ```
 
-- [ ] **Step 2: Verify TypeScript compiles**
+- [x] **Step 2: Verify TypeScript compiles**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/api && npx tsc --noEmit --pretty`
-Expected: Errors only in `clerk-webhook.handler.ts` (deleted in next task) and `auth.integration.test.ts` (deleted in next task)
+Expected: No errors (integration tests under `*.integration.test.ts` may still reference `/me/role` until updated or removed in Task 5–6).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/api/src/modules/user/user.routes.ts
