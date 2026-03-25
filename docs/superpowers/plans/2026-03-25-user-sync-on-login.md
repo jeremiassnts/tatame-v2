@@ -418,6 +418,8 @@ git commit -m "feat(api): add POST /users/me/sync endpoint, remove POST /users/m
 
 ### Task 5: Remove webhook handler, integration tests, and config
 
+**Status:** Completed (`refactor(api): remove Clerk webhook handler and related config`).
+
 **Files:**
 - Delete: `apps/api/src/modules/auth/clerk-webhook.handler.ts`
 - Delete: `apps/api/src/auth.integration.test.ts`
@@ -427,20 +429,20 @@ git commit -m "feat(api): add POST /users/me/sync endpoint, remove POST /users/m
 - Modify: `packages/config/src/clerk.ts:10-12`
 - Modify: `packages/config/src/index.ts:4`
 
-- [ ] **Step 1: Delete webhook handler file**
+- [x] **Step 1: Delete webhook handler file**
 
 ```bash
 rm apps/api/src/modules/auth/clerk-webhook.handler.ts
 ```
 
-- [ ] **Step 2: Delete webhook and old user integration tests**
+- [x] **Step 2: Delete webhook and old user integration tests**
 
 ```bash
 rm apps/api/src/auth.integration.test.ts
 rm apps/api/src/user.integration.test.ts
 ```
 
-- [ ] **Step 3: Update `app.ts` — remove webhook route and import**
+- [x] **Step 3: Update `app.ts` — remove webhook route and import**
 
 Replace `apps/api/src/app.ts` with:
 
@@ -476,7 +478,7 @@ export function createApp(): express.Express {
 }
 ```
 
-- [ ] **Step 4: Remove webhook env vars from `env.ts`**
+- [x] **Step 4: Remove webhook env vars from `env.ts`**
 
 In `packages/config/src/env.ts`, remove lines 18-21:
 
@@ -487,7 +489,7 @@ In `packages/config/src/env.ts`, remove lines 18-21:
   CLERK_WEBHOOK_SECRET: z.string().optional(),
 ```
 
-- [ ] **Step 5: Remove `clerkWebhookSigningSecret` from `clerk.ts`**
+- [x] **Step 5: Remove `clerkWebhookSigningSecret` from `clerk.ts`**
 
 In `packages/config/src/clerk.ts`, remove lines 10-12:
 
@@ -497,7 +499,7 @@ export function clerkWebhookSigningSecret(env: Env): string | undefined {
 }
 ```
 
-- [ ] **Step 6: Remove `clerkWebhookSigningSecret` from `index.ts`**
+- [x] **Step 6: Remove `clerkWebhookSigningSecret` from `index.ts`**
 
 In `packages/config/src/index.ts`, replace lines 2-5:
 
@@ -514,22 +516,24 @@ With:
 export { clerkAuthorizedParties } from "./clerk.js";
 ```
 
-- [ ] **Step 7: Verify TypeScript compiles cleanly**
+- [x] **Step 7: Verify TypeScript compiles cleanly**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/api && npx tsc --noEmit --pretty`
 Expected: No errors
 
-- [ ] **Step 8: Run all API unit tests**
+- [x] **Step 8: Run all API unit tests**
 
-Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && npx vitest run apps/api/src/modules/`
+Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/api && pnpm exec vitest run src/modules/`
 Expected: All tests pass
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add -A apps/api/src/modules/auth/clerk-webhook.handler.ts apps/api/src/auth.integration.test.ts apps/api/src/user.integration.test.ts apps/api/src/app.ts packages/config/src/env.ts packages/config/src/clerk.ts packages/config/src/index.ts
 git commit -m "refactor(api): remove Clerk webhook handler and related config"
 ```
+
+Also commit companion updates: `apps/api/vitest.integration.setup.ts`, `.env.example`, `AGENTS.md` (drop webhook env/docs).
 
 ---
 
