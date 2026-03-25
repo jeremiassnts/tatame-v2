@@ -1,20 +1,18 @@
+import { Avatar } from "@/components/Avatar";
 import { useAcademyContext } from "@/lib/academy-context";
 import { useApi } from "@/lib/api";
 import { useAcademy, useAcademyStats } from "@/lib/hooks/use-academy";
 import { useCurrentUser } from "@/lib/hooks/use-user";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
   Calendar,
   ChevronRight,
   CreditCard,
-  Grid3x3,
   UserPlus
 } from "lucide-react-native";
 import { useState } from "react";
 import {
-  Image,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -157,22 +155,11 @@ export default function ManagerDashboard() {
               </Text>
             </View>
             <View className="flex-row items-center gap-2">
-              <LinearGradient
-                colors={["#A078E8", "#7C5CBF"]}
-                start={{ x: 0.5, y: 0 }}
-                end={{ x: 0.5, y: 1 }}
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 22,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Text className="font-poppins-semibold text-lg text-white">
-                  {avatarLetter}
-                </Text>
-              </LinearGradient>
+              <Avatar
+                variant="user"
+                imageUrl={me?.profileImageUrl}
+                fallbackLetter={avatarLetter}
+              />
             </View>
           </View>
 
@@ -181,28 +168,7 @@ export default function ManagerDashboard() {
             style={{ padding: 20, gap: 16 }}
           >
             <View className="flex-row items-center gap-3">
-              {academyLogoUrl ? (
-                <Image
-                  source={{ uri: academyLogoUrl }}
-                  className="h-11 w-11"
-                  style={{ borderRadius: 12 }}
-                />
-              ) : (
-                <LinearGradient
-                  colors={["#A078E8", "#7C5CBF"]}
-                  start={{ x: 0.5, y: 0 }}
-                  end={{ x: 0.5, y: 1 }}
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 12,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Grid3x3 size={22} color="#FFFFFF" />
-                </LinearGradient>
-              )}
+              <Avatar variant="brand" imageUrl={academyLogoUrl} />
               <View className="min-w-0 flex-1" style={{ gap: 2 }}>
                 <Text className="font-poppins-semibold text-base text-primary">
                   {academyName}
