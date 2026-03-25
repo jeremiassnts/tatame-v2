@@ -855,10 +855,12 @@ git commit -m "feat(mobile): call syncUser after sign-in"
 
 ### Task 9: Integrate `syncUser` into sign-up OAuth flow
 
+**Status:** Completed (`feat(mobile): call syncUser after sign-up OAuth`).
+
 **Files:**
 - Modify: `apps/mobile/app/(auth)/sign-up.tsx`
 
-- [ ] **Step 1: Add imports**
+- [x] **Step 1: Add imports**
 
 Add imports at the top of `sign-up.tsx`:
 
@@ -874,7 +876,7 @@ Inside the component, destructure `getToken` from `useAuth`:
 const { getToken } = useAuth();
 ```
 
-- [ ] **Step 2: Update `handleOAuth` — add sync after `setActive`**
+- [x] **Step 2: Update `handleOAuth` — add sync after `setActive`**
 
 Replace lines 66-70 of `handleOAuth`:
 
@@ -908,12 +910,12 @@ With:
 
 Note: Add `Alert` to the existing `react-native` import if not already there.
 
-- [ ] **Step 3: Verify TypeScript compiles**
+- [x] **Step 3: Verify TypeScript compiles**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/mobile && npx tsc --noEmit --pretty`
 Expected: No errors
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/mobile/app/\(auth\)/sign-up.tsx
