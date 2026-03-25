@@ -1,8 +1,5 @@
 export { loadEnv, type Env } from "./env.js";
-export {
-  clerkAuthorizedParties,
-  clerkWebhookSigningSecret,
-} from "./clerk.js";
+export { clerkAuthorizedParties } from "./clerk.js";
 export {
   BELT_ORDER,
   MAX_STRIPES_BY_BELT,

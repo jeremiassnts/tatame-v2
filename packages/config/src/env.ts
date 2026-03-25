@@ -15,10 +15,6 @@ const envSchema = z.object({
   CLERK_AUTHORIZED_PARTIES: z.string().optional(),
   /** Minimum mobile app version required (semver, e.g. "1.0.0"). Clients below this are force-updated. */
   MIN_MOBILE_VERSION: z.string().default("1.0.0"),
-  /** From Clerk Dashboard → Webhooks → signing secret (preferred env name for @clerk/backend) */
-  CLERK_WEBHOOK_SIGNING_SECRET: z.string().optional(),
-  /** @deprecated use CLERK_WEBHOOK_SIGNING_SECRET — still read as fallback */
-  CLERK_WEBHOOK_SECRET: z.string().optional(),
   R2_ACCOUNT_ID: z.string().optional(),
   R2_ACCESS_KEY_ID: z.string().optional(),
   R2_SECRET_ACCESS_KEY: z.string().optional(),
