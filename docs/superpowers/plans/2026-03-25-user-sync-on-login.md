@@ -1000,22 +1000,24 @@ git commit -m "feat(mobile): call syncUser after email verification, remove dead
 
 ### Task 11: Run full verification
 
-- [ ] **Step 1: Build all packages**
+**Status:** Completed (2026-03-25).
 
-Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && npx turbo build`
+- [x] **Step 1: Build all packages**
+
+Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm build` (or `npx turbo build`)
 Expected: All packages build successfully
 
-- [ ] **Step 2: Run all API tests**
+- [x] **Step 2: Run all API tests**
 
-Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && npx vitest run apps/api/`
-Expected: All tests pass
+Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/api && pnpm test` (or `npx vitest run` from `apps/api`)
+Expected: All tests pass — **101 tests**, 18 files (unit + integration)
 
-- [ ] **Step 3: Verify mobile TypeScript**
+- [x] **Step 3: Verify mobile TypeScript**
 
-Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/mobile && npx tsc --noEmit --pretty`
+Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/mobile && pnpm exec tsc --noEmit --pretty`
 Expected: No errors
 
-- [ ] **Step 4: Verify no stale references to removed code**
+- [x] **Step 4: Verify no stale references to removed code**
 
 Run:
 ```bash
