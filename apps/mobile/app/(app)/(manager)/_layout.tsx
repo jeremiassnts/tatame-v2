@@ -1,7 +1,10 @@
 import { Tabs } from "expo-router";
 import { Calendar, Home, MoreHorizontal, Users } from "lucide-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ManagerLayout() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       screenOptions={{
@@ -13,8 +16,8 @@ export default function ManagerLayout() {
           backgroundColor: "#1A1A1A",
           borderTopColor: "#2A2A2A",
           borderTopWidth: 1,
-          height: 72,
-          paddingBottom: 16,
+          height: 56 + Math.max(insets.bottom, 8),
+          paddingBottom: Math.max(insets.bottom, 8),
           paddingTop: 8,
         },
         tabBarActiveTintColor: "#A078E8",
