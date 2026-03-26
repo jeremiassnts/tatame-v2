@@ -294,13 +294,17 @@ git commit -m "feat(api): enrich class responses with instructor name + add chec
 
 ## Task 3: Create mobile query hooks
 
+**Status:** Done — commit `feat(mobile): add query hooks for classes, checkins, graduations, subscriptions`.
+
+**Implementation notes (vs. snippets below):** `use-checkin` uses `CreateCheckinResponse` from `@tatame/validators` for the mutation return type and `encodeURIComponent(date)` on the class check-ins URL. `use-subscription` matches the API shape `{ subscription, plan }` as sibling fields (not `plan` nested under `subscription`). `use-classes` types `instructorName` as optional `string | null`.
+
 **Files:**
 - Create: `apps/mobile/lib/hooks/use-classes.ts`
 - Create: `apps/mobile/lib/hooks/use-checkin.ts`
 - Create: `apps/mobile/lib/hooks/use-graduation.ts`
 - Create: `apps/mobile/lib/hooks/use-subscription.ts`
 
-- [ ] **Step 1: Create use-classes.ts**
+- [x] **Step 1: Create use-classes.ts**
 
 ```typescript
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -383,7 +387,7 @@ export function useDeleteClass() {
 }
 ```
 
-- [ ] **Step 2: Create use-checkin.ts**
+- [x] **Step 2: Create use-checkin.ts**
 
 ```typescript
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -438,7 +442,7 @@ export function useCheckin() {
 }
 ```
 
-- [ ] **Step 3: Create use-graduation.ts**
+- [x] **Step 3: Create use-graduation.ts**
 
 ```typescript
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -471,7 +475,7 @@ export function useRegisterBelt() {
 }
 ```
 
-- [ ] **Step 4: Create use-subscription.ts**
+- [x] **Step 4: Create use-subscription.ts**
 
 ```typescript
 import { useQuery } from "@tanstack/react-query";
@@ -502,7 +506,7 @@ export function useMySubscription() {
 }
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/mobile/lib/hooks/use-classes.ts apps/mobile/lib/hooks/use-checkin.ts apps/mobile/lib/hooks/use-graduation.ts apps/mobile/lib/hooks/use-subscription.ts
