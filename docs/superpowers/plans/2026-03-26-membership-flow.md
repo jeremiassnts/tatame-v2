@@ -1452,13 +1452,13 @@ git commit -m "feat(mobile): implement M-MGR-06 pending requests screen"
 
 ---
 
-## Task 9: Mobile — Joining flow layout and Search Academy screen
+## Task 9: Mobile — Joining flow layout and Search Academy screen ✅
 
 **Files:**
 - Create: `apps/mobile/app/(app)/(joining)/_layout.tsx`
 - Create: `apps/mobile/app/(app)/(joining)/search-academy.tsx`
 
-- [ ] **Step 1: Create joining flow layout**
+- [x] **Step 1: Create joining flow layout**
 
 ```typescript
 // apps/mobile/app/(app)/(joining)/_layout.tsx
@@ -1476,7 +1476,7 @@ export default function JoiningLayout() {
 }
 ```
 
-- [ ] **Step 2: Create search academy screen**
+- [x] **Step 2: Create search academy screen**
 
 ```typescript
 // apps/mobile/app/(app)/(joining)/search-academy.tsx
@@ -1586,7 +1586,7 @@ export default function SearchAcademyScreen() {
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(joining)/
