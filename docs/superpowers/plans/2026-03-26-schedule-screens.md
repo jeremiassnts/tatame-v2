@@ -517,12 +517,14 @@ git commit -m "feat(mobile): add query hooks for classes, checkins, graduations,
 
 ## Task 4: Extend ClassCard component
 
+**Status:** Done — commit `feat(mobile): extend ClassCard with capacity, instructor, and check-in button`.
+
 **Files:**
 - Modify: `apps/mobile/components/ClassCard.tsx`
 
 The existing `ClassCard` is too simple — it only shows name and time. It needs to show instructor, capacity, and optionally a check-in button (for the student home).
 
-- [ ] **Step 1: Rewrite ClassCard with extended props**
+- [x] **Step 1: Rewrite ClassCard with extended props**
 
 Replace the contents of `apps/mobile/components/ClassCard.tsx`:
 
@@ -620,7 +622,7 @@ export function ClassCard({
 }
 ```
 
-- [ ] **Step 2: Update dashboard to use new ClassCard props**
+- [x] **Step 2: Update dashboard to use new ClassCard props**
 
 In `apps/mobile/app/(app)/(manager)/(home)/index.tsx`, the `DashboardClassRow` inline component can now be replaced with the updated `ClassCard`. Replace the `todayClasses.map` section to use `ClassCard` instead of `DashboardClassRow`, and remove the `DashboardClassRow` function. Import `ClassCard` from `@/components/ClassCard`.
 
@@ -639,7 +641,7 @@ todayClasses.map((cls) => (
 
 Remove the `DashboardClassRow` function and the `Clock` and `ChevronRight` imports if no longer used (keep `ChevronRight` if used elsewhere in the file — check first).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/mobile/components/ClassCard.tsx apps/mobile/app/(app)/(manager)/(home)/index.tsx
