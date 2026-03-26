@@ -733,11 +733,13 @@ git commit -m "feat(mobile): add WeekDayStrip component"
 
 ## Task 6: Create CapacityBar and CheckinListItem components
 
+**Status:** Done — commit `feat(mobile): add CapacityBar and CheckinListItem components` (tokens aligned with `design.pen` M-MGR-08 `jon0a`: capacity track `#242424`, bar height 6 / radius 3, label `#525252`; check-in rows padding 10×14, `CircleCheck` `#32D74B`).
+
 **Files:**
 - Create: `apps/mobile/components/CapacityBar.tsx`
 - Create: `apps/mobile/components/CheckinListItem.tsx`
 
-- [ ] **Step 1: Create CapacityBar**
+- [x] **Step 1: Create CapacityBar**
 
 ```typescript
 import { Text, View } from "react-native";
@@ -790,7 +792,7 @@ export function CapacityBar({ current, max }: CapacityBarProps) {
 }
 ```
 
-- [ ] **Step 2: Create CheckinListItem**
+- [x] **Step 2: Create CheckinListItem**
 
 ```typescript
 import { Text, View } from "react-native";
@@ -839,7 +841,7 @@ export function CheckinListItem({
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/mobile/components/CapacityBar.tsx apps/mobile/components/CheckinListItem.tsx
