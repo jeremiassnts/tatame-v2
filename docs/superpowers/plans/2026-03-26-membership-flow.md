@@ -1881,7 +1881,7 @@ git commit -m "feat(mobile): add instructor/student routing in app layout"
 
 ## Task 12: Verify full flow end-to-end
 
-- [ ] **Step 1: Verify API compiles**
+- [x] **Step 1: Verify API compiles**
 
 ```bash
 cd /Volumes/ExternalDisk1/repos/tatame-v2
@@ -1890,7 +1890,7 @@ pnpm --filter @tatame/api build
 
 Expected: No errors.
 
-- [ ] **Step 2: Verify validators compile**
+- [x] **Step 2: Verify validators compile**
 
 ```bash
 pnpm --filter @tatame/validators build
@@ -1898,7 +1898,7 @@ pnpm --filter @tatame/validators build
 
 Expected: No errors.
 
-- [ ] **Step 3: Verify mobile TypeScript**
+- [x] **Step 3: Verify mobile TypeScript**
 
 ```bash
 pnpm --filter @tatame/mobile exec tsc --noEmit
