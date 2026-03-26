@@ -26,8 +26,19 @@ function AppRouter() {
       router.replace("/(app)/create-academy");
     } else if (user.activeRole === "manager" && user.activeAcademy) {
       router.replace("/(app)/(manager)/(home)");
+    } else if (
+      user.activeRole === "instructor" ||
+      user.activeRole === "student"
+    ) {
+      if (!user.activeMembership) {
+        router.replace("/(app)/(joining)/search-academy");
+      } else if (user.activeMembership.status === "pending") {
+        router.replace("/(app)/(joining)/pending-approval");
+      } else if (user.activeMembership.status === "active") {
+        // Temporary route until instructor/student home exists.
+        router.replace("/(app)/(joining)/pending-approval");
+      }
     }
-    // Future: instructor/student redirects
   }, [isPending, user, router]);
 
   if (isPending) {

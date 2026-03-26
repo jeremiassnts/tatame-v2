@@ -1,29 +1,13 @@
 import { View, Text, Image, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useOAuth } from "@clerk/clerk-expo";
-import * as WebBrowser from "expo-web-browser";
 import { Divider } from "@/components/Divider";
 import { SocialButtons } from "@/components/SocialButtons";
-
-WebBrowser.maybeCompleteAuthSession();
+import { useStartSSO } from "@/lib/hooks/use-start-sso";
 
 export default function AuthWelcomeScreen() {
   const router = useRouter();
-  const { startOAuthFlow: startGoogle } = useOAuth({ strategy: "oauth_google" });
-  const { startOAuthFlow: startApple } = useOAuth({ strategy: "oauth_apple" });
-
-  const handleOAuth = async (start: typeof startGoogle) => {
-    try {
-      const { createdSessionId, setActive } = await start();
-      if (createdSessionId && setActive) {
-        await setActive({ session: createdSessionId });
-        router.replace("/(app)");
-      }
-    } catch {
-      // user cancelled or provider failed
-    }
-  };
+  const { handleSSO } = useStartSSO();
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom"]}>
@@ -67,8 +51,8 @@ export default function AuthWelcomeScreen() {
         <Divider text="ou continue com" />
 
         <SocialButtons
-          onGooglePress={() => handleOAuth(startGoogle)}
-          onApplePress={() => handleOAuth(startApple)}
+          onGooglePress={() => handleSSO("oauth_google")}
+          onApplePress={() => handleSSO("oauth_apple")}
         />
       </View>
     </SafeAreaView>

@@ -1,4 +1,3 @@
-import { Router } from "express";
 import { Role } from "@tatame/types";
 import type { CreateAcademyBody, UpdateAcademyBody } from "@tatame/validators";
 import {
@@ -6,6 +5,7 @@ import {
   createAcademyBodySchema,
   updateAcademyBodySchema,
 } from "@tatame/validators";
+import { Router } from "express";
 import { getDb } from "../../lib/db.js";
 import { HttpError } from "../../lib/http-error.js";
 import { attachActiveAcademyContext } from "../../middleware/academy-context.js";

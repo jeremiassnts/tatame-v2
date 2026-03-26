@@ -1,17 +1,23 @@
 import { Tabs } from "expo-router";
 import { Calendar, Home, MoreHorizontal, Users } from "lucide-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ManagerLayout() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
+        sceneStyle: {
+          backgroundColor: "#0C0C0C",
+        },
         tabBarStyle: {
           backgroundColor: "#1A1A1A",
           borderTopColor: "#2A2A2A",
           borderTopWidth: 1,
-          height: 72,
-          paddingBottom: 16,
+          height: 56 + Math.max(insets.bottom, 8),
+          paddingBottom: Math.max(insets.bottom, 8),
           paddingTop: 8,
         },
         tabBarActiveTintColor: "#A078E8",
@@ -32,14 +38,15 @@ export default function ManagerLayout() {
       <Tabs.Screen
         name="(members)"
         options={{
-          title: "Members",
+          title: "Membros",
+          href: "/(app)/(manager)/(members)",
           tabBarIcon: ({ color, size }) => <Users size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="(classes)"
         options={{
-          title: "Classes",
+          title: "Aulas",
           tabBarIcon: ({ color, size }) => (
             <Calendar size={size} color={color} />
           ),
@@ -48,7 +55,7 @@ export default function ManagerLayout() {
       <Tabs.Screen
         name="(more)"
         options={{
-          title: "More",
+          title: "Mais",
           tabBarIcon: ({ color, size }) => (
             <MoreHorizontal size={size} color={color} />
           ),

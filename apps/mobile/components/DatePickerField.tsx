@@ -1,13 +1,15 @@
-import { useState } from "react";
-import { View, Text, Pressable, Platform } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Calendar } from "lucide-react-native";
+import { useState } from "react";
+import { Platform, Pressable, Text, View } from "react-native";
 
 type DatePickerFieldProps = {
   label: string;
   value: string | null;
   onChange: (date: string | null) => void;
   error?: string;
+  /** When true, calendar icon on the right (M-MGR-03 settings). */
+  iconTrailing?: boolean;
 };
 
 export function DatePickerField({
@@ -15,13 +17,14 @@ export function DatePickerField({
   value,
   onChange,
   error,
+  iconTrailing = false,
 }: DatePickerFieldProps) {
   const [show, setShow] = useState(false);
 
   const dateValue = value ? new Date(value + "T00:00:00") : new Date();
 
   const formatDisplay = (dateStr: string | null) => {
-    if (!dateStr) return "Select date";
+    if (!dateStr) return "Selecione a data";
     const [y, m, d] = dateStr.split("-");
     return `${d}/${m}/${y}`;
   };
@@ -43,16 +46,18 @@ export function DatePickerField({
       </Text>
       <Pressable
         onPress={() => setShow(true)}
-        className={`h-[52px] flex-row items-center rounded-xl border px-4 ${
-          error ? "border-red-500" : "border-surface-border"
-        } bg-surface`}
+        className={`h-[52px] flex-row items-center rounded-xl border px-4 ${error ? "border-red-500" : "border-surface-border"
+          } bg-surface ${iconTrailing ? "justify-between" : "gap-2"}`}
       >
-        <Calendar size={18} color="#525252" style={{ marginRight: 8 }} />
+        {!iconTrailing ? (
+          <Calendar size={18} color="#525252" />
+        ) : null}
         <Text
-          className={`flex-1 font-poppins text-[15px] ${value ? "text-primary" : "text-[#525252]"}`}
+          className={`font-poppins text-[15px] ${iconTrailing ? "" : "flex-1"} ${value ? "text-primary" : "text-[#525252]"}`}
         >
           {formatDisplay(value)}
         </Text>
+        {iconTrailing ? <Calendar size={18} color="#525252" /> : null}
       </Pressable>
       {show ? (
         <DateTimePicker

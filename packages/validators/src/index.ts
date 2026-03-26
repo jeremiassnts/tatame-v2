@@ -8,10 +8,12 @@ export {
 } from "./upload.schema.js";
 export {
   activeAcademySchema,
+  activeMembershipSchema,
   roleEnumSchema,
   syncUserBodySchema,
   userMeResponseSchema,
   type ActiveAcademy,
+  type ActiveMembership,
   type SyncUserBody,
   type UserMeResponse,
 } from "./user.schema.js";
@@ -27,11 +29,17 @@ export {
   type UpdateAcademyBody,
 } from "./academy.schema.js";
 export {
+  listMembersQuerySchema,
+  memberDetailResponseSchema,
+  memberListItemSchema,
   membershipIdParamSchema,
   membershipResponseSchema,
   pendingMembershipItemSchema,
   pendingQuerySchema,
   requestMembershipBodySchema,
+  type ListMembersQuery,
+  type MemberDetailResponse,
+  type MemberListItem,
   type MembershipResponse,
   type PendingMembershipItem,
   type RequestMembershipBody,

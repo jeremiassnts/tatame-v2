@@ -1,29 +1,30 @@
-import { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  ActivityIndicator,
-} from "react-native";
-import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useForm, Controller } from "react-hook-form";
+import { BackButton } from "@/components/BackButton";
+import { DatePickerField } from "@/components/DatePickerField";
+import { FormInput } from "@/components/FormInput";
+import { ImagePickerField } from "@/components/ImagePickerField";
+import { useAcademyContext } from "@/lib/academy-context";
+import { useAcademy, useUpdateAcademy } from "@/lib/hooks/use-academy";
+import { useUploadImage } from "@/lib/hooks/use-upload";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   updateAcademyBodySchema,
   type UpdateAcademyBody,
 } from "@tatame/validators";
 import type { ImagePickerAsset } from "expo-image-picker";
-import { BackButton } from "@/components/BackButton";
-import { FormInput } from "@/components/FormInput";
-import { GradientButton } from "@/components/GradientButton";
-import { ImagePickerField } from "@/components/ImagePickerField";
-import { DatePickerField } from "@/components/DatePickerField";
-import { useAcademyContext } from "@/lib/academy-context";
-import { useAcademy, useUpdateAcademy } from "@/lib/hooks/use-academy";
-import { useUploadImage } from "@/lib/hooks/use-upload";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import { Mail, MapPin, Phone } from "lucide-react-native";
+import { useEffect, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Pressable,
+  ScrollView,
+  Text,
+  View
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 function toDateOnly(value: string | null): string | null {
   if (!value) return null;
@@ -94,7 +95,7 @@ export default function AcademySettingsScreen() {
       }, 1000);
     } catch (e) {
       setGeneralError(
-        e instanceof Error ? e.message : "Failed to save changes",
+        e instanceof Error ? e.message : "Não foi possível salvar as alterações",
       );
     } finally {
       setSubmitting(false);
@@ -113,140 +114,167 @@ export default function AcademySettingsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <View className="flex-1 px-6 pt-2">
+      <View className="flex-1 px-6 pt-2">
+        <View className="flex-row items-center justify-between">
           <BackButton />
-
-          <View className="mt-4 gap-2">
-            <Text
-              className="font-poppins-bold text-primary"
-              style={{ fontSize: 28, letterSpacing: -1 }}
-            >
-              Academy Settings
-            </Text>
-            <Text className="font-poppins text-[15px] text-[#525252]">
-              Update your academy information
-            </Text>
-          </View>
-
+          <Text
+            className="font-poppins-bold text-primary"
+            style={{ fontSize: 18, letterSpacing: -0.3 }}
+          >
+            Configurações
+          </Text>
+          <View className="h-10 w-10" />
+        </View>
+        <KeyboardAvoidingView behavior="padding" className="flex-1">
           <ScrollView
             className="mt-6 flex-1"
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ paddingBottom: 16 }}
           >
-            <View className="gap-4 pb-4">
+            <View style={{ gap: 24 }}>
               <ImagePickerField
-                label="Academy Logo"
+                label=""
+                variant="academySettings"
                 imageUri={imageAsset?.uri ?? academy?.logoUrl ?? null}
                 onImageSelected={setImageAsset}
               />
 
-              <Controller
-                control={control}
-                name="name"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <FormInput
-                    label="Academy Name"
-                    placeholder="Enter academy name"
-                    value={value ?? ""}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    autoCapitalize="words"
-                    error={errors.name?.message}
-                  />
-                )}
-              />
+              <View style={{ gap: 16 }}>
+                <Controller
+                  control={control}
+                  name="name"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <FormInput
+                      label="Nome da academia"
+                      placeholder="Nome da academia"
+                      value={value ?? ""}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      autoCapitalize="words"
+                      error={errors.name?.message}
+                    />
+                  )}
+                />
 
-              <Controller
-                control={control}
-                name="address"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <FormInput
-                    label="Address"
-                    placeholder="Street, city, state"
-                    value={value ?? ""}
-                    onChangeText={(t) => onChange(t || null)}
-                    onBlur={onBlur}
-                    error={errors.address?.message}
-                  />
-                )}
-              />
+                <Controller
+                  control={control}
+                  name="address"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <FormInput
+                      label="Endereço"
+                      placeholder="Rua, cidade, estado"
+                      value={value ?? ""}
+                      onChangeText={(t) => onChange(t || null)}
+                      onBlur={onBlur}
+                      leftIcon={MapPin}
+                      error={errors.address?.message}
+                    />
+                  )}
+                />
 
-              <Controller
-                control={control}
-                name="contactEmail"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <FormInput
-                    label="Contact Email"
-                    placeholder="academy@email.com"
-                    value={value ?? ""}
-                    onChangeText={(t) => onChange(t || null)}
-                    onBlur={onBlur}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    error={errors.contactEmail?.message}
-                  />
-                )}
-              />
+                <Controller
+                  control={control}
+                  name="contactEmail"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <FormInput
+                      label="E-mail de contato"
+                      placeholder="contato@academia.com"
+                      value={value ?? ""}
+                      onChangeText={(t) => onChange(t || null)}
+                      onBlur={onBlur}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      leftIcon={Mail}
+                      error={errors.contactEmail?.message}
+                    />
+                  )}
+                />
 
-              <Controller
-                control={control}
-                name="contactPhone"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <FormInput
-                    label="Contact Phone"
-                    placeholder="(11) 99999-9999"
-                    value={value ?? ""}
-                    onChangeText={(t) => onChange(t || null)}
-                    onBlur={onBlur}
-                    keyboardType="phone-pad"
-                    error={errors.contactPhone?.message}
-                  />
-                )}
-              />
+                <Controller
+                  control={control}
+                  name="contactPhone"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <FormInput
+                      label="Telefone"
+                      placeholder="(11) 99999-9999"
+                      value={value ?? ""}
+                      onChangeText={(t) => onChange(t || null)}
+                      onBlur={onBlur}
+                      keyboardType="phone-pad"
+                      leftIcon={Phone}
+                      error={errors.contactPhone?.message}
+                    />
+                  )}
+                />
 
-              <Controller
-                control={control}
-                name="foundedAt"
-                render={({ field: { onChange, value } }) => (
-                  <DatePickerField
-                    label="Founded Date"
-                    value={value ?? null}
-                    onChange={onChange}
-                    error={errors.foundedAt?.message}
-                  />
-                )}
-              />
+                <Controller
+                  control={control}
+                  name="foundedAt"
+                  render={({ field: { onChange, value } }) => (
+                    <DatePickerField
+                      label="Data de fundação"
+                      value={value ?? null}
+                      onChange={onChange}
+                      iconTrailing
+                      error={errors.foundedAt?.message}
+                    />
+                  )}
+                />
+              </View>
             </View>
           </ScrollView>
+        </KeyboardAvoidingView>
+        {generalError ? (
+          <Text className="mb-2 font-poppins text-sm text-red-500">
+            {generalError}
+          </Text>
+        ) : null}
 
-          {generalError ? (
-            <Text className="mb-2 font-poppins text-sm text-red-500">
-              {generalError}
-            </Text>
-          ) : null}
-
-          <View className="pb-2">
-            {saved ? (
-              <View className="h-14 items-center justify-center rounded-xl bg-accent">
+        <View className="pb-2">
+          {saved ? (
+            <View className="overflow-hidden rounded-xl">
+              <LinearGradient
+                colors={["#A078E8", "#7C5CBF"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                className="h-14 items-center justify-center"
+              >
                 <Text className="font-poppins-semibold text-base text-white">
-                  Saved!
+                  Salvo!
                 </Text>
+              </LinearGradient>
+            </View>
+          ) : (
+            <Pressable
+              onPress={handleSubmit(onSubmit)}
+              disabled={!hasChanges || submitting}
+              className="w-full"
+            >
+              <View className="overflow-hidden rounded-xl">
+                <LinearGradient
+                  colors={
+                    !hasChanges || submitting
+                      ? ["#3A3A3A", "#3A3A3A"]
+                      : ["#A078E8", "#7C5CBF"]
+                  }
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  className="h-14 flex-row items-center justify-center"
+                >
+                  {submitting ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
+                    <Text className="font-poppins-semibold text-base text-white">
+                      Salvar alterações
+                    </Text>
+                  )}
+                </LinearGradient>
               </View>
-            ) : (
-              <GradientButton
-                label="Save Changes"
-                onPress={handleSubmit(onSubmit)}
-                disabled={!hasChanges}
-                loading={submitting}
-              />
-            )}
-          </View>
+            </Pressable>
+          )}
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </SafeAreaView>
   );
 }

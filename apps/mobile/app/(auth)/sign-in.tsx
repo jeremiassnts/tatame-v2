@@ -1,17 +1,14 @@
 import { useState } from "react";
 import { View, Text, Pressable, Alert, ActivityIndicator } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAuth, useOAuth, useSignIn } from "@clerk/clerk-expo";
-import * as WebBrowser from "expo-web-browser";
+import { useSignIn } from "@clerk/clerk-expo";
 import { BackButton } from "@/components/BackButton";
 import { FormInput } from "@/components/FormInput";
 import { Divider } from "@/components/Divider";
 import { SocialButtons } from "@/components/SocialButtons";
-import { syncUser } from "@/lib/api";
-
-WebBrowser.maybeCompleteAuthSession();
+import { useAuthComplete } from "@/lib/hooks/use-auth-complete";
+import { useStartSSO } from "@/lib/hooks/use-start-sso";
 
 type ClerkError = {
   errors?: Array<{
@@ -22,10 +19,9 @@ type ClerkError = {
 
 export default function SignInScreen() {
   const router = useRouter();
-  const { getToken } = useAuth();
   const { signIn, setActive } = useSignIn();
-  const { startOAuthFlow: startGoogle } = useOAuth({ strategy: "oauth_google" });
-  const { startOAuthFlow: startApple } = useOAuth({ strategy: "oauth_apple" });
+  const { completeAuth } = useAuthComplete();
+  const { handleSSO } = useStartSSO();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -38,17 +34,12 @@ export default function SignInScreen() {
     setLoading(true);
     try {
       const result = await signIn.create({ identifier: email, password });
-      if (result.status === "complete" && setActive) {
-        await setActive({ session: result.createdSessionId });
-        const token = await getToken();
-        if (!token) {
-          setErrors({ general: "Sessão inválida. Tente novamente." });
-          return;
-        }
-        const userType = await AsyncStorage.getItem("userType");
+      if (result.status === "complete") {
         try {
-          await syncUser(token, userType);
-          router.replace("/(app)");
+          await completeAuth({
+            createdSessionId: result.createdSessionId,
+            setActive,
+          });
         } catch {
           setErrors({ general: "Não foi possível sincronizar. Tente novamente." });
         }
@@ -73,29 +64,6 @@ export default function SignInScreen() {
       }
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleOAuth = async (start: typeof startGoogle) => {
-    try {
-      const result = await start();
-      if (result.createdSessionId && result.setActive) {
-        await result.setActive({ session: result.createdSessionId });
-        const token = await getToken();
-        if (!token) {
-          Alert.alert("Erro", "Sessão inválida. Tente novamente.");
-          return;
-        }
-        const userType = await AsyncStorage.getItem("userType");
-        try {
-          await syncUser(token, userType);
-          router.replace("/(app)");
-        } catch {
-          Alert.alert("Erro", "Não foi possível sincronizar. Tente novamente.");
-        }
-      }
-    } catch {
-      // cancelled
     }
   };
 
@@ -165,8 +133,8 @@ export default function SignInScreen() {
           <Divider />
 
           <SocialButtons
-            onGooglePress={() => handleOAuth(startGoogle)}
-            onApplePress={() => handleOAuth(startApple)}
+            onGooglePress={() => handleSSO("oauth_google")}
+            onApplePress={() => handleSSO("oauth_apple")}
             disabled={loading}
           />
 

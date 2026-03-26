@@ -8,6 +8,51 @@ export type PendingMembershipWithUser = MembershipRow & {
   userEmail: string;
 };
 
+export type MemberListItemRow = {
+  id: string;
+  userId: string;
+  role: string;
+  status: string;
+  joinedAt: Date | null;
+  createdAt: Date;
+  userName: string;
+  userEmail: string;
+  userProfileImageUrl: string | null;
+};
+
+export type MemberDetailRow = {
+  id: string;
+  userId: string;
+  academyId: string;
+  role: string;
+  status: string;
+  joinedAt: Date | null;
+  createdAt: Date;
+  userName: string;
+  userEmail: string;
+  userPhone: string | null;
+  userInstagram: string | null;
+  userBirthDate: string | null;
+  userProfileImageUrl: string | null;
+  history: {
+    id: string;
+    role: string;
+    status: string;
+    joinedAt: Date | null;
+    leftAt: Date | null;
+    createdAt: Date;
+  }[];
+};
+
+export type ActiveOrPendingMembershipRow = {
+  id: string;
+  academyId: string;
+  academyName: string;
+  academyLogoUrl: string | null;
+  role: string;
+  status: string;
+};
+
 export interface IMembershipRepository {
   findById(membershipId: string): Promise<MembershipRow | undefined>;
   findActiveByUser(userId: string): Promise<MembershipRow | undefined>;
@@ -44,6 +89,15 @@ export interface IMembershipRepository {
   rejectAllPendingExcept(userId: string, excludeMembershipId: string): Promise<void>;
 
   deleteById(membershipId: string): Promise<void>;
+
+  findByAcademy(
+    academyId: string,
+    filters: { role?: string; status?: string; q?: string },
+  ): Promise<MemberListItemRow[]>;
+
+  findDetailById(membershipId: string): Promise<MemberDetailRow | null>;
+
+  findActiveOrPendingByUser(userId: string): Promise<ActiveOrPendingMembershipRow | null>;
 
   withTransaction<T>(fn: (txRepo: IMembershipRepository) => Promise<T>): Promise<T>;
 }
