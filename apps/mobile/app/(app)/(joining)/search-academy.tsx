@@ -3,7 +3,7 @@ import { useSearchAcademies } from "@/lib/hooks/use-membership";
 import { useCurrentUser } from "@/lib/hooks/use-user";
 import { useRouter } from "expo-router";
 import { Search } from "lucide-react-native";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -15,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const TEXT_SECONDARY = "#ABABAB";
 const TEXT_MUTED = "#525252";
+const SEARCH_DEBOUNCE_MS = 400;
 
 const ROLE_COPY: Record<string, { title: string; subtitle: string }> = {
   instructor: {
@@ -30,6 +31,7 @@ const ROLE_COPY: Record<string, { title: string; subtitle: string }> = {
 export default function SearchAcademyScreen() {
   const { data: user } = useCurrentUser();
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const router = useRouter();
 
   const copy = useMemo(() => {
@@ -37,14 +39,25 @@ export default function SearchAcademyScreen() {
     return ROLE_COPY[role] ?? ROLE_COPY.student;
   }, [user?.activeRole]);
 
-  const { data: results, isPending, isFetching } = useSearchAcademies(query);
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setDebouncedQuery(query);
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => clearTimeout(timeoutId);
+  }, [query]);
+
+  const { data: results, isPending, isFetching } =
+    useSearchAcademies(debouncedQuery);
   const shouldShowResults = query.trim().length >= 2;
+  const isDebouncing = query !== debouncedQuery;
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-background pt-6" edges={["top"]}>
       <View className="flex-1" style={{ paddingHorizontal: 24, paddingTop: 8, gap: 20 }}>
-        <View style={{ gap: 8 }}>
-          <Text className="font-sora-bold text-[40px] leading-[44px] text-primary">
+        <View>
+          <Text className="font-poppins-bold text-primary"
+            style={{ fontSize: 28, letterSpacing: -1 }}>
             {copy.title}
           </Text>
           <Text
@@ -75,7 +88,7 @@ export default function SearchAcademyScreen() {
               Resultados
             </Text>
 
-            {isPending || isFetching ? (
+            {isDebouncing || isPending || isFetching ? (
               <View className="items-center py-8">
                 <ActivityIndicator color="#A078E8" />
               </View>

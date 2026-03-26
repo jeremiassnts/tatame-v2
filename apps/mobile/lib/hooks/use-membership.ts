@@ -1,5 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useApi } from "@/lib/api";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   MemberDetailResponse,
   MemberListItem,
@@ -18,6 +18,10 @@ type AcademySearchItem = {
   name: string;
   logoUrl: string | null;
   address: string | null;
+};
+
+type SearchAcademiesResponse = {
+  items: AcademySearchItem[];
 };
 
 export function useMembers(academyId: string, filters?: MemberFilters) {
@@ -130,8 +134,10 @@ export function useSearchAcademies(query: string) {
 
   return useQuery({
     queryKey: ["academies-search", query],
-    queryFn: () =>
-      api.get<AcademySearchItem[]>(`/academies?q=${encodeURIComponent(query)}`),
+    queryFn: async () => {
+      const response = await api.get<SearchAcademiesResponse>(`/academies?q=${encodeURIComponent(query)}`);
+      return response.items;
+    },
     enabled: query.length >= 2,
   });
 }

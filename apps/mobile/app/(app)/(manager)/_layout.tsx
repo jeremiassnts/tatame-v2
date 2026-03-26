@@ -38,14 +38,15 @@ export default function ManagerLayout() {
       <Tabs.Screen
         name="(members)"
         options={{
-          title: "Members",
+          title: "Membros",
+          href: "/(app)/(manager)/(members)",
           tabBarIcon: ({ color, size }) => <Users size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="(classes)"
         options={{
-          title: "Classes",
+          title: "Aulas",
           tabBarIcon: ({ color, size }) => (
             <Calendar size={size} color={color} />
           ),
@@ -54,7 +55,7 @@ export default function ManagerLayout() {
       <Tabs.Screen
         name="(more)"
         options={{
-          title: "More",
+          title: "Mais",
           tabBarIcon: ({ color, size }) => (
             <MoreHorizontal size={size} color={color} />
           ),

@@ -51,7 +51,7 @@ export default function PendingApprovalScreen() {
           </View>
 
           <View className="items-center" style={{ gap: 12 }}>
-            <Text className="font-sora-bold text-[38px] leading-[42px] text-primary">
+            <Text className="font-poppins-bold text-[30px] leading-[42px] text-primary text-center">
               Aguardando aprovação
             </Text>
             <Text

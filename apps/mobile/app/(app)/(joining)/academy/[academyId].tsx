@@ -5,13 +5,14 @@ import { useRequestMembership } from "@/lib/hooks/use-membership";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, Mail, MapPin, Phone } from "lucide-react-native";
 import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 const TEXT_SECONDARY = "#ABABAB";
 const TEXT_MUTED = "#525252";
 const SEPARATOR = "#2A2A2A";
 
 export default function AcademyDetailScreen() {
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ academyId: string | string[] }>();
   const academyId = Array.isArray(params.academyId)
     ? params.academyId[0]
@@ -57,8 +58,17 @@ export default function AcademyDetailScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
-      <View className="flex-1" style={{ paddingHorizontal: 24, paddingTop: 8, gap: 16 }}>
+    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top"]}>
+      <View
+        className="flex-1"
+        style={{
+          paddingHorizontal: 24,
+          paddingTop: 8,
+          gap: 16,
+          // Garante que o botão de ação não fique atrás da gesture bar / comandos do sistema.
+          paddingBottom: Math.max(insets.bottom, 24),
+        }}
+      >
         <View className="flex-row items-center justify-between">
           <Pressable
             onPress={() => router.back()}
@@ -66,7 +76,10 @@ export default function AcademyDetailScreen() {
           >
             <ArrowLeft size={18} color="#FFFFFF" />
           </Pressable>
-          <Text className="font-sora-bold text-lg text-primary">
+          <Text
+            className="font-poppins-bold text-primary"
+            style={{ fontSize: 18, letterSpacing: -0.3 }}
+          >
             Detalhes da academia
           </Text>
           <View className="h-10 w-10" />
@@ -74,8 +87,8 @@ export default function AcademyDetailScreen() {
 
         <View className="flex-1" style={{ gap: 24 }}>
           <View className="items-center" style={{ gap: 12 }}>
-            <Avatar variant="brand" imageUrl={academy.logoUrl} />
-            <Text className="font-sora-bold text-[30px] text-primary">{academy.name}</Text>
+            <Avatar variant="brand" imageUrl={academy.logoUrl} size={80} />
+            <Text className="font-poppins-bold text-primary" style={{ fontSize: 24, letterSpacing: -0.3 }}>{academy.name}</Text>
             <Text className="font-poppins text-sm" style={{ color: TEXT_SECONDARY }}>
               {academy.address ?? "Endereco nao informado"}
             </Text>
@@ -109,7 +122,7 @@ export default function AcademyDetailScreen() {
           <Pressable
             onPress={handleRequestMembership}
             disabled={requestMembership.isPending}
-            className="mb-6 items-center justify-center rounded-xl bg-accent py-3.5"
+            className="items-center justify-center rounded-xl bg-accent py-3.5"
           >
             {requestMembership.isPending ? (
               <ActivityIndicator color="#FFFFFF" />

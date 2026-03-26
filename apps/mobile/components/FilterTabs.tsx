@@ -16,7 +16,8 @@ export function FilterTabs({ tabs, activeKey, onSelect }: FilterTabsProps) {
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ gap: 8 }}
+      style={{ flexGrow: 0 }}
+      contentContainerStyle={{ gap: 8, alignItems: "center" }}
     >
       {tabs.map((tab) => {
         const isActive = tab.key === activeKey;
@@ -25,8 +26,10 @@ export function FilterTabs({ tabs, activeKey, onSelect }: FilterTabsProps) {
           <Pressable
             key={tab.key}
             onPress={() => onSelect(tab.key)}
-            className="rounded-full border px-4 py-1.5"
+            className="rounded-full border px-4"
             style={{
+              height: 32,
+              justifyContent: "center",
               backgroundColor: isActive ? "#A078E8" : "transparent",
               borderColor: isActive ? "#A078E8" : "#3A3A3A",
             }}

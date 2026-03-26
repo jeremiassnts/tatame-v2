@@ -14,6 +14,7 @@ type AvatarProps = {
   fallbackLetter?: string;
   /** Used when `variant` is `brand` and there is no image. */
   FallbackIcon?: LucideIcon;
+  size?: number;
 };
 
 export function Avatar({
@@ -21,14 +22,15 @@ export function Avatar({
   imageUrl,
   fallbackLetter,
   FallbackIcon = Grid3x3,
+  size = SIZE,
 }: AvatarProps) {
-  const borderRadius = variant === "user" ? SIZE / 2 : 12;
+  const borderRadius = variant === "user" ? size / 2 : 12;
 
   if (imageUrl) {
     return (
       <Image
         source={{ uri: imageUrl }}
-        style={{ width: SIZE, height: SIZE, borderRadius }}
+        style={{ width: size, height: size, borderRadius }}
       />
     );
   }
@@ -41,8 +43,8 @@ export function Avatar({
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
         style={{
-          width: SIZE,
-          height: SIZE,
+          width: size,
+          height: size,
           borderRadius,
           alignItems: "center",
           justifyContent: "center",
@@ -61,8 +63,8 @@ export function Avatar({
       start={{ x: 0.5, y: 0 }}
       end={{ x: 0.5, y: 1 }}
       style={{
-        width: SIZE,
-        height: SIZE,
+        width: size,
+        height: size,
         borderRadius,
         alignItems: "center",
         justifyContent: "center",
