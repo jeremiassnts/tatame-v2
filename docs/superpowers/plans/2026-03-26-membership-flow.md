@@ -1341,12 +1341,12 @@ git commit -m "feat(mobile): implement M-MGR-05 member detail screen"
 
 ---
 
-## Task 8: Mobile — M-MGR-06 Pending Requests screen
+## Task 8: Mobile — M-MGR-06 Pending Requests screen ✅
 
 **Files:**
 - Create: `apps/mobile/app/(app)/(manager)/(members)/pending.tsx`
 
-- [ ] **Step 1: Create pending requests screen**
+- [x] **Step 1: Create pending requests screen**
 
 ```typescript
 // apps/mobile/app/(app)/(manager)/(members)/pending.tsx
@@ -1435,7 +1435,7 @@ export default function PendingRequestsScreen() {
 }
 ```
 
-- [ ] **Step 2: Update dashboard quick action to link to pending screen**
+- [x] **Step 2: Update dashboard quick action to link to pending screen**
 
 In `apps/mobile/app/(app)/(manager)/(home)/index.tsx`, the "Solicitações pendentes" quick action currently links to `/(app)/(manager)/(members)`. Update to:
 
@@ -1443,7 +1443,7 @@ In `apps/mobile/app/(app)/(manager)/(home)/index.tsx`, the "Solicitações pende
 onPress={() => router.push("/(app)/(manager)/(members)/pending")}
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(manager)/(members)/pending.tsx apps/mobile/app/(app)/(manager)/(home)/index.tsx

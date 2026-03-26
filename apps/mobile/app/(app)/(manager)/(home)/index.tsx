@@ -252,7 +252,7 @@ export default function ManagerDashboard() {
 
           <View className="flex-row gap-3">
             <Pressable
-              onPress={() => router.push("/(app)/(manager)/(members)")}
+              onPress={() => router.push("/(app)/(manager)/(members)/pending")}
               className="min-w-0 flex-1 rounded-[14px] border border-surface-border bg-surface"
               style={{ padding: 16, gap: 10 }}
             >
