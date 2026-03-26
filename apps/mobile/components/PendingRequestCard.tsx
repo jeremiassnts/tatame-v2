@@ -17,11 +17,11 @@ function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const hours = Math.floor(diff / (1000 * 60 * 60));
 
-  if (hours < 1) return "ha poucos minutos";
-  if (hours < 24) return `ha ${hours} hora${hours > 1 ? "s" : ""}`;
+  if (hours < 1) return "há poucos minutos";
+  if (hours < 24) return `há ${hours} hora${hours > 1 ? "s" : ""}`;
 
   const days = Math.floor(hours / 24);
-  return `ha ${days} dia${days > 1 ? "s" : ""}`;
+  return `há ${days} dia${days > 1 ? "s" : ""}`;
 }
 
 export function PendingRequestCard({

@@ -24,6 +24,10 @@ type SearchAcademiesResponse = {
   items: AcademySearchItem[];
 };
 
+type PendingRequestsResponse = {
+  items: PendingMembershipItem[];
+};
+
 export function useMembers(academyId: string, filters?: MemberFilters) {
   const api = useApi();
   const params = new URLSearchParams({ academyId });
@@ -54,8 +58,10 @@ export function usePendingRequests(academyId: string) {
 
   return useQuery({
     queryKey: ["pending-requests", academyId],
-    queryFn: () =>
-      api.get<PendingMembershipItem[]>(`/memberships/pending?academyId=${academyId}`),
+    queryFn: async () => {
+      const response = await api.get<PendingRequestsResponse>(`/memberships/pending?academyId=${academyId}`);
+      return response.items;
+    },
     enabled: Boolean(academyId),
   });
 }
