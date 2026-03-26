@@ -1832,12 +1832,12 @@ git commit -m "feat(mobile): add academy detail and pending approval screens"
 
 ---
 
-## Task 11: Mobile — Update app layout for instructor/student routing
+## Task 11: Mobile — Update app layout for instructor/student routing ✅
 
 **Files:**
 - Modify: `apps/mobile/app/(app)/_layout.tsx`
 
-- [ ] **Step 1: Update the AppRouter component to handle instructor/student flows**
+- [x] **Step 1: Update the AppRouter component to handle instructor/student flows**
 
 In `apps/mobile/app/(app)/_layout.tsx`, update the `useEffect` block in `AppRouter`:
 
@@ -1870,7 +1870,7 @@ useEffect(() => {
 
 **Note:** The last `else if` for `status === "active"` is a temporary placeholder. When instructor/student home screens are built, replace this with the proper redirect (e.g. `/(app)/(instructor)/(home)` or `/(app)/(student)/(home)`).
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/_layout.tsx
