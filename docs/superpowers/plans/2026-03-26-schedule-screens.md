@@ -652,10 +652,12 @@ git commit -m "feat(mobile): extend ClassCard with capacity, instructor, and che
 
 ## Task 5: Create WeekDayStrip component
 
+**Status:** Done — commit `feat(mobile): add WeekDayStrip component` (visual tokens aligned with `design.pen` node `s5xEh` / screen `zREdY`: 56px cells, `rounded-[12px]`, gap 6, unselected `#525252` labels, selected `bg-accent` without border).
+
 **Files:**
 - Create: `apps/mobile/components/WeekDayStrip.tsx`
 
-- [ ] **Step 1: Create WeekDayStrip**
+- [x] **Step 1: Create WeekDayStrip**
 
 ```typescript
 import { Pressable, Text, View } from "react-native";
@@ -720,7 +722,7 @@ export function WeekDayStrip({ selectedDay, onDaySelect }: WeekDayStripProps) {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/components/WeekDayStrip.tsx
