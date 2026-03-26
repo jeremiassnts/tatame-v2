@@ -88,7 +88,7 @@
 **Files:**
 - Modify: `apps/mobile/lib/api.ts:84-118`
 
-- [ ] **Step 1: Add delete method to useApi**
+- [x] **Step 1: Add delete method to useApi**
 
 In `apps/mobile/lib/api.ts`, add the `delete` method to the `useApi` return object after the `patch` method:
 
@@ -99,7 +99,7 @@ async delete<T>(path: string): Promise<T> {
 },
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/lib/api.ts
@@ -119,7 +119,7 @@ git commit -m "feat(mobile): add delete method to API client"
 
 **Context:** The class API currently returns raw DB rows with `instructorId` but no `instructorName`. The screens need instructor names. Similarly, the checkins endpoint needs to return user names for the check-in list.
 
-- [ ] **Step 1: Enrich class list/detail responses with instructor name**
+- [x] **Step 1: Enrich class list/detail responses with instructor name**
 
 The class repository `findByAcademyId` and `findById` currently return raw `ClassRow` without instructor name. Update both methods in `class.repository.postgres.ts` to join with the `users` table and return `instructorName`:
 
@@ -180,7 +180,7 @@ Do the same for `findById`. Also update the `ClassRow` type in `class.repository
 
 In the class routes, the response already passes through the row directly, so the instructor name will be included automatically.
 
-- [ ] **Step 2: Add findByClassAndDate to checkin repository interface**
+- [x] **Step 2: Add findByClassAndDate to checkin repository interface**
 
 In `apps/api/src/modules/checkin/checkin.repository.ts`, add to the `ICheckinRepository` interface:
 
@@ -191,7 +191,7 @@ findByClassAndDateWithUser(
 ): Promise<(CheckinRow & { userName: string; userProfileImageUrl: string | null })[]>;
 ```
 
-- [ ] **Step 3: Implement findByClassAndDateWithUser in Postgres repository**
+- [x] **Step 3: Implement findByClassAndDateWithUser in Postgres repository**
 
 In `apps/api/src/modules/checkin/checkin.repository.postgres.ts`, add import for `users` table and implement:
 
@@ -228,7 +228,7 @@ async findByClassAndDateWithUser(
 
 Add `checkins.checkedInAt` import if needed (it's the column ref from `@tatame/db`).
 
-- [ ] **Step 4: Add GET /classes/:classId/checkins route**
+- [x] **Step 4: Add GET /classes/:classId/checkins route**
 
 In `apps/api/src/modules/class/class.routes.ts`, add at the bottom before the export (or after the existing routes). This needs a new import and a new route:
 
@@ -278,12 +278,12 @@ classRouter.get(
 );
 ```
 
-- [ ] **Step 5: Verify API compiles**
+- [x] **Step 5: Verify API compiles**
 
 Run: `cd apps/api && npx tsc --noEmit`
 Expected: No errors
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/api/src/modules/checkin/checkin.repository.ts apps/api/src/modules/checkin/checkin.repository.postgres.ts apps/api/src/modules/class/class.routes.ts apps/api/src/modules/class/class.repository.ts apps/api/src/modules/class/class.repository.postgres.ts
