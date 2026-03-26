@@ -1436,10 +1436,12 @@ git commit -m "feat(mobile): add ClassForm shared component"
 
 ## Task 9: Manager schedule screen (M-MGR-07)
 
+**Status:** Done — commit `feat(mobile): implement manager class schedule screen (M-MGR-07)` (date label `text-muted` / design.pen `zREdY` `agPdx`).
+
 **Files:**
 - Modify: `apps/mobile/app/(app)/(manager)/(classes)/index.tsx`
 
-- [ ] **Step 1: Replace placeholder with schedule screen**
+- [x] **Step 1: Replace placeholder with schedule screen**
 
 Replace contents of `apps/mobile/app/(app)/(manager)/(classes)/index.tsx`:
 
@@ -1544,7 +1546,7 @@ export default function ManagerClassSchedule() {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(manager)/(classes)/index.tsx
