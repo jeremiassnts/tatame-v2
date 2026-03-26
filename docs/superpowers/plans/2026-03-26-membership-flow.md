@@ -1595,13 +1595,13 @@ git commit -m "feat(mobile): add joining flow layout and search academy screen"
 
 ---
 
-## Task 10: Mobile — Academy Detail and Pending Approval screens
+## Task 10: Mobile — Academy Detail and Pending Approval screens ✅
 
 **Files:**
 - Create: `apps/mobile/app/(app)/(joining)/academy/[academyId].tsx`
 - Create: `apps/mobile/app/(app)/(joining)/pending-approval.tsx`
 
-- [ ] **Step 1: Create academy detail screen**
+- [x] **Step 1: Create academy detail screen**
 
 ```typescript
 // apps/mobile/app/(app)/(joining)/academy/[academyId].tsx
@@ -1732,7 +1732,7 @@ export default function AcademyDetailScreen() {
 }
 ```
 
-- [ ] **Step 2: Create pending approval screen**
+- [x] **Step 2: Create pending approval screen**
 
 ```typescript
 // apps/mobile/app/(app)/(joining)/pending-approval.tsx
@@ -1823,7 +1823,7 @@ export default function PendingApprovalScreen() {
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(joining)/
