@@ -38,7 +38,7 @@ export default function PendingRequestsScreen() {
           >
             <ArrowLeft size={18} color="#FFFFFF" />
           </Pressable>
-          <Text className="font-sora-bold text-lg text-primary">
+          <Text className="font-poppins-bold text-lg text-primary">
             Solicitações pendentes
           </Text>
           <View className="h-10 w-10" />

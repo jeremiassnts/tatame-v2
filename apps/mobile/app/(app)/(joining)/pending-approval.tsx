@@ -16,13 +16,13 @@ export default function PendingApprovalScreen() {
   const isStudent = user?.activeRole === "student";
 
   const subtitle = isStudent
-    ? `Sua solicitação para entrar na ${academyName} foi enviada. O gestor da academia ira avaliar seu pedido para liberar seu acesso como aluno.`
-    : `Sua solicitação para entrar na ${academyName} foi enviada. O gestor da academia ira avaliar seu pedido.`;
+    ? `Sua solicitação para entrar em ${academyName} foi enviada. O gestor da academia irá avaliar seu pedido para liberar seu acesso como aluno.`
+    : `Sua solicitação para entrar em ${academyName} foi enviada. O gestor da academia irá avaliar seu pedido.`;
 
   const handleCancelMembership = () => {
     Alert.alert(
-      "Cancelar solicitacao",
-      "Deseja realmente cancelar sua solicitacao de entrada?",
+      "Cancelar solicitação",
+      "Deseja realmente cancelar sua solicitação de entrada?",
       [
         { text: "Nao", style: "cancel" },
         {

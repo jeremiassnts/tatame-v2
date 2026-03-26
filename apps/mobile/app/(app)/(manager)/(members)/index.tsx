@@ -58,7 +58,7 @@ export default function MembersListScreen() {
           >
             <ArrowLeft size={18} color="#FFFFFF" />
           </Pressable>
-          <Text className="font-sora-bold text-lg text-primary">Membros</Text>
+          <Text className="font-poppins-bold text-lg text-primary">Membros</Text>
           <View className="h-10 w-10" />
         </View>
 

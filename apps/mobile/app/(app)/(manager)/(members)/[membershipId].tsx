@@ -96,7 +96,7 @@ export default function MemberDetailScreen() {
           >
             <ArrowLeft size={18} color="#FFFFFF" />
           </Pressable>
-          <Text className="font-sora-bold text-lg text-primary">Detalhes</Text>
+          <Text className="font-poppins-bold text-lg text-primary">Detalhes</Text>
           <View className="h-10 w-10" />
         </View>
 
@@ -111,7 +111,7 @@ export default function MemberDetailScreen() {
               imageUrl={member.userProfileImageUrl}
               fallbackLetter={letter}
             />
-            <Text className="font-sora-bold text-[30px] text-primary">
+            <Text className="font-poppins-bold text-[30px] text-primary">
               {member.userName}
             </Text>
             <View className="flex-row items-center gap-2">
