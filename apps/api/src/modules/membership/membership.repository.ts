@@ -32,7 +32,7 @@ export type MemberDetailRow = {
   userEmail: string;
   userPhone: string | null;
   userInstagram: string | null;
-  userBirthDate: Date | null;
+  userBirthDate: string | null;
   userProfileImageUrl: string | null;
   history: {
     id: string;

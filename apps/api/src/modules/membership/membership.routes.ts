@@ -2,10 +2,12 @@ import { Router } from "express";
 import { Role } from "@tatame/types";
 import type { RequestMembershipBody } from "@tatame/validators";
 import {
+  listMembersQuerySchema,
   membershipIdParamSchema,
   pendingQuerySchema,
   requestMembershipBodySchema,
 } from "@tatame/validators";
+import { z } from "zod";
 import { getDb } from "../../lib/db.js";
 import { HttpError } from "../../lib/http-error.js";
 import { attachActiveAcademyContext } from "../../middleware/academy-context.js";
@@ -21,6 +23,31 @@ const db = getDb();
 const membershipService = new MembershipService(
   new PostgresMembershipRepository(db),
   new PostgresAcademyRepository(db),
+);
+
+membershipRouter.get(
+  "/",
+  authorize(Role.Manager),
+  attachActiveAcademyContext,
+  async (req, res, next) => {
+    try {
+      const query = listMembersQuerySchema
+        .extend({ academyId: z.string().uuid() })
+        .safeParse(req.query);
+      if (!query.success) {
+        throw new HttpError(400, "Query academyId (uuid) is required");
+      }
+      const { academyId, role, status, q } = query.data;
+      const members = await membershipService.listMembers(
+        academyId,
+        req.appAuth!.userId,
+        { role, status, q },
+      );
+      res.json(members);
+    } catch (e) {
+      next(e);
+    }
+  },
 );
 
 membershipRouter.post(
@@ -61,6 +88,27 @@ membershipRouter.get(
         managerUserId,
       );
       res.json({ items });
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+membershipRouter.get(
+  "/:membershipId",
+  authorize(Role.Manager),
+  attachActiveAcademyContext,
+  async (req, res, next) => {
+    try {
+      const params = membershipIdParamSchema.safeParse(req.params);
+      if (!params.success) {
+        throw new HttpError(400, "Invalid membership id");
+      }
+      const detail = await membershipService.getMemberDetail(
+        params.data.membershipId,
+        req.appAuth!.userId,
+      );
+      res.json(detail);
     } catch (e) {
       next(e);
     }
