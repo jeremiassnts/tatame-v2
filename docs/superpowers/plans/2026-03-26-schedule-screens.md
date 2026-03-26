@@ -1557,10 +1557,12 @@ git commit -m "feat(mobile): implement manager class schedule screen (M-MGR-07)"
 
 ## Task 10: Manager class detail screen (M-MGR-08)
 
+**Status:** Done — commit `feat(mobile): implement manager class detail screen (M-MGR-08)` (UI from `ClassDetailView`, matches design.pen `jon0a`; route param normalized; error / missing id states).
+
 **Files:**
 - Create: `apps/mobile/app/(app)/(manager)/(classes)/[classId].tsx`
 
-- [ ] **Step 1: Create class detail screen**
+- [x] **Step 1: Create class detail screen**
 
 ```typescript
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -1640,7 +1642,7 @@ export default function ManagerClassDetail() {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(manager)/(classes)/[classId].tsx
