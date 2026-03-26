@@ -1101,12 +1101,12 @@ git commit -m "feat(mobile): implement M-MGR-04 members list screen"
 
 ---
 
-## Task 7: Mobile — M-MGR-05 Member Detail screen
+## Task 7: Mobile — M-MGR-05 Member Detail screen ✅
 
 **Files:**
 - Create: `apps/mobile/app/(app)/(manager)/(members)/[membershipId].tsx`
 
-- [ ] **Step 1: Create the member detail screen**
+- [x] **Step 1: Create the member detail screen**
 
 ```typescript
 // apps/mobile/app/(app)/(manager)/(members)/[membershipId].tsx
@@ -1332,7 +1332,7 @@ export default function MemberDetailScreen() {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(manager)/(members)/[membershipId].tsx
