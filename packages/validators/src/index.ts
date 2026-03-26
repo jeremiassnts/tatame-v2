@@ -8,10 +8,12 @@ export {
 } from "./upload.schema.js";
 export {
   activeAcademySchema,
+  activeMembershipSchema,
   roleEnumSchema,
   syncUserBodySchema,
   userMeResponseSchema,
   type ActiveAcademy,
+  type ActiveMembership,
   type SyncUserBody,
   type UserMeResponse,
 } from "./user.schema.js";

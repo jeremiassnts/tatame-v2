@@ -1,7 +1,10 @@
 import { randomUUID } from "node:crypto";
 import type { InMemoryUserRepository } from "../user/user.repository.in-memory.js";
 import type {
+  ActiveOrPendingMembershipRow,
   IMembershipRepository,
+  MemberDetailRow,
+  MemberListItemRow,
   MembershipRow,
   PendingMembershipWithUser,
 } from "./membership.repository.js";
@@ -132,6 +135,79 @@ export class InMemoryMembershipRepository implements IMembershipRepository {
         r.updatedAt = t;
       }
     }
+  }
+
+  async findByAcademy(
+    academyId: string,
+    filters: { role?: string; status?: string; q?: string },
+  ): Promise<MemberListItemRow[]> {
+    let results = this.rows.filter((r) => r.academyId === academyId);
+    if (filters.role) results = results.filter((r) => r.role === filters.role);
+    if (filters.status)
+      results = results.filter((r) => r.status === filters.status);
+    return results.map((r) => ({
+      id: r.id,
+      userId: r.userId,
+      role: r.role,
+      status: r.status,
+      joinedAt: r.joinedAt,
+      createdAt: r.createdAt,
+      userName: "",
+      userEmail: "",
+      userProfileImageUrl: null,
+    }));
+  }
+
+  async findDetailById(
+    membershipId: string,
+  ): Promise<MemberDetailRow | null> {
+    const row = this.rows.find((r) => r.id === membershipId);
+    if (!row) return null;
+    const history = this.rows
+      .filter((r) => r.userId === row.userId && r.academyId === row.academyId)
+      .map((r) => ({
+        id: r.id,
+        role: r.role,
+        status: r.status,
+        joinedAt: r.joinedAt,
+        leftAt: r.leftAt,
+        createdAt: r.createdAt,
+      }));
+    return {
+      id: row.id,
+      userId: row.userId,
+      academyId: row.academyId,
+      role: row.role,
+      status: row.status,
+      joinedAt: row.joinedAt,
+      createdAt: row.createdAt,
+      userName: "",
+      userEmail: "",
+      userPhone: null,
+      userInstagram: null,
+      userBirthDate: null,
+      userProfileImageUrl: null,
+      history,
+    };
+  }
+
+  async findActiveOrPendingByUser(
+    userId: string,
+  ): Promise<ActiveOrPendingMembershipRow | null> {
+    const row = this.rows.find(
+      (r) =>
+        r.userId === userId &&
+        (r.status === "pending" || r.status === "active"),
+    );
+    if (!row) return null;
+    return {
+      id: row.id,
+      academyId: row.academyId,
+      academyName: "",
+      academyLogoUrl: null,
+      role: row.role,
+      status: row.status,
+    };
   }
 
   async deleteById(membershipId: string): Promise<void> {

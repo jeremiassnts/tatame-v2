@@ -9,6 +9,7 @@ import { getClerkClient } from "../../lib/clerk.js";
 import { getDb } from "../../lib/db.js";
 import { requireSession } from "../../middleware/require-session.js";
 import { validateBody } from "../../middleware/validate.js";
+import { PostgresMembershipRepository } from "../membership/membership.repository.postgres.js";
 import { PostgresUserRepository } from "./user.repository.postgres.js";
 import { UserService } from "./user.service.js";
 
@@ -16,12 +17,16 @@ export const userRouter = Router();
 
 const db = getDb();
 const userService = new UserService(new PostgresUserRepository(db));
+const membershipRepo = new PostgresMembershipRepository(db);
 
 function buildMeResponse(
   row: NonNullable<Awaited<ReturnType<typeof userService.getByClerkId>>>,
   activeRole: string | null,
   activeAcademy: Awaited<
     ReturnType<typeof userService.getActiveAcademyForManager>
+  >,
+  activeMembership: Awaited<
+    ReturnType<typeof membershipRepo.findActiveOrPendingByUser>
   >,
 ) {
   return userMeResponseSchema.parse({
@@ -32,6 +37,7 @@ function buildMeResponse(
     profileImageUrl: row.profileImageUrl,
     activeRole,
     activeAcademy,
+    activeMembership,
   });
 }
 
@@ -59,7 +65,13 @@ userRouter.get("/me", requireSession, async (req, res, next) => {
       activeAcademy = await userService.getActiveAcademyForManager(row.id);
     }
 
-    res.json(buildMeResponse(row, activeRole, activeAcademy));
+    let activeMembership = null;
+    if (activeRole && activeRole !== "manager") {
+      activeMembership =
+        await membershipRepo.findActiveOrPendingByUser(row.id);
+    }
+
+    res.json(buildMeResponse(row, activeRole, activeAcademy, activeMembership));
   } catch (e) {
     next(e);
   }
@@ -131,7 +143,13 @@ userRouter.post(
         activeAcademy = await userService.getActiveAcademyForManager(row.id);
       }
 
-      res.json(buildMeResponse(row, activeRole, activeAcademy));
+      let activeMembership = null;
+      if (activeRole && activeRole !== "manager") {
+        activeMembership =
+          await membershipRepo.findActiveOrPendingByUser(row.id);
+      }
+
+      res.json(buildMeResponse(row, activeRole, activeAcademy, activeMembership));
     } catch (e) {
       next(e);
     }
