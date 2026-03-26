@@ -852,10 +852,12 @@ git commit -m "feat(mobile): add CapacityBar and CheckinListItem components"
 
 ## Task 7: Create ClassDetailView component
 
+**Status:** Done — commit `feat(mobile): add ClassDetailView shared component` (layout aligned with `design.pen` jon0a: accent bar + title block, 2-column info grid Horário/Dia | Instrutor/Vagas, `Timer` for schedule, `#525252` info labels/icons).
+
 **Files:**
 - Create: `apps/mobile/components/ClassDetailView.tsx`
 
-- [ ] **Step 1: Create ClassDetailView**
+- [x] **Step 1: Create ClassDetailView**
 
 ```typescript
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
@@ -1090,7 +1092,7 @@ export function ClassDetailView({
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/components/ClassDetailView.tsx
