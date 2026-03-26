@@ -1103,10 +1103,12 @@ git commit -m "feat(mobile): add ClassDetailView shared component"
 
 ## Task 8: Create ClassForm component
 
+**Status:** Done — commit `feat(mobile): add ClassForm shared component` (aligned with `design.pen` e3e4u M-MGR-09: 52px selects with `ChevronDown`, field spacing 16; multi-day chips per plan/spec).
+
 **Files:**
 - Create: `apps/mobile/components/ClassForm.tsx`
 
-- [ ] **Step 1: Create ClassForm**
+- [x] **Step 1: Create ClassForm**
 
 ```typescript
 import { useState } from "react";
@@ -1423,7 +1425,7 @@ export function ClassForm({
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/components/ClassForm.tsx
