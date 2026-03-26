@@ -100,6 +100,11 @@ export function useApi() {
       return request<T>(path, { method: "PATCH", body, token });
     },
 
+    async delete<T>(path: string): Promise<T> {
+      const token = await getToken();
+      return request<T>(path, { method: "DELETE", token });
+    },
+
     async uploadImage(file: {
       uri: string;
       type: string;
