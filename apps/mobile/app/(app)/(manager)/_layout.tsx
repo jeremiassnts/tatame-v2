@@ -6,6 +6,9 @@ export default function ManagerLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        sceneStyle: {
+          backgroundColor: "#0C0C0C",
+        },
         tabBarStyle: {
           backgroundColor: "#1A1A1A",
           borderTopColor: "#2A2A2A",

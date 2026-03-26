@@ -120,6 +120,10 @@ export default function ManagerDashboard() {
     setRefreshing(false);
   };
 
+  const onSettingsPress = () => {
+    router.push("/(app)/(manager)/(home)/settings");
+  };
+
   const managerFirst = firstName(me?.name ?? "");
   const avatarLetter = (managerFirst || me?.name || "?").charAt(0).toUpperCase();
   const addressLine =
@@ -167,7 +171,7 @@ export default function ManagerDashboard() {
             className="rounded-2xl border border-surface-border bg-surface"
             style={{ padding: 20, gap: 16 }}
           >
-            <View className="flex-row items-center gap-3">
+            <Pressable onPress={onSettingsPress} className="flex-row items-center gap-3">
               <Avatar variant="brand" imageUrl={academyLogoUrl} />
               <View className="min-w-0 flex-1" style={{ gap: 2 }}>
                 <Text className="font-poppins-semibold text-base text-primary">
@@ -181,7 +185,7 @@ export default function ManagerDashboard() {
                   {addressLine}
                 </Text>
               </View>
-            </View>
+            </Pressable>
 
             <View className="h-px w-full bg-surface-border" />
 
