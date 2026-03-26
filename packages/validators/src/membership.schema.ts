@@ -35,3 +35,52 @@ export const pendingMembershipItemSchema = membershipResponseSchema.extend({
 });
 
 export type PendingMembershipItem = z.infer<typeof pendingMembershipItemSchema>;
+
+export const listMembersQuerySchema = z.object({
+  role: z.enum(["instructor", "student"]).optional(),
+  status: z.enum(["pending", "active", "blocked"]).optional(),
+  q: z.string().optional(),
+});
+
+export type ListMembersQuery = z.infer<typeof listMembersQuerySchema>;
+
+export const memberListItemSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().uuid(),
+  role: z.enum(["manager", "instructor", "student"]),
+  status: z.enum(["pending", "active", "rejected", "blocked"]),
+  joinedAt: z.coerce.date().nullable(),
+  createdAt: z.coerce.date(),
+  userName: z.string(),
+  userEmail: z.string().email(),
+  userProfileImageUrl: z.string().nullable(),
+});
+
+export type MemberListItem = z.infer<typeof memberListItemSchema>;
+
+export const memberDetailResponseSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().uuid(),
+  role: z.enum(["manager", "instructor", "student"]),
+  status: z.enum(["pending", "active", "rejected", "blocked"]),
+  joinedAt: z.coerce.date().nullable(),
+  createdAt: z.coerce.date(),
+  userName: z.string(),
+  userEmail: z.string().email(),
+  userPhone: z.string().nullable(),
+  userInstagram: z.string().nullable(),
+  userBirthDate: z.string().nullable(),
+  userProfileImageUrl: z.string().nullable(),
+  history: z.array(
+    z.object({
+      id: z.string().uuid(),
+      role: z.enum(["manager", "instructor", "student"]),
+      status: z.enum(["pending", "active", "rejected", "blocked"]),
+      joinedAt: z.coerce.date().nullable(),
+      leftAt: z.coerce.date().nullable(),
+      createdAt: z.coerce.date(),
+    })
+  ),
+});
+
+export type MemberDetailResponse = z.infer<typeof memberDetailResponseSchema>;

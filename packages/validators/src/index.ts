@@ -27,11 +27,17 @@ export {
   type UpdateAcademyBody,
 } from "./academy.schema.js";
 export {
+  listMembersQuerySchema,
+  memberDetailResponseSchema,
+  memberListItemSchema,
   membershipIdParamSchema,
   membershipResponseSchema,
   pendingMembershipItemSchema,
   pendingQuerySchema,
   requestMembershipBodySchema,
+  type ListMembersQuery,
+  type MemberDetailResponse,
+  type MemberListItem,
   type MembershipResponse,
   type PendingMembershipItem,
   type RequestMembershipBody,

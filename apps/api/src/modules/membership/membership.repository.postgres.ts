@@ -1,7 +1,10 @@
-import { and, eq, inArray, ne } from "drizzle-orm";
-import { academyMemberships, users, type Database } from "@tatame/db";
+import { and, desc, eq, inArray, ne } from "drizzle-orm";
+import { academies, academyMemberships, users, type Database } from "@tatame/db";
 import type {
+  ActiveOrPendingMembershipRow,
   IMembershipRepository,
+  MemberDetailRow,
+  MemberListItemRow,
   MembershipRow,
   PendingMembershipWithUser,
 } from "./membership.repository.js";
@@ -179,6 +182,143 @@ export class PostgresMembershipRepository implements IMembershipRepository {
           ne(academyMemberships.id, excludeMembershipId),
         ),
       );
+  }
+
+  async findByAcademy(
+    academyId: string,
+    filters: { role?: string; status?: string; q?: string },
+  ): Promise<MemberListItemRow[]> {
+    const conditions: ReturnType<typeof eq>[] = [
+      eq(academyMemberships.academyId, academyId),
+    ];
+
+    if (filters.role) {
+      conditions.push(
+        eq(academyMemberships.role, filters.role as "instructor" | "student"),
+      );
+    }
+    if (filters.status) {
+      conditions.push(
+        eq(
+          academyMemberships.status,
+          filters.status as "pending" | "active" | "blocked",
+        ),
+      );
+    }
+
+    const rows = await this.db
+      .select({
+        id: academyMemberships.id,
+        userId: academyMemberships.userId,
+        role: academyMemberships.role,
+        status: academyMemberships.status,
+        joinedAt: academyMemberships.joinedAt,
+        createdAt: academyMemberships.createdAt,
+        userName: users.name,
+        userEmail: users.email,
+        userProfileImageUrl: users.profileImageUrl,
+      })
+      .from(academyMemberships)
+      .innerJoin(users, eq(academyMemberships.userId, users.id))
+      .where(and(...conditions))
+      .orderBy(desc(academyMemberships.createdAt));
+
+    if (filters.q) {
+      const lower = filters.q.toLowerCase();
+      return rows.filter(
+        (r) =>
+          r.userName.toLowerCase().includes(lower) ||
+          r.userEmail.toLowerCase().includes(lower),
+      );
+    }
+
+    return rows;
+  }
+
+  async findDetailById(membershipId: string): Promise<MemberDetailRow | null> {
+    const [row] = await this.db
+      .select({
+        id: academyMemberships.id,
+        userId: academyMemberships.userId,
+        academyId: academyMemberships.academyId,
+        role: academyMemberships.role,
+        status: academyMemberships.status,
+        joinedAt: academyMemberships.joinedAt,
+        createdAt: academyMemberships.createdAt,
+        userName: users.name,
+        userEmail: users.email,
+        userPhone: users.phone,
+        userInstagram: users.instagram,
+        userBirthDate: users.birthDate,
+        userProfileImageUrl: users.profileImageUrl,
+      })
+      .from(academyMemberships)
+      .innerJoin(users, eq(academyMemberships.userId, users.id))
+      .where(eq(academyMemberships.id, membershipId))
+      .limit(1);
+
+    if (!row) return null;
+
+    const history = await this.db
+      .select({
+        id: academyMemberships.id,
+        role: academyMemberships.role,
+        status: academyMemberships.status,
+        joinedAt: academyMemberships.joinedAt,
+        leftAt: academyMemberships.leftAt,
+        createdAt: academyMemberships.createdAt,
+      })
+      .from(academyMemberships)
+      .where(
+        and(
+          eq(academyMemberships.userId, row.userId),
+          eq(academyMemberships.academyId, row.academyId),
+        ),
+      )
+      .orderBy(desc(academyMemberships.createdAt));
+
+    return {
+      id: row.id,
+      userId: row.userId,
+      academyId: row.academyId,
+      role: row.role,
+      status: row.status,
+      joinedAt: row.joinedAt,
+      createdAt: row.createdAt,
+      userName: row.userName,
+      userEmail: row.userEmail,
+      userPhone: row.userPhone,
+      userInstagram: row.userInstagram,
+      userBirthDate: row.userBirthDate,
+      userProfileImageUrl: row.userProfileImageUrl,
+      history,
+    };
+  }
+
+  async findActiveOrPendingByUser(
+    userId: string,
+  ): Promise<ActiveOrPendingMembershipRow | null> {
+    const [row] = await this.db
+      .select({
+        id: academyMemberships.id,
+        academyId: academyMemberships.academyId,
+        academyName: academies.name,
+        academyLogoUrl: academies.logoUrl,
+        role: academyMemberships.role,
+        status: academyMemberships.status,
+      })
+      .from(academyMemberships)
+      .innerJoin(academies, eq(academyMemberships.academyId, academies.id))
+      .where(
+        and(
+          eq(academyMemberships.userId, userId),
+          inArray(academyMemberships.status, ["pending", "active"]),
+        ),
+      )
+      .orderBy(desc(academyMemberships.createdAt))
+      .limit(1);
+
+    return row ?? null;
   }
 
   async deleteById(membershipId: string): Promise<void> {
