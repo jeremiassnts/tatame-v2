@@ -977,12 +977,12 @@ git commit -m "feat(mobile): add shared UI components for membership flow"
 
 ---
 
-## Task 6: Mobile — M-MGR-04 Members List screen
+## Task 6: Mobile — M-MGR-04 Members List screen ✅
 
 **Files:**
 - Modify: `apps/mobile/app/(app)/(manager)/(members)/index.tsx`
 
-- [ ] **Step 1: Replace placeholder with member list screen**
+- [x] **Step 1: Replace placeholder with member list screen**
 
 ```typescript
 // apps/mobile/app/(app)/(manager)/(members)/index.tsx
@@ -1092,7 +1092,7 @@ export default function MembersListScreen() {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(manager)/(members)/index.tsx
