@@ -58,39 +58,39 @@ export function ClassForm({
   onSubmit,
   isSubmitting,
 }: ClassFormProps) {
-  const [name, setName] = useState(initialData?.name ?? "");
-  const [description, setDescription] = useState(
-    initialData?.description ?? "",
-  );
-  const [instructorId, setInstructorId] = useState(
-    initialData?.instructorId ?? "",
-  );
-  const [dayOfWeek, setDayOfWeek] = useState(initialData?.dayOfWeek ?? 1);
-  const [startTime, setStartTime] = useState(initialData?.startTime ?? "");
-  const [endTime, setEndTime] = useState(initialData?.endTime ?? "");
-  const [capacityText, setCapacityText] = useState(
-    initialData?.capacity != null ? String(initialData.capacity) : "",
-  );
-  const [unlimited, setUnlimited] = useState(initialData?.capacity === null);
-  const [selectedExtraDays, setSelectedExtraDays] = useState<number[]>([]);
+  const [form, setForm] = useState(() => ({
+    name: initialData?.name ?? "",
+    description: initialData?.description ?? "",
+    instructorId: initialData?.instructorId ?? "",
+    dayOfWeek: initialData?.dayOfWeek ?? 1,
+    startTime: initialData?.startTime ?? "",
+    endTime: initialData?.endTime ?? "",
+    capacityText:
+      initialData?.capacity != null ? String(initialData.capacity) : "",
+    unlimited: initialData?.capacity === null,
+    selectedExtraDays: [] as number[],
+  }));
 
   const handleSubmit = () => {
     onSubmit({
-      name: name.trim(),
-      description: description.trim(),
-      instructorId,
-      dayOfWeek,
-      startTime,
-      endTime,
-      capacity: unlimited ? null : Number(capacityText) || null,
-      extraDays: mode === "create" ? selectedExtraDays : undefined,
+      name: form.name.trim(),
+      description: form.description.trim(),
+      instructorId: form.instructorId,
+      dayOfWeek: form.dayOfWeek,
+      startTime: form.startTime,
+      endTime: form.endTime,
+      capacity: form.unlimited ? null : Number(form.capacityText) || null,
+      extraDays: mode === "create" ? form.selectedExtraDays : undefined,
     });
   };
 
   const toggleExtraDay = (day: number) => {
-    setSelectedExtraDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day],
-    );
+    setForm((prev) => ({
+      ...prev,
+      selectedExtraDays: prev.selectedExtraDays.includes(day)
+        ? prev.selectedExtraDays.filter((d) => d !== day)
+        : [...prev.selectedExtraDays, day],
+    }));
   };
 
   const title = mode === "create" ? "Nova aula" : "Editar aula";
@@ -114,15 +114,15 @@ export function ClassForm({
       >
         <FormInput
           label="Nome da aula"
-          value={name}
-          onChangeText={setName}
+          value={form.name}
+          onChangeText={(v) => setForm((prev) => ({ ...prev, name: v }))}
           placeholder="Ex: Fundamentos"
         />
 
         <FormInput
           label="Descrição"
-          value={description}
-          onChangeText={setDescription}
+          value={form.description}
+          onChangeText={(v) => setForm((prev) => ({ ...prev, description: v }))}
           placeholder="Descrição opcional da aula..."
           multiline
           numberOfLines={3}
@@ -137,8 +137,8 @@ export function ClassForm({
           </Text>
           {canSelectInstructor ? (
             <ModalSelect
-              value={instructorId}
-              onChange={setInstructorId}
+              value={form.instructorId}
+              onChange={(v) => setForm((prev) => ({ ...prev, instructorId: v }))}
               placeholder="Selecionar instrutor"
               options={(instructors ?? []).map((i) => ({
                 value: i.id,
@@ -160,8 +160,10 @@ export function ClassForm({
             Dia da semana
           </Text>
           <ModalSelect
-            value={String(dayOfWeek)}
-            onChange={(v) => setDayOfWeek(Number(v))}
+            value={String(form.dayOfWeek)}
+            onChange={(v) =>
+              setForm((prev) => ({ ...prev, dayOfWeek: Number(v) }))
+            }
             options={DAY_LABELS.map((label, i) => ({
               value: String(i),
               label,
@@ -173,16 +175,16 @@ export function ClassForm({
           <View className="flex-1">
             <TimePickerField
               label="Início"
-              value={startTime}
-              onChange={setStartTime}
+              value={form.startTime}
+              onChange={(v) => setForm((prev) => ({ ...prev, startTime: v }))}
               placeholder="19:00"
             />
           </View>
           <View className="flex-1">
             <TimePickerField
               label="Término"
-              value={endTime}
-              onChange={setEndTime}
+              value={form.endTime}
+              onChange={(v) => setForm((prev) => ({ ...prev, endTime: v }))}
               placeholder="20:30"
             />
           </View>
@@ -196,21 +198,26 @@ export function ClassForm({
             <View className="flex-row items-center gap-2">
               <Text className="font-poppins text-xs text-muted">Ilimitado</Text>
               <Switch
-                value={unlimited}
+                value={form.unlimited}
                 onValueChange={(v) => {
-                  setUnlimited(v);
-                  if (v) setCapacityText("");
+                  setForm((prev) => ({
+                    ...prev,
+                    unlimited: v,
+                    capacityText: v ? "" : prev.capacityText,
+                  }));
                 }}
                 trackColor={{ false: "#3A3A3A", true: "#A078E8" }}
                 thumbColor="#FFFFFF"
               />
             </View>
           </View>
-          {!unlimited ? (
+          {!form.unlimited ? (
             <FormInput
               label=""
-              value={capacityText}
-              onChangeText={setCapacityText}
+              value={form.capacityText}
+              onChangeText={(v) =>
+                setForm((prev) => ({ ...prev, capacityText: v }))
+              }
               placeholder="20"
               keyboardType="number-pad"
             />
@@ -231,8 +238,8 @@ export function ClassForm({
             </View>
             <View className="flex-row flex-wrap" style={{ gap: 8 }}>
               {DAY_SHORT.map((label, i) => {
-                if (i === dayOfWeek) return null;
-                const selected = selectedExtraDays.includes(i);
+                if (i === form.dayOfWeek) return null;
+                const selected = form.selectedExtraDays.includes(i);
                 return (
                   <Pressable
                     key={label}
@@ -259,12 +266,12 @@ export function ClassForm({
       <View className="px-6 pb-6">
         <Pressable
           onPress={handleSubmit}
-          disabled={isSubmitting || !name.trim()}
+          disabled={isSubmitting || !form.name.trim()}
         >
           <View className="overflow-hidden rounded-xl">
             <LinearGradient
               colors={
-                isSubmitting || !name.trim()
+                isSubmitting || !form.name.trim()
                   ? ["#3A3A3A", "#3A3A3A"]
                   : ["#A078E8", "#7C5CBF"]
               }
