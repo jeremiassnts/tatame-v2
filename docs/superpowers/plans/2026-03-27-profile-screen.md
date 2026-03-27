@@ -476,7 +476,7 @@ git commit -m "feat(api): add PATCH and DELETE /users/me endpoints"
 **Files:**
 - Modify: `apps/mobile/lib/hooks/use-user.ts`
 
-- [ ] **Step 1: Add the hooks**
+- [x] **Step 1: Add the hooks**
 
 Replace the contents of `apps/mobile/lib/hooks/use-user.ts` with:
 
