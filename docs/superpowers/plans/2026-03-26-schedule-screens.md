@@ -2832,24 +2832,24 @@ git commit -m "feat(mobile): implement student schedule and class detail screens
 
 ## Task 18: Smoke test all screens
 
-- [ ] **Step 1: Verify TypeScript compiles**
+- [x] **Step 1: Verify TypeScript compiles**
 
 Run: `cd apps/mobile && npx tsc --noEmit`
 Expected: No errors (or only pre-existing ones)
 
-- [ ] **Step 2: Verify API compiles**
+- [x] **Step 2: Verify API compiles**
 
 Run: `cd apps/api && npx tsc --noEmit`
 Expected: No errors
 
-- [ ] **Step 3: Fix any type issues found**
+- [x] **Step 3: Fix any type issues found**
 
 Address any TypeScript errors from the above runs. Common issues:
 - Missing type exports from `@tatame/validators` — check `packages/validators/src/index.ts` exports
 - `Belt` type import from `@tatame/types` — verify it's exported
 - `MemberListItem` shape — verify it has `userId` and `userName` fields
 
-- [ ] **Step 4: Commit fixes if any**
+- [x] **Step 4: Commit fixes if any**
 
 ```bash
 git add -A
