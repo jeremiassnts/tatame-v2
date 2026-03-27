@@ -1,6 +1,10 @@
 import { and, desc, eq } from "drizzle-orm";
-import { beltPromotions, type Database } from "@tatame/db";
-import type { BeltPromotionRow, IGraduationRepository } from "./graduation.repository.js";
+import { beltPromotions, users, type Database } from "@tatame/db";
+import type {
+  BeltPromotionRow,
+  BeltPromotionWithPromoterName,
+  IGraduationRepository,
+} from "./graduation.repository.js";
 
 export class PostgresGraduationRepository implements IGraduationRepository {
   constructor(private readonly db: Database) {}
@@ -19,10 +23,22 @@ export class PostgresGraduationRepository implements IGraduationRepository {
   async listByUserInAcademy(
     userId: string,
     academyId: string,
-  ): Promise<BeltPromotionRow[]> {
-    return this.db
-      .select()
+  ): Promise<BeltPromotionWithPromoterName[]> {
+    const rows = await this.db
+      .select({
+        id: beltPromotions.id,
+        userId: beltPromotions.userId,
+        academyId: beltPromotions.academyId,
+        promotedBy: beltPromotions.promotedBy,
+        promotedByName: users.name,
+        belt: beltPromotions.belt,
+        stripes: beltPromotions.stripes,
+        isCurrent: beltPromotions.isCurrent,
+        promotedAt: beltPromotions.promotedAt,
+        notes: beltPromotions.notes,
+      })
       .from(beltPromotions)
+      .innerJoin(users, eq(users.id, beltPromotions.promotedBy))
       .where(
         and(
           eq(beltPromotions.userId, userId),
@@ -30,6 +46,7 @@ export class PostgresGraduationRepository implements IGraduationRepository {
         ),
       )
       .orderBy(desc(beltPromotions.promotedAt));
+    return rows;
   }
 
   async insertInitialCurrent(data: {

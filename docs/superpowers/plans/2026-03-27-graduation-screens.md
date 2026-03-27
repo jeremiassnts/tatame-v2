@@ -93,7 +93,7 @@ git commit -m "feat(validators): rename promoteBeltBody userId, add promotedByNa
 - Modify: `apps/api/src/modules/graduation/graduation.repository.postgres.ts`
 - Modify: `apps/api/src/modules/graduation/graduation.repository.in-memory.ts`
 
-- [ ] **Step 1: Add `BeltPromotionWithPromoterName` type to interface**
+- [x] **Step 1: Add `BeltPromotionWithPromoterName` type to interface**
 
 In `apps/api/src/modules/graduation/graduation.repository.ts`, add the new type and update `listByUserInAcademy` return type:
 
@@ -136,7 +136,7 @@ export interface IGraduationRepository {
 }
 ```
 
-- [ ] **Step 2: Update Postgres repository to JOIN users**
+- [x] **Step 2: Update Postgres repository to JOIN users**
 
 In `apps/api/src/modules/graduation/graduation.repository.postgres.ts`, update the imports and `listByUserInAcademy`:
 
@@ -183,7 +183,7 @@ async listByUserInAcademy(
 }
 ```
 
-- [ ] **Step 3: Update InMemory repository**
+- [x] **Step 3: Update InMemory repository**
 
 In `apps/api/src/modules/graduation/graduation.repository.in-memory.ts`, update the import and `listByUserInAcademy`:
 
@@ -212,7 +212,7 @@ async listByUserInAcademy(
 }
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/api/src/modules/graduation/graduation.repository.ts apps/api/src/modules/graduation/graduation.repository.postgres.ts apps/api/src/modules/graduation/graduation.repository.in-memory.ts

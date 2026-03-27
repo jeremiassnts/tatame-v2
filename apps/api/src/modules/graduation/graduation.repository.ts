@@ -3,13 +3,17 @@ import type { beltPromotions } from "@tatame/db";
 
 export type BeltPromotionRow = InferSelectModel<typeof beltPromotions>;
 
+export type BeltPromotionWithPromoterName = BeltPromotionRow & {
+  promotedByName: string;
+};
+
 export interface IGraduationRepository {
   findCurrentByUserId(userId: string): Promise<BeltPromotionRow | undefined>;
 
   listByUserInAcademy(
     userId: string,
     academyId: string,
-  ): Promise<BeltPromotionRow[]>;
+  ): Promise<BeltPromotionWithPromoterName[]>;
 
   insertInitialCurrent(data: {
     userId: string;

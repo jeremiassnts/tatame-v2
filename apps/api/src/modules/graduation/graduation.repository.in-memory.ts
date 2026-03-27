@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type {
   BeltPromotionRow,
+  BeltPromotionWithPromoterName,
   IGraduationRepository,
 } from "./graduation.repository.js";
 
@@ -14,13 +15,14 @@ export class InMemoryGraduationRepository implements IGraduationRepository {
   async listByUserInAcademy(
     userId: string,
     academyId: string,
-  ): Promise<BeltPromotionRow[]> {
+  ): Promise<BeltPromotionWithPromoterName[]> {
     return this.rows
       .filter((r) => r.userId === userId && r.academyId === academyId)
       .sort(
         (a, b) =>
           new Date(b.promotedAt).getTime() - new Date(a.promotedAt).getTime(),
-      );
+      )
+      .map((r) => ({ ...r, promotedByName: "Test User" }));
   }
 
   async insertInitialCurrent(data: {
