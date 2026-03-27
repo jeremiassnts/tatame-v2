@@ -523,7 +523,7 @@ export function useDeleteAccount() {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/lib/hooks/use-user.ts
