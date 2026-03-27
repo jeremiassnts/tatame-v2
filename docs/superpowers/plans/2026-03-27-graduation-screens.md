@@ -641,7 +641,7 @@ git commit -m "feat(mobile): add useGraduationHistory and usePromoteGraduation h
 **Files:**
 - Create: `apps/mobile/app/(app)/promote-graduation.tsx`
 
-- [ ] **Step 1: Create the promotion screen**
+- [x] **Step 1: Create the promotion screen**
 
 Create `apps/mobile/app/(app)/promote-graduation.tsx`:
 
@@ -1017,7 +1017,7 @@ export default function PromoteGraduationScreen() {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/app/\(app\)/promote-graduation.tsx
