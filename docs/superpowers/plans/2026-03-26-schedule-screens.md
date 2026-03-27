@@ -2730,14 +2730,14 @@ git commit -m "feat(mobile): implement student home screen (M-STU-05)"
 - Create: `apps/mobile/app/(app)/(student)/(classes)/index.tsx`
 - Create: `apps/mobile/app/(app)/(student)/(classes)/[classId].tsx`
 
-- [ ] **Step 1: Create student weekly schedule**
+- [x] **Step 1: Create student weekly schedule**
 
 Create `apps/mobile/app/(app)/(student)/(classes)/index.tsx`. Same as manager schedule (Task 9) but:
 - Title: "Agenda semanal"
 - No "+" button (replace with `<View className="h-10 w-10" />` spacer)
 - Route prefix: `/(app)/(student)/(classes)/`
 
-- [ ] **Step 2: Create student class detail**
+- [x] **Step 2: Create student class detail**
 
 Create `apps/mobile/app/(app)/(student)/(classes)/[classId].tsx`:
 
@@ -2821,7 +2821,7 @@ export default function StudentClassDetail() {
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(student)/(classes)/
