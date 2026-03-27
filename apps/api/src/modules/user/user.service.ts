@@ -39,4 +39,20 @@ export class UserService {
   async getActiveAcademyForManager(userId: string) {
     return (await this.userRepo.findActiveAcademyForManager(userId)) ?? null;
   }
+
+  async updateProfile(
+    userId: string,
+    data: {
+      name?: string;
+      phone?: string | null;
+      instagram?: string | null;
+      birthDate?: string | null;
+    },
+  ) {
+    return (await this.userRepo.update(userId, data)) ?? null;
+  }
+
+  async softDelete(userId: string): Promise<void> {
+    await this.userRepo.softDelete(userId);
+  }
 }

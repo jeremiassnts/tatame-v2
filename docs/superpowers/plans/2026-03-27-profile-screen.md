@@ -223,7 +223,7 @@ git commit -m "feat(api): add update and softDelete to user repository"
 - Modify: `apps/api/src/modules/user/user.service.ts`
 - Modify: `apps/api/src/modules/user/user.service.test.ts`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Add to `apps/api/src/modules/user/user.service.test.ts`:
 
@@ -278,13 +278,13 @@ it("softDelete sets deletedAt and user is no longer findable", async () => {
 });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `cd apps/api && npx vitest run src/modules/user/user.service.test.ts`
 
 Expected: FAIL — `updateProfile` and `softDelete` are not defined on `UserService`.
 
-- [ ] **Step 3: Implement the methods in UserService**
+- [x] **Step 3: Implement the methods in UserService**
 
 Add to `apps/api/src/modules/user/user.service.ts`:
 
@@ -306,7 +306,7 @@ async softDelete(userId: string): Promise<void> {
 }
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `cd apps/api && npx vitest run src/modules/user/user.service.test.ts`
 
