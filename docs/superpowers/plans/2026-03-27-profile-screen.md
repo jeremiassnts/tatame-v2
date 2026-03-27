@@ -46,7 +46,7 @@ git commit -m "feat(db): add deletedAt column to users table"
 **Files:**
 - Modify: `packages/validators/src/user.schema.ts`
 
-- [ ] **Step 1: Add the `updateProfileBodySchema` and expand response**
+- [x] **Step 1: Add the `updateProfileBodySchema` and expand response**
 
 Add to `packages/validators/src/user.schema.ts`:
 

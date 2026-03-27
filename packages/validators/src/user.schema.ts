@@ -8,6 +8,20 @@ export const syncUserBodySchema = z.object({
 
 export type SyncUserBody = z.infer<typeof syncUserBodySchema>;
 
+export const updateProfileBodySchema = z.object({
+  name: z.string().min(2).max(100).optional(),
+  phone: z.string().max(20).nullable().optional(),
+  instagram: z
+    .string()
+    .max(30)
+    .transform((v) => v.replace(/^@/, ""))
+    .nullable()
+    .optional(),
+  birthDate: z.string().date().nullable().optional(),
+});
+
+export type UpdateProfileBody = z.infer<typeof updateProfileBodySchema>;
+
 export const activeAcademySchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
@@ -33,6 +47,9 @@ export const userMeResponseSchema = z.object({
   email: z.string().email(),
   name: z.string(),
   profileImageUrl: z.string().nullable(),
+  phone: z.string().nullable(),
+  instagram: z.string().nullable(),
+  birthDate: z.string().nullable(),
   /** Null until a role is assigned via POST /users/me/sync. */
   activeRole: roleEnumSchema.nullable(),
   /** Non-null for managers who own an academy. */
