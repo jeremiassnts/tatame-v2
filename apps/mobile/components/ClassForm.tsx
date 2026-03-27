@@ -1,5 +1,6 @@
 import { BackButton } from "@/components/BackButton";
 import { FormInput } from "@/components/FormInput";
+import { ModalSelect } from "@/components/ModalSelect";
 import { LinearGradient } from "expo-linear-gradient";
 import { Check, ChevronDown, Lock } from "lucide-react-native";
 import { useState } from "react";
@@ -71,7 +72,6 @@ export function ClassForm({
   );
   const [unlimited, setUnlimited] = useState(initialData?.capacity === null);
   const [selectedExtraDays, setSelectedExtraDays] = useState<number[]>([]);
-  const [showInstructorPicker, setShowInstructorPicker] = useState(false);
   const [showDayPicker, setShowDayPicker] = useState(false);
 
   const selectedInstructor = instructors?.find((i) => i.id === instructorId);
@@ -128,7 +128,7 @@ export function ClassForm({
           placeholder="Descrição opcional da aula..."
           multiline
           numberOfLines={3}
-          style={{ height: 80 }}
+          style={{ height: 80, textAlignVertical: "top", }}
         />
 
         <View style={{ gap: 6 }}>
@@ -138,43 +138,15 @@ export function ClassForm({
               : "Instrutor (definido automaticamente)"}
           </Text>
           {canSelectInstructor ? (
-            <>
-              <Pressable
-                onPress={() => setShowInstructorPicker(!showInstructorPicker)}
-                className="h-[52px] flex-row items-center justify-between rounded-xl border border-surface-border bg-surface px-4"
-              >
-                <Text
-                  className={`font-poppins text-[15px] ${selectedInstructor ? "text-primary" : "text-muted"}`}
-                >
-                  {selectedInstructor?.name ?? "Selecionar instrutor"}
-                </Text>
-                <ChevronDown size={18} color="#525252" />
-              </Pressable>
-              {showInstructorPicker && instructors ? (
-                <View className="rounded-xl border border-surface-border bg-surface">
-                  {instructors.map((inst, idx) => (
-                    <Pressable
-                      key={inst.id}
-                      onPress={() => {
-                        setInstructorId(inst.id);
-                        setShowInstructorPicker(false);
-                      }}
-                      className={`flex-row items-center justify-between px-4 py-3 ${idx < instructors.length - 1
-                        ? "border-b border-surface-border"
-                        : ""
-                        }`}
-                    >
-                      <Text className="font-poppins text-sm text-primary">
-                        {inst.name}
-                      </Text>
-                      {inst.id === instructorId ? (
-                        <Check size={16} color="#A078E8" />
-                      ) : null}
-                    </Pressable>
-                  ))}
-                </View>
-              ) : null}
-            </>
+            <ModalSelect
+              value={instructorId}
+              onChange={setInstructorId}
+              placeholder="Selecionar instrutor"
+              options={(instructors ?? []).map((i) => ({
+                value: i.id,
+                label: i.name,
+              }))}
+            />
           ) : (
             <View className="h-[52px] flex-row items-center gap-2.5 rounded-xl border border-surface-border bg-surface px-4">
               <Text className="flex-1 font-poppins text-[15px] text-primary">
@@ -274,10 +246,9 @@ export function ClassForm({
 
         {mode === "create" ? (
           <View
-            className="rounded-xl border border-surface-border bg-surface"
-            style={{ padding: 16, gap: 12 }}
+            className="rounded-xl border border-surface-border bg-surface p-4 gap-4"
           >
-            <View style={{ gap: 2 }}>
+            <View className="gap-1">
               <Text className="font-poppins-semibold text-sm text-primary">
                 Criar para múltiplos dias
               </Text>
