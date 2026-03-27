@@ -2,7 +2,7 @@ import { BackButton } from "@/components/BackButton";
 import { FormInput } from "@/components/FormInput";
 import { ModalSelect } from "@/components/ModalSelect";
 import { LinearGradient } from "expo-linear-gradient";
-import { Check, ChevronDown, Lock } from "lucide-react-native";
+import { Check, Lock } from "lucide-react-native";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -72,9 +72,6 @@ export function ClassForm({
   );
   const [unlimited, setUnlimited] = useState(initialData?.capacity === null);
   const [selectedExtraDays, setSelectedExtraDays] = useState<number[]>([]);
-  const [showDayPicker, setShowDayPicker] = useState(false);
-
-  const selectedInstructor = instructors?.find((i) => i.id === instructorId);
 
   const handleSubmit = () => {
     onSubmit({
@@ -128,7 +125,7 @@ export function ClassForm({
           placeholder="Descrição opcional da aula..."
           multiline
           numberOfLines={3}
-          style={{ height: 80, textAlignVertical: "top", }}
+          style={{ height: 80 }}
         />
 
         <View style={{ gap: 6 }}>
@@ -161,37 +158,14 @@ export function ClassForm({
           <Text className="font-poppins-medium text-[13px] text-muted">
             Dia da semana
           </Text>
-          <Pressable
-            onPress={() => setShowDayPicker(!showDayPicker)}
-            className="h-[52px] flex-row items-center justify-between rounded-xl border border-surface-border bg-surface px-4"
-          >
-            <Text className="font-poppins text-[15px] text-primary">
-              {DAY_LABELS[dayOfWeek]}
-            </Text>
-            <ChevronDown size={18} color="#525252" />
-          </Pressable>
-          {showDayPicker ? (
-            <View className="rounded-xl border border-surface-border bg-surface">
-              {DAY_LABELS.map((label, i) => (
-                <Pressable
-                  key={label}
-                  onPress={() => {
-                    setDayOfWeek(i);
-                    setShowDayPicker(false);
-                  }}
-                  className={`flex-row items-center justify-between px-4 py-3 ${i < DAY_LABELS.length - 1 ? "border-b border-surface-border" : ""
-                    }`}
-                >
-                  <Text className="font-poppins text-sm text-primary">
-                    {label}
-                  </Text>
-                  {i === dayOfWeek ? (
-                    <Check size={16} color="#A078E8" />
-                  ) : null}
-                </Pressable>
-              ))}
-            </View>
-          ) : null}
+          <ModalSelect
+            value={String(dayOfWeek)}
+            onChange={(v) => setDayOfWeek(Number(v))}
+            options={DAY_LABELS.map((label, i) => ({
+              value: String(i),
+              label,
+            }))}
+          />
         </View>
 
         <View className="flex-row" style={{ gap: 12 }}>
