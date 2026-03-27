@@ -1884,7 +1884,7 @@ git commit -m "feat(mobile): route active instructors/students to their home scr
 - Create: `apps/mobile/app/(app)/(instructor)/(home)/index.tsx`
 - Create: `apps/mobile/app/(app)/(instructor)/(classes)/_layout.tsx`
 
-- [ ] **Step 1: Create instructor tab layout**
+- [x] **Step 1: Create instructor tab layout**
 
 Create `apps/mobile/app/(app)/(instructor)/_layout.tsx`:
 
@@ -1952,7 +1952,7 @@ export default function InstructorLayout() {
 }
 ```
 
-- [ ] **Step 2: Create home and classes stack layouts**
+- [x] **Step 2: Create home and classes stack layouts**
 
 Create `apps/mobile/app/(app)/(instructor)/(home)/_layout.tsx`:
 
@@ -1988,7 +1988,7 @@ export default function InstructorClassesLayout() {
 }
 ```
 
-- [ ] **Step 3: Create instructor home screen**
+- [x] **Step 3: Create instructor home screen**
 
 Create `apps/mobile/app/(app)/(instructor)/(home)/index.tsx`:
 
@@ -2157,7 +2157,7 @@ export default function InstructorHome() {
 }
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(instructor)/
