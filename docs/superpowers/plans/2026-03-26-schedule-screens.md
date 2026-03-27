@@ -1807,7 +1807,7 @@ git commit -m "feat(mobile): implement manager create/edit class screens (M-MGR-
 **Files:**
 - Modify: `apps/mobile/app/(app)/_layout.tsx`
 
-- [ ] **Step 1: Update routing logic and provide AcademyProvider for all active roles**
+- [x] **Step 1: Update routing logic and provide AcademyProvider for all active roles**
 
 Replace the `useEffect` routing logic in `apps/mobile/app/(app)/_layout.tsx` to handle instructor and student routing:
 
@@ -1867,7 +1867,7 @@ const academyContext =
 
 This ensures the `AcademyProvider` wraps instructor and student screens too.
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/_layout.tsx
