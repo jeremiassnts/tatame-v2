@@ -59,11 +59,20 @@ export class MembershipService {
 
   async listMembers(
     academyId: string,
-    managerUserId: string,
+    requesterUserId: string,
+    requesterRole: "manager" | "instructor" | "student",
     filters: { role?: string; status?: string; q?: string },
   ) {
-    await this.assertManagerOwnsAcademy(managerUserId, academyId);
-    return this.membershipRepo.findByAcademy(academyId, filters);
+    if (requesterRole === "manager") {
+      await this.assertManagerOwnsAcademy(requesterUserId, academyId);
+      return this.membershipRepo.findByAcademy(academyId, filters);
+    }
+
+    await this.assertActiveMemberInAcademy(requesterUserId, academyId);
+    return this.membershipRepo.findByAcademy(academyId, {
+      ...filters,
+      status: "active",
+    });
   }
 
   async getMemberDetail(membershipId: string, managerUserId: string) {
@@ -207,6 +216,17 @@ export class MembershipService {
     }
     if (academy.ownerId !== userId) {
       throw new HttpError(403, "You do not manage this academy");
+    }
+  }
+
+  private async assertActiveMemberInAcademy(userId: string, academyId: string) {
+    const membership = await this.membershipRepo.findActiveByUserAndAcademy(
+      userId,
+      academyId,
+    );
+
+    if (!membership) {
+      throw new HttpError(403, "You are not an active member of this academy");
     }
   }
 }

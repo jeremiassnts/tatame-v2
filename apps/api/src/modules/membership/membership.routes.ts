@@ -27,7 +27,7 @@ const membershipService = new MembershipService(
 
 membershipRouter.get(
   "/",
-  authorize(Role.Manager),
+  authorize(Role.Manager, Role.Instructor, Role.Student),
   attachActiveAcademyContext,
   async (req, res, next) => {
     try {
@@ -41,6 +41,7 @@ membershipRouter.get(
       const members = await membershipService.listMembers(
         academyId,
         req.appAuth!.userId,
+        req.appAuth!.role as "manager" | "instructor" | "student",
         { role, status, q },
       );
       res.json(members);

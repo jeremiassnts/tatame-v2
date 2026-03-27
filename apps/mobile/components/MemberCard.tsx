@@ -7,7 +7,7 @@ type MemberCardProps = {
   role: string;
   status: string;
   profileImageUrl: string | null;
-  onPress: () => void;
+  onPress?: () => void;
 };
 
 export function MemberCard({
@@ -18,10 +18,12 @@ export function MemberCard({
   onPress,
 }: MemberCardProps) {
   const letter = (name || "?").charAt(0).toUpperCase();
+  const isInteractive = typeof onPress === "function";
 
   return (
     <Pressable
       onPress={onPress}
+      disabled={!isInteractive}
       className="flex-row items-center gap-3 rounded-2xl border border-surface-border bg-surface px-4 py-3"
     >
       <Avatar variant="user" imageUrl={profileImageUrl} fallbackLetter={letter} />
