@@ -326,7 +326,7 @@ git commit -m "feat(api): add updateProfile and softDelete to UserService with t
 **Files:**
 - Modify: `apps/api/src/modules/user/user.routes.ts`
 
-- [ ] **Step 1: Update `buildMeResponse` to include new fields**
+- [x] **Step 1: Update `buildMeResponse` to include new fields**
 
 In `user.routes.ts`, update the `buildMeResponse` function to include `phone`, `instagram`, and `birthDate`:
 
@@ -368,7 +368,7 @@ import {
 import type { SyncUserBody, UpdateProfileBody } from "@tatame/validators";
 ```
 
-- [ ] **Step 2: Add the PATCH endpoint**
+- [x] **Step 2: Add the PATCH endpoint**
 
 Add after the existing POST `/me/sync` route:
 
@@ -421,7 +421,7 @@ userRouter.patch(
 );
 ```
 
-- [ ] **Step 3: Add the DELETE endpoint**
+- [x] **Step 3: Add the DELETE endpoint**
 
 Add after the PATCH route:
 
@@ -456,7 +456,7 @@ userRouter.delete("/me", requireSession, async (req, res, next) => {
 });
 ```
 
-- [ ] **Step 4: Verify the API compiles**
+- [x] **Step 4: Verify the API compiles**
 
 Run: `cd apps/api && npx tsc --noEmit`
 

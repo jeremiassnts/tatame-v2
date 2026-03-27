@@ -11,10 +11,12 @@ export {
   activeMembershipSchema,
   roleEnumSchema,
   syncUserBodySchema,
+  updateProfileBodySchema,
   userMeResponseSchema,
   type ActiveAcademy,
   type ActiveMembership,
   type SyncUserBody,
+  type UpdateProfileBody,
   type UserMeResponse,
 } from "./user.schema.js";
 export {

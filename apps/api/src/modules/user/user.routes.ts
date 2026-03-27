@@ -1,7 +1,8 @@
 import { getAuth } from "@clerk/express";
-import type { SyncUserBody } from "@tatame/validators";
+import type { SyncUserBody, UpdateProfileBody } from "@tatame/validators";
 import {
   syncUserBodySchema,
+  updateProfileBodySchema,
   userMeResponseSchema,
 } from "@tatame/validators";
 import { Router } from "express";
@@ -35,6 +36,9 @@ function buildMeResponse(
     email: row.email,
     name: row.name,
     profileImageUrl: row.profileImageUrl,
+    phone: row.phone ?? null,
+    instagram: row.instagram ?? null,
+    birthDate: row.birthDate ?? null,
     activeRole,
     activeAcademy,
     activeMembership,
@@ -155,3 +159,79 @@ userRouter.post(
     }
   },
 );
+
+userRouter.patch(
+  "/me",
+  requireSession,
+  validateBody(updateProfileBodySchema),
+  async (req, res, next) => {
+    try {
+      const { userId: clerkUserId } = getAuth(req);
+      if (!clerkUserId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const row = await userService.getByClerkId(clerkUserId);
+      if (!row) {
+        res.status(404).json({ error: "Usuário não encontrado" });
+        return;
+      }
+
+      const body = req.validatedBody as UpdateProfileBody;
+      const updated = await userService.updateProfile(row.id, body);
+      if (!updated) {
+        res.status(404).json({ error: "Usuário não encontrado" });
+        return;
+      }
+
+      const activeRole = await userService.getActiveRole(updated.id);
+
+      let activeAcademy = null;
+      if (activeRole === "manager") {
+        activeAcademy = await userService.getActiveAcademyForManager(updated.id);
+      }
+
+      let activeMembership = null;
+      if (activeRole && activeRole !== "manager") {
+        activeMembership =
+          await membershipRepo.findActiveOrPendingByUser(updated.id);
+      }
+
+      res.json(
+        buildMeResponse(updated, activeRole, activeAcademy, activeMembership),
+      );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+userRouter.delete("/me", requireSession, async (req, res, next) => {
+  try {
+    const { userId: clerkUserId } = getAuth(req);
+    if (!clerkUserId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const row = await userService.getByClerkId(clerkUserId);
+    if (!row) {
+      res.status(404).json({ error: "Usuário não encontrado" });
+      return;
+    }
+
+    await userService.softDelete(row.id);
+
+    try {
+      const clerkClient = getClerkClient();
+      await clerkClient.users.deleteUser(clerkUserId);
+    } catch (clerkErr) {
+      console.error("Failed to delete Clerk user:", clerkErr);
+    }
+
+    res.status(204).send();
+  } catch (e) {
+    next(e);
+  }
+});
