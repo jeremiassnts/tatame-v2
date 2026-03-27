@@ -1,6 +1,7 @@
 import { BackButton } from "@/components/BackButton";
 import { FormInput } from "@/components/FormInput";
 import { ModalSelect } from "@/components/ModalSelect";
+import { TimePickerField } from "@/components/TimePickerField";
 import { LinearGradient } from "expo-linear-gradient";
 import { Check, Lock } from "lucide-react-native";
 import { useState } from "react";
@@ -170,21 +171,19 @@ export function ClassForm({
 
         <View className="flex-row" style={{ gap: 12 }}>
           <View className="flex-1">
-            <FormInput
+            <TimePickerField
               label="Início"
               value={startTime}
-              onChangeText={setStartTime}
+              onChange={setStartTime}
               placeholder="19:00"
-              keyboardType="numbers-and-punctuation"
             />
           </View>
           <View className="flex-1">
-            <FormInput
+            <TimePickerField
               label="Término"
               value={endTime}
-              onChangeText={setEndTime}
+              onChange={setEndTime}
               placeholder="20:30"
-              keyboardType="numbers-and-punctuation"
             />
           </View>
         </View>
