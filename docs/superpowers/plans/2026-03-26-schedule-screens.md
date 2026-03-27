@@ -2176,7 +2176,7 @@ git commit -m "feat(mobile): add instructor layout, home screen, and class stack
 
 These are thin wrappers identical to the manager versions with different permissions.
 
-- [ ] **Step 1: Create instructor schedule screen**
+- [x] **Step 1: Create instructor schedule screen**
 
 Create `apps/mobile/app/(app)/(instructor)/(classes)/index.tsx`. Same as manager schedule (Task 9) but:
 - Title: "Minhas aulas"
@@ -2187,7 +2187,7 @@ Copy the manager schedule screen contents and change:
 - Title from "Agenda" to "Minhas aulas"
 - All route prefixes from `/(app)/(manager)/(classes)/` to `/(app)/(instructor)/(classes)/`
 
-- [ ] **Step 2: Create instructor class detail**
+- [x] **Step 2: Create instructor class detail**
 
 Create `apps/mobile/app/(app)/(instructor)/(classes)/[classId].tsx`. Same as manager detail (Task 10) but:
 - `canEdit` = true, `canDelete` = false
@@ -2199,7 +2199,7 @@ Copy the manager detail screen contents and change:
 - Remove `onDelete` handler and `useDeleteClass` hook
 - Change edit route prefix
 
-- [ ] **Step 3: Create instructor create/edit screens**
+- [x] **Step 3: Create instructor create/edit screens**
 
 Create `apps/mobile/app/(app)/(instructor)/(classes)/create.tsx`:
 
@@ -2254,7 +2254,7 @@ Same as manager edit (Task 11 step 2) but:
 - Add `useCurrentUser` to get instructor name
 - Set `instructorId: me!.id` in the submit
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(instructor)/(classes)/
