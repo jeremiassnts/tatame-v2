@@ -25,6 +25,15 @@ const DEFAULT_TABS: { key: string; label: string }[] = [
 ];
 
 type MemberFilters = { role?: string; status?: string; q?: string };
+type MemberWithGraduation = {
+  id: string;
+  userName: string;
+  role: string;
+  status: string;
+  userProfileImageUrl: string | null;
+  currentBelt: "white" | "blue" | "purple" | "brown" | "black" | null;
+  currentStripes: number | null;
+};
 
 type MembersListContentProps = {
   title?: string;
@@ -61,6 +70,7 @@ export function MembersListContent({
   }, [activeTab, searchQuery]);
 
   const { data: members, isPending } = useMembers(academyId, filters);
+  const membersWithGraduation = (members ?? []) as MemberWithGraduation[];
   const canOpenMember = allowMemberDetails && typeof getMemberDetailHref === "function";
 
   return (
@@ -104,7 +114,7 @@ export function MembersListContent({
           </View>
         ) : (
           <FlatList
-            data={members ?? []}
+            data={membersWithGraduation}
             keyExtractor={(item) => item.id}
             contentContainerStyle={{ gap: 10, paddingBottom: 24 }}
             showsVerticalScrollIndicator={false}
@@ -114,6 +124,8 @@ export function MembersListContent({
                 role={item.role}
                 status={item.status}
                 profileImageUrl={item.userProfileImageUrl}
+                belt={item.currentBelt}
+                stripes={item.currentStripes}
                 onPress={
                   canOpenMember
                     ? () => router.push(getMemberDetailHref(item.id))

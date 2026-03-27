@@ -18,6 +18,8 @@ export type MemberListItemRow = {
   userName: string;
   userEmail: string;
   userProfileImageUrl: string | null;
+  currentBelt: string | null;
+  currentStripes: number | null;
 };
 
 export type MemberDetailRow = {

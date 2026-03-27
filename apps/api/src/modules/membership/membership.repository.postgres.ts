@@ -1,5 +1,11 @@
 import { and, desc, eq, inArray, ne } from "drizzle-orm";
-import { academies, academyMemberships, users, type Database } from "@tatame/db";
+import {
+  academies,
+  academyMemberships,
+  beltPromotions,
+  users,
+  type Database,
+} from "@tatame/db";
 import type {
   ActiveOrPendingMembershipRow,
   IMembershipRepository,
@@ -217,9 +223,19 @@ export class PostgresMembershipRepository implements IMembershipRepository {
         userName: users.name,
         userEmail: users.email,
         userProfileImageUrl: users.profileImageUrl,
+        currentBelt: beltPromotions.belt,
+        currentStripes: beltPromotions.stripes,
       })
       .from(academyMemberships)
       .innerJoin(users, eq(academyMemberships.userId, users.id))
+      .leftJoin(
+        beltPromotions,
+        and(
+          eq(beltPromotions.userId, academyMemberships.userId),
+          eq(beltPromotions.academyId, academyMemberships.academyId),
+          eq(beltPromotions.isCurrent, true),
+        ),
+      )
       .where(and(...conditions))
       .orderBy(desc(academyMemberships.createdAt));
 

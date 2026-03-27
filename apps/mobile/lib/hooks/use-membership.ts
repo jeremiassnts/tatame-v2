@@ -13,6 +13,11 @@ type MemberFilters = {
   q?: string;
 };
 
+type MemberListItemWithGraduation = MemberListItem & {
+  currentBelt: "white" | "blue" | "purple" | "brown" | "black" | null;
+  currentStripes: number | null;
+};
+
 type AcademySearchItem = {
   id: string;
   name: string;
@@ -38,7 +43,8 @@ export function useMembers(academyId: string, filters?: MemberFilters) {
 
   return useQuery({
     queryKey: ["members", academyId, filters],
-    queryFn: () => api.get<MemberListItem[]>(`/memberships?${params.toString()}`),
+    queryFn: () =>
+      api.get<MemberListItemWithGraduation[]>(`/memberships?${params.toString()}`),
     enabled: Boolean(academyId),
   });
 }

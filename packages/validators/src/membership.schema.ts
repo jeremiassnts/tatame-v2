@@ -54,6 +54,10 @@ export const memberListItemSchema = z.object({
   userName: z.string(),
   userEmail: z.string().email(),
   userProfileImageUrl: z.string().nullable(),
+  currentBelt: z
+    .enum(["white", "blue", "purple", "brown", "black"])
+    .nullable(),
+  currentStripes: z.number().int().min(0).max(10).nullable(),
 });
 
 export type MemberListItem = z.infer<typeof memberListItemSchema>;
