@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Calendar, Home, MoreHorizontal, Users } from "lucide-react-native";
+import { Calendar, Home, Users } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ManagerLayout() {
@@ -49,15 +49,6 @@ export default function ManagerLayout() {
           title: "Aulas",
           tabBarIcon: ({ color, size }) => (
             <Calendar size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="(more)"
-        options={{
-          title: "Mais",
-          tabBarIcon: ({ color, size }) => (
-            <MoreHorizontal size={size} color={color} />
           ),
         }}
       />

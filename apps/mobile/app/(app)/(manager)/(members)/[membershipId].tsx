@@ -13,7 +13,7 @@ import {
   Mail,
   Phone,
 } from "lucide-react-native";
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const TEXT_SECONDARY = "#ABABAB";
@@ -77,9 +77,7 @@ export default function MemberDetailScreen() {
   if (isPending || !member) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-background">
-        <Text className="font-poppins text-sm" style={{ color: TEXT_MUTED }}>
-          Carregando...
-        </Text>
+        <ActivityIndicator color="#A078E8" />
       </SafeAreaView>
     );
   }
@@ -87,7 +85,7 @@ export default function MemberDetailScreen() {
   const letter = (member.userName || "?").charAt(0).toUpperCase();
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top"]}>
       <View className="flex-1" style={{ paddingHorizontal: 24, paddingTop: 8, gap: 16 }}>
         <View className="flex-row items-center justify-between">
           <Pressable
@@ -110,6 +108,7 @@ export default function MemberDetailScreen() {
               variant="user"
               imageUrl={member.userProfileImageUrl}
               fallbackLetter={letter}
+              size={80}
             />
             <Text className="font-poppins-bold text-[30px] text-primary">
               {member.userName}

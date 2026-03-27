@@ -1,11 +1,11 @@
-import { useState } from "react";
-import { ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
 import { BackButton } from "@/components/BackButton";
 import { ClassCard } from "@/components/ClassCard";
 import { WeekDayStrip } from "@/components/WeekDayStrip";
 import { useClasses } from "@/lib/hooks/use-classes";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import { ScrollView, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const TEXT_MUTED = "#525252";
 
@@ -57,7 +57,7 @@ export default function StudentClassSchedule() {
   const { data: classes, isLoading } = useClasses(selectedDay);
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top"]}>
       <View className="flex-row items-center justify-between px-6 pb-2 pt-2">
         <BackButton />
         <Text className="font-poppins-bold text-lg text-primary">Agenda semanal</Text>
