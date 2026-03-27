@@ -956,7 +956,7 @@ cd apps/mobile && npx tsc --noEmit
 
 Expected: No type errors.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/mobile/app/\(app\)/\(manager\)/\(home\)/index.tsx apps/mobile/app/\(app\)/\(instructor\)/\(home\)/index.tsx apps/mobile/app/\(app\)/\(student\)/\(home\)/index.tsx
