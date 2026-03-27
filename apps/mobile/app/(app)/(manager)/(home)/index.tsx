@@ -1,8 +1,10 @@
 import { Avatar } from "@/components/Avatar";
 import { ClassCard } from "@/components/ClassCard";
+import { GraduationCard } from "@/components/GraduationCard";
 import { useAcademyContext } from "@/lib/academy-context";
 import { useApi } from "@/lib/api";
 import { useAcademy, useAcademyStats } from "@/lib/hooks/use-academy";
+import { useMyGraduation } from "@/lib/hooks/use-graduation";
 import { useCurrentUser } from "@/lib/hooks/use-user";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
@@ -57,6 +59,7 @@ export default function ManagerDashboard() {
   const { data: me } = useCurrentUser();
   const { data: academy } = useAcademy(academyId);
   const { data: stats } = useAcademyStats(academyId);
+  const { data: graduation } = useMyGraduation();
   const [refreshing, setRefreshing] = useState(false);
 
   const dayOfWeek = new Date().getDay();
@@ -77,6 +80,7 @@ export default function ManagerDashboard() {
       queryClient.invalidateQueries({
         queryKey: ["classes", academyId, dayOfWeek],
       }),
+      queryClient.invalidateQueries({ queryKey: ["graduation", "me"] }),
     ]);
     setRefreshing(false);
   };
@@ -210,6 +214,17 @@ export default function ManagerDashboard() {
             </View>
           </View>
 
+          <GraduationCard
+            graduation={graduation}
+            variant="full"
+            onRegisterPress={() =>
+              router.push({
+                pathname: "/(app)/(student)/register-belt",
+                params: { returnTo: "manager" },
+              })
+            }
+          />
+
           <Text className="font-poppins-semibold text-sm" style={{ color: TEXT_SECONDARY }}>
             Ações rápidas
           </Text>
@@ -246,7 +261,7 @@ export default function ManagerDashboard() {
               </Text>
             </Pressable>
             <Pressable
-              onPress={() => router.push("/(app)/(manager)/(more)")}
+              onPress={() => router.push("/(app)/(manager)/(home)")}
               className="min-w-0 flex-1 rounded-[14px] border border-surface-border bg-surface"
               style={{ padding: 16, gap: 10 }}
             >

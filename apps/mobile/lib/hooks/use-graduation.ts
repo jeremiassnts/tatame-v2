@@ -13,6 +13,7 @@ export function useMyGraduation() {
   return useQuery({
     queryKey: ["graduation", "me"],
     queryFn: () => api.get<GraduationsResponse>("/graduations/me"),
+    retry: false,
     select: (data) => data.items.find((g) => g.isCurrent) ?? null,
   });
 }

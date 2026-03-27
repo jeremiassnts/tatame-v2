@@ -5,8 +5,10 @@ import { useRouter } from "expo-router";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { Avatar } from "@/components/Avatar";
 import { ClassCard } from "@/components/ClassCard";
+import { GraduationCard } from "@/components/GraduationCard";
 import { useApi } from "@/lib/api";
 import { useAcademyContext } from "@/lib/academy-context";
+import { useMyGraduation } from "@/lib/hooks/use-graduation";
 import { useCurrentUser } from "@/lib/hooks/use-user";
 import { useClasses } from "@/lib/hooks/use-classes";
 
@@ -60,6 +62,7 @@ export default function InstructorHome() {
   const api = useApi();
   const { academyName, academyLogoUrl } = useAcademyContext();
   const { data: me } = useCurrentUser();
+  const { data: graduation } = useMyGraduation();
   const dayOfWeek = new Date().getDay();
   const todayStr = todayDateString();
   const instructorId = me?.id;
@@ -189,6 +192,17 @@ export default function InstructorHome() {
               </View>
             </View>
           </View>
+
+          <GraduationCard
+            graduation={graduation}
+            variant="full"
+            onRegisterPress={() =>
+              router.push({
+                pathname: "/(app)/(student)/register-belt",
+                params: { returnTo: "instructor" },
+              })
+            }
+          />
 
           <Text className="font-poppins-semibold text-sm" style={{ color: TEXT_SECONDARY }}>
             Aulas de hoje

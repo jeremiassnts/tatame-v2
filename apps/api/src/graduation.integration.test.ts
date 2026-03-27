@@ -79,4 +79,26 @@ describe("Graduation routes integration", () => {
     expect(history.status).toBe(200);
     expect(history.body.items?.length).toBeGreaterThanOrEqual(2);
   });
+
+  it("academy owner registers initial belt while in manager role", async () => {
+    await insertUserWithGlobalRole(ctx.db, CLERK_MANAGER, "manager");
+
+    asClerkUser(CLERK_MANAGER);
+    const ac = await request(app)
+      .post("/v1/academies")
+      .send({ name: "Owner Belt Only" });
+    expect(ac.status).toBe(201);
+
+    const initial = await request(app).post("/v1/graduations/initial").send({
+      belt: Belt.White,
+      stripes: 0,
+    });
+    expect(initial.status).toBe(201);
+    expect(initial.body.belt).toBe(Belt.White);
+
+    const mine = await request(app).get("/v1/graduations/me");
+    expect(mine.status).toBe(200);
+    const current = mine.body.items?.find((g: { isCurrent: boolean }) => g.isCurrent);
+    expect(current?.belt).toBe(Belt.White);
+  });
 });

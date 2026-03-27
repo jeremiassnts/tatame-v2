@@ -51,29 +51,49 @@ export class GraduationService {
   }
 
   /**
-   * Student registers first belt after approval (spec: initial belt by student).
-   * `promotedBy` is the student's own id (DB column non-null).
+   * First belt in the academy for this user (`promotedBy` = own user id).
+   * Allowed when: active student membership + global role student; or academy owner
+   * (manager membership) / active instructor — so staff can record their own rank.
    */
   async registerInitialBelt(opts: {
-    studentUserId: string;
+    userId: string;
     academyId: string;
     belt: Belt;
     stripes: number;
     notes: string | null;
+    globalRole: Role;
   }): Promise<BeltPromotionRow> {
     const m = await this.membershipRepo.findActiveByUserAndAcademy(
-      opts.studentUserId,
+      opts.userId,
       opts.academyId,
     );
-    if (!m || m.status !== "active" || m.role !== "student") {
-      throw new HttpError(403, "Active student membership required");
+    if (!m || m.status !== "active") {
+      throw new HttpError(403, "Active academy membership required");
+    }
+
+    const gr = opts.globalRole;
+    let allowed = false;
+    if (gr === "student" && m.role === "student") {
+      allowed = true;
+    } else if (gr === "manager" && m.role === "manager") {
+      const academy = await this.academyRepo.findById(opts.academyId);
+      if (academy?.ownerId === opts.userId) {
+        allowed = true;
+      }
+    } else if (gr === "instructor" && m.role === "instructor") {
+      allowed = true;
+    }
+
+    if (!allowed) {
+      throw new HttpError(
+        403,
+        "Initial belt registration requires matching student, owner, or instructor membership",
+      );
     }
 
     assertValidBeltRank(opts.belt, opts.stripes);
 
-    const current = await this.graduationRepo.findCurrentByUserId(
-      opts.studentUserId,
-    );
+    const current = await this.graduationRepo.findCurrentByUserId(opts.userId);
     if (current) {
       throw new HttpError(
         409,
@@ -83,9 +103,9 @@ export class GraduationService {
 
     try {
       return await this.graduationRepo.insertInitialCurrent({
-        userId: opts.studentUserId,
+        userId: opts.userId,
         academyId: opts.academyId,
-        promotedBy: opts.studentUserId,
+        promotedBy: opts.userId,
         belt: opts.belt,
         stripes: opts.stripes,
         notes: opts.notes,

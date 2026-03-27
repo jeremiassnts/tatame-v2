@@ -48,14 +48,11 @@ function formatPromotion(row: BeltPromotionRow) {
 
 graduationRouter.get(
   "/me",
-  authorize(Role.Student),
+  authorize(Role.Student, Role.Manager, Role.Instructor),
   attachActiveAcademyContext,
   requireActiveAcademy,
   async (req, res, next) => {
     try {
-      if (req.appAuth!.academyRole !== Role.Student) {
-        throw new HttpError(403, "Student membership required");
-      }
       const userId = req.appAuth!.userId;
       const academyId = req.appAuth!.activeAcademyId!;
       const items = await graduationService.listForUserInAcademy(
@@ -71,22 +68,20 @@ graduationRouter.get(
 
 graduationRouter.post(
   "/initial",
-  authorize(Role.Student),
+  authorize(Role.Student, Role.Manager, Role.Instructor),
   attachActiveAcademyContext,
   requireActiveAcademy,
   validateBody(registerInitialBeltBodySchema),
   async (req, res, next) => {
     try {
-      if (req.appAuth!.academyRole !== Role.Student) {
-        throw new HttpError(403, "Student membership required");
-      }
       const body = req.validatedBody as RegisterInitialBeltBody;
       const row = await graduationService.registerInitialBelt({
-        studentUserId: req.appAuth!.userId,
+        userId: req.appAuth!.userId,
         academyId: req.appAuth!.activeAcademyId!,
         belt: body.belt,
         stripes: body.stripes,
         notes: body.notes ?? null,
+        globalRole: req.appAuth!.role,
       });
       res.status(201).json(formatPromotion(row));
     } catch (e) {

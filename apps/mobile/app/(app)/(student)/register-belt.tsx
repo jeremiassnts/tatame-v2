@@ -1,12 +1,12 @@
-import { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { Award, Check } from "lucide-react-native";
 import { BackButton } from "@/components/BackButton";
 import { GradientButton } from "@/components/GradientButton";
 import { useRegisterBelt } from "@/lib/hooks/use-graduation";
 import type { RegisterInitialBeltBody } from "@tatame/validators";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { Award, Check } from "lucide-react-native";
+import { useEffect, useMemo, useState } from "react";
+import { Pressable, ScrollView, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type Belt = RegisterInitialBeltBody["belt"];
 
@@ -18,26 +18,68 @@ const BELTS: { value: Belt; label: string; color: string }[] = [
   { value: "black", label: "Preta", color: "#212121" },
 ];
 
-const STRIPES = [0, 1, 2, 3, 4];
+/** Alinhado a `MAX_STRIPES_BY_BELT` em `@tatame/config` (preta: até 10 graus). */
+const MAX_STRIPES_BY_BELT: Record<Belt, number> = {
+  white: 4,
+  blue: 4,
+  purple: 4,
+  brown: 4,
+  black: 10,
+};
 
 export default function RegisterBelt() {
   const router = useRouter();
+  const { returnTo } = useLocalSearchParams<{ returnTo?: string }>();
   const registerBelt = useRegisterBelt();
   const [selectedBelt, setSelectedBelt] = useState<Belt | null>(null);
   const [selectedStripes, setSelectedStripes] = useState(0);
+
+  const maxStripes = selectedBelt ? MAX_STRIPES_BY_BELT[selectedBelt] : 4;
+  const stripeOptions = useMemo(
+    () => Array.from({ length: maxStripes + 1 }, (_, i) => i),
+    [maxStripes],
+  );
+
+  useEffect(() => {
+    if (!selectedBelt) return;
+    const max = MAX_STRIPES_BY_BELT[selectedBelt];
+    setSelectedStripes((s) => (s > max ? max : s));
+  }, [selectedBelt]);
+
+  const handleBack = () => {
+    if (returnTo === "manager") {
+      router.replace("/(app)/(manager)/(home)");
+      return;
+    }
+    if (returnTo === "instructor") {
+      router.replace("/(app)/(instructor)/(home)");
+      return;
+    }
+    router.back();
+  };
 
   const handleConfirm = () => {
     if (!selectedBelt) return;
     registerBelt.mutate(
       { belt: selectedBelt, stripes: selectedStripes },
-      { onSuccess: () => router.replace("/(app)/(student)/(home)") },
+      {
+        onSuccess: () => {
+          if (returnTo === "manager") {
+            router.replace("/(app)/(manager)/(home)");
+          } else if (returnTo === "instructor") {
+            router.replace("/(app)/(instructor)/(home)");
+          } else {
+            router.replace("/(app)/(student)/(home)");
+          }
+        }
+      },
     );
   };
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
       <View className="flex-row items-center justify-between px-6 pb-2 pt-2">
-        <BackButton />
+        <BackButton onPress={handleBack} />
         <Text className="font-poppins-bold text-lg text-primary">Registrar faixa</Text>
         <View className="h-10 w-10" />
       </View>
@@ -77,7 +119,11 @@ export default function RegisterBelt() {
                     className="h-6 w-6 rounded-full border-2"
                     style={{
                       backgroundColor: belt.color,
-                      borderColor: isSelected ? "#A078E8" : "#3A3A3A",
+                      borderColor: isSelected
+                        ? "#A078E8"
+                        : belt.value === "black"
+                          ? "rgba(255, 255, 255, 0.2)"
+                          : "#3A3A3A",
                     }}
                   />
                   <Text className="flex-1 font-poppins-medium text-sm text-primary">{belt.label}</Text>
@@ -93,21 +139,19 @@ export default function RegisterBelt() {
           style={{ padding: 16, gap: 12 }}
         >
           <Text className="font-poppins-semibold text-[13px] text-muted">Graus</Text>
-          <View className="flex-row items-center justify-center" style={{ gap: 8 }}>
-            {STRIPES.map((s) => {
+          <View className="flex-row flex-wrap items-center justify-center" style={{ gap: 8 }}>
+            {stripeOptions.map((s) => {
               const isSelected = selectedStripes === s;
               return (
                 <Pressable
                   key={s}
                   onPress={() => setSelectedStripes(s)}
-                  className={`h-11 w-11 items-center justify-center rounded-lg border ${
-                    isSelected ? "border-accent bg-accent" : "border-surface-border bg-surface"
-                  }`}
+                  className={`h-11 w-11 items-center justify-center rounded-lg border ${isSelected ? "border-accent bg-accent" : "border-surface-border bg-surface"
+                    }`}
                 >
                   <Text
-                    className={`font-poppins-bold text-base ${
-                      isSelected ? "text-white" : "text-primary"
-                    }`}
+                    className={`font-poppins-bold text-base ${isSelected ? "text-white" : "text-primary"
+                      }`}
                   >
                     {s}
                   </Text>

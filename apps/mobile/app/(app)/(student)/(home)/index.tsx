@@ -1,5 +1,6 @@
 import { Avatar } from "@/components/Avatar";
 import { ClassCard } from "@/components/ClassCard";
+import { GraduationCard } from "@/components/GraduationCard";
 import { useAcademyContext } from "@/lib/academy-context";
 import { useCheckin } from "@/lib/hooks/use-checkin";
 import { useClasses } from "@/lib/hooks/use-classes";
@@ -15,22 +16,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const TEXT_SECONDARY = "#8A8A8A";
 const TEXT_MUTED = "#525252";
-
-const BELT_COLORS: Record<string, string> = {
-  white: "#E0E0E0",
-  blue: "#2196F3",
-  purple: "#9C27B0",
-  brown: "#795548",
-  black: "#212121",
-};
-
-const BELT_LABELS: Record<string, string> = {
-  white: "Branca",
-  blue: "Azul",
-  purple: "Roxa",
-  brown: "Marrom",
-  black: "Preta",
-};
 
 function formatTime(t: string) {
   const parts = t.split(":");
@@ -133,47 +118,11 @@ export default function StudentHome() {
           ) : null}
 
           <View className="flex-row" style={{ gap: 12 }}>
-            <Pressable
-              onPress={
-                graduation ? undefined : () => router.push("/(app)/(student)/register-belt")
-              }
-              className="flex-1 rounded-2xl border border-surface-border bg-surface"
-              style={{ padding: 16, gap: 12 }}
-            >
-              <Text className="font-poppins-semibold text-xs text-muted">Faixa atual</Text>
-              {graduation ? (
-                <View style={{ gap: 12 }}>
-                  <View className="flex-row items-center" style={{ gap: 10 }}>
-                    <View
-                      className="h-8 w-8 rounded-full"
-                      style={{ backgroundColor: BELT_COLORS[graduation.belt] ?? "#666" }}
-                    />
-                    <View style={{ gap: 2 }}>
-                      <Text className="font-poppins-bold text-primary" style={{ fontSize: 15 }}>
-                        {BELT_LABELS[graduation.belt] ?? graduation.belt}
-                      </Text>
-                      <Text className="font-poppins text-xs text-muted">
-                        {graduation.stripes} graus
-                      </Text>
-                    </View>
-                  </View>
-                  <View className="flex-row items-center" style={{ gap: 5 }}>
-                    {[0, 1, 2, 3].map((idx) => (
-                      <View
-                        key={idx}
-                        className="h-2 w-2 rounded-full"
-                        style={{ backgroundColor: idx < graduation.stripes ? "#FFFFFF" : "#3A3A3A" }}
-                      />
-                    ))}
-                  </View>
-                </View>
-              ) : (
-                <Text className="font-poppins text-sm text-muted">
-                  Não registrada,
-                  <Text className="text-[#A078E8]"> clique aqui para registrar</Text>
-                </Text>
-              )}
-            </Pressable>
+            <GraduationCard
+              graduation={graduation}
+              variant="compact"
+              onRegisterPress={() => router.push("/(app)/(student)/register-belt")}
+            />
             <View
               className="flex-1 rounded-2xl border border-surface-border bg-surface"
               style={{ padding: 16, gap: 4 }}

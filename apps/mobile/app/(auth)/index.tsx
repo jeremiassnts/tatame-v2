@@ -1,10 +1,10 @@
-import { View, Text, Image, Pressable } from "react-native";
-import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Divider } from "@/components/Divider";
 import { SocialButtons } from "@/components/SocialButtons";
 import { useStartSSO } from "@/lib/hooks/use-start-sso";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
+import { Image, Pressable, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function AuthWelcomeScreen() {
   const router = useRouter();
@@ -34,7 +34,7 @@ export default function AuthWelcomeScreen() {
             TATAME
           </Text>
           <Text className="font-poppins text-center text-[15px] text-[#525252]">
-            Sua academia na palma da mao
+            Sua academia na palma da mão
           </Text>
         </View>
       </View>

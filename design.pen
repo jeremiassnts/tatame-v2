@@ -3367,6 +3367,111 @@
               ]
             },
             {
+              "type": "frame",
+              "id": "HkzwF",
+              "name": "Belt Card",
+              "width": "fill_container",
+              "fill": "$--bg-card",
+              "cornerRadius": 16,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "$--border-default"
+              },
+              "padding": 16,
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "jGiDK",
+                  "name": "Belt Left",
+                  "gap": 12,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "9kKUt",
+                      "name": "Belt Circle",
+                      "fill": "#1564C0",
+                      "width": 36,
+                      "height": 36
+                    },
+                    {
+                      "type": "frame",
+                      "id": "tnbyl",
+                      "name": "Belt Info",
+                      "layout": "vertical",
+                      "gap": 2,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "fnvKH",
+                          "name": "beltLabel",
+                          "fill": "$--text-secondary",
+                          "content": "Faixa atual",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "DAqDL",
+                          "name": "beltName",
+                          "fill": "$--text-primary",
+                          "content": "Azul — 2 graus",
+                          "fontFamily": "Sora",
+                          "fontSize": 15,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "FRczi",
+                  "name": "Stripe Dots",
+                  "gap": 5,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "SIqTR",
+                      "name": "s1",
+                      "fill": "$--text-primary",
+                      "width": 8,
+                      "height": 8
+                    },
+                    {
+                      "type": "ellipse",
+                      "id": "LnfUH",
+                      "name": "s2",
+                      "fill": "$--text-primary",
+                      "width": 8,
+                      "height": 8
+                    },
+                    {
+                      "type": "ellipse",
+                      "id": "ykKHM",
+                      "name": "s3",
+                      "fill": "$--border-strong",
+                      "width": 8,
+                      "height": 8
+                    },
+                    {
+                      "type": "ellipse",
+                      "id": "mekFA",
+                      "name": "s4",
+                      "fill": "$--border-strong",
+                      "width": 8,
+                      "height": 8
+                    }
+                  ]
+                }
+              ]
+            },
+            {
               "type": "text",
               "id": "AXxT0",
               "name": "sectionLabel",

@@ -93,14 +93,65 @@ describe("GraduationService", () => {
     const svc = makeGraduationSvc(promos, [mem], academy);
 
     const row = await svc.registerInitialBelt({
-      studentUserId: studentId,
+      userId: studentId,
       academyId: academy.id,
       belt: Belt.White,
       stripes: 0,
       notes: null,
+      globalRole: "student",
     });
     expect(row.belt).toBe("white");
     expect(row.isCurrent).toBe(true);
+    expect(promos).toHaveLength(1);
+  });
+
+  it("registerInitialBelt allows academy owner (manager membership)", async () => {
+    const ownerId = randomUUID();
+    const academy = makeAcademy({ ownerId });
+    const mem = makeMembership({
+      userId: ownerId,
+      academyId: academy.id,
+      role: "manager",
+      status: "active",
+      isActive: true,
+    });
+    const promos: BeltPromotionRow[] = [];
+    const svc = makeGraduationSvc(promos, [mem], academy);
+
+    const row = await svc.registerInitialBelt({
+      userId: ownerId,
+      academyId: academy.id,
+      belt: Belt.White,
+      stripes: 0,
+      notes: null,
+      globalRole: "manager",
+    });
+    expect(row.belt).toBe("white");
+    expect(promos).toHaveLength(1);
+  });
+
+  it("registerInitialBelt allows active instructor", async () => {
+    const instructorId = randomUUID();
+    const academy = makeAcademy();
+    const mem = makeMembership({
+      userId: instructorId,
+      academyId: academy.id,
+      role: "instructor",
+      status: "active",
+      isActive: true,
+    });
+    const promos: BeltPromotionRow[] = [];
+    const svc = makeGraduationSvc(promos, [mem], academy);
+
+    const row = await svc.registerInitialBelt({
+      userId: instructorId,
+      academyId: academy.id,
+      belt: Belt.Blue,
+      stripes: 0,
+      notes: null,
+      globalRole: "instructor",
+    });
+    expect(row.belt).toBe("blue");
     expect(promos).toHaveLength(1);
   });
 
@@ -127,11 +178,12 @@ describe("GraduationService", () => {
 
     await expect(
       svc.registerInitialBelt({
-        studentUserId: studentId,
+        userId: studentId,
         academyId: academy.id,
         belt: Belt.Blue,
         stripes: 0,
         notes: null,
+        globalRole: "student",
       }),
     ).rejects.toMatchObject({ statusCode: 409 });
   });
