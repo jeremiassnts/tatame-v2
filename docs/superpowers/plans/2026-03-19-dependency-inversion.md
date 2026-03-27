@@ -58,7 +58,7 @@
 
 - Create: `apps/api/src/lib/repo-factory.ts`
 
-- [ ] **Step 1: Create the RepoFactory type file**
+- [x] **Step 1: Create the RepoFactory type file**
 
 ```typescript
 // apps/api/src/lib/repo-factory.ts
@@ -67,12 +67,12 @@ import type { Database } from "@tatame/db";
 export type RepoFactory<T> = (db: Database) => T;
 ```
 
-- [ ] **Step 2: Verify TypeScript compiles**
+- [x] **Step 2: Verify TypeScript compiles**
 
 Run: `cd apps/api && npx tsc --noEmit --pretty 2>&1 | head -20`
 Expected: No errors (new file is not imported yet, so no impact)
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/api/src/lib/repo-factory.ts
@@ -88,7 +88,7 @@ git commit -m "feat(api): add shared RepoFactory type for transactional DI"
 - Create: `apps/api/src/modules/user/user.repository.ts`
 - Create: `apps/api/src/modules/user/user.repository.postgres.ts`
 
-- [ ] **Step 1: Create `IUserRepository` interface**
+- [x] **Step 1: Create `IUserRepository` interface**
 
 ```typescript
 // apps/api/src/modules/user/user.repository.ts
@@ -124,7 +124,7 @@ export interface IUserRepository {
 }
 ```
 
-- [ ] **Step 2: Create `PostgresUserRepository`**
+- [x] **Step 2: Create `PostgresUserRepository`**
 
 Extract all Drizzle queries from `user.service.ts` into this class.
 
@@ -205,12 +205,12 @@ export class PostgresUserRepository implements IUserRepository {
 }
 ```
 
-- [ ] **Step 3: Verify TypeScript compiles**
+- [x] **Step 3: Verify TypeScript compiles**
 
 Run: `cd apps/api && npx tsc --noEmit --pretty 2>&1 | head -20`
 Expected: No errors
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/api/src/modules/user/user.repository.ts apps/api/src/modules/user/user.repository.postgres.ts
@@ -225,7 +225,7 @@ git commit -m "feat(api): add IUserRepository interface and Postgres implementat
 
 - Rewrite: `apps/api/src/modules/user/user.service.ts`
 
-- [ ] **Step 1: Rewrite `user.service.ts` as `UserService` class**
+- [x] **Step 1: Rewrite `user.service.ts` as `UserService` class**
 
 The service receives `IUserRepository` via constructor. The `primaryEmail` and `displayName` Clerk helpers are removed from this file — they move to the webhook handler in Task 5.
 
@@ -275,12 +275,12 @@ export class UserService {
 }
 ```
 
-- [ ] **Step 2: Verify TypeScript compiles (expect errors in routes/webhook — will be fixed in Tasks 4-5)**
+- [x] **Step 2: Verify TypeScript compiles (expect errors in routes/webhook — will be fixed in Tasks 4-5)**
 
 Run: `cd apps/api && npx tsc --noEmit --pretty 2>&1 | head -30`
 Expected: Errors in `user.routes.ts` and `clerk-webhook.handler.ts` (they still import old functions)
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/api/src/modules/user/user.service.ts
@@ -295,7 +295,7 @@ git commit -m "refactor(api): convert user service to class with constructor inj
 
 - Modify: `apps/api/src/modules/user/user.routes.ts`
 
-- [ ] **Step 1: Rewrite routes to wire `UserService` with `PostgresUserRepository`**
+- [x] **Step 1: Rewrite routes to wire `UserService` with `PostgresUserRepository`**
 
 ```typescript
 // apps/api/src/modules/user/user.routes.ts
@@ -393,7 +393,7 @@ userRouter.post(
 );
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/api/src/modules/user/user.routes.ts
@@ -408,7 +408,7 @@ git commit -m "refactor(api): wire UserService into user routes"
 
 - Modify: `apps/api/src/modules/auth/clerk-webhook.handler.ts`
 
-- [ ] **Step 1: Move Clerk-specific helpers here, wire `UserService`**
+- [x] **Step 1: Move Clerk-specific helpers here, wire `UserService`**
 
 The `primaryEmail` and `displayName` functions move from the old `user.service.ts` to here. The handler transforms `UserJSON` into a plain DTO before passing to `UserService`.
 
@@ -487,12 +487,12 @@ export async function handleClerkWebhook(
 }
 ```
 
-- [ ] **Step 2: Verify TypeScript compiles (user module should be fully clean now)**
+- [x] **Step 2: Verify TypeScript compiles (user module should be fully clean now)**
 
 Run: `cd apps/api && npx tsc --noEmit --pretty 2>&1 | head -20`
 Expected: No errors related to user module
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/api/src/modules/auth/clerk-webhook.handler.ts
@@ -508,7 +508,7 @@ git commit -m "refactor(api): move Clerk DTO extraction to webhook handler, wire
 - Create: `apps/api/src/modules/membership/membership.repository.ts`
 - Create: `apps/api/src/modules/membership/membership.repository.postgres.ts`
 
-- [ ] **Step 1: Create `IMembershipRepository` interface**
+- [x] **Step 1: Create `IMembershipRepository` interface**
 
 ```typescript
 // apps/api/src/modules/membership/membership.repository.ts
@@ -568,7 +568,7 @@ export interface IMembershipRepository {
 }
 ```
 
-- [ ] **Step 2: Create `PostgresMembershipRepository`**
+- [x] **Step 2: Create `PostgresMembershipRepository`**
 
 ```typescript
 // apps/api/src/modules/membership/membership.repository.postgres.ts
@@ -760,11 +760,11 @@ export class PostgresMembershipRepository implements IMembershipRepository {
 }
 ```
 
-- [ ] **Step 3: Verify TypeScript compiles**
+- [x] **Step 3: Verify TypeScript compiles**
 
 Run: `cd apps/api && npx tsc --noEmit --pretty 2>&1 | head -20`
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/api/src/modules/membership/membership.repository.ts apps/api/src/modules/membership/membership.repository.postgres.ts
@@ -780,7 +780,7 @@ git commit -m "feat(api): add IMembershipRepository interface and Postgres imple
 - Create: `apps/api/src/modules/academy/academy.repository.ts`
 - Create: `apps/api/src/modules/academy/academy.repository.postgres.ts`
 
-- [ ] **Step 1: Create `IAcademyRepository` interface**
+- [x] **Step 1: Create `IAcademyRepository` interface**
 
 ```typescript
 // apps/api/src/modules/academy/academy.repository.ts
@@ -826,7 +826,7 @@ export interface IAcademyRepository {
 }
 ```
 
-- [ ] **Step 2: Create `PostgresAcademyRepository`**
+- [x] **Step 2: Create `PostgresAcademyRepository`**
 
 ```typescript
 // apps/api/src/modules/academy/academy.repository.postgres.ts
@@ -904,11 +904,11 @@ export class PostgresAcademyRepository implements IAcademyRepository {
 }
 ```
 
-- [ ] **Step 3: Verify TypeScript compiles**
+- [x] **Step 3: Verify TypeScript compiles**
 
 Run: `cd apps/api && npx tsc --noEmit --pretty 2>&1 | head -20`
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/api/src/modules/academy/academy.repository.ts apps/api/src/modules/academy/academy.repository.postgres.ts
@@ -924,7 +924,7 @@ git commit -m "feat(api): add IAcademyRepository interface and Postgres implemen
 - Rewrite: `apps/api/src/modules/academy/academy.service.ts`
 - Modify: `apps/api/src/modules/academy/academy.routes.ts`
 
-- [ ] **Step 1: Rewrite `academy.service.ts` as `AcademyService` class**
+- [x] **Step 1: Rewrite `academy.service.ts` as `AcademyService` class**
 
 ```typescript
 // apps/api/src/modules/academy/academy.service.ts
@@ -1019,7 +1019,7 @@ export class AcademyService {
 }
 ```
 
-- [ ] **Step 2: Rewrite `academy.routes.ts` to wire `AcademyService`**
+- [x] **Step 2: Rewrite `academy.routes.ts` to wire `AcademyService`**
 
 ```typescript
 // apps/api/src/modules/academy/academy.routes.ts
@@ -1124,12 +1124,12 @@ academyRouter.patch(
 );
 ```
 
-- [ ] **Step 3: Verify TypeScript compiles**
+- [x] **Step 3: Verify TypeScript compiles**
 
 Run: `cd apps/api && npx tsc --noEmit --pretty 2>&1 | head -20`
 Expected: Errors in `class.service.ts` and `membership.service.ts` (they still import old `assertManagerOwnsAcademy`)
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/api/src/modules/academy/academy.service.ts apps/api/src/modules/academy/academy.routes.ts
@@ -1145,7 +1145,7 @@ git commit -m "refactor(api): convert academy service to class, wire into routes
 - Create: `apps/api/src/modules/class/class.repository.ts`
 - Create: `apps/api/src/modules/class/class.repository.postgres.ts`
 
-- [ ] **Step 1: Create `IClassRepository` interface**
+- [x] **Step 1: Create `IClassRepository` interface**
 
 ```typescript
 // apps/api/src/modules/class/class.repository.ts
@@ -1194,7 +1194,7 @@ export interface IClassRepository {
 }
 ```
 
-- [ ] **Step 2: Create `PostgresClassRepository`**
+- [x] **Step 2: Create `PostgresClassRepository`**
 
 ```typescript
 // apps/api/src/modules/class/class.repository.postgres.ts
@@ -1281,11 +1281,11 @@ export class PostgresClassRepository implements IClassRepository {
 }
 ```
 
-- [ ] **Step 3: Verify TypeScript compiles**
+- [x] **Step 3: Verify TypeScript compiles**
 
 Run: `cd apps/api && npx tsc --noEmit --pretty 2>&1 | head -20`
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/api/src/modules/class/class.repository.ts apps/api/src/modules/class/class.repository.postgres.ts
@@ -1301,7 +1301,7 @@ git commit -m "feat(api): add IClassRepository interface and Postgres implementa
 - Rewrite: `apps/api/src/modules/class/class.service.ts`
 - Modify: `apps/api/src/modules/class/class.routes.ts`
 
-- [ ] **Step 1: Rewrite `class.service.ts` as `ClassService` class**
+- [x] **Step 1: Rewrite `class.service.ts` as `ClassService` class**
 
 ```typescript
 // apps/api/src/modules/class/class.service.ts
@@ -1501,7 +1501,7 @@ export class ClassService {
 }
 ```
 
-- [ ] **Step 2: Rewrite `class.routes.ts`**
+- [x] **Step 2: Rewrite `class.routes.ts`**
 
 ```typescript
 // apps/api/src/modules/class/class.routes.ts
@@ -1651,12 +1651,12 @@ classRouter.delete(
 );
 ```
 
-- [ ] **Step 3: Verify TypeScript compiles**
+- [x] **Step 3: Verify TypeScript compiles**
 
 Run: `cd apps/api && npx tsc --noEmit --pretty 2>&1 | head -20`
 Expected: Errors only in `membership.service.ts` (still uses old pattern)
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/api/src/modules/class/class.service.ts apps/api/src/modules/class/class.routes.ts
@@ -1672,7 +1672,7 @@ git commit -m "refactor(api): convert class service to class, wire into routes"
 - Rewrite: `apps/api/src/modules/membership/membership.service.ts`
 - Modify: `apps/api/src/modules/membership/membership.routes.ts`
 
-- [ ] **Step 1: Rewrite `membership.service.ts` as `MembershipService` class**
+- [x] **Step 1: Rewrite `membership.service.ts` as `MembershipService` class**
 
 ```typescript
 // apps/api/src/modules/membership/membership.service.ts
@@ -1876,7 +1876,7 @@ export class MembershipService {
 }
 ```
 
-- [ ] **Step 2: Rewrite `membership.routes.ts`**
+- [x] **Step 2: Rewrite `membership.routes.ts`**
 
 ```typescript
 // apps/api/src/modules/membership/membership.routes.ts
@@ -2048,12 +2048,12 @@ membershipRouter.post(
 );
 ```
 
-- [ ] **Step 3: Verify TypeScript compiles**
+- [x] **Step 3: Verify TypeScript compiles**
 
 Run: `cd apps/api && npx tsc --noEmit --pretty 2>&1 | head -30`
 Expected: Error in `academy-context.ts` (imports old `getActiveMembership` free function) — fixed in Task 12
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/api/src/modules/membership/membership.service.ts apps/api/src/modules/membership/membership.routes.ts
@@ -2070,7 +2070,7 @@ git commit -m "refactor(api): convert membership service to class, wire into rou
 
 The middleware currently imports `getActiveMembership` as a free function from `membership.service.ts`. After the rewrite, that export no longer exists. Since the middleware only needs a simple data lookup (no business logic), it uses `PostgresMembershipRepository` directly.
 
-- [ ] **Step 1: Rewrite `academy-context.ts`**
+- [x] **Step 1: Rewrite `academy-context.ts`**
 
 ```typescript
 // apps/api/src/middleware/academy-context.ts
@@ -2127,12 +2127,12 @@ export function requireActiveAcademy(
 }
 ```
 
-- [ ] **Step 2: Verify TypeScript compiles**
+- [x] **Step 2: Verify TypeScript compiles**
 
 Run: `cd apps/api && npx tsc --noEmit --pretty 2>&1 | head -20`
 Expected: No errors
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/api/src/middleware/academy-context.ts
@@ -2145,12 +2145,12 @@ git commit -m "refactor(api): update academy-context middleware to use repositor
 
 **Files:** None (verification only)
 
-- [ ] **Step 1: Full TypeScript compilation check**
+- [x] **Step 1: Full TypeScript compilation check**
 
 Run: `cd apps/api && npx tsc --noEmit --pretty`
 Expected: Clean — zero errors
 
-- [ ] **Step 2: Verify no old service imports remain**
+- [x] **Step 2: Verify no old service imports remain**
 
 Run: `grep -r "from.*academy.service" apps/api/src --include="*.ts" | grep -v "academy.service.ts"`
 Expected: Only route files importing `AcademyService` class. No file should import `assertManagerOwnsAcademy`, `createAcademyWithManagerMembership`, etc. as named exports.
@@ -2158,7 +2158,7 @@ Expected: Only route files importing `AcademyService` class. No file should impo
 Run: `grep -r "getDb()" apps/api/src/modules --include="*.ts"`
 Expected: Only route files and webhook handler call `getDb()`. No service file should reference it.
 
-- [ ] **Step 3: Verify no Drizzle imports in service files**
+- [x] **Step 3: Verify no Drizzle imports in service files**
 
 Run: `grep -r "from \"drizzle-orm\"" apps/api/src/modules --include="*.service.ts"`
 Expected: No matches — services should have zero Drizzle imports.
@@ -2166,6 +2166,6 @@ Expected: No matches — services should have zero Drizzle imports.
 Run: `grep -r "from \"@tatame/db\"" apps/api/src/modules --include="*.service.ts"`
 Expected: No matches — services should not import from the DB package.
 
-- [ ] **Step 4: Commit (if any cleanup was needed)**
+- [x] **Step 4: Commit (if any cleanup was needed)**
 
 If all checks pass, no commit needed. If cleanup was required, commit the fixes.

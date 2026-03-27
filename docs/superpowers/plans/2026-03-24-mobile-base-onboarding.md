@@ -58,7 +58,7 @@ apps/mobile/
 - Create: `apps/mobile/tailwind.config.js`
 - Create: `apps/mobile/nativewind-env.d.ts`
 
-- [ ] **Step 1: Write `package.json` with all dependencies**
+- [x] **Step 1: Write `package.json` with all dependencies**
 
 ```json
 {
@@ -98,7 +98,7 @@ apps/mobile/
 }
 ```
 
-- [ ] **Step 2: Write `app.json`**
+- [x] **Step 2: Write `app.json`**
 
 ```json
 {
@@ -128,7 +128,7 @@ apps/mobile/
 }
 ```
 
-- [ ] **Step 3: Write `tsconfig.json`**
+- [x] **Step 3: Write `tsconfig.json`**
 
 ```json
 {
@@ -149,7 +149,7 @@ apps/mobile/
 }
 ```
 
-- [ ] **Step 4: Write `babel.config.js`**
+- [x] **Step 4: Write `babel.config.js`**
 
 ```js
 module.exports = function (api) {
@@ -162,7 +162,7 @@ module.exports = function (api) {
 };
 ```
 
-- [ ] **Step 5: Write `metro.config.js`**
+- [x] **Step 5: Write `metro.config.js`**
 
 ```js
 const { getDefaultConfig } = require("expo/metro-config");
@@ -173,7 +173,7 @@ const config = getDefaultConfig(__dirname);
 module.exports = withNativeWind(config, { input: "./global.css" });
 ```
 
-- [ ] **Step 6: Write `global.css`**
+- [x] **Step 6: Write `global.css`**
 
 ```css
 @tailwind base;
@@ -181,7 +181,7 @@ module.exports = withNativeWind(config, { input: "./global.css" });
 @tailwind utilities;
 ```
 
-- [ ] **Step 7: Write `tailwind.config.js` with design tokens**
+- [x] **Step 7: Write `tailwind.config.js` with design tokens**
 
 ```js
 /** @type {import('tailwindcss').Config} */
@@ -215,13 +215,13 @@ module.exports = {
 };
 ```
 
-- [ ] **Step 8: Write `nativewind-env.d.ts`**
+- [x] **Step 8: Write `nativewind-env.d.ts`**
 
 ```ts
 /// <reference types="nativewind/types" />
 ```
 
-- [ ] **Step 9: Write `constants/tokens.ts`**
+- [x] **Step 9: Write `constants/tokens.ts`**
 
 ```ts
 export const colors = {
@@ -235,7 +235,7 @@ export const colors = {
 } as const;
 ```
 
-- [ ] **Step 10: Install dependencies**
+- [x] **Step 10: Install dependencies**
 
 Run from repo root:
 ```bash
@@ -243,7 +243,7 @@ cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm install
 ```
 Expected: packages installed, lockfile updated, no errors.
 
-- [ ] **Step 11: Commit**
+- [x] **Step 11: Commit**
 
 ```bash
 git add apps/mobile/
@@ -257,7 +257,7 @@ git commit -m "feat(mobile): scaffold Expo app with NativeWind and design tokens
 **Files:**
 - Create: `apps/mobile/app/_layout.tsx`
 
-- [ ] **Step 1: Write root layout**
+- [x] **Step 1: Write root layout**
 
 ```tsx
 import "../global.css";
@@ -309,7 +309,7 @@ export default function RootLayout() {
 }
 ```
 
-- [ ] **Step 2: Verify app loads**
+- [x] **Step 2: Verify app loads**
 
 Run from `apps/mobile`:
 ```bash
@@ -317,7 +317,7 @@ cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/mobile && npx expo start
 ```
 Expected: Expo starts, no crash. Blank screen is fine — no routes yet.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/mobile/app/_layout.tsx
@@ -335,7 +335,7 @@ git commit -m "feat(mobile): add root layout with Poppins font loading"
 - Create: `apps/mobile/app/(auth)/_layout.tsx`
 - Create: `apps/mobile/app/(app)/_layout.tsx`
 
-- [ ] **Step 1: Write onboarding layout (headerless stack)**
+- [x] **Step 1: Write onboarding layout (headerless stack)**
 
 ```tsx
 import { Stack } from "expo-router";
@@ -353,7 +353,7 @@ export default function OnboardingLayout() {
 }
 ```
 
-- [ ] **Step 2: Write Welcome placeholder**
+- [x] **Step 2: Write Welcome placeholder**
 
 ```tsx
 import { View, Text } from "react-native";
@@ -367,7 +367,7 @@ export default function WelcomeScreen() {
 }
 ```
 
-- [ ] **Step 3: Write User Type placeholder**
+- [x] **Step 3: Write User Type placeholder**
 
 ```tsx
 import { View, Text } from "react-native";
@@ -381,7 +381,7 @@ export default function UserTypeScreen() {
 }
 ```
 
-- [ ] **Step 4: Write auth placeholder layout**
+- [x] **Step 4: Write auth placeholder layout**
 
 ```tsx
 import { Stack } from "expo-router";
@@ -393,7 +393,7 @@ export default function AuthLayout() {
 }
 ```
 
-- [ ] **Step 5: Write app placeholder layout**
+- [x] **Step 5: Write app placeholder layout**
 
 ```tsx
 import { Stack } from "expo-router";
@@ -405,13 +405,13 @@ export default function AppLayout() {
 }
 ```
 
-- [ ] **Step 6: Verify navigation works**
+- [x] **Step 6: Verify navigation works**
 
 Run Expo, confirm:
 - App boots to Welcome placeholder
 - NativeWind classes render (dark background, white text, Poppins font)
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/mobile/app/
@@ -425,7 +425,7 @@ git commit -m "feat(mobile): add onboarding/auth/app route groups with placehold
 **Files:**
 - Create: `apps/mobile/components/GradientButton.tsx`
 
-- [ ] **Step 1: Write GradientButton**
+- [x] **Step 1: Write GradientButton**
 
 ```tsx
 import { Pressable, Text, View } from "react-native";
@@ -456,11 +456,11 @@ export function GradientButton({ label, onPress }: GradientButtonProps) {
 }
 ```
 
-- [ ] **Step 2: Verify visually**
+- [x] **Step 2: Verify visually**
 
 Import into Welcome placeholder temporarily, check gradient renders correctly on device.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/mobile/components/GradientButton.tsx
@@ -476,7 +476,7 @@ git commit -m "feat(mobile): add GradientButton component with purple gradient"
 
 **Design reference:** Frame `LHmll` in `design.pen` — dark bg, centered logo placeholder (120x120, rounded-3xl, #242424), "TATAME" title (Poppins 700, 38px), tagline (Poppins 400, 16px, muted), CTA button at bottom.
 
-- [ ] **Step 1: Implement Welcome screen**
+- [x] **Step 1: Implement Welcome screen**
 
 ```tsx
 import { View, Text } from "react-native";
@@ -521,7 +521,7 @@ export default function WelcomeScreen() {
 }
 ```
 
-- [ ] **Step 2: Verify on device**
+- [x] **Step 2: Verify on device**
 
 Compare with design screenshot (frame `LHmll`). Check:
 - Dark background fills screen
@@ -531,7 +531,7 @@ Compare with design screenshot (frame `LHmll`). Check:
 - CTA at bottom with gradient, arrow icon
 - Tapping CTA navigates to user-type
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/mobile/app/\(onboarding\)/index.tsx
@@ -547,7 +547,7 @@ git commit -m "feat(mobile): implement Welcome screen (M-ONBOARD-01)"
 
 **Design reference:** Frame `C0GXO` in `design.pen` — title/subtitle at top, 3 selectable role cards (Gestor/Instrutor/Aluno), selected state with purple border + translucent bg, CTA at bottom. Saves to AsyncStorage.
 
-- [ ] **Step 1: Implement User Type Selection screen**
+- [x] **Step 1: Implement User Type Selection screen**
 
 ```tsx
 import { useState } from "react";
@@ -656,7 +656,7 @@ export default function UserTypeScreen() {
 }
 ```
 
-- [ ] **Step 2: Verify on device**
+- [x] **Step 2: Verify on device**
 
 Compare with design screenshot (frame `C0GXO`). Check:
 - Title and subtitle match design
@@ -666,7 +666,7 @@ Compare with design screenshot (frame `C0GXO`). Check:
 - CTA at bottom
 - Tapping CTA saves to AsyncStorage (verify with `adb shell` or React Native debugger)
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/mobile/app/\(onboarding\)/user-type.tsx
@@ -677,7 +677,7 @@ git commit -m "feat(mobile): implement User Type Selection screen (M-ONBOARD-02)
 
 ### Task 7: Final verification and cleanup
 
-- [ ] **Step 1: Full flow test on device**
+- [x] **Step 1: Full flow test on device**
 
 1. Kill app, relaunch
 2. Welcome screen loads with Poppins font, dark theme, logo placeholder, CTA
@@ -686,14 +686,14 @@ git commit -m "feat(mobile): implement User Type Selection screen (M-ONBOARD-02)
 5. Select "Aluno", tap "Continuar"
 6. Verify AsyncStorage has `userType=student`
 
-- [ ] **Step 2: Verify `pnpm build` from root**
+- [x] **Step 2: Verify `pnpm build` from root**
 
 ```bash
 cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm build
 ```
 Expected: no errors (mobile build script is a no-op placeholder for EAS).
 
-- [ ] **Step 3: Final commit if any tweaks**
+- [x] **Step 3: Final commit if any tweaks**
 
 ```bash
 git add -A apps/mobile/

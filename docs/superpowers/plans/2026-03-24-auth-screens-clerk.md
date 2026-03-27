@@ -47,13 +47,13 @@ apps/mobile/
 **Files:**
 - Modify: `apps/mobile/package.json`
 
-- [ ] **Step 1: Install packages**
+- [x] **Step 1: Install packages**
 
 ```bash
 cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/mobile && npx expo install @clerk/clerk-expo expo-secure-store expo-web-browser
 ```
 
-- [ ] **Step 2: Create `.env` file**
+- [x] **Step 2: Create `.env` file**
 
 Create `apps/mobile/.env`:
 ```
@@ -62,7 +62,7 @@ EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_REPLACE_ME
 
 Add `.env` to `apps/mobile/.gitignore`.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/mobile/package.json apps/mobile/.gitignore ../../pnpm-lock.yaml
@@ -77,7 +77,7 @@ git commit -m "chore(mobile): add Clerk, expo-secure-store, expo-web-browser"
 - Create: `apps/mobile/lib/clerk-token-cache.ts`
 - Modify: `apps/mobile/app/_layout.tsx`
 
-- [ ] **Step 1: Write token cache adapter**
+- [x] **Step 1: Write token cache adapter**
 
 ```ts
 // apps/mobile/lib/clerk-token-cache.ts
@@ -97,7 +97,7 @@ export const tokenCache: TokenCache = {
 };
 ```
 
-- [ ] **Step 2: Update root layout with ClerkProvider**
+- [x] **Step 2: Update root layout with ClerkProvider**
 
 Replace `apps/mobile/app/_layout.tsx` with:
 
@@ -159,11 +159,11 @@ export default function RootLayout() {
 }
 ```
 
-- [ ] **Step 3: Verify app boots**
+- [x] **Step 3: Verify app boots**
 
 Run `npx expo start --clear`. App should load without crash (Clerk key is placeholder but won't crash until auth is attempted).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/mobile/lib/clerk-token-cache.ts apps/mobile/app/_layout.tsx
@@ -178,7 +178,7 @@ git commit -m "feat(mobile): add ClerkProvider with secure-store token cache"
 - Modify: `apps/mobile/app/index.tsx`
 - Modify: `apps/mobile/app/(onboarding)/user-type.tsx`
 
-- [ ] **Step 1: Update root index with auth-aware redirect**
+- [x] **Step 1: Update root index with auth-aware redirect**
 
 ```tsx
 // apps/mobile/app/index.tsx
@@ -212,7 +212,7 @@ export default function Index() {
 }
 ```
 
-- [ ] **Step 2: Update user-type to navigate to auth after selection**
+- [x] **Step 2: Update user-type to navigate to auth after selection**
 
 In `apps/mobile/app/(onboarding)/user-type.tsx`, replace the `handleContinue` function:
 
@@ -229,12 +229,12 @@ const handleContinue = async () => {
 };
 ```
 
-- [ ] **Step 3: Verify flow**
+- [x] **Step 3: Verify flow**
 
 1. Clear AsyncStorage (fresh install or clear app data)
 2. App → onboarding → select role → "Continuar" → should land on auth welcome landing (will be placeholder for now)
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/mobile/app/index.tsx "apps/mobile/app/(onboarding)/user-type.tsx"
@@ -251,7 +251,7 @@ git commit -m "feat(mobile): smart root redirect and onboarding-to-auth transiti
 - Create: `apps/mobile/components/FormInput.tsx`
 - Create: `apps/mobile/components/SocialButtons.tsx`
 
-- [ ] **Step 1: Write BackButton**
+- [x] **Step 1: Write BackButton**
 
 ```tsx
 // apps/mobile/components/BackButton.tsx
@@ -277,7 +277,7 @@ export function BackButton({ onPress }: BackButtonProps) {
 }
 ```
 
-- [ ] **Step 2: Write Divider**
+- [x] **Step 2: Write Divider**
 
 ```tsx
 // apps/mobile/components/Divider.tsx
@@ -298,7 +298,7 @@ export function Divider({ text = "ou" }: DividerProps) {
 }
 ```
 
-- [ ] **Step 3: Write FormInput**
+- [x] **Step 3: Write FormInput**
 
 ```tsx
 // apps/mobile/components/FormInput.tsx
@@ -354,7 +354,7 @@ export function FormInput({
 }
 ```
 
-- [ ] **Step 4: Write SocialButtons**
+- [x] **Step 4: Write SocialButtons**
 
 ```tsx
 // apps/mobile/components/SocialButtons.tsx
@@ -397,11 +397,11 @@ export function SocialButtons({
 }
 ```
 
-- [ ] **Step 5: Verify imports resolve**
+- [x] **Step 5: Verify imports resolve**
 
 Run `npx expo start --clear`, no bundler errors.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/mobile/components/BackButton.tsx apps/mobile/components/Divider.tsx apps/mobile/components/FormInput.tsx apps/mobile/components/SocialButtons.tsx
@@ -416,7 +416,7 @@ git commit -m "feat(mobile): add shared auth components (BackButton, Divider, Fo
 - Modify: `apps/mobile/app/(auth)/_layout.tsx`
 - Create: `apps/mobile/app/(auth)/index.tsx`
 
-- [ ] **Step 1: Update auth layout**
+- [x] **Step 1: Update auth layout**
 
 ```tsx
 // apps/mobile/app/(auth)/_layout.tsx
@@ -435,7 +435,7 @@ export default function AuthLayout() {
 }
 ```
 
-- [ ] **Step 2: Implement Welcome Landing**
+- [x] **Step 2: Implement Welcome Landing**
 
 ```tsx
 // apps/mobile/app/(auth)/index.tsx
@@ -525,11 +525,11 @@ export default function AuthWelcomeScreen() {
 }
 ```
 
-- [ ] **Step 3: Verify on device**
+- [x] **Step 3: Verify on device**
 
 Compare with design screenshot (frame `sh9aY`). Check logo, buttons, social buttons, divider.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add "apps/mobile/app/(auth)/_layout.tsx" "apps/mobile/app/(auth)/index.tsx"
@@ -543,7 +543,7 @@ git commit -m "feat(mobile): implement auth Welcome Landing screen (M-AUTH-01)"
 **Files:**
 - Create: `apps/mobile/app/(auth)/sign-up.tsx`
 
-- [ ] **Step 1: Implement Sign Up**
+- [x] **Step 1: Implement Sign Up**
 
 ```tsx
 // apps/mobile/app/(auth)/sign-up.tsx
@@ -712,11 +712,11 @@ export default function SignUpScreen() {
 }
 ```
 
-- [ ] **Step 2: Verify on device**
+- [x] **Step 2: Verify on device**
 
 Compare with design (frame `6QNkX`). Check form fields, error states, loading spinner, social buttons, link.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add "apps/mobile/app/(auth)/sign-up.tsx"
@@ -730,7 +730,7 @@ git commit -m "feat(mobile): implement Sign Up screen with Clerk custom flow (M-
 **Files:**
 - Create: `apps/mobile/app/(auth)/sign-in.tsx`
 
-- [ ] **Step 1: Implement Sign In**
+- [x] **Step 1: Implement Sign In**
 
 ```tsx
 // apps/mobile/app/(auth)/sign-in.tsx
@@ -898,11 +898,11 @@ export default function SignInScreen() {
 }
 ```
 
-- [ ] **Step 2: Verify on device**
+- [x] **Step 2: Verify on device**
 
 Compare with design (frame `PW7C6`). Check fields, "Esqueceu a senha?" link, error state, loading.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add "apps/mobile/app/(auth)/sign-in.tsx"
@@ -916,7 +916,7 @@ git commit -m "feat(mobile): implement Sign In screen with Clerk custom flow (M-
 **Files:**
 - Create: `apps/mobile/app/(auth)/verify-email.tsx`
 
-- [ ] **Step 1: Implement Email Verification**
+- [x] **Step 1: Implement Email Verification**
 
 ```tsx
 // apps/mobile/app/(auth)/verify-email.tsx
@@ -1117,7 +1117,7 @@ export default function VerifyEmailScreen() {
 }
 ```
 
-- [ ] **Step 2: Verify on device**
+- [x] **Step 2: Verify on device**
 
 Compare with design (frame `YHqfF`). Check:
 - 6 digit boxes with active state (purple border on next empty)
@@ -1126,7 +1126,7 @@ Compare with design (frame `YHqfF`). Check:
 - Back button
 - Error state when entering wrong code
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add "apps/mobile/app/(auth)/verify-email.tsx"
@@ -1137,11 +1137,11 @@ git commit -m "feat(mobile): implement Email Verification screen with Clerk (M-A
 
 ### Task 9: Final verification and commit
 
-- [ ] **Step 1: Set real Clerk key in `.env`**
+- [x] **Step 1: Set real Clerk key in `.env`**
 
 Ask user to set `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` in `apps/mobile/.env` with their real Clerk publishable key.
 
-- [ ] **Step 2: Full flow test**
+- [x] **Step 2: Full flow test**
 
 1. Fresh app → onboarding → select role → auth welcome landing
 2. Tap "Criar conta" → fill form → submit → verify email screen
@@ -1151,7 +1151,7 @@ Ask user to set `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` in `apps/mobile/.env` with t
 6. Test Google OAuth button
 7. Test back navigation on all screens
 
-- [ ] **Step 3: Commit any fixes**
+- [x] **Step 3: Commit any fixes**
 
 ```bash
 git add apps/mobile/
