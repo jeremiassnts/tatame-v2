@@ -556,7 +556,7 @@ git commit -m "feat(api): update graduation routes for renamed fields and promot
 **Files:**
 - Modify: `apps/mobile/lib/hooks/use-graduation.ts`
 
-- [ ] **Step 1: Add `useGraduationHistory` and `usePromoteGraduation` hooks**
+- [x] **Step 1: Add `useGraduationHistory` and `usePromoteGraduation` hooks**
 
 Replace `apps/mobile/lib/hooks/use-graduation.ts` with:
 
@@ -625,7 +625,7 @@ export function usePromoteGraduation() {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/lib/hooks/use-graduation.ts
