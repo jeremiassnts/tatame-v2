@@ -87,7 +87,7 @@ export const userMeResponseSchema = z.object({
 });
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add packages/validators/src/user.schema.ts
