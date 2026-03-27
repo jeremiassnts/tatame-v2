@@ -537,7 +537,7 @@ git commit -m "feat(mobile): add useUpdateProfile and useDeleteAccount hooks"
 **Files:**
 - Create: `apps/mobile/app/(app)/profile.tsx`
 
-- [ ] **Step 1: Create the profile screen**
+- [x] **Step 1: Create the profile screen**
 
 Create `apps/mobile/app/(app)/profile.tsx`:
 
