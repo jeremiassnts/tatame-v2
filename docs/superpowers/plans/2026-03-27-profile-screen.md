@@ -15,7 +15,7 @@
 **Files:**
 - Modify: `packages/db/src/schema/index.ts:49-65`
 
-- [ ] **Step 1: Add the `deletedAt` column to the schema**
+- [x] **Step 1: Add the `deletedAt` column to the schema**
 
 In `packages/db/src/schema/index.ts`, add `deletedAt` to the `users` table definition, after `updatedAt`:
 
@@ -23,7 +23,7 @@ In `packages/db/src/schema/index.ts`, add `deletedAt` to the `users` table defin
 deletedAt: timestamp("deleted_at", { withTimezone: true }),
 ```
 
-- [ ] **Step 2: Generate the Drizzle migration**
+- [x] **Step 2: Generate the Drizzle migration**
 
 Run:
 ```bash
