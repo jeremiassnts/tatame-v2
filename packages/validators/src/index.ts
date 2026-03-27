@@ -83,10 +83,10 @@ export {
   beltPromotionResponseSchema,
   beltSchema,
   listGraduationsQuerySchema,
-  promoteStudentBeltBodySchema,
+  promoteBeltBodySchema,
   registerInitialBeltBodySchema,
   type BeltPromotionResponse,
   type ListGraduationsQuery,
-  type PromoteStudentBeltBody,
+  type PromoteBeltBody,
   type RegisterInitialBeltBody,
 } from "./graduation.schema.js";

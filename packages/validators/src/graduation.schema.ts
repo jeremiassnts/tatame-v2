@@ -38,18 +38,16 @@ export type RegisterInitialBeltBody = z.infer<
   typeof registerInitialBeltBodySchema
 >;
 
-export const promoteStudentBeltBodySchema = z
+export const promoteBeltBodySchema = z
   .object({
-    studentUserId: z.string().uuid(),
+    userId: z.string().uuid(),
     belt: beltSchema,
     stripes: z.number().int(),
     notes: z.string().max(2000).nullable().optional(),
   })
   .superRefine(refineBeltStripes);
 
-export type PromoteStudentBeltBody = z.infer<
-  typeof promoteStudentBeltBodySchema
->;
+export type PromoteBeltBody = z.infer<typeof promoteBeltBodySchema>;
 
 export const listGraduationsQuerySchema = z.object({
   userId: z.string().uuid(),
@@ -62,6 +60,7 @@ export const beltPromotionResponseSchema = z.object({
   userId: z.string().uuid(),
   academyId: z.string().uuid(),
   promotedBy: z.string().uuid(),
+  promotedByName: z.string(),
   belt: beltSchema,
   stripes: z.number().int(),
   isCurrent: z.boolean(),

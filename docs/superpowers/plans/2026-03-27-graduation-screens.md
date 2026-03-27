@@ -39,7 +39,7 @@ Issues are in team **Tatame**, state **Backlog**. Each plan task maps 1:1 to a L
 **Files:**
 - Modify: `packages/validators/src/graduation.schema.ts`
 
-- [ ] **Step 1: Rename schema and field**
+- [x] **Step 1: Rename schema and field**
 
 In `packages/validators/src/graduation.schema.ts`, replace the `promoteStudentBeltBodySchema` block (lines 41-52):
 
@@ -56,7 +56,7 @@ export const promoteBeltBodySchema = z
 export type PromoteBeltBody = z.infer<typeof promoteBeltBodySchema>;
 ```
 
-- [ ] **Step 2: Add `promotedByName` to response schema**
+- [x] **Step 2: Add `promotedByName` to response schema**
 
 In the same file, update `beltPromotionResponseSchema` to add `promotedByName`:
 
@@ -75,7 +75,7 @@ export const beltPromotionResponseSchema = z.object({
 });
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add packages/validators/src/graduation.schema.ts
