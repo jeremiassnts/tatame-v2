@@ -1,17 +1,17 @@
-import { useState } from "react";
-import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { Bell, ChevronRight, CreditCard, TriangleAlert } from "lucide-react-native";
 import { Avatar } from "@/components/Avatar";
 import { ClassCard } from "@/components/ClassCard";
 import { useAcademyContext } from "@/lib/academy-context";
-import { useClasses } from "@/lib/hooks/use-classes";
-import { useCurrentUser } from "@/lib/hooks/use-user";
-import { useMySubscription } from "@/lib/hooks/use-subscription";
-import { useMyGraduation } from "@/lib/hooks/use-graduation";
 import { useCheckin } from "@/lib/hooks/use-checkin";
+import { useClasses } from "@/lib/hooks/use-classes";
+import { useMyGraduation } from "@/lib/hooks/use-graduation";
+import { useMySubscription } from "@/lib/hooks/use-subscription";
+import { useCurrentUser } from "@/lib/hooks/use-user";
 import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
+import { Bell, ChevronRight, CreditCard, TriangleAlert } from "lucide-react-native";
+import { useState } from "react";
+import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const TEXT_SECONDARY = "#8A8A8A";
 const TEXT_MUTED = "#525252";
@@ -133,28 +133,47 @@ export default function StudentHome() {
           ) : null}
 
           <View className="flex-row" style={{ gap: 12 }}>
-            <View
+            <Pressable
+              onPress={
+                graduation ? undefined : () => router.push("/(app)/(student)/register-belt")
+              }
               className="flex-1 rounded-2xl border border-surface-border bg-surface"
               style={{ padding: 16, gap: 12 }}
             >
               <Text className="font-poppins-semibold text-xs text-muted">Faixa atual</Text>
               {graduation ? (
-                <View className="flex-row items-center gap-2">
-                  <View
-                    className="h-4 w-4 rounded-full"
-                    style={{ backgroundColor: BELT_COLORS[graduation.belt] ?? "#666" }}
-                  />
-                  <Text className="font-poppins-semibold text-sm text-primary">
-                    {BELT_LABELS[graduation.belt] ?? graduation.belt}
-                  </Text>
-                  <Text className="font-poppins text-xs text-muted">
-                    {graduation.stripes} graus
-                  </Text>
+                <View style={{ gap: 12 }}>
+                  <View className="flex-row items-center" style={{ gap: 10 }}>
+                    <View
+                      className="h-8 w-8 rounded-full"
+                      style={{ backgroundColor: BELT_COLORS[graduation.belt] ?? "#666" }}
+                    />
+                    <View style={{ gap: 2 }}>
+                      <Text className="font-poppins-bold text-primary" style={{ fontSize: 15 }}>
+                        {BELT_LABELS[graduation.belt] ?? graduation.belt}
+                      </Text>
+                      <Text className="font-poppins text-xs text-muted">
+                        {graduation.stripes} graus
+                      </Text>
+                    </View>
+                  </View>
+                  <View className="flex-row items-center" style={{ gap: 5 }}>
+                    {[0, 1, 2, 3].map((idx) => (
+                      <View
+                        key={idx}
+                        className="h-2 w-2 rounded-full"
+                        style={{ backgroundColor: idx < graduation.stripes ? "#FFFFFF" : "#3A3A3A" }}
+                      />
+                    ))}
+                  </View>
                 </View>
               ) : (
-                <Text className="font-poppins text-sm text-muted">Não registrada</Text>
+                <Text className="font-poppins text-sm text-muted">
+                  Não registrada,
+                  <Text className="text-[#A078E8]"> clique aqui para registrar</Text>
+                </Text>
               )}
-            </View>
+            </Pressable>
             <View
               className="flex-1 rounded-2xl border border-surface-border bg-surface"
               style={{ padding: 16, gap: 4 }}

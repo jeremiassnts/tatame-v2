@@ -6,6 +6,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
 import { useEffect } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { useAuth } from "@clerk/clerk-expo";
 
 export default function AppLayout() {
   return (
@@ -17,9 +18,15 @@ export default function AppLayout() {
 
 function AppRouter() {
   const router = useRouter();
+  const { isLoaded, isSignedIn } = useAuth();
   const { data: user, isPending, isError, error, refetch } = useCurrentUser();
 
   useEffect(() => {
+    if (!isLoaded) return;
+    if (!isSignedIn) {
+      router.replace("/(auth)");
+      return;
+    }
     if (isPending || !user) return;
 
     if (user.activeRole === "manager" && !user.activeAcademy) {
@@ -42,7 +49,22 @@ function AppRouter() {
         }
       }
     }
-  }, [isPending, user, router]);
+  }, [isLoaded, isSignedIn, isPending, user, router]);
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
+    if (isError && error instanceof ApiError && error.status === 401) {
+      router.replace("/(auth)");
+    }
+  }, [error, isError, isLoaded, isSignedIn, router]);
+
+  if (!isLoaded || !isSignedIn) {
+    return (
+      <View className="flex-1 items-center justify-center bg-background">
+        <ActivityIndicator color="#A078E8" />
+      </View>
+    );
+  }
 
   if (isPending) {
     return (
@@ -53,6 +75,13 @@ function AppRouter() {
   }
 
   if (isError) {
+    if (error instanceof ApiError && error.status === 401) {
+      return (
+        <View className="flex-1 items-center justify-center bg-background">
+          <ActivityIndicator color="#A078E8" />
+        </View>
+      );
+    }
     const message =
       error instanceof ApiError ? error.message : "Não foi possível carregar seu perfil";
     return (
