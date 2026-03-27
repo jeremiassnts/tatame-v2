@@ -312,7 +312,7 @@ Run: `cd apps/api && npx vitest run src/modules/user/user.service.test.ts`
 
 Expected: All tests PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/api/src/modules/user/user.service.ts apps/api/src/modules/user/user.service.test.ts
