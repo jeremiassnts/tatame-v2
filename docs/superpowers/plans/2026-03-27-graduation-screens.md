@@ -1420,13 +1420,13 @@ git commit -m "feat(mobile): add instructor members screens, replace graduation 
 
 > **Linear:** [TAT-13](https://linear.app/tatame/issue/TAT-13/grad-task-9-final-verification-graduation-plan) · `PLAN-TASK-9`
 
-- [ ] **Step 1: Run all API unit tests**
+- [x] **Step 1: Run all API unit tests**
 
 Run: `cd apps/api && npx vitest run`
 
 Expected: All tests pass.
 
-- [ ] **Step 2: Run type checks**
+- [x] **Step 2: Run type checks**
 
 Run:
 ```bash
@@ -1435,7 +1435,7 @@ cd apps/api && npx tsc --noEmit && cd ../../apps/mobile && npx tsc --noEmit
 
 Expected: No type errors.
 
-- [ ] **Step 3: Commit if any fixes were needed**
+- [x] **Step 3: Commit if any fixes were needed**
 
 Only if previous steps required fixes:
 ```bash
