@@ -856,7 +856,7 @@ git commit -m "feat(mobile): add profile screen"
 - Modify: `apps/mobile/app/(app)/(instructor)/(home)/index.tsx:145`
 - Modify: `apps/mobile/app/(app)/(student)/(home)/index.tsx:96-109`
 
-- [ ] **Step 1: Manager Home — wrap Avatar in Pressable**
+- [x] **Step 1: Manager Home — wrap Avatar in Pressable**
 
 In `apps/mobile/app/(app)/(manager)/(home)/index.tsx`, replace lines 122-128:
 
@@ -885,7 +885,7 @@ with:
 </Pressable>
 ```
 
-- [ ] **Step 2: Instructor Home — wrap Avatar in Pressable**
+- [x] **Step 2: Instructor Home — wrap Avatar in Pressable**
 
 In `apps/mobile/app/(app)/(instructor)/(home)/index.tsx`, replace line 145:
 
@@ -903,7 +903,7 @@ with:
 
 Add `Pressable` to the `react-native` import and `useRouter` from `expo-router` (useRouter is already imported).
 
-- [ ] **Step 3: Student Home — add avatar to header**
+- [x] **Step 3: Student Home — add avatar to header**
 
 In `apps/mobile/app/(app)/(student)/(home)/index.tsx`, the student home doesn't currently show a user avatar. It has a bell icon button. We need to add the avatar next to it.
 
@@ -945,7 +945,7 @@ with:
 </View>
 ```
 
-- [ ] **Step 4: Verify mobile compiles**
+- [x] **Step 4: Verify mobile compiles**
 
 Run: `cd apps/mobile && npx expo export --platform ios --dump-sourcemap false 2>&1 | tail -5`
 

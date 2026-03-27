@@ -119,13 +119,16 @@ export default function ManagerDashboard() {
                 {managerFirst || "Gestor"}
               </Text>
             </View>
-            <View className="flex-row items-center gap-2">
+            <Pressable
+              onPress={() => router.push("/(app)/profile")}
+              className="flex-row items-center gap-2"
+            >
               <Avatar
                 variant="user"
                 imageUrl={me?.profileImageUrl}
                 fallbackLetter={avatarLetter}
               />
-            </View>
+            </Pressable>
           </View>
 
           <View

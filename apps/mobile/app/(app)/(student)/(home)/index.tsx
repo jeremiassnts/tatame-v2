@@ -3,9 +3,11 @@ import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from "react-
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Bell, ChevronRight, CreditCard, TriangleAlert } from "lucide-react-native";
+import { Avatar } from "@/components/Avatar";
 import { ClassCard } from "@/components/ClassCard";
 import { useAcademyContext } from "@/lib/academy-context";
 import { useClasses } from "@/lib/hooks/use-classes";
+import { useCurrentUser } from "@/lib/hooks/use-user";
 import { useMySubscription } from "@/lib/hooks/use-subscription";
 import { useMyGraduation } from "@/lib/hooks/use-graduation";
 import { useCheckin } from "@/lib/hooks/use-checkin";
@@ -49,6 +51,7 @@ export default function StudentHome() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { academyName } = useAcademyContext();
+  const { data: me } = useCurrentUser();
   const dayOfWeek = new Date().getDay();
   const { data: classes } = useClasses(dayOfWeek);
   const { data: subResponse } = useMySubscription();
@@ -103,9 +106,18 @@ export default function StudentHome() {
                 {academyName}
               </Text>
             </View>
-            <Pressable className="h-10 w-10 items-center justify-center rounded-xl border border-surface-border bg-surface">
-              <Bell size={18} color="#FFFFFF" />
-            </Pressable>
+            <View className="flex-row items-center gap-2">
+              <Pressable className="h-10 w-10 items-center justify-center rounded-xl border border-surface-border bg-surface">
+                <Bell size={18} color="#FFFFFF" />
+              </Pressable>
+              <Pressable onPress={() => router.push("/(app)/profile")}>
+                <Avatar
+                  variant="user"
+                  imageUrl={me?.profileImageUrl}
+                  fallbackLetter={(me?.name?.charAt(0) || "?").toUpperCase()}
+                />
+              </Pressable>
+            </View>
           </View>
 
           {!hasSubscription ? (

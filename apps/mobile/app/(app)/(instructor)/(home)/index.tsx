@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { RefreshControl, ScrollView, Text, View } from "react-native";
+import { Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
@@ -142,7 +142,13 @@ export default function InstructorHome() {
                 {instructorFirst || "Instrutor"}
               </Text>
             </View>
-            <Avatar variant="user" imageUrl={me?.profileImageUrl} fallbackLetter={avatarLetter} />
+            <Pressable onPress={() => router.push("/(app)/profile")}>
+              <Avatar
+                variant="user"
+                imageUrl={me?.profileImageUrl}
+                fallbackLetter={avatarLetter}
+              />
+            </Pressable>
           </View>
 
           <View
