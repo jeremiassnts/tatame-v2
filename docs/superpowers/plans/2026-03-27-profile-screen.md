@@ -462,7 +462,7 @@ Run: `cd apps/api && npx tsc --noEmit`
 
 Expected: No type errors.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/api/src/modules/user/user.routes.ts
