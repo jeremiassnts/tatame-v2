@@ -155,6 +155,8 @@ export class InMemoryMembershipRepository implements IMembershipRepository {
       userName: "",
       userEmail: "",
       userProfileImageUrl: null,
+      currentBelt: null,
+      currentStripes: null,
     }));
   }
 
