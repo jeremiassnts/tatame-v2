@@ -2271,7 +2271,7 @@ git commit -m "feat(mobile): implement instructor class screens (M-INS-05/06/07)
 - Create: `apps/mobile/app/(app)/(student)/(classes)/_layout.tsx`
 - Create: `apps/mobile/app/(app)/(student)/register-belt.tsx`
 
-- [ ] **Step 1: Create student stack layout (no tabs)**
+- [x] **Step 1: Create student stack layout (no tabs)**
 
 Create `apps/mobile/app/(app)/(student)/_layout.tsx`:
 
@@ -2324,7 +2324,7 @@ export default function StudentClassesLayout() {
 }
 ```
 
-- [ ] **Step 2: Create register belt screen (M-STU-04)**
+- [x] **Step 2: Create register belt screen (M-STU-04)**
 
 Create `apps/mobile/app/(app)/(student)/register-belt.tsx`:
 
@@ -2466,7 +2466,7 @@ export default function RegisterBelt() {
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(student)/
