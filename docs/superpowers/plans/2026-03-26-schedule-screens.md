@@ -1653,11 +1653,13 @@ git commit -m "feat(mobile): implement manager class detail screen (M-MGR-08)"
 
 ## Task 11: Manager create & edit class screens (M-MGR-09)
 
+**Status:** Done — commit `feat(mobile): implement manager create/edit class screens (M-MGR-09)` (UI from `ClassForm` / design.pen `e3e4u`; create dedupes days + `ApiError` alert; edit normalizes `classId`).
+
 **Files:**
 - Create: `apps/mobile/app/(app)/(manager)/(classes)/create.tsx`
 - Create: `apps/mobile/app/(app)/(manager)/(classes)/edit/[classId].tsx`
 
-- [ ] **Step 1: Create create.tsx**
+- [x] **Step 1: Create create.tsx**
 
 ```typescript
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -1710,7 +1712,7 @@ export default function ManagerCreateClass() {
 }
 ```
 
-- [ ] **Step 2: Create edit directory and edit/[classId].tsx**
+- [x] **Step 2: Create edit directory and edit/[classId].tsx**
 
 Run: `mkdir -p apps/mobile/app/\(app\)/\(manager\)/\(classes\)/edit`
 
@@ -1791,7 +1793,7 @@ export default function ManagerEditClass() {
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(manager)/(classes)/create.tsx apps/mobile/app/(app)/(manager)/(classes)/edit/
