@@ -1,3 +1,7 @@
+import { BackButton } from "@/components/BackButton";
+import { FormInput } from "@/components/FormInput";
+import { LinearGradient } from "expo-linear-gradient";
+import { Check, ChevronDown, Lock } from "lucide-react-native";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -7,10 +11,6 @@ import {
   Text,
   View,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { Check, ChevronDown, Lock } from "lucide-react-native";
-import { FormInput } from "@/components/FormInput";
-import { BackButton } from "@/components/BackButton";
 
 const DAY_LABELS = [
   "Domingo",
@@ -118,7 +118,7 @@ export function ClassForm({
           label="Nome da aula"
           value={name}
           onChangeText={setName}
-          placeholder="Ex: Fundamentals"
+          placeholder="Ex: Fundamentos"
         />
 
         <FormInput
@@ -128,7 +128,7 @@ export function ClassForm({
           placeholder="Descrição opcional da aula..."
           multiline
           numberOfLines={3}
-          style={{ height: 80, textAlignVertical: "top" }}
+          style={{ height: 80 }}
         />
 
         <View style={{ gap: 6 }}>
@@ -159,11 +159,10 @@ export function ClassForm({
                         setInstructorId(inst.id);
                         setShowInstructorPicker(false);
                       }}
-                      className={`flex-row items-center justify-between px-4 py-3 ${
-                        idx < instructors.length - 1
-                          ? "border-b border-surface-border"
-                          : ""
-                      }`}
+                      className={`flex-row items-center justify-between px-4 py-3 ${idx < instructors.length - 1
+                        ? "border-b border-surface-border"
+                        : ""
+                        }`}
                     >
                       <Text className="font-poppins text-sm text-primary">
                         {inst.name}
@@ -208,9 +207,8 @@ export function ClassForm({
                     setDayOfWeek(i);
                     setShowDayPicker(false);
                   }}
-                  className={`flex-row items-center justify-between px-4 py-3 ${
-                    i < DAY_LABELS.length - 1 ? "border-b border-surface-border" : ""
-                  }`}
+                  className={`flex-row items-center justify-between px-4 py-3 ${i < DAY_LABELS.length - 1 ? "border-b border-surface-border" : ""
+                    }`}
                 >
                   <Text className="font-poppins text-sm text-primary">
                     {label}
@@ -295,16 +293,14 @@ export function ClassForm({
                   <Pressable
                     key={label}
                     onPress={() => toggleExtraDay(i)}
-                    className={`items-center justify-center rounded-lg border px-3 py-2 ${
-                      selected
-                        ? "border-accent bg-accent-translucent"
-                        : "border-surface-border bg-surface"
-                    }`}
+                    className={`items-center justify-center rounded-lg border px-3 py-2 ${selected
+                      ? "border-accent bg-accent-translucent"
+                      : "border-surface-border bg-surface"
+                      }`}
                   >
                     <Text
-                      className={`font-poppins-medium text-xs ${
-                        selected ? "text-accent" : "text-muted"
-                      }`}
+                      className={`font-poppins-medium text-xs ${selected ? "text-accent" : "text-muted"
+                        }`}
                     >
                       {label}
                     </Text>

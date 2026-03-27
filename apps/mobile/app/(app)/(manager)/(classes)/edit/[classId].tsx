@@ -30,7 +30,6 @@ export default function ManagerEditClass() {
   const { data: cls, isLoading, isError } = useClass(classId ?? "");
   const updateClass = useUpdateClass(classId ?? "");
   const { data: members } = useMembers(academyId, {
-    role: "instructor",
     status: "active",
   });
 
@@ -60,10 +59,12 @@ export default function ManagerEditClass() {
     );
   }
 
-  const instructors = (members ?? []).map((m) => ({
-    id: m.userId,
-    name: m.userName,
-  }));
+  const instructors = (members ?? [])
+    .filter((m) => m.role === "instructor" || m.role === "manager")
+    .map((m) => ({
+      id: m.userId,
+      name: m.userName,
+    }));
 
   const handleSubmit = (data: ClassFormData) => {
     updateClass.mutate(

@@ -1,25 +1,26 @@
-import { Alert } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
 import { ClassForm, type ClassFormData } from "@/components/ClassForm";
-import { ApiError } from "@/lib/api";
 import { useAcademyContext } from "@/lib/academy-context";
+import { ApiError } from "@/lib/api";
 import { useCreateClass } from "@/lib/hooks/use-classes";
 import { useMembers } from "@/lib/hooks/use-membership";
+import { useRouter } from "expo-router";
+import { Alert } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ManagerCreateClass() {
   const router = useRouter();
   const { academyId } = useAcademyContext();
   const createClass = useCreateClass();
   const { data: members } = useMembers(academyId, {
-    role: "instructor",
     status: "active",
   });
 
-  const instructors = (members ?? []).map((m) => ({
-    id: m.userId,
-    name: m.userName,
-  }));
+  const instructors = (members ?? [])
+    .filter((m) => m.role === "instructor" || m.role === "manager")
+    .map((m) => ({
+      id: m.userId,
+      name: m.userName,
+    }));
 
   const handleSubmit = async (data: ClassFormData) => {
     const daysToCreate = [
