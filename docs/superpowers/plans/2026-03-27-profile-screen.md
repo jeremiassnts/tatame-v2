@@ -840,7 +840,7 @@ export default function ProfileScreen() {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/app/\(app\)/profile.tsx
