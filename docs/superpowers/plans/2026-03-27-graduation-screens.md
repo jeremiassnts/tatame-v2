@@ -229,7 +229,7 @@ git commit -m "feat(api): add promotedByName to graduation list via JOIN"
 - Modify: `apps/api/src/modules/graduation/graduation.service.ts`
 - Modify: `apps/api/src/modules/graduation/graduation.service.test.ts`
 
-- [ ] **Step 1: Write failing tests for instructor promotion by manager**
+- [x] **Step 1: Write failing tests for instructor promotion by manager**
 
 Add to `apps/api/src/modules/graduation/graduation.service.test.ts`:
 
@@ -313,13 +313,13 @@ it("promoteMember rejects instructor promoting another instructor", async () => 
 });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `cd apps/api && npx vitest run src/modules/graduation/graduation.service.test.ts`
 
 Expected: FAIL — `promoteMember` is not defined on `GraduationService`.
 
-- [ ] **Step 3: Rename methods and update logic in service**
+- [x] **Step 3: Rename methods and update logic in service**
 
 In `apps/api/src/modules/graduation/graduation.service.ts`:
 
@@ -420,13 +420,13 @@ async promoteMember(opts: {
 }
 ```
 
-- [ ] **Step 4: Update existing test that uses old method name**
+- [x] **Step 4: Update existing test that uses old method name**
 
 In `graduation.service.test.ts`, update the `promoteStudent replaces current belt` test (line 191-227) to use the new method name:
 
 Replace `svc.promoteStudent({` with `svc.promoteMember({` and replace `studentUserId: studentId` with `targetUserId: studentId`.
 
-- [ ] **Step 5: Run tests to verify they pass**
+- [x] **Step 5: Run tests to verify they pass**
 
 Run: `cd apps/api && npx vitest run src/modules/graduation/graduation.service.test.ts`
 

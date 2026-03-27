@@ -124,8 +124,8 @@ export class GraduationService {
     }
   }
 
-  /** Manager (owner) or active instructor in the academy may list a student's promotion history. */
-  async assertStaffCanListStudent(
+  /** Manager (owner) or active instructor in the academy may list a member's promotion history (students; managers also instructors). */
+  async assertStaffCanListMember(
     actorUserId: string,
     actorRole: Role,
     academyId: string,
@@ -140,16 +140,28 @@ export class GraduationService {
       targetUserId,
       academyId,
     );
-    if (!m || m.status !== "active" || m.role !== "student") {
-      throw new HttpError(404, "Student not found in this academy");
+    if (!m || m.status !== "active") {
+      throw new HttpError(404, "Member not found in this academy");
+    }
+    // Instructors can only view student graduations
+    if (actorRole === "instructor" && m.role !== "student") {
+      throw new HttpError(404, "Member not found in this academy");
+    }
+    // Managers can view student and instructor graduations
+    if (
+      actorRole === "manager" &&
+      m.role !== "student" &&
+      m.role !== "instructor"
+    ) {
+      throw new HttpError(404, "Member not found in this academy");
     }
   }
 
-  async promoteStudent(opts: {
+  async promoteMember(opts: {
     actorUserId: string;
     actorRole: Role;
     academyId: string;
-    studentUserId: string;
+    targetUserId: string;
     belt: Belt;
     stripes: number;
     notes: string | null;
@@ -160,25 +172,38 @@ export class GraduationService {
       opts.academyId,
     );
 
-    if (opts.studentUserId === opts.actorUserId) {
+    if (opts.targetUserId === opts.actorUserId) {
       throw new HttpError(400, "Use the initial belt endpoint for your own belt");
     }
 
     const m = await this.membershipRepo.findActiveByUserAndAcademy(
-      opts.studentUserId,
+      opts.targetUserId,
       opts.academyId,
     );
-    if (!m || m.status !== "active" || m.role !== "student") {
-      throw new HttpError(404, "Student not found in this academy");
+    if (!m || m.status !== "active") {
+      throw new HttpError(404, "Member not found in this academy");
+    }
+
+    // Instructors can only promote students
+    if (opts.actorRole === "instructor" && m.role !== "student") {
+      throw new HttpError(404, "Member not found in this academy");
+    }
+    // Managers can promote students and instructors
+    if (
+      opts.actorRole === "manager" &&
+      m.role !== "student" &&
+      m.role !== "instructor"
+    ) {
+      throw new HttpError(404, "Member not found in this academy");
     }
 
     const current = await this.graduationRepo.findCurrentByUserId(
-      opts.studentUserId,
+      opts.targetUserId,
     );
     if (!current) {
       throw new HttpError(
         409,
-        "Student has no current belt; they must register their initial belt first",
+        "Member has no current belt; they must register their initial belt first",
       );
     }
 
@@ -188,7 +213,7 @@ export class GraduationService {
     );
 
     return this.graduationRepo.replaceCurrentPromotion({
-      userId: opts.studentUserId,
+      userId: opts.targetUserId,
       academyId: opts.academyId,
       promotedBy: opts.actorUserId,
       belt: opts.belt,
