@@ -32,7 +32,7 @@ cd packages/db && npx drizzle-kit generate
 
 Expected: A new migration file is created in `packages/db/drizzle/` with an `ALTER TABLE "users" ADD COLUMN "deleted_at" timestamp with time zone` statement.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add packages/db/src/schema/index.ts packages/db/drizzle/
