@@ -2480,7 +2480,7 @@ git commit -m "feat(mobile): add student layout and register belt screen (M-STU-
 **Files:**
 - Create: `apps/mobile/app/(app)/(student)/(home)/index.tsx`
 
-- [ ] **Step 1: Create student home screen**
+- [x] **Step 1: Create student home screen**
 
 Create `apps/mobile/app/(app)/(student)/(home)/index.tsx`:
 
@@ -2715,7 +2715,7 @@ export default function StudentHome() {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(student)/(home)/index.tsx
