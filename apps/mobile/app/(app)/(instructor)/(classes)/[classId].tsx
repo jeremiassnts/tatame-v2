@@ -1,9 +1,9 @@
+import { ClassDetailView } from "@/components/ClassDetailView";
+import { useClassCheckins } from "@/lib/hooks/use-checkin";
+import { useClass } from "@/lib/hooks/use-classes";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { ActivityIndicator, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { ClassDetailView } from "@/components/ClassDetailView";
-import { useClass } from "@/lib/hooks/use-classes";
-import { useClassCheckins } from "@/lib/hooks/use-checkin";
 
 const DAY_NAMES = [
   "Domingo",
@@ -74,7 +74,7 @@ export default function InstructorClassDetail() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top"]}>
       <ClassDetailView
         classData={{
           id: cls.id,

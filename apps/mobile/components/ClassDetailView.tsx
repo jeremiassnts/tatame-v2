@@ -1,4 +1,7 @@
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { BackButton } from "@/components/BackButton";
+import { CapacityBar } from "@/components/CapacityBar";
+import { CheckinListItem } from "@/components/CheckinListItem";
+import type { CheckinItem } from "@/lib/hooks/use-checkin";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   Calendar,
@@ -9,10 +12,7 @@ import {
   User,
   Users,
 } from "lucide-react-native";
-import { BackButton } from "@/components/BackButton";
-import { CapacityBar } from "@/components/CapacityBar";
-import { CheckinListItem } from "@/components/CheckinListItem";
-import type { CheckinItem } from "@/lib/hooks/use-checkin";
+import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 
 /** Icons + labels in info rows — design.pen M-MGR-08 (jon0a) info items. */
 const INFO_ICON = "#525252";
@@ -113,7 +113,7 @@ export function ClassDetailView({
 
   return (
     <>
-      <View className="flex-row items-center justify-between px-6 pb-2 pt-2">
+      <View className="flex flex-row items-center justify-between px-6 pb-2 pt-4">
         <BackButton />
         <Text className="font-poppins-bold text-lg text-primary">
           Detalhes da aula
