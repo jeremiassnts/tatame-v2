@@ -35,8 +35,11 @@ function AppRouter() {
       } else if (user.activeMembership.status === "pending") {
         router.replace("/(app)/(joining)/pending-approval");
       } else if (user.activeMembership.status === "active") {
-        // Temporary route until instructor/student home exists.
-        router.replace("/(app)/(joining)/pending-approval");
+        if (user.activeRole === "instructor") {
+          router.replace("/(app)/(instructor)/(home)");
+        } else {
+          router.replace("/(app)/(student)/(home)");
+        }
       }
     }
   }, [isPending, user, router]);
@@ -76,11 +79,17 @@ function AppRouter() {
   const academyContext =
     user.activeRole === "manager" && user.activeAcademy
       ? {
-        academyId: user.activeAcademy.id,
-        academyName: user.activeAcademy.name,
-        academyLogoUrl: user.activeAcademy.logoUrl,
-      }
-      : null;
+          academyId: user.activeAcademy.id,
+          academyName: user.activeAcademy.name,
+          academyLogoUrl: user.activeAcademy.logoUrl,
+        }
+      : user.activeMembership && user.activeMembership.status === "active"
+        ? {
+            academyId: user.activeMembership.academyId,
+            academyName: user.activeMembership.academyName,
+            academyLogoUrl: user.activeMembership.academyLogoUrl,
+          }
+        : null;
 
   if (academyContext) {
     return (

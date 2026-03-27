@@ -1,16 +1,12 @@
 import { Avatar } from "@/components/Avatar";
+import { ClassCard } from "@/components/ClassCard";
 import { useAcademyContext } from "@/lib/academy-context";
 import { useApi } from "@/lib/api";
 import { useAcademy, useAcademyStats } from "@/lib/hooks/use-academy";
 import { useCurrentUser } from "@/lib/hooks/use-user";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import {
-  Calendar,
-  ChevronRight,
-  CreditCard,
-  UserPlus
-} from "lucide-react-native";
+import { Calendar, CreditCard, UserPlus } from "lucide-react-native";
 import { useState } from "react";
 import {
   Pressable,
@@ -23,7 +19,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const TEXT_SECONDARY = "#8A8A8A";
 const TEXT_MUTED = "#525252";
-const BORDER_STRONG = "#3A3A3A";
 const WARNING = "#FFD60A";
 
 type ClassItem = {
@@ -31,6 +26,8 @@ type ClassItem = {
   name: string;
   startTime: string;
   endTime: string;
+  instructorName?: string | null;
+  capacity?: number | null;
 };
 
 function greetingPrefix(): string {
@@ -51,42 +48,6 @@ function formatTime(t: string) {
   const h = parts[0] ?? "0";
   const m = parts[1] ?? "00";
   return `${h.padStart(2, "0")}:${m}`;
-}
-
-function DashboardClassRow({
-  name,
-  startTime,
-  endTime,
-}: {
-  name: string;
-  startTime: string;
-  endTime: string;
-}) {
-  return (
-    <Pressable className="flex-row items-center gap-3.5 rounded-[14px] border border-surface-border bg-surface p-3.5">
-      <View className="w-[52px] items-center" style={{ gap: 2 }}>
-        <Text
-          className="font-poppins-semibold text-primary"
-          style={{ fontSize: 14 }}
-        >
-          {startTime}
-        </Text>
-        <Text className="font-poppins text-[11px]" style={{ color: TEXT_MUTED }}>
-          {endTime}
-        </Text>
-      </View>
-      <View
-        className="h-9 w-px"
-        style={{ backgroundColor: BORDER_STRONG }}
-      />
-      <View className="min-w-0 flex-1" style={{ gap: 3 }}>
-        <Text className="font-poppins-semibold text-sm text-primary">
-          {name}
-        </Text>
-      </View>
-      <ChevronRight size={18} color={TEXT_MUTED} />
-    </Pressable>
-  );
 }
 
 export default function ManagerDashboard() {
@@ -311,11 +272,16 @@ export default function ManagerDashboard() {
               </View>
             ) : (
               todayClasses.map((cls) => (
-                <DashboardClassRow
+                <ClassCard
                   key={cls.id}
                   name={cls.name}
                   startTime={formatTime(cls.startTime)}
                   endTime={formatTime(cls.endTime)}
+                  instructorName={cls.instructorName ?? undefined}
+                  capacity={cls.capacity}
+                  onPress={() =>
+                    router.push(`/(app)/(manager)/(classes)/${cls.id}`)
+                  }
                 />
               ))
             )}
