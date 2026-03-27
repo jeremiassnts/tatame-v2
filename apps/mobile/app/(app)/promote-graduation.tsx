@@ -112,7 +112,7 @@ export default function PromoteGraduationScreen() {
     ? MAX_STRIPES_BY_BELT[selectedBelt as Belt] ?? 4
     : 4;
 
-  const beltOptions = BELT_ORDER.map((b) => ({
+  const beltOptions = BELT_ORDER.map((b: Belt) => ({
     value: b,
     label: BELT_LABELS[b] ?? b,
   }));

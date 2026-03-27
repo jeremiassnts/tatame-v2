@@ -77,15 +77,17 @@ function BeltSwatch({
 }) {
   const belt = graduation?.belt;
   const isBlack = belt === "black";
+  const fill =
+    graduation && belt
+      ? BELT_COLORS[belt] ?? "#666"
+      : "#3A3A3A";
   return (
     <View
       style={{
         width: size,
         height: size,
         borderRadius: size / 2,
-        backgroundColor: graduation
-          ? BELT_COLORS[belt] ?? "#666"
-          : "#3A3A3A",
+        backgroundColor: fill,
         borderWidth: isBlack ? 1 : 0,
         borderColor: isBlack ? BLACK_BELT_OUTLINE : undefined,
       }}

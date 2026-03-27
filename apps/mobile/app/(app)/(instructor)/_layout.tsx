@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Award, Calendar, Home, School } from "lucide-react-native";
+import { Calendar, Home, School, Users } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function InstructorLayout() {
@@ -41,11 +41,10 @@ export default function InstructorLayout() {
         }}
       />
       <Tabs.Screen
-        name="(graduation)"
+        name="(members)"
         options={{
-          title: "Graduação",
-          tabBarIcon: ({ color, size }) => <Award size={size} color={color} />,
-          href: null,
+          title: "Membros",
+          tabBarIcon: ({ color, size }) => <Users size={size} color={color} />,
         }}
       />
       <Tabs.Screen

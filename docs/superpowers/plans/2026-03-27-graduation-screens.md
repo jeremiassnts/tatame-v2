@@ -1105,7 +1105,7 @@ git commit -m "feat(mobile): add promote graduation button to manager member det
 - Delete: `apps/mobile/app/(app)/(instructor)/(graduation)/_layout.tsx`
 - Delete: `apps/mobile/app/(app)/(instructor)/(graduation)/index.tsx`
 
-- [ ] **Step 1: Create instructor members layout**
+- [x] **Step 1: Create instructor members layout**
 
 Create `apps/mobile/app/(app)/(instructor)/(members)/_layout.tsx`:
 
@@ -1124,7 +1124,7 @@ export default function InstructorMembersLayout() {
 }
 ```
 
-- [ ] **Step 2: Create instructor members list**
+- [x] **Step 2: Create instructor members list**
 
 Create `apps/mobile/app/(app)/(instructor)/(members)/index.tsx`:
 
@@ -1143,7 +1143,7 @@ export default function InstructorMembersListScreen() {
 }
 ```
 
-- [ ] **Step 3: Create instructor member detail**
+- [x] **Step 3: Create instructor member detail**
 
 Create `apps/mobile/app/(app)/(instructor)/(members)/[membershipId].tsx`:
 
@@ -1332,7 +1332,7 @@ export default function InstructorMemberDetailScreen() {
 }
 ```
 
-- [ ] **Step 4: Update instructor layout — replace graduation tab with members**
+- [x] **Step 4: Update instructor layout — replace graduation tab with members**
 
 In `apps/mobile/app/(app)/(instructor)/_layout.tsx`, replace entire file:
 
@@ -1399,7 +1399,7 @@ export default function InstructorLayout() {
 }
 ```
 
-- [ ] **Step 5: Delete old graduation placeholder files**
+- [x] **Step 5: Delete old graduation placeholder files**
 
 ```bash
 rm apps/mobile/app/\(app\)/\(instructor\)/\(graduation\)/_layout.tsx
@@ -1407,7 +1407,7 @@ rm apps/mobile/app/\(app\)/\(instructor\)/\(graduation\)/index.tsx
 rmdir apps/mobile/app/\(app\)/\(instructor\)/\(graduation\)
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/mobile/app/\(app\)/\(instructor\)/

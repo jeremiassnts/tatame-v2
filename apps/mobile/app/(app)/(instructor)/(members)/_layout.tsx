@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
 
-export default function InstructorGraduationLayout() {
+export default function InstructorMembersLayout() {
   return (
     <Stack
       screenOptions={{

@@ -41,6 +41,8 @@ type MembersListContentProps = {
   allowMemberDetails?: boolean;
   getMemberDetailHref?: (membershipId: string) => string;
   tabs?: { key: string; label: string }[];
+  /** Applied after API results (e.g. hide managers on instructor list). */
+  additionalFilter?: (m: MemberWithGraduation) => boolean;
 };
 
 export function MembersListContent({
@@ -49,6 +51,7 @@ export function MembersListContent({
   allowMemberDetails = false,
   getMemberDetailHref,
   tabs = DEFAULT_TABS,
+  additionalFilter,
 }: MembersListContentProps) {
   const router = useRouter();
   const { academyId } = useAcademyContext();
@@ -71,6 +74,13 @@ export function MembersListContent({
 
   const { data: members, isPending } = useMembers(academyId, filters);
   const membersWithGraduation = (members ?? []) as MemberWithGraduation[];
+  const visibleMembers = useMemo(
+    () =>
+      additionalFilter
+        ? membersWithGraduation.filter(additionalFilter)
+        : membersWithGraduation,
+    [membersWithGraduation, additionalFilter],
+  );
   const canOpenMember = allowMemberDetails && typeof getMemberDetailHref === "function";
 
   return (
@@ -114,7 +124,7 @@ export function MembersListContent({
           </View>
         ) : (
           <FlatList
-            data={membersWithGraduation}
+            data={visibleMembers}
             keyExtractor={(item) => item.id}
             contentContainerStyle={{ gap: 10, paddingBottom: 24 }}
             showsVerticalScrollIndicator={false}
