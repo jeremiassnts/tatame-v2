@@ -967,13 +967,13 @@ git commit -m "feat(mobile): make avatar pressable to navigate to profile"
 
 ### Task 9: Final verification
 
-- [ ] **Step 1: Run all API unit tests**
+- [x] **Step 1: Run all API unit tests**
 
 Run: `cd apps/api && npx vitest run`
 
 Expected: All tests pass.
 
-- [ ] **Step 2: Run type checks across the monorepo**
+- [x] **Step 2: Run type checks across the monorepo**
 
 Run: `npx turbo typecheck`
 
@@ -984,7 +984,7 @@ cd apps/api && npx tsc --noEmit && cd ../../apps/mobile && npx tsc --noEmit
 
 Expected: No type errors.
 
-- [ ] **Step 3: Commit if any fixes were needed**
+- [x] **Step 3: Commit if any fixes were needed** (not needed)
 
 Only if previous steps required fixes:
 ```bash
