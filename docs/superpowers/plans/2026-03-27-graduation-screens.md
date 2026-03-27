@@ -8,9 +8,33 @@
 
 **Tech Stack:** Drizzle ORM, Express, Zod, React Native, Expo Router, React Hook Form, TanStack Query, ModalSelect
 
+### Linear tracking
+
+Issues are in team **Tatame**, state **Backlog**. Each plan task maps 1:1 to a Linear issue and a stable **plan ID** for commits.
+
+| Plan | Linear | Plan ID |
+|------|--------|---------|
+| Task 1 | [TAT-5](https://linear.app/tatame/issue/TAT-5/grad-task-1-rename-promote-body-field-to-userid-validators) | `PLAN-TASK-1` |
+| Task 2 | [TAT-6](https://linear.app/tatame/issue/TAT-6/grad-task-2-graduation-repo-promotedbyname-join-users) | `PLAN-TASK-2` |
+| Task 3 | [TAT-7](https://linear.app/tatame/issue/TAT-7/grad-task-3-service-promote-instructors-rename-methods) | `PLAN-TASK-3` |
+| Task 4 | [TAT-8](https://linear.app/tatame/issue/TAT-8/grad-task-4-update-graduation-routes-api) | `PLAN-TASK-4` |
+| Task 5 | [TAT-9](https://linear.app/tatame/issue/TAT-9/grad-task-5-mobile-hooks-for-graduation) | `PLAN-TASK-5` |
+| Task 6 | [TAT-10](https://linear.app/tatame/issue/TAT-10/grad-task-6-promotion-screen-promote-graduation) | `PLAN-TASK-6` |
+| Task 7 | [TAT-11](https://linear.app/tatame/issue/TAT-11/grad-task-7-promote-button-manager-member-detail) | `PLAN-TASK-7` |
+| Task 8 | [TAT-12](https://linear.app/tatame/issue/TAT-12/grad-task-8-instructor-members-screens-tab) | `PLAN-TASK-8` |
+| Task 9 | [TAT-13](https://linear.app/tatame/issue/TAT-13/grad-task-9-final-verification-graduation-plan) | `PLAN-TASK-9` |
+
+**How to close Linear issues when you implement**
+
+1. **Commit / PR:** Include the issue id (e.g. `TAT-5`) in the commit message. Examples: `feat(validators): rename promote body (#TAT-5)` or a body line `Fixes TAT-5` / `Closes TAT-5`. If [Linear’s Git integration](https://linear.app/docs/github) is enabled for your repo, merging the PR can auto-complete the issue.
+2. **Manual:** When a task’s steps are done, set the Linear issue to **Done** (or move out of Backlog as your workflow prefers).
+3. **Plan checkboxes:** Mark the corresponding `- [ ]` steps as `- [x]` in this file in the same change that closes the work.
+
 ---
 
 ### Task 1: Rename `studentUserId` → `userId` in validators
+
+> **Linear:** [TAT-5](https://linear.app/tatame/issue/TAT-5/grad-task-1-rename-promote-body-field-to-userid-validators) · `PLAN-TASK-1`
 
 **Files:**
 - Modify: `packages/validators/src/graduation.schema.ts`
@@ -61,6 +85,8 @@ git commit -m "feat(validators): rename promoteBeltBody userId, add promotedByNa
 ---
 
 ### Task 2: Update graduation repository to include promoter name
+
+> **Linear:** [TAT-6](https://linear.app/tatame/issue/TAT-6/grad-task-2-graduation-repo-promotedbyname-join-users) · `PLAN-TASK-2`
 
 **Files:**
 - Modify: `apps/api/src/modules/graduation/graduation.repository.ts`
@@ -196,6 +222,8 @@ git commit -m "feat(api): add promotedByName to graduation list via JOIN"
 ---
 
 ### Task 3: Rename service methods and allow instructor promotion
+
+> **Linear:** [TAT-7](https://linear.app/tatame/issue/TAT-7/grad-task-3-service-promote-instructors-rename-methods) · `PLAN-TASK-3`
 
 **Files:**
 - Modify: `apps/api/src/modules/graduation/graduation.service.ts`
@@ -415,6 +443,8 @@ git commit -m "feat(api): rename promoteMember, allow manager to promote instruc
 
 ### Task 4: Update graduation routes
 
+> **Linear:** [TAT-8](https://linear.app/tatame/issue/TAT-8/grad-task-4-update-graduation-routes-api) · `PLAN-TASK-4`
+
 **Files:**
 - Modify: `apps/api/src/modules/graduation/graduation.routes.ts`
 
@@ -521,6 +551,8 @@ git commit -m "feat(api): update graduation routes for renamed fields and promot
 
 ### Task 5: Add mobile hooks for graduation
 
+> **Linear:** [TAT-9](https://linear.app/tatame/issue/TAT-9/grad-task-5-mobile-hooks-for-graduation) · `PLAN-TASK-5`
+
 **Files:**
 - Modify: `apps/mobile/lib/hooks/use-graduation.ts`
 
@@ -603,6 +635,8 @@ git commit -m "feat(mobile): add useGraduationHistory and usePromoteGraduation h
 ---
 
 ### Task 6: Create the promotion screen
+
+> **Linear:** [TAT-10](https://linear.app/tatame/issue/TAT-10/grad-task-6-promotion-screen-promote-graduation) · `PLAN-TASK-6`
 
 **Files:**
 - Create: `apps/mobile/app/(app)/promote-graduation.tsx`
@@ -994,6 +1028,8 @@ git commit -m "feat(mobile): add promote graduation screen"
 
 ### Task 7: Add promote button to manager member detail
 
+> **Linear:** [TAT-11](https://linear.app/tatame/issue/TAT-11/grad-task-7-promote-button-manager-member-detail) · `PLAN-TASK-7`
+
 **Files:**
 - Modify: `apps/mobile/app/(app)/(manager)/(members)/[membershipId].tsx`
 
@@ -1058,6 +1094,8 @@ git commit -m "feat(mobile): add promote graduation button to manager member det
 ---
 
 ### Task 8: Create instructor members screens
+
+> **Linear:** [TAT-12](https://linear.app/tatame/issue/TAT-12/grad-task-8-instructor-members-screens-tab) · `PLAN-TASK-8`
 
 **Files:**
 - Create: `apps/mobile/app/(app)/(instructor)/(members)/_layout.tsx`
@@ -1379,6 +1417,8 @@ git commit -m "feat(mobile): add instructor members screens, replace graduation 
 ---
 
 ### Task 9: Final verification
+
+> **Linear:** [TAT-13](https://linear.app/tatame/issue/TAT-13/grad-task-9-final-verification-graduation-plan) · `PLAN-TASK-9`
 
 - [ ] **Step 1: Run all API unit tests**
 
