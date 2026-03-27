@@ -13,6 +13,18 @@ export interface IUserRepository {
 
   findByClerkId(clerkUserId: string): Promise<UserRow | undefined>;
 
+  update(
+    id: string,
+    data: {
+      name?: string;
+      phone?: string | null;
+      instagram?: string | null;
+      birthDate?: string | null;
+    },
+  ): Promise<UserRow | undefined>;
+
+  softDelete(id: string): Promise<void>;
+
   findActiveRole(userId: string): Promise<string | undefined>;
 
   hasActiveRole(userId: string): Promise<boolean>;

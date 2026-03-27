@@ -63,6 +63,7 @@ export function makeUser(overrides: Partial<UserRow> = {}): UserRow {
       }) ?? null,
     createdAt: t,
     updatedAt: t,
+    deletedAt: null,
     ...overrides,
   };
 }

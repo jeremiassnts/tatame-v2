@@ -40,11 +40,36 @@ export class InMemoryUserRepository implements IUserRepository {
       birthDate: null,
       createdAt: t,
       updatedAt: t,
+      deletedAt: null,
     });
   }
 
   async findByClerkId(clerkUserId: string): Promise<UserRow | undefined> {
-    return this.users.find((u) => u.clerkUserId === clerkUserId);
+    return this.users.find((u) => u.clerkUserId === clerkUserId && !u.deletedAt);
+  }
+
+  async update(
+    id: string,
+    data: {
+      name?: string;
+      phone?: string | null;
+      instagram?: string | null;
+      birthDate?: string | null;
+    },
+  ): Promise<UserRow | undefined> {
+    const user = this.users.find((u) => u.id === id && !u.deletedAt);
+    if (!user) return undefined;
+    if (data.name !== undefined) user.name = data.name;
+    if (data.phone !== undefined) user.phone = data.phone;
+    if (data.instagram !== undefined) user.instagram = data.instagram;
+    if (data.birthDate !== undefined) user.birthDate = data.birthDate;
+    user.updatedAt = new Date();
+    return { ...user };
+  }
+
+  async softDelete(id: string): Promise<void> {
+    const user = this.users.find((u) => u.id === id);
+    if (user) user.deletedAt = new Date();
   }
 
   async findActiveRole(userId: string): Promise<string | undefined> {

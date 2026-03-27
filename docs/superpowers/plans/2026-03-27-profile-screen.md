@@ -103,7 +103,7 @@ git commit -m "feat(validators): add updateProfileBodySchema and expand userMeRe
 - Modify: `apps/api/src/modules/user/user.repository.postgres.ts`
 - Modify: `apps/api/src/modules/user/user.repository.in-memory.ts`
 
-- [ ] **Step 1: Add methods to the interface**
+- [x] **Step 1: Add methods to the interface**
 
 In `apps/api/src/modules/user/user.repository.ts`, add to `IUserRepository`:
 
@@ -121,7 +121,7 @@ update(
 softDelete(id: string): Promise<void>;
 ```
 
-- [ ] **Step 2: Implement in Postgres repository**
+- [x] **Step 2: Implement in Postgres repository**
 
 In `apps/api/src/modules/user/user.repository.postgres.ts`, add:
 
@@ -170,7 +170,7 @@ async findByClerkId(clerkUserId: string): Promise<UserRow | undefined> {
 }
 ```
 
-- [ ] **Step 3: Implement in InMemory repository**
+- [x] **Step 3: Implement in InMemory repository**
 
 In `apps/api/src/modules/user/user.repository.in-memory.ts`, add the `deletedAt` field to the `upsert` push call (it's already there as part of `UserRow` type) and add:
 

@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import {
   academies,
   academyMemberships,
@@ -40,9 +40,30 @@ export class PostgresUserRepository implements IUserRepository {
     const [row] = await this.db
       .select()
       .from(users)
-      .where(eq(users.clerkUserId, clerkUserId))
+      .where(and(eq(users.clerkUserId, clerkUserId), isNull(users.deletedAt)))
       .limit(1);
     return row;
+  }
+
+  async update(
+    id: string,
+    data: {
+      name?: string;
+      phone?: string | null;
+      instagram?: string | null;
+      birthDate?: string | null;
+    },
+  ): Promise<UserRow | undefined> {
+    const [row] = await this.db
+      .update(users)
+      .set(data)
+      .where(and(eq(users.id, id), isNull(users.deletedAt)))
+      .returning();
+    return row;
+  }
+
+  async softDelete(id: string): Promise<void> {
+    await this.db.update(users).set({ deletedAt: new Date() }).where(eq(users.id, id));
   }
 
   async findActiveRole(userId: string): Promise<string | undefined> {
