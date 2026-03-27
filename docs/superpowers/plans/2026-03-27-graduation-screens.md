@@ -1033,7 +1033,7 @@ git commit -m "feat(mobile): add promote graduation screen"
 **Files:**
 - Modify: `apps/mobile/app/(app)/(manager)/(members)/[membershipId].tsx`
 
-- [ ] **Step 1: Add the promote button**
+- [x] **Step 1: Add the promote button**
 
 In `apps/mobile/app/(app)/(manager)/(members)/[membershipId].tsx`, add `ArrowUpRight` to the lucide import:
 
@@ -1084,7 +1084,7 @@ Add the promote button above the block button. Replace the bottom section (lines
 ) : null}
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/app/\(app\)/\(manager\)/\(members\)/\[membershipId\].tsx

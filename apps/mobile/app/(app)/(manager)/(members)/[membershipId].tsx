@@ -7,6 +7,7 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   ArrowLeft,
+  ArrowUpRight,
   AtSign,
   Ban,
   Calendar,
@@ -185,17 +186,34 @@ export default function MemberDetailScreen() {
         </ScrollView>
 
         {member.status === "active" && member.role !== "manager" ? (
-          <Pressable
-            onPress={handleBlock}
-            disabled={blockMutation.isPending}
-            className="mb-6 flex-row items-center justify-center gap-2 rounded-xl border py-3.5"
-            style={{ backgroundColor: "#1A0A0A", borderColor: "#FF453A40" }}
-          >
-            <Ban size={16} color="#FF453A" />
-            <Text className="font-poppins-semibold text-sm" style={{ color: "#FF453A" }}>
-              Bloquear membro
-            </Text>
-          </Pressable>
+          <View className="mb-6" style={{ gap: 10 }}>
+            <Pressable
+              onPress={() =>
+                router.push({
+                  pathname: "/(app)/promote-graduation",
+                  params: { userId: member.userId, membershipId },
+                })
+              }
+              className="flex-row items-center justify-center gap-2 rounded-xl py-3.5"
+              style={{ backgroundColor: "#A078E8", height: 48 }}
+            >
+              <ArrowUpRight size={16} color="#FFFFFF" />
+              <Text className="font-poppins-semibold text-sm text-white">
+                Promover graduação
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={handleBlock}
+              disabled={blockMutation.isPending}
+              className="flex-row items-center justify-center gap-2 rounded-xl border py-3.5"
+              style={{ backgroundColor: "#1A0A0A", borderColor: "#FF453A40" }}
+            >
+              <Ban size={16} color="#FF453A" />
+              <Text className="font-poppins-semibold text-sm" style={{ color: "#FF453A" }}>
+                Bloquear membro
+              </Text>
+            </Pressable>
+          </View>
         ) : null}
       </View>
     </SafeAreaView>
