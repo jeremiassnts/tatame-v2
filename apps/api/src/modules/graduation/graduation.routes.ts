@@ -1,12 +1,12 @@
 import { Router } from "express";
 import { Role } from "@tatame/types";
 import type {
-  PromoteStudentBeltBody,
+  PromoteBeltBody,
   RegisterInitialBeltBody,
 } from "@tatame/validators";
 import {
   listGraduationsQuerySchema,
-  promoteStudentBeltBodySchema,
+  promoteBeltBodySchema,
   registerInitialBeltBodySchema,
 } from "@tatame/validators";
 import { getDb } from "../../lib/db.js";
@@ -20,7 +20,6 @@ import { validateBody } from "../../middleware/validate.js";
 import { PostgresAcademyRepository } from "../academy/academy.repository.postgres.js";
 import { PostgresMembershipRepository } from "../membership/membership.repository.postgres.js";
 import { PostgresGraduationRepository } from "./graduation.repository.postgres.js";
-import type { BeltPromotionRow } from "./graduation.repository.js";
 import { GraduationService } from "./graduation.service.js";
 
 export const graduationRouter = Router();
@@ -32,12 +31,24 @@ const graduationService = new GraduationService(
   new PostgresAcademyRepository(db),
 );
 
-function formatPromotion(row: BeltPromotionRow) {
+function formatPromotion(row: {
+  id: string;
+  userId: string;
+  academyId: string;
+  promotedBy: string;
+  promotedByName?: string;
+  belt: string;
+  stripes: number;
+  isCurrent: boolean;
+  promotedAt: Date;
+  notes: string | null;
+}) {
   return {
     id: row.id,
     userId: row.userId,
     academyId: row.academyId,
     promotedBy: row.promotedBy,
+    promotedByName: row.promotedByName ?? "",
     belt: row.belt,
     stripes: row.stripes,
     isCurrent: row.isCurrent,
@@ -104,7 +115,7 @@ graduationRouter.get(
       const academyId = req.appAuth!.activeAcademyId!;
       const actorId = req.appAuth!.userId;
       const actorRole = req.appAuth!.role;
-      await graduationService.assertStaffCanListStudent(
+      await graduationService.assertStaffCanListMember(
         actorId,
         actorRole,
         academyId,
@@ -126,15 +137,15 @@ graduationRouter.post(
   authorize(Role.Manager, Role.Instructor),
   attachActiveAcademyContext,
   requireActiveAcademy,
-  validateBody(promoteStudentBeltBodySchema),
+  validateBody(promoteBeltBodySchema),
   async (req, res, next) => {
     try {
-      const body = req.validatedBody as PromoteStudentBeltBody;
-      const row = await graduationService.promoteStudent({
+      const body = req.validatedBody as PromoteBeltBody;
+      const row = await graduationService.promoteMember({
         actorUserId: req.appAuth!.userId,
         actorRole: req.appAuth!.role,
         academyId: req.appAuth!.activeAcademyId!,
-        studentUserId: body.studentUserId,
+        targetUserId: body.userId,
         belt: body.belt,
         stripes: body.stripes,
         notes: body.notes ?? null,

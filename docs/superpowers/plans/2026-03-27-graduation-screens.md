@@ -432,7 +432,7 @@ Run: `cd apps/api && npx vitest run src/modules/graduation/graduation.service.te
 
 Expected: All tests PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/api/src/modules/graduation/graduation.service.ts apps/api/src/modules/graduation/graduation.service.test.ts
@@ -448,7 +448,7 @@ git commit -m "feat(api): rename promoteMember, allow manager to promote instruc
 **Files:**
 - Modify: `apps/api/src/modules/graduation/graduation.routes.ts`
 
-- [ ] **Step 1: Update imports and route handlers**
+- [x] **Step 1: Update imports and route handlers**
 
 In `apps/api/src/modules/graduation/graduation.routes.ts`, update imports:
 
@@ -534,13 +534,13 @@ graduationRouter.post(
 );
 ```
 
-- [ ] **Step 2: Verify API compiles**
+- [x] **Step 2: Verify API compiles**
 
 Run: `cd apps/api && npx tsc --noEmit`
 
 Expected: No type errors.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/api/src/modules/graduation/graduation.routes.ts

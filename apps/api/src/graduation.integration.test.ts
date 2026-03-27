@@ -66,7 +66,7 @@ describe("Graduation routes integration", () => {
 
     asClerkUser(CLERK_MANAGER);
     const promote = await request(app).post("/v1/graduations").send({
-      studentUserId: student.id,
+      userId: student.id,
       belt: Belt.Blue,
       stripes: 0,
     });
