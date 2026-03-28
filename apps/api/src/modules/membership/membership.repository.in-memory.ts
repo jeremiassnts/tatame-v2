@@ -209,6 +209,7 @@ export class InMemoryMembershipRepository implements IMembershipRepository {
       academyLogoUrl: null,
       role: row.role,
       status: row.status,
+      joinedAt: row.joinedAt,
     };
   }
 

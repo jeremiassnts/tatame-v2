@@ -63,12 +63,12 @@ In `findActiveOrPendingByUser`, update the `.select()` call:
 
 ---
 
-### Task 3: Add `joinedAt` to in-memory repository
+### Task 3: Add `joinedAt` to in-memory repository ✅ **DONE** (Linear: TAT-32)
 
 **Files:**
 - Modify: `apps/api/src/modules/membership/membership.repository.in-memory.ts:196-213`
 
-- [ ] **Step 1: Return `joinedAt` from in-memory implementation**
+- [x] **Step 1: Return `joinedAt` from in-memory implementation**
 
 Update `findActiveOrPendingByUser`:
 
@@ -94,19 +94,19 @@ Update `findActiveOrPendingByUser`:
   }
 ```
 
-- [ ] **Step 2: Verify types compile cleanly**
+- [x] **Step 2: Verify types compile cleanly**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && npx tsc --noEmit -p apps/api/tsconfig.json 2>&1 | head -10`
 
 Expected: No type errors in `apps/api`.
 
-- [ ] **Step 3: Run existing membership tests**
+- [x] **Step 3: Run existing membership tests**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && npx vitest run apps/api/src/modules/membership/membership.service.test.ts`
 
 Expected: All existing tests pass.
 
-- [ ] **Step 4: Commit backend changes**
+- [x] **Step 4: Commit backend changes**
 
 ```bash
 git add apps/api/src/modules/membership/membership.repository.ts apps/api/src/modules/membership/membership.repository.postgres.ts apps/api/src/modules/membership/membership.repository.in-memory.ts
