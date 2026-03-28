@@ -16408,7 +16408,7 @@
                       "id": "xAeEo",
                       "name": "label",
                       "fill": "#ABABAB",
-                      "content": "Pendências",
+                      "content": "Pagamentos em atraso",
                       "fontFamily": "Inter",
                       "fontSize": 12,
                       "fontWeight": "500"
@@ -16417,8 +16417,8 @@
                       "type": "text",
                       "id": "eeWVG",
                       "name": "value",
-                      "fill": "#FF9F0A",
-                      "content": "7",
+                      "fill": "#FF453A",
+                      "content": "3",
                       "fontFamily": "Sora",
                       "fontSize": 20,
                       "fontWeight": "700"
@@ -16427,8 +16427,8 @@
                       "type": "text",
                       "id": "69pj3",
                       "name": "sub",
-                      "fill": "#ABABAB",
-                      "content": "Alunos sem confirmação",
+                      "fill": "#FF453A",
+                      "content": "R$ 1.420 pendente",
                       "fontFamily": "Inter",
                       "fontSize": 11,
                       "fontWeight": "500"
@@ -16439,43 +16439,234 @@
             },
             {
               "type": "frame",
-              "id": "cfudU",
-              "name": "Month Filter",
+              "id": "OQvQp",
+              "name": "Members Card",
               "width": "fill_container",
-              "height": 46,
-              "fill": "#1A1A1A",
-              "cornerRadius": 10,
+              "fill": "$--bg-card",
+              "cornerRadius": 14,
               "stroke": {
                 "align": "inside",
                 "thickness": 1,
-                "fill": "#2A2A2A"
+                "fill": "$--border-default"
               },
-              "padding": [
-                0,
-                14
-              ],
+              "padding": 14,
               "justifyContent": "space_between",
               "alignItems": "center",
               "children": [
                 {
+                  "type": "frame",
+                  "id": "YlpSW",
+                  "name": "Members Info",
+                  "layout": "vertical",
+                  "gap": 6,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "SZQwa",
+                      "name": "membersLabel",
+                      "fill": "$--text-secondary",
+                      "content": "Membros ativos",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "g1pnu",
+                      "name": "membersValue",
+                      "fill": "$--text-primary",
+                      "content": "48",
+                      "fontFamily": "Sora",
+                      "fontSize": 20,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "xWLow",
+                      "name": "membersSub",
+                      "fill": "#32D74B",
+                      "content": "+5 vs mês anterior",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "wJ9d9",
+                  "name": "Members Icon Wrap",
+                  "width": 40,
+                  "height": 40,
+                  "fill": "$--accent-soft",
+                  "cornerRadius": 10,
+                  "layout": "vertical",
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "8g91n",
+                      "name": "mIcon",
+                      "width": 20,
+                      "height": 20,
+                      "iconFontName": "users",
+                      "iconFontFamily": "lucide",
+                      "fill": "$--accent-primary"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "tX0XW",
+              "name": "Quick Actions",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 10,
+              "children": [
+                {
                   "type": "text",
-                  "id": "kjopx",
-                  "name": "month",
-                  "fill": "#FFFFFF",
-                  "content": "Março 2026",
+                  "id": "QOVNl",
+                  "name": "qaLabel",
+                  "fill": "$--text-secondary",
+                  "content": "Ações rápidas",
                   "fontFamily": "Inter",
                   "fontSize": 14,
                   "fontWeight": "600"
                 },
                 {
-                  "type": "icon_font",
-                  "id": "Nb47d",
-                  "name": "icon",
-                  "width": 16,
-                  "height": 16,
-                  "iconFontName": "chevron-down",
-                  "iconFontFamily": "lucide",
-                  "fill": "#525252"
+                  "type": "frame",
+                  "id": "kEdGD",
+                  "name": "Actions Row",
+                  "width": "fill_container",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "CTWut",
+                      "name": "Action Plans",
+                      "width": "fill_container",
+                      "height": 80,
+                      "fill": "$--bg-card",
+                      "cornerRadius": 14,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$--border-default"
+                      },
+                      "layout": "vertical",
+                      "gap": 8,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon_font",
+                          "id": "9r7E2",
+                          "name": "qa1Icon",
+                          "width": 20,
+                          "height": 20,
+                          "iconFontName": "list",
+                          "iconFontFamily": "lucide",
+                          "fill": "$--accent-primary"
+                        },
+                        {
+                          "type": "text",
+                          "id": "OhU0N",
+                          "name": "qa1Text",
+                          "fill": "$--text-primary",
+                          "content": "Planos",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "g2jpB",
+                      "name": "Action Subscriptions",
+                      "width": "fill_container",
+                      "height": 80,
+                      "fill": "$--bg-card",
+                      "cornerRadius": 14,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$--border-default"
+                      },
+                      "layout": "vertical",
+                      "gap": 8,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon_font",
+                          "id": "1fskW",
+                          "name": "qa2Icon",
+                          "width": 20,
+                          "height": 20,
+                          "iconFontName": "credit-card",
+                          "iconFontFamily": "lucide",
+                          "fill": "$--accent-primary"
+                        },
+                        {
+                          "type": "text",
+                          "id": "PFzcx",
+                          "name": "qa2Text",
+                          "fill": "$--text-primary",
+                          "content": "Assinaturas",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "L2U1x",
+                      "name": "Action Confirm",
+                      "width": "fill_container",
+                      "height": 80,
+                      "fill": "$--bg-card",
+                      "cornerRadius": 14,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$--border-default"
+                      },
+                      "layout": "vertical",
+                      "gap": 8,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon_font",
+                          "id": "79Poc",
+                          "name": "qa3Icon",
+                          "width": 20,
+                          "height": 20,
+                          "iconFontName": "circle-check",
+                          "iconFontFamily": "lucide",
+                          "fill": "$--accent-primary"
+                        },
+                        {
+                          "type": "text",
+                          "id": "6PSJf",
+                          "name": "qa3Text",
+                          "fill": "$--text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Confirmar\nPagamento",
+                          "textAlign": "center",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    }
+                  ]
                 }
               ]
             },
@@ -16679,56 +16870,8 @@
                       "fontWeight": "500"
                     }
                   ]
-                },
-                {
-                  "type": "frame",
-                  "id": "ML0oN",
-                  "name": "Pending Warning",
-                  "width": "fill_container",
-                  "fill": "#FF9F0A15",
-                  "cornerRadius": 10,
-                  "stroke": {
-                    "align": "inside",
-                    "thickness": 1,
-                    "fill": "#FF9F0A40"
-                  },
-                  "gap": 8,
-                  "padding": [
-                    10,
-                    12
-                  ],
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon_font",
-                      "id": "sJJtG",
-                      "name": "icon",
-                      "width": 16,
-                      "height": 16,
-                      "iconFontName": "triangle-alert",
-                      "iconFontFamily": "lucide",
-                      "fill": "#FF9F0A"
-                    },
-                    {
-                      "type": "text",
-                      "id": "6ZfXn",
-                      "name": "txt",
-                      "fill": "#FF9F0A",
-                      "content": "7 pagamentos pendentes neste mês",
-                      "fontFamily": "Inter",
-                      "fontSize": 12,
-                      "fontWeight": "600"
-                    }
-                  ]
                 }
               ]
-            },
-            {
-              "type": "frame",
-              "id": "nZ8Nv",
-              "name": "Spacer",
-              "width": "fill_container",
-              "height": "fill_container"
             }
           ]
         },
@@ -44418,6 +44561,17 @@
           ]
         }
       ]
+    },
+    {
+      "type": "text",
+      "id": "ra0Il",
+      "x": 0,
+      "y": 0,
+      "fill": "#000000",
+      "content": "332778",
+      "fontFamily": "Inter",
+      "fontSize": 12,
+      "fontWeight": "normal"
     }
   ],
   "variables": {
