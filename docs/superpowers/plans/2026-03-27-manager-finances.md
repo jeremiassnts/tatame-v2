@@ -1099,7 +1099,7 @@ git commit -m "test(api): add integration tests for academy subscriptions and fi
 - Create: `apps/mobile/lib/hooks/use-academy-subscriptions.ts`
 - Create: `apps/mobile/lib/hooks/use-finances.ts`
 
-- [ ] **Step 1: Create subscription plans hooks**
+- [x] **Step 1: Create subscription plans hooks**
 
 Create `apps/mobile/lib/hooks/use-subscription-plans.ts`:
 
@@ -1178,7 +1178,7 @@ export function useUpdatePlan(planId: string) {
 }
 ```
 
-- [ ] **Step 2: Create academy subscriptions hooks**
+- [x] **Step 2: Create academy subscriptions hooks**
 
 Create `apps/mobile/lib/hooks/use-academy-subscriptions.ts`:
 
@@ -1257,7 +1257,7 @@ export function useAcademySubscription(subscriptionId: string | undefined) {
 }
 ```
 
-- [ ] **Step 3: Create finances hooks**
+- [x] **Step 3: Create finances hooks**
 
 Create `apps/mobile/lib/hooks/use-finances.ts`:
 
@@ -1338,7 +1338,7 @@ export function useConfirmPayment() {
 }
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/mobile/lib/hooks/use-subscription-plans.ts apps/mobile/lib/hooks/use-academy-subscriptions.ts apps/mobile/lib/hooks/use-finances.ts
