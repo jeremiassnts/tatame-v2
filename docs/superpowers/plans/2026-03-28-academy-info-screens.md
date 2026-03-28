@@ -149,18 +149,18 @@ git commit -m "feat(validators): add joinedAt to activeMembershipSchema"
 
 ---
 
-### Task 5: Build the `AcademyInfo` shared component
+### Task 5: Build the `AcademyInfo` shared component ✅ **DONE** (Linear: TAT-34)
 
 **Files:**
 - Create: `apps/mobile/components/AcademyInfo.tsx`
 
 **Design reference:** Use Pencil MCP `batch_get` to read **Node ID `WXT1J`** (instructor design, `readDepth: 4`, `resolveVariables: true`) for the overall layout — nav row, logo section, form fields, warning card, leave button. Then read **Node ID `HKRmV`** child `mEOPs` (the "Member Card" in the student design) for the member-since card. Use `get_screenshot` on both nodes to verify visual match.
 
-- [ ] **Step 1: Read the design nodes via Pencil MCP**
+- [x] **Step 1: Read the design nodes via Pencil MCP**
 
 Use `batch_get` on `design.pen` with `nodeIds: ["WXT1J", "HKRmV"]`, `readDepth: 4`, `resolveVariables: true` to get the full structure. Take `get_screenshot` of both nodes for visual reference.
 
-- [ ] **Step 2: Create the component**
+- [x] **Step 2: Create the component**
 
 ```tsx
 import { BackButton } from "@/components/BackButton";
@@ -349,11 +349,11 @@ export function AcademyInfo({ onLeave, isLeaving, memberSince }: AcademyInfoProp
 }
 ```
 
-- [ ] **Step 3: Take a screenshot of design Node `WXT1J` and `HKRmV` to visually compare**
+- [x] **Step 3: Take a screenshot of design Node `WXT1J` and `HKRmV` to visually compare**
 
 Use Pencil MCP `get_screenshot` on `design.pen` for nodes `WXT1J` and `HKRmV`. Verify the component layout matches: nav row positioning, logo size/radius, field spacing, member card layout, warning card colors, button size/color.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/mobile/components/AcademyInfo.tsx
