@@ -878,13 +878,13 @@ git commit -m "feat(mobile): remove instructor Academia tab, move academy info t
 **Files:**
 - Create: `apps/mobile/app/(app)/(student)/(subscription)/index.tsx`
 
-- [ ] **Step 1: Read design node structure**
+- [x] **Step 1: Read design node structure**
 
 Use `mcp__pencil__batch_get` with `filePath: "/Volumes/ExternalDisk1/repos/tatame-v2/design.pen"`, `nodeIds: ["YYbfl"]`, `readDepth: 4` to understand the component hierarchy.
 
 Also take a screenshot with `mcp__pencil__get_screenshot` for `nodeId: "YYbfl"`.
 
-- [ ] **Step 2: Create the My Subscription screen**
+- [x] **Step 2: Create the My Subscription screen**
 
 Create `apps/mobile/app/(app)/(student)/(subscription)/index.tsx`:
 
@@ -1090,11 +1090,11 @@ export default function MySubscriptionScreen() {
 }
 ```
 
-- [ ] **Step 3: Take screenshot to compare with design**
+- [x] **Step 3: Take screenshot to compare with design**
 
 Use `mcp__pencil__get_screenshot` to compare the design node `YYbfl` with the built screen. Adjust styling if needed.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(student)/(subscription)/index.tsx
