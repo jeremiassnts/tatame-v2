@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type {
+  AcademySubscriptionItem,
   IStudentSubscriptionRepository,
   ISubscriptionPlanRepository,
   StudentSubscriptionRow,
@@ -173,5 +174,19 @@ export class InMemoryStudentSubscriptionRepository
     if (!row) return undefined;
     Object.assign(row, data, { updatedAt: new Date() });
     return row;
+  }
+
+  async listByAcademy(
+    _academyId: string,
+    _opts: { status?: string; planId?: string },
+  ): Promise<AcademySubscriptionItem[]> {
+    return [];
+  }
+
+  async findByIdForManager(
+    _subscriptionId: string,
+    _academyId: string,
+  ): Promise<AcademySubscriptionItem | undefined> {
+    return undefined;
   }
 }

@@ -166,7 +166,7 @@ git commit -m "feat(validators): add academy subscriptions query and limit schem
 - Modify: `apps/api/src/modules/subscription/subscription.repository.postgres.ts`
 - Modify: `apps/api/src/modules/subscription/subscription.repository.in-memory.ts`
 
-- [ ] **Step 1: Add types and interface methods to repository.ts**
+- [x] **Step 1: Add types and interface methods to repository.ts**
 
 In `apps/api/src/modules/subscription/subscription.repository.ts`, add after the existing `StudentSubscriptionWithPlan` type:
 
@@ -197,7 +197,7 @@ Add to the `IStudentSubscriptionRepository` interface:
   ): Promise<AcademySubscriptionItem | undefined>;
 ```
 
-- [ ] **Step 2: Implement listByAcademy in postgres repository**
+- [x] **Step 2: Implement listByAcademy in postgres repository**
 
 In `apps/api/src/modules/subscription/subscription.repository.postgres.ts`, add the import for `users` and `payments` tables at the top:
 
@@ -275,7 +275,7 @@ Then add the `listByAcademy` method to `PostgresStudentSubscriptionRepository`:
   }
 ```
 
-- [ ] **Step 3: Implement findByIdForManager in postgres repository**
+- [x] **Step 3: Implement findByIdForManager in postgres repository**
 
 Add to `PostgresStudentSubscriptionRepository`:
 
@@ -334,7 +334,7 @@ Add to `PostgresStudentSubscriptionRepository`:
   }
 ```
 
-- [ ] **Step 4: Add stubs to in-memory repository**
+- [x] **Step 4: Add stubs to in-memory repository**
 
 In `apps/api/src/modules/subscription/subscription.repository.in-memory.ts`, add to the in-memory class:
 
@@ -356,12 +356,12 @@ In `apps/api/src/modules/subscription/subscription.repository.in-memory.ts`, add
 
 Make sure to import the `AcademySubscriptionItem` type.
 
-- [ ] **Step 5: Verify API compiles**
+- [x] **Step 5: Verify API compiles**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && npx turbo build --filter=@tatame/api`
 Expected: build succeeds
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/api/src/modules/subscription/

@@ -1,10 +1,13 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
 import {
+  payments,
   studentSubscriptions,
   subscriptionPlans,
+  users,
   type Database,
 } from "@tatame/db";
 import type {
+  AcademySubscriptionItem,
   IStudentSubscriptionRepository,
   ISubscriptionPlanRepository,
   StudentSubscriptionRow,
@@ -232,5 +235,132 @@ export class PostgresStudentSubscriptionRepository
       .where(eq(studentSubscriptions.id, subscriptionId))
       .returning();
     return row;
+  }
+
+  async listByAcademy(
+    academyId: string,
+    opts: { status?: string; planId?: string },
+  ): Promise<AcademySubscriptionItem[]> {
+    const conditions = [eq(subscriptionPlans.academyId, academyId)];
+    if (opts.status) {
+      conditions.push(
+        eq(
+          studentSubscriptions.status,
+          opts.status as "active" | "expired" | "cancelled",
+        ),
+      );
+    }
+    if (opts.planId) {
+      conditions.push(eq(studentSubscriptions.planId, opts.planId));
+    }
+
+    const rows = await this.db
+      .select({
+        subscription: studentSubscriptions,
+        plan: subscriptionPlans,
+        user: {
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          profileImageUrl: users.profileImageUrl,
+        },
+      })
+      .from(studentSubscriptions)
+      .innerJoin(
+        subscriptionPlans,
+        eq(studentSubscriptions.planId, subscriptionPlans.id),
+      )
+      .innerJoin(users, eq(studentSubscriptions.userId, users.id))
+      .where(conditions.length === 1 ? conditions[0]! : and(...conditions))
+      .orderBy(desc(studentSubscriptions.createdAt));
+
+    const subIds = rows.map((r) => r.subscription.id);
+    const lastPayments =
+      subIds.length > 0
+        ? await this.db
+            .selectDistinctOn([payments.subscriptionId], {
+              subscriptionId: payments.subscriptionId,
+              referenceMonth: payments.referenceMonth,
+              paidAt: payments.paidAt,
+              amountCents: payments.amountCents,
+            })
+            .from(payments)
+            .where(inArray(payments.subscriptionId, subIds))
+            .orderBy(payments.subscriptionId, desc(payments.paidAt))
+        : [];
+
+    const paymentMap = new Map(lastPayments.map((p) => [p.subscriptionId, p]));
+
+    return rows.map((r) => {
+      const lp = paymentMap.get(r.subscription.id);
+      return {
+        subscription: r.subscription,
+        plan: r.plan,
+        user: r.user,
+        lastPayment: lp
+          ? {
+              referenceMonth: lp.referenceMonth,
+              paidAt: lp.paidAt,
+              amountCents: lp.amountCents,
+            }
+          : null,
+      };
+    });
+  }
+
+  async findByIdForManager(
+    subscriptionId: string,
+    academyId: string,
+  ): Promise<AcademySubscriptionItem | undefined> {
+    const [row] = await this.db
+      .select({
+        subscription: studentSubscriptions,
+        plan: subscriptionPlans,
+        user: {
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          profileImageUrl: users.profileImageUrl,
+        },
+      })
+      .from(studentSubscriptions)
+      .innerJoin(
+        subscriptionPlans,
+        eq(studentSubscriptions.planId, subscriptionPlans.id),
+      )
+      .innerJoin(users, eq(studentSubscriptions.userId, users.id))
+      .where(
+        and(
+          eq(studentSubscriptions.id, subscriptionId),
+          eq(subscriptionPlans.academyId, academyId),
+        ),
+      )
+      .limit(1);
+
+    if (!row) return undefined;
+
+    const lastPayments = await this.db
+      .select({
+        referenceMonth: payments.referenceMonth,
+        paidAt: payments.paidAt,
+        amountCents: payments.amountCents,
+      })
+      .from(payments)
+      .where(eq(payments.subscriptionId, subscriptionId))
+      .orderBy(desc(payments.paidAt))
+      .limit(1);
+
+    return {
+      subscription: row.subscription,
+      plan: row.plan,
+      user: row.user,
+      lastPayment: lastPayments[0]
+        ? {
+            referenceMonth: lastPayments[0].referenceMonth,
+            paidAt: lastPayments[0].paidAt,
+            amountCents: lastPayments[0].amountCents,
+          }
+        : null,
+    };
   }
 }

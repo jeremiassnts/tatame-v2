@@ -11,6 +11,22 @@ export type StudentSubscriptionWithPlan = {
   plan: SubscriptionPlanRow;
 };
 
+export type AcademySubscriptionItem = {
+  subscription: StudentSubscriptionRow;
+  plan: SubscriptionPlanRow;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    profileImageUrl: string | null;
+  };
+  lastPayment: {
+    referenceMonth: string;
+    paidAt: Date;
+    amountCents: number;
+  } | null;
+};
+
 export interface ISubscriptionPlanRepository {
   findByAcademy(
     academyId: string,
@@ -82,4 +98,14 @@ export interface IStudentSubscriptionRepository {
       expiresAt: string;
     }>,
   ): Promise<StudentSubscriptionRow | undefined>;
+
+  listByAcademy(
+    academyId: string,
+    opts: { status?: string; planId?: string },
+  ): Promise<AcademySubscriptionItem[]>;
+
+  findByIdForManager(
+    subscriptionId: string,
+    academyId: string,
+  ): Promise<AcademySubscriptionItem | undefined>;
 }
