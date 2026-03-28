@@ -438,13 +438,13 @@ git commit -m "feat(mobile): enable instructor Academia tab"
 
 ---
 
-### Task 8: Create student academy route files
+### Task 8: Create student academy route files ✅ **DONE** (Linear: TAT-37)
 
 **Files:**
 - Create: `apps/mobile/app/(app)/(student)/(academy)/_layout.tsx`
 - Create: `apps/mobile/app/(app)/(student)/(academy)/index.tsx`
 
-- [ ] **Step 1: Create the Stack layout**
+- [x] **Step 1: Create the Stack layout**
 
 ```tsx
 // apps/mobile/app/(app)/(student)/(academy)/_layout.tsx
@@ -462,7 +462,7 @@ export default function StudentAcademyLayout() {
 }
 ```
 
-- [ ] **Step 2: Create the screen**
+- [x] **Step 2: Create the screen**
 
 ```tsx
 // apps/mobile/app/(app)/(student)/(academy)/index.tsx
@@ -484,7 +484,7 @@ export default function StudentAcademyScreen() {
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(student)/(academy)/_layout.tsx apps/mobile/app/(app)/(student)/(academy)/index.tsx
