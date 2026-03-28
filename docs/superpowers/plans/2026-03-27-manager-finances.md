@@ -3473,26 +3473,26 @@ git commit -m "feat(mobile): add financial dashboard screen"
 
 **Linear:** [TAT-29](https://linear.app/tatame/issue/TAT-29/manager-finances-task-16-verify-full-build-and-run-tests)
 
-- [ ] **Step 1: Run API integration tests**
+- [x] **Step 1: Run API integration tests**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/api && npx vitest run src/subscription-payment.integration.test.ts`
 Expected: all tests pass
 
-- [ ] **Step 2: Run API unit tests**
+- [x] **Step 2: Run API unit tests**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/api && npx vitest run`
 Expected: all tests pass
 
-- [ ] **Step 3: Build full project**
+- [x] **Step 3: Build full project**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && npx turbo build`
 Expected: all packages build successfully
 
-- [ ] **Step 4: Verify TypeScript types in mobile**
+- [x] **Step 4: Verify TypeScript types in mobile**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/mobile && npx tsc --noEmit`
 Expected: no type errors
 
-- [ ] **Step 5: Fix any issues found and commit**
+- [x] **Step 5: Fix any issues found and commit**
 
 If there are issues, fix them and commit with a descriptive message.
