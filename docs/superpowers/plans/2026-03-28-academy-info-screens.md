@@ -12,12 +12,12 @@
 
 ---
 
-### Task 1: Add `joinedAt` to `ActiveOrPendingMembershipRow` type
+### Task 1: Add `joinedAt` to `ActiveOrPendingMembershipRow` type ✅ **DONE** (Linear: TAT-30)
 
 **Files:**
 - Modify: `apps/api/src/modules/membership/membership.repository.ts:49-56`
 
-- [ ] **Step 1: Add `joinedAt` to the type**
+- [x] **Step 1: Add `joinedAt` to the type**
 
 ```ts
 export type ActiveOrPendingMembershipRow = {
@@ -31,7 +31,7 @@ export type ActiveOrPendingMembershipRow = {
 };
 ```
 
-- [ ] **Step 2: Verify types compile**
+- [x] **Step 2: Verify types compile**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && npx tsc --noEmit -p apps/api/tsconfig.json 2>&1 | head -30`
 

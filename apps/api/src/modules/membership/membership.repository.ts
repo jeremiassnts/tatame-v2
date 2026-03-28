@@ -53,6 +53,7 @@ export type ActiveOrPendingMembershipRow = {
   academyLogoUrl: string | null;
   role: string;
   status: string;
+  joinedAt: Date | null;
 };
 
 export interface IMembershipRepository {
