@@ -47,11 +47,12 @@ export class PaymentService {
   async listForManager(
     managerUserId: string,
     academyId: string,
-    opts: { subscriptionId?: string },
+    opts: { subscriptionId?: string; limit?: number },
   ): Promise<PaymentRow[]> {
     await this.assertManagerOwnsAcademy(managerUserId, academyId);
     return this.paymentRepo.findByAcademy(academyId, {
       subscriptionId: opts.subscriptionId,
+      limit: opts.limit,
     });
   }
 

@@ -1,6 +1,10 @@
-import { and, desc, eq } from "drizzle-orm";
-import { payments, type Database } from "@tatame/db";
-import type { IPaymentRepository, PaymentRow } from "./payment.repository.js";
+import { and, desc, eq, sum } from "drizzle-orm";
+import { payments, users, type Database } from "@tatame/db";
+import type {
+  IPaymentRepository,
+  PaymentRow,
+  PaymentWithUser,
+} from "./payment.repository.js";
 
 export class PostgresPaymentRepository implements IPaymentRepository {
   constructor(private readonly db: Database) {}
@@ -37,7 +41,7 @@ export class PostgresPaymentRepository implements IPaymentRepository {
 
   async findByAcademy(
     academyId: string,
-    opts: { subscriptionId?: string; userId?: string },
+    opts: { subscriptionId?: string; userId?: string; limit?: number },
   ): Promise<PaymentRow[]> {
     const conditions = [eq(payments.academyId, academyId)];
     if (opts.subscriptionId) {
@@ -48,11 +52,45 @@ export class PostgresPaymentRepository implements IPaymentRepository {
     }
     const whereClause =
       conditions.length === 1 ? conditions[0]! : and(...conditions);
-    return this.db
+    const query = this.db
       .select()
       .from(payments)
       .where(whereClause)
       .orderBy(desc(payments.paidAt));
+    if (opts.limit) {
+      return query.limit(opts.limit);
+    }
+    return query;
+  }
+
+  async findByAcademyWithUser(
+    academyId: string,
+    opts: { limit?: number },
+  ): Promise<PaymentWithUser[]> {
+    const query = this.db
+      .select({
+        id: payments.id,
+        subscriptionId: payments.subscriptionId,
+        userId: payments.userId,
+        academyId: payments.academyId,
+        amountCents: payments.amountCents,
+        method: payments.method,
+        confirmedBy: payments.confirmedBy,
+        stripePaymentId: payments.stripePaymentId,
+        referenceMonth: payments.referenceMonth,
+        notes: payments.notes,
+        paidAt: payments.paidAt,
+        createdAt: payments.createdAt,
+        userName: users.name,
+      })
+      .from(payments)
+      .innerJoin(users, eq(payments.userId, users.id))
+      .where(eq(payments.academyId, academyId))
+      .orderBy(desc(payments.paidAt));
+    if (opts.limit) {
+      return query.limit(opts.limit);
+    }
+    return query;
   }
 
   async existsForSubscriptionReferenceMonth(
@@ -70,5 +108,21 @@ export class PostgresPaymentRepository implements IPaymentRepository {
       )
       .limit(1);
     return !!row;
+  }
+
+  async sumByAcademyForMonth(
+    academyId: string,
+    referenceMonth: string,
+  ): Promise<number> {
+    const [row] = await this.db
+      .select({ total: sum(payments.amountCents) })
+      .from(payments)
+      .where(
+        and(
+          eq(payments.academyId, academyId),
+          eq(payments.referenceMonth, referenceMonth),
+        ),
+      );
+    return Number(row?.total ?? 0);
   }
 }

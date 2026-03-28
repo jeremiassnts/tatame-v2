@@ -66,7 +66,10 @@ paymentRouter.get(
       const items = await paymentService.listForManager(
         managerUserId,
         academyId,
-        { subscriptionId: query.data.subscriptionId },
+        {
+          subscriptionId: query.data.subscriptionId,
+          limit: query.data.limit,
+        },
       );
       res.json({ items });
     } catch (e) {

@@ -1,5 +1,9 @@
 import { randomUUID } from "node:crypto";
-import type { IPaymentRepository, PaymentRow } from "./payment.repository.js";
+import type {
+  IPaymentRepository,
+  PaymentRow,
+  PaymentWithUser,
+} from "./payment.repository.js";
 
 export class InMemoryPaymentRepository implements IPaymentRepository {
   constructor(private readonly rows: PaymentRow[] = []) {}
@@ -36,9 +40,9 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
 
   async findByAcademy(
     academyId: string,
-    opts: { subscriptionId?: string; userId?: string },
+    opts: { subscriptionId?: string; userId?: string; limit?: number },
   ): Promise<PaymentRow[]> {
-    return this.rows
+    const sorted = this.rows
       .filter((p) => p.academyId === academyId)
       .filter(
         (p) =>
@@ -49,6 +53,17 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
         (a, b) =>
           new Date(b.paidAt).getTime() - new Date(a.paidAt).getTime(),
       );
+    if (opts.limit) {
+      return sorted.slice(0, opts.limit);
+    }
+    return sorted;
+  }
+
+  async findByAcademyWithUser(
+    _academyId: string,
+    _opts: { limit?: number },
+  ): Promise<PaymentWithUser[]> {
+    return [];
   }
 
   async existsForSubscriptionReferenceMonth(
@@ -60,5 +75,17 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
         p.subscriptionId === subscriptionId &&
         p.referenceMonth === referenceMonth,
     );
+  }
+
+  async sumByAcademyForMonth(
+    academyId: string,
+    referenceMonth: string,
+  ): Promise<number> {
+    return this.rows
+      .filter(
+        (p) =>
+          p.academyId === academyId && p.referenceMonth === referenceMonth,
+      )
+      .reduce((acc, p) => acc + p.amountCents, 0);
   }
 }

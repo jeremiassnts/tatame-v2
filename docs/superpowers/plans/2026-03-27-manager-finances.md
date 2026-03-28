@@ -378,7 +378,7 @@ git commit -m "feat(api): add academy-level subscription repository queries"
 - Modify: `apps/api/src/modules/payment/payment.repository.ts`
 - Modify: `apps/api/src/modules/payment/payment.repository.postgres.ts`
 
-- [ ] **Step 1: Update interface with limit option and new method**
+- [x] **Step 1: Update interface with limit option and new method**
 
 In `apps/api/src/modules/payment/payment.repository.ts`, update `findByAcademy` signature and add a new type and method:
 
@@ -422,7 +422,7 @@ export interface IPaymentRepository {
 }
 ```
 
-- [ ] **Step 2: Implement in postgres repository**
+- [x] **Step 2: Implement in postgres repository**
 
 In `apps/api/src/modules/payment/payment.repository.postgres.ts`, add `users` import:
 
@@ -513,7 +513,7 @@ Add `sumByAcademyForMonth`:
   }
 ```
 
-- [ ] **Step 3: Update payment service to pass limit**
+- [x] **Step 3: Update payment service to pass limit**
 
 In `apps/api/src/modules/payment/payment.service.ts`, update `listForManager`:
 
@@ -531,7 +531,7 @@ In `apps/api/src/modules/payment/payment.service.ts`, update `listForManager`:
   }
 ```
 
-- [ ] **Step 4: Update payment route to pass limit**
+- [x] **Step 4: Update payment route to pass limit**
 
 In `apps/api/src/modules/payment/payment.routes.ts`, update the GET `/` handler to pass limit:
 
@@ -543,12 +543,12 @@ In `apps/api/src/modules/payment/payment.routes.ts`, update the GET `/` handler 
       );
 ```
 
-- [ ] **Step 5: Verify API compiles**
+- [x] **Step 5: Verify API compiles**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && npx turbo build --filter=@tatame/api`
 Expected: build succeeds
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/api/src/modules/payment/ packages/validators/src/payment.schema.ts
