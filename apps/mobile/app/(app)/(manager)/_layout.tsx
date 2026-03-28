@@ -31,7 +31,7 @@ export default function ManagerLayout() {
       <Tabs.Screen
         name="(home)"
         options={{
-          title: "Home",
+          title: "Início",
           tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
         }}
       />
