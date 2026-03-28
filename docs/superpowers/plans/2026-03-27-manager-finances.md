@@ -916,7 +916,7 @@ git commit -m "feat(api): add financial summary endpoint"
 **Files:**
 - Modify: `apps/api/src/subscription-payment.integration.test.ts`
 
-- [ ] **Step 1: Add tests for academy subscription list and financial summary**
+- [x] **Step 1: Add tests for academy subscription list and financial summary**
 
 Add these test cases inside the existing `describe` block in `apps/api/src/subscription-payment.integration.test.ts`, after the existing test:
 
@@ -1076,12 +1076,12 @@ Add these test cases inside the existing `describe` block in `apps/api/src/subsc
   });
 ```
 
-- [ ] **Step 2: Run integration tests**
+- [x] **Step 2: Run integration tests**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/api && npx vitest run src/subscription-payment.integration.test.ts`
 Expected: all tests pass
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/api/src/subscription-payment.integration.test.ts
