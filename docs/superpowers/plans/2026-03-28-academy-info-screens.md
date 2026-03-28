@@ -493,12 +493,12 @@ git commit -m "feat(mobile): add student academy info screen"
 
 ---
 
-### Task 9: Add student "Academia" tab
+### Task 9: Add student "Academia" tab ✅ **DONE** (Linear: TAT-38)
 
 **Files:**
 - Modify: `apps/mobile/app/(app)/(student)/_layout.tsx`
 
-- [ ] **Step 1: Add School import and new Tabs.Screen**
+- [x] **Step 1: Add School import and new Tabs.Screen**
 
 Update imports to include `School`:
 
@@ -584,7 +584,7 @@ export default function StudentLayout() {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(student)/_layout.tsx
