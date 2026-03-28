@@ -359,7 +359,7 @@ git commit -m "feat(api): add weekly count and history methods to checkin servic
 **Files:**
 - Modify: `apps/api/src/modules/checkin/checkin.routes.ts`
 
-- [ ] **Step 1: Add imports**
+- [x] **Step 1: Add imports**
 
 Add to existing imports at the top of `checkin.routes.ts`:
 
@@ -370,7 +370,7 @@ import { checkinHistoryQuerySchema, createCheckinBodySchema } from "@tatame/vali
 
 (Replace the existing `createCheckinBodySchema` import line.)
 
-- [ ] **Step 2: Add GET /me/weekly-count route**
+- [x] **Step 2: Add GET /me/weekly-count route**
 
 Add **before** the existing `POST /` route (Express matches routes in order, and `/me/weekly-count` must not be captured by a parameterized route):
 
@@ -392,7 +392,7 @@ checkinRouter.get(
 );
 ```
 
-- [ ] **Step 3: Add GET /me/history route**
+- [x] **Step 3: Add GET /me/history route**
 
 Add after the weekly-count route:
 
@@ -421,12 +421,12 @@ checkinRouter.get(
 );
 ```
 
-- [ ] **Step 4: Verify TypeScript compiles**
+- [x] **Step 4: Verify TypeScript compiles**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm --filter api exec tsc --noEmit`
 Expected: No type errors
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/api/src/modules/checkin/checkin.routes.ts

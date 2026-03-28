@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { Role } from "@tatame/types";
 import type { CreateCheckinBody } from "@tatame/validators";
-import { createCheckinBodySchema } from "@tatame/validators";
+import { checkinHistoryQuerySchema, createCheckinBodySchema } from "@tatame/validators";
 import { getDb } from "../../lib/db.js";
 import { HttpError } from "../../lib/http-error.js";
 import {
@@ -41,6 +41,45 @@ function formatCheckinRow(row: CheckinRow) {
     weekReference: weekStr,
   };
 }
+
+checkinRouter.get(
+  "/me/weekly-count",
+  authorize(Role.Student, Role.Instructor),
+  attachActiveAcademyContext,
+  requireActiveAcademy,
+  async (req, res, next) => {
+    try {
+      const userId = req.appAuth!.userId;
+      const result = await checkinService.getWeeklyCount(userId);
+      res.json(result);
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+checkinRouter.get(
+  "/me/history",
+  authorize(Role.Student, Role.Instructor),
+  attachActiveAcademyContext,
+  requireActiveAcademy,
+  async (req, res, next) => {
+    try {
+      const query = checkinHistoryQuerySchema.safeParse(req.query);
+      if (!query.success) {
+        throw new HttpError(400, "Invalid query");
+      }
+      const userId = req.appAuth!.userId;
+      const result = await checkinService.getHistory(userId, {
+        cursor: query.data.cursor,
+        limit: query.data.limit,
+      });
+      res.json(result);
+    } catch (e) {
+      next(e);
+    }
+  },
+);
 
 checkinRouter.post(
   "/",
