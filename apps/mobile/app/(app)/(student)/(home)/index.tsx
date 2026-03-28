@@ -83,14 +83,17 @@ export default function StudentHome() {
       >
         <View className="pb-8" style={{ paddingTop: 4, paddingHorizontal: 24, gap: 16 }}>
           <View className="flex-row items-center justify-between">
-            <View style={{ gap: 2 }}>
+            <Pressable
+              onPress={() => router.push("/(app)/(student)/(home)/academy-info")}
+              style={{ gap: 2 }}
+            >
               <Text
                 className="font-poppins-bold text-primary"
                 style={{ fontSize: 20, letterSpacing: -0.5 }}
               >
                 {academyName}
               </Text>
-            </View>
+            </Pressable>
             <View className="flex-row items-center gap-2">
               <Pressable className="h-10 w-10 items-center justify-center rounded-xl border border-surface-border bg-surface">
                 <Bell size={18} color="#FFFFFF" />
@@ -135,7 +138,10 @@ export default function StudentHome() {
             </View>
           </View>
 
-          <Pressable className="flex-row items-center gap-3 rounded-2xl border border-surface-border bg-surface p-4">
+          <Pressable
+            onPress={() => router.push("/(app)/(student)/(subscription)")}
+            className="flex-row items-center gap-3 rounded-2xl border border-surface-border bg-surface p-4"
+          >
             <View className="h-10 w-10 items-center justify-center rounded-xl bg-accent-translucent">
               <CreditCard size={18} color="#A078E8" />
             </View>

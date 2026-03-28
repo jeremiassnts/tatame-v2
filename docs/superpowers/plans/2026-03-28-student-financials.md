@@ -581,7 +581,7 @@ git commit -m "feat(mobile): add hooks for weekly checkin count, history, paymen
 - Delete: `apps/mobile/app/(app)/(student)/(academy)/_layout.tsx`
 - Delete: `apps/mobile/app/(app)/(student)/(academy)/index.tsx`
 
-- [ ] **Step 1: Create subscription stack layout**
+- [x] **Step 1: Create subscription stack layout**
 
 Create `apps/mobile/app/(app)/(student)/(subscription)/_layout.tsx`:
 
@@ -601,7 +601,7 @@ export default function SubscriptionLayout() {
 }
 ```
 
-- [ ] **Step 2: Create academy-info screen under (home)**
+- [x] **Step 2: Create academy-info screen under (home)**
 
 Create `apps/mobile/app/(app)/(student)/(home)/academy-info.tsx`:
 
@@ -624,7 +624,7 @@ export default function StudentAcademyInfoScreen() {
 }
 ```
 
-- [ ] **Step 3: Update student _layout.tsx**
+- [x] **Step 3: Update student _layout.tsx**
 
 Replace the full content of `apps/mobile/app/(app)/(student)/_layout.tsx`:
 
@@ -693,7 +693,7 @@ export default function StudentLayout() {
 }
 ```
 
-- [ ] **Step 4: Add navigation to subscription card and academy card in student home**
+- [x] **Step 4: Add navigation to subscription card and academy card in student home**
 
 In `apps/mobile/app/(app)/(student)/(home)/index.tsx`, modify the subscription card Pressable (around line 138) to add navigation:
 
@@ -719,7 +719,7 @@ Modify the header section: change the `<View style={{ gap: 2 }}>` containing `ac
 </Pressable>
 ```
 
-- [ ] **Step 5: Delete old academy tab files**
+- [x] **Step 5: Delete old academy tab files**
 
 ```bash
 rm apps/mobile/app/(app)/(student)/(academy)/_layout.tsx
@@ -727,7 +727,7 @@ rm apps/mobile/app/(app)/(student)/(academy)/index.tsx
 rmdir apps/mobile/app/(app)/(student)/(academy)
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A apps/mobile/app/(app)/(student)/

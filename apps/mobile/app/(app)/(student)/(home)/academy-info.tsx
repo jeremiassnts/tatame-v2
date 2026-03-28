@@ -2,7 +2,7 @@ import { AcademyInfo } from "@/components/AcademyInfo";
 import { useCancelMembership } from "@/lib/hooks/use-membership";
 import { useCurrentUser } from "@/lib/hooks/use-user";
 
-export default function StudentAcademyScreen() {
+export default function StudentAcademyInfoScreen() {
   const { data: user } = useCurrentUser();
   const cancelMembership = useCancelMembership();
 
