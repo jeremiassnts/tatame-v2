@@ -1483,7 +1483,7 @@ git commit -m "feat(mobile): add finances tab and stack layout"
 **Files:**
 - Create: `apps/mobile/app/(app)/(manager)/(finances)/plans/index.tsx`
 
-- [ ] **Step 1: Create plans list screen**
+- [x] **Step 1: Create plans list screen**
 
 Create `apps/mobile/app/(app)/(manager)/(finances)/plans/index.tsx`:
 
@@ -1643,7 +1643,7 @@ export default function PlansListScreen() {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(manager)/(finances)/plans/index.tsx
