@@ -745,7 +745,7 @@ git commit -m "feat(mobile): replace student Academia tab with Assinatura, move 
 - Delete: `apps/mobile/app/(app)/(instructor)/(academy)/_layout.tsx`
 - Delete: `apps/mobile/app/(app)/(instructor)/(academy)/index.tsx`
 
-- [ ] **Step 1: Create academy-info screen under instructor (home)**
+- [x] **Step 1: Create academy-info screen under instructor (home)**
 
 Create `apps/mobile/app/(app)/(instructor)/(home)/academy-info.tsx`:
 
@@ -768,7 +768,7 @@ export default function InstructorAcademyInfoScreen() {
 }
 ```
 
-- [ ] **Step 2: Update instructor _layout.tsx — remove Academia tab**
+- [x] **Step 2: Update instructor _layout.tsx — remove Academia tab**
 
 Replace the full content of `apps/mobile/app/(app)/(instructor)/_layout.tsx`:
 
@@ -827,7 +827,7 @@ export default function InstructorLayout() {
 }
 ```
 
-- [ ] **Step 3: Add academy card navigation to instructor home**
+- [x] **Step 3: Add academy card navigation to instructor home**
 
 In `apps/mobile/app/(app)/(instructor)/(home)/index.tsx`, find the academy card (the `<View className="rounded-2xl border border-surface-border bg-surface" ...>` around line 157). Wrap it in a Pressable:
 
@@ -850,7 +850,7 @@ With:
 
 And close with `</Pressable>` instead of `</View>` (find the matching closing tag around line 193).
 
-- [ ] **Step 4: Delete old instructor academy tab files**
+- [x] **Step 4: Delete old instructor academy tab files**
 
 ```bash
 rm apps/mobile/app/(app)/(instructor)/(academy)/_layout.tsx
@@ -858,7 +858,7 @@ rm apps/mobile/app/(app)/(instructor)/(academy)/index.tsx
 rmdir apps/mobile/app/(app)/(instructor)/(academy)
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A apps/mobile/app/(app)/(instructor)/

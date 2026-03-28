@@ -154,7 +154,8 @@ export default function InstructorHome() {
             </Pressable>
           </View>
 
-          <View
+          <Pressable
+            onPress={() => router.push("/(app)/(instructor)/(home)/academy-info")}
             className="rounded-2xl border border-surface-border bg-surface"
             style={{ padding: 20, gap: 16 }}
           >
@@ -191,7 +192,7 @@ export default function InstructorHome() {
                 </Text>
               </View>
             </View>
-          </View>
+          </Pressable>
 
           <GraduationCard
             graduation={graduation}
