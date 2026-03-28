@@ -362,12 +362,12 @@ git commit -m "feat(mobile): add shared AcademyInfo component"
 
 ---
 
-### Task 6: Wire up instructor academy screen
+### Task 6: Wire up instructor academy screen ✅ **DONE** (Linear: TAT-35)
 
 **Files:**
 - Modify: `apps/mobile/app/(app)/(instructor)/(academy)/index.tsx`
 
-- [ ] **Step 1: Replace the placeholder with AcademyInfo**
+- [x] **Step 1: Replace the placeholder with AcademyInfo**
 
 ```tsx
 import { AcademyInfo } from "@/components/AcademyInfo";
@@ -388,7 +388,7 @@ export default function InstructorAcademyScreen() {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(instructor)/(academy)/index.tsx
