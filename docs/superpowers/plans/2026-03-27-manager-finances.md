@@ -1659,7 +1659,7 @@ git commit -m "feat(mobile): add subscription plans list screen"
 **Files:**
 - Create: `apps/mobile/app/(app)/(manager)/(finances)/plans/[planId].tsx`
 
-- [ ] **Step 1: Create plan detail screen**
+- [x] **Step 1: Create plan detail screen**
 
 Create `apps/mobile/app/(app)/(manager)/(finances)/plans/[planId].tsx`:
 
@@ -1942,7 +1942,7 @@ export default function PlanDetailScreen() {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(manager)/(finances)/plans/\[planId\].tsx
