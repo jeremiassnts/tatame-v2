@@ -2,7 +2,7 @@ import { Avatar } from "@/components/Avatar";
 import { ClassCard } from "@/components/ClassCard";
 import { GraduationCard } from "@/components/GraduationCard";
 import { useAcademyContext } from "@/lib/academy-context";
-import { useCheckin } from "@/lib/hooks/use-checkin";
+import { useCheckin, useWeeklyCheckinCount } from "@/lib/hooks/use-checkin";
 import { useClasses } from "@/lib/hooks/use-classes";
 import { useMyGraduation } from "@/lib/hooks/use-graduation";
 import { useMySubscription } from "@/lib/hooks/use-subscription";
@@ -44,6 +44,7 @@ export default function StudentHome() {
   const plan = subResponse?.plan;
   const { data: graduation } = useMyGraduation();
   const checkin = useCheckin();
+  const { data: weeklyCount } = useWeeklyCheckinCount();
   const [refreshing, setRefreshing] = useState(false);
 
   const hasSubscription =
@@ -56,6 +57,7 @@ export default function StudentHome() {
       queryClient.invalidateQueries({ queryKey: ["classes", dayOfWeek] }),
       queryClient.invalidateQueries({ queryKey: ["subscription", "me"] }),
       queryClient.invalidateQueries({ queryKey: ["graduation", "me"] }),
+      queryClient.invalidateQueries({ queryKey: ["checkins", "me"] }),
       queryClient.invalidateQueries({ queryKey: ["checkins"] }),
     ]);
     setRefreshing(false);
@@ -132,7 +134,7 @@ export default function StudentHome() {
             >
               <Text className="font-poppins-semibold text-xs text-muted">Check-ins</Text>
               <Text className="font-poppins-bold text-primary" style={{ fontSize: 28 }}>
-                0
+                {weeklyCount?.count ?? 0}
               </Text>
               <Text className="font-poppins text-xs text-muted">esta semana</Text>
             </View>

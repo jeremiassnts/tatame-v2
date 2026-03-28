@@ -1668,7 +1668,7 @@ git commit -m "feat(mobile): add Check-in History screen (M-STU-11)"
 **Files:**
 - Modify: `apps/mobile/app/(app)/(student)/(home)/index.tsx`
 
-- [ ] **Step 1: Replace hardcoded check-in count**
+- [x] **Step 1: Replace hardcoded check-in count**
 
 In `apps/mobile/app/(app)/(student)/(home)/index.tsx`:
 
@@ -1694,7 +1694,7 @@ Also add the weekly count query to the refresh invalidation:
 queryClient.invalidateQueries({ queryKey: ["checkins", "me"] }),
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(student)/(home)/index.tsx
