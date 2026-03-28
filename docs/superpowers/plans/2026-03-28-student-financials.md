@@ -223,7 +223,7 @@ git commit -m "feat(api): add findByUserWithClass to checkin repository"
 **Files:**
 - Modify: `apps/api/src/modules/checkin/checkin.service.ts`
 
-- [ ] **Step 1: Add getWeeklyCount method**
+- [x] **Step 1: Add getWeeklyCount method**
 
 Add to the `CheckinService` class (after the existing `checkIn` method):
 
@@ -241,7 +241,7 @@ Add to the `CheckinService` class (after the existing `checkIn` method):
 
 Note: `utcTodayDateString` is already imported from `../subscription/subscription.service.js` and `mondayOfWeekContaining` is already defined in this file.
 
-- [ ] **Step 2: Add getHistory method**
+- [x] **Step 2: Add getHistory method**
 
 Add below `getWeeklyCount`:
 
@@ -340,12 +340,12 @@ Add below `getWeeklyCount`:
   }
 ```
 
-- [ ] **Step 3: Verify TypeScript compiles**
+- [x] **Step 3: Verify TypeScript compiles**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm --filter api exec tsc --noEmit`
 Expected: No type errors
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/api/src/modules/checkin/checkin.service.ts
