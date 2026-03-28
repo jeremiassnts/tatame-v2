@@ -39,12 +39,12 @@ Expected: Type errors in the two repository implementations (postgres and in-mem
 
 ---
 
-### Task 2: Add `joinedAt` to Postgres repository query
+### Task 2: Add `joinedAt` to Postgres repository query ✅ **DONE** (Linear: TAT-31)
 
 **Files:**
 - Modify: `apps/api/src/modules/membership/membership.repository.postgres.ts:317-325`
 
-- [ ] **Step 1: Add `joinedAt` to the select**
+- [x] **Step 1: Add `joinedAt` to the select**
 
 In `findActiveOrPendingByUser`, update the `.select()` call:
 

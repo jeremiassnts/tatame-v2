@@ -322,6 +322,7 @@ export class PostgresMembershipRepository implements IMembershipRepository {
         academyLogoUrl: academies.logoUrl,
         role: academyMemberships.role,
         status: academyMemberships.status,
+        joinedAt: academyMemberships.joinedAt,
       })
       .from(academyMemberships)
       .innerJoin(academies, eq(academyMemberships.academyId, academies.id))
