@@ -1495,13 +1495,13 @@ git commit -m "feat(mobile): add Plan Detail screen (M-STU-09)"
 **Files:**
 - Create: `apps/mobile/app/(app)/(student)/(subscription)/checkin-history.tsx`
 
-- [ ] **Step 1: Read design node structure and take screenshot**
+- [x] **Step 1: Read design node structure and take screenshot**
 
 Use `mcp__pencil__batch_get` with `filePath: "/Volumes/ExternalDisk1/repos/tatame-v2/design.pen"`, `nodeIds: ["9IxiV"]`, `readDepth: 4`.
 
 Also take a screenshot with `mcp__pencil__get_screenshot` for `nodeId: "9IxiV"`.
 
-- [ ] **Step 2: Create the Check-in History screen**
+- [x] **Step 2: Create the Check-in History screen**
 
 Create `apps/mobile/app/(app)/(student)/(subscription)/checkin-history.tsx`:
 
@@ -1650,11 +1650,11 @@ function formatDisplayDate(dateStr: string): string {
 }
 ```
 
-- [ ] **Step 3: Take screenshot to compare with design**
+- [x] **Step 3: Take screenshot to compare with design**
 
 Use `mcp__pencil__get_screenshot` on `9IxiV` to compare. Adjust styling as needed.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(student)/(subscription)/checkin-history.tsx
