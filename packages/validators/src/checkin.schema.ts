@@ -32,3 +32,13 @@ export const createCheckinResponseSchema = z.object({
 });
 
 export type CreateCheckinResponse = z.infer<typeof createCheckinResponseSchema>;
+
+export const checkinHistoryQuerySchema = z.object({
+  cursor: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  limit: z
+    .string()
+    .optional()
+    .transform((v) => (v ? Number(v) : 4)),
+});
+
+export type CheckinHistoryQuery = z.infer<typeof checkinHistoryQuerySchema>;

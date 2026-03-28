@@ -67,7 +67,7 @@ The spec mentions modifying this endpoint to "cancel old + create new subscripti
 - Modify: `packages/validators/src/checkin.schema.ts`
 - Modify: `packages/validators/src/index.ts`
 
-- [ ] **Step 1: Add schemas to checkin.schema.ts**
+- [x] **Step 1: Add schemas to checkin.schema.ts**
 
 Add to the end of `packages/validators/src/checkin.schema.ts`:
 
@@ -83,7 +83,7 @@ export const checkinHistoryQuerySchema = z.object({
 export type CheckinHistoryQuery = z.infer<typeof checkinHistoryQuerySchema>;
 ```
 
-- [ ] **Step 2: Export new schemas from index.ts**
+- [x] **Step 2: Export new schemas from index.ts**
 
 In `packages/validators/src/index.ts`, update the checkin export block to include:
 
@@ -99,12 +99,12 @@ export {
 } from "./checkin.schema.js";
 ```
 
-- [ ] **Step 3: Verify build**
+- [x] **Step 3: Verify build**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm --filter @tatame/validators build`
 Expected: Build succeeds
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/validators/src/checkin.schema.ts packages/validators/src/index.ts

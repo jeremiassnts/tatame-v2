@@ -76,9 +76,11 @@ export {
   type ConfirmManualPaymentBody,
 } from "./payment.schema.js";
 export {
+  checkinHistoryQuerySchema,
   checkinResponseSchema,
   createCheckinBodySchema,
   createCheckinResponseSchema,
+  type CheckinHistoryQuery,
   type CreateCheckinBody,
   type CreateCheckinResponse,
 } from "./checkin.schema.js";
