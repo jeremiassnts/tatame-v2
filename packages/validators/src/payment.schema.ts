@@ -23,4 +23,9 @@ export type ConfirmManualPaymentBody = z.infer<
 
 export const listPaymentsQuerySchema = z.object({
   subscriptionId: z.string().uuid().optional(),
+  limit: z
+    .string()
+    .optional()
+    .transform((v) => (v ? parseInt(v, 10) : undefined))
+    .pipe(z.number().int().min(1).max(100).optional()),
 });

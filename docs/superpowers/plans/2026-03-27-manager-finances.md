@@ -84,7 +84,7 @@ Issues are linked with **blocked by** in Linear following task order (1 â†’ 2 â†
 - Modify: `packages/validators/src/payment.schema.ts`
 - Modify: `packages/validators/src/index.ts`
 
-- [ ] **Step 1: Add academy subscriptions query schema**
+- [x] **Step 1: Add academy subscriptions query schema**
 
 In `packages/validators/src/subscription.schema.ts`, add at the end of the file:
 
@@ -107,7 +107,7 @@ export const subscriptionIdParamSchema = z.object({
 });
 ```
 
-- [ ] **Step 2: Add limit to payments query schema**
+- [x] **Step 2: Add limit to payments query schema**
 
 In `packages/validators/src/payment.schema.ts`, replace `listPaymentsQuerySchema`:
 
@@ -122,7 +122,7 @@ export const listPaymentsQuerySchema = z.object({
 });
 ```
 
-- [ ] **Step 3: Export new schemas from index**
+- [x] **Step 3: Export new schemas from index**
 
 In `packages/validators/src/index.ts`, update the subscription export block:
 
@@ -143,12 +143,12 @@ export {
 } from "./subscription.schema.js";
 ```
 
-- [ ] **Step 4: Build validators package**
+- [x] **Step 4: Build validators package**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && npx turbo build --filter=@tatame/validators`
 Expected: build succeeds
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/validators/src/subscription.schema.ts packages/validators/src/payment.schema.ts packages/validators/src/index.ts

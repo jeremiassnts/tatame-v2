@@ -42,3 +42,20 @@ export const selectStudentPlanBodySchema = z.object({
 });
 
 export type SelectStudentPlanBody = z.infer<typeof selectStudentPlanBodySchema>;
+
+export const listAcademySubscriptionsQuerySchema = z.object({
+  status: z.enum(["active", "expired", "cancelled"]).optional(),
+  planId: z.string().uuid().optional(),
+  pendingPayment: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => v === "true"),
+});
+
+export type ListAcademySubscriptionsQuery = z.infer<
+  typeof listAcademySubscriptionsQuerySchema
+>;
+
+export const subscriptionIdParamSchema = z.object({
+  subscriptionId: z.string().uuid(),
+});

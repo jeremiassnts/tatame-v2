@@ -57,12 +57,15 @@ export {
 } from "./class.schema.js";
 export {
   createSubscriptionPlanBodySchema,
+  listAcademySubscriptionsQuerySchema,
   listPlansQuerySchema,
   planIdParamSchema,
   recurrenceMonthsSchema,
   selectStudentPlanBodySchema,
+  subscriptionIdParamSchema,
   updateSubscriptionPlanBodySchema,
   type CreateSubscriptionPlanBody,
+  type ListAcademySubscriptionsQuery,
   type SelectStudentPlanBody,
   type UpdateSubscriptionPlanBody,
 } from "./subscription.schema.js";
