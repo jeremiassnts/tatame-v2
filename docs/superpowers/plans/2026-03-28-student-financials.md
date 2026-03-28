@@ -1705,22 +1705,22 @@ git commit -m "feat(mobile): wire student home check-in count to real data"
 
 ## Task 13: Final verification
 
-- [ ] **Step 1: Verify API TypeScript compiles**
+- [x] **Step 1: Verify API TypeScript compiles**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm --filter api exec tsc --noEmit`
 Expected: No errors
 
-- [ ] **Step 2: Verify mobile TypeScript compiles**
+- [x] **Step 2: Verify mobile TypeScript compiles**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm --filter mobile exec tsc --noEmit`
 Expected: No errors (or only pre-existing ones)
 
-- [ ] **Step 3: Verify validators build**
+- [x] **Step 3: Verify validators build**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm --filter @tatame/validators build`
 Expected: Build succeeds
 
-- [ ] **Step 4: Review all new files exist**
+- [x] **Step 4: Review all new files exist**
 
 ```bash
 ls -la apps/mobile/app/(app)/(student)/(subscription)/_layout.tsx
@@ -1732,13 +1732,13 @@ ls -la apps/mobile/app/(app)/(student)/(home)/academy-info.tsx
 ls -la apps/mobile/app/(app)/(instructor)/(home)/academy-info.tsx
 ```
 
-- [ ] **Step 5: Verify deleted files are gone**
+- [x] **Step 5: Verify deleted files are gone**
 
 ```bash
 test ! -d apps/mobile/app/(app)/(student)/(academy) && echo "OK: student academy deleted"
 test ! -d apps/mobile/app/(app)/(instructor)/(academy) && echo "OK: instructor academy deleted"
 ```
 
-- [ ] **Step 6: Final commit if needed**
+- [x] **Step 6: Final commit if needed**
 
 Only if there are uncommitted fixes from verification.
