@@ -593,21 +593,25 @@ git commit -m "feat(mobile): add student Academia tab"
 
 ---
 
-### Task 10: Verify types compile across the monorepo
+### Task 10: Verify types compile across the monorepo ✅ **DONE** (Linear: TAT-39)
 
-- [ ] **Step 1: Run full TypeScript check**
+- [x] **Step 1: Run full TypeScript check**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && npx tsc --noEmit -p apps/api/tsconfig.json 2>&1 | tail -5 && npx tsc --noEmit -p apps/mobile/tsconfig.json 2>&1 | tail -5`
 
 Expected: No errors in either project.
 
-- [ ] **Step 2: If errors exist, fix them and amend the relevant commit**
+Note: run `pnpm --filter @tatame/validators build` before `tsc` for `apps/mobile` so `@tatame/validators` `dist` includes `joinedAt` on `UserMeResponse`.
+
+- [x] **Step 2: If errors exist, fix them and amend the relevant commit**
+
+(No errors; no amend needed.)
 
 ---
 
-### Task 11: Visual verification against design
+### Task 11: Visual verification against design ✅ **DONE** (Linear: TAT-40)
 
-- [ ] **Step 1: Read both design nodes using Pencil MCP**
+- [x] **Step 1: Read both design nodes using Pencil MCP**
 
 Use `batch_get` on `design.pen` with `nodeIds: ["WXT1J", "HKRmV"]`, `readDepth: 4`, `resolveVariables: true`.
 
@@ -619,17 +623,21 @@ Compare against the implemented `AcademyInfo.tsx` component:
 - Warning card: bg `#242424`, "Atenção" bold + warning text
 - Leave button: bg `#D64B4B`, height 56, "Sair da academia" text
 
-- [ ] **Step 2: Take screenshots of design nodes**
+- [x] **Step 2: Take screenshots of design nodes**
 
 Use Pencil MCP `get_screenshot` on `design.pen` for nodes `WXT1J` and `HKRmV`. Visually verify the component matches.
 
-- [ ] **Step 3: Fix any visual discrepancies found**
+- [x] **Step 3: Fix any visual discrepancies found**
 
 If spacing, colors, typography, or layout don't match the design, update `AcademyInfo.tsx` accordingly.
 
-- [ ] **Step 4: Commit any fixes**
+(No further code changes required; implementation matches the design checklist.)
+
+- [x] **Step 4: Commit any fixes**
 
 ```bash
 git add apps/mobile/components/AcademyInfo.tsx
 git commit -m "fix(mobile): adjust AcademyInfo layout to match design"
 ```
+
+(Skipped: no fixes needed.)
