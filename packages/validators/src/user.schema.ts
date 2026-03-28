@@ -37,6 +37,7 @@ export const activeMembershipSchema = z.object({
   academyLogoUrl: z.string().nullable(),
   role: roleEnumSchema,
   status: z.enum(["pending", "active", "blocked"]),
+  joinedAt: z.coerce.date().nullable(),
 });
 
 export type ActiveMembership = z.infer<typeof activeMembershipSchema>;

@@ -115,12 +115,12 @@ git commit -m "feat(api): add joinedAt to activeMembership query"
 
 ---
 
-### Task 4: Add `joinedAt` to `activeMembershipSchema` validator
+### Task 4: Add `joinedAt` to `activeMembershipSchema` validator ✅ **DONE** (Linear: TAT-33)
 
 **Files:**
 - Modify: `packages/validators/src/user.schema.ts:33-40`
 
-- [ ] **Step 1: Add `joinedAt` to the schema**
+- [x] **Step 1: Add `joinedAt` to the schema**
 
 ```ts
 export const activeMembershipSchema = z.object({
@@ -134,13 +134,13 @@ export const activeMembershipSchema = z.object({
 });
 ```
 
-- [ ] **Step 2: Verify validators compile**
+- [x] **Step 2: Verify validators compile**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && npx tsc --noEmit -p packages/validators/tsconfig.json 2>&1 | head -10`
 
 Expected: No errors.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add packages/validators/src/user.schema.ts
