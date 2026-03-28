@@ -119,7 +119,7 @@ git commit -m "feat(validators): add checkin history query schema"
 - Modify: `apps/api/src/modules/checkin/checkin.repository.ts`
 - Modify: `apps/api/src/modules/checkin/checkin.repository.postgres.ts`
 
-- [ ] **Step 1: Add interface methods to checkin.repository.ts**
+- [x] **Step 1: Add interface methods to checkin.repository.ts**
 
 Add to the `ICheckinRepository` interface and add new types at the top:
 
@@ -155,7 +155,7 @@ export interface ICheckinRepository {
 }
 ```
 
-- [ ] **Step 2: Implement findByUserWithClass in PostgresCheckinRepository**
+- [x] **Step 2: Implement findByUserWithClass in PostgresCheckinRepository**
 
 Add at the end of the `PostgresCheckinRepository` class in `checkin.repository.postgres.ts`:
 
@@ -204,12 +204,12 @@ import type {
 
 Note: The `limit` here will be computed by the service (number of weeks * reasonable per-week max) — the service does the grouping.
 
-- [ ] **Step 3: Verify TypeScript compiles**
+- [x] **Step 3: Verify TypeScript compiles**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm --filter api exec tsc --noEmit`
 Expected: No type errors
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/api/src/modules/checkin/checkin.repository.ts apps/api/src/modules/checkin/checkin.repository.postgres.ts

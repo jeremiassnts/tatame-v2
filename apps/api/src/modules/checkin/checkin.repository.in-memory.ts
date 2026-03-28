@@ -1,5 +1,9 @@
 import { randomUUID } from "node:crypto";
-import type { CheckinRow, ICheckinRepository } from "./checkin.repository.js";
+import type {
+  CheckinHistoryItem,
+  CheckinRow,
+  ICheckinRepository,
+} from "./checkin.repository.js";
 
 export class InMemoryCheckinRepository implements ICheckinRepository {
   constructor(private readonly rows: CheckinRow[] = []) {}
@@ -50,5 +54,12 @@ export class InMemoryCheckinRepository implements ICheckinRepository {
     };
     this.rows.push(row);
     return row;
+  }
+
+  async findByUserWithClass(
+    _userId: string,
+    _opts: { cursor?: string; limit: number },
+  ): Promise<CheckinHistoryItem[]> {
+    return [];
   }
 }
