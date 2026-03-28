@@ -397,12 +397,12 @@ git commit -m "feat(mobile): implement instructor academy info screen"
 
 ---
 
-### Task 7: Enable instructor "Academia" tab
+### Task 7: Enable instructor "Academia" tab ✅ **DONE** (Linear: TAT-36)
 
 **Files:**
 - Modify: `apps/mobile/app/(app)/(instructor)/_layout.tsx:50-57`
 
-- [ ] **Step 1: Remove `href: null` from the academy tab**
+- [x] **Step 1: Remove `href: null` from the academy tab**
 
 Change the `(academy)` Tabs.Screen from:
 
@@ -429,7 +429,7 @@ To:
       />
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(instructor)/_layout.tsx

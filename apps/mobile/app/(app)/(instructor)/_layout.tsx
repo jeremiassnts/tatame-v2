@@ -52,7 +52,6 @@ export default function InstructorLayout() {
         options={{
           title: "Academia",
           tabBarIcon: ({ color, size }) => <School size={size} color={color} />,
-          href: null,
         }}
       />
     </Tabs>
