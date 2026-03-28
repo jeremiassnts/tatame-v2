@@ -2974,7 +2974,7 @@ git commit -m "feat(mobile): add student subscription detail screen"
 **Files:**
 - Create: `apps/mobile/app/(app)/(manager)/(finances)/confirm-payment.tsx`
 
-- [ ] **Step 1: Create confirm payment screen**
+- [x] **Step 1: Create confirm payment screen**
 
 Create `apps/mobile/app/(app)/(manager)/(finances)/confirm-payment.tsx`:
 
@@ -3212,7 +3212,7 @@ export default function ConfirmPaymentScreen() {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(manager)/(finances)/confirm-payment.tsx
@@ -3228,7 +3228,7 @@ git commit -m "feat(mobile): add confirm payment screen"
 **Files:**
 - Modify: `apps/mobile/app/(app)/(manager)/(finances)/index.tsx`
 
-- [ ] **Step 1: Replace placeholder with full dashboard**
+- [x] **Step 1: Replace placeholder with full dashboard**
 
 Replace the content of `apps/mobile/app/(app)/(manager)/(finances)/index.tsx`:
 
@@ -3460,7 +3460,7 @@ export default function FinancialDashboard() {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(manager)/(finances)/index.tsx
