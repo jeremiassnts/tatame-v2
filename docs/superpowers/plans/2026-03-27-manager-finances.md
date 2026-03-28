@@ -750,7 +750,7 @@ git commit -m "feat(api): add academy-level subscription list and detail endpoin
 - Create: `apps/api/src/modules/finance/finance.routes.ts`
 - Modify: `apps/api/src/router.ts`
 
-- [ ] **Step 1: Create finance service**
+- [x] **Step 1: Create finance service**
 
 Create `apps/api/src/modules/finance/finance.service.ts`:
 
@@ -836,7 +836,7 @@ export class FinanceService {
 }
 ```
 
-- [ ] **Step 2: Create finance routes**
+- [x] **Step 2: Create finance routes**
 
 Create `apps/api/src/modules/finance/finance.routes.ts`:
 
@@ -881,7 +881,7 @@ financeRouter.get(
 );
 ```
 
-- [ ] **Step 3: Register finance router**
+- [x] **Step 3: Register finance router**
 
 In `apps/api/src/router.ts`, add the import:
 
@@ -895,12 +895,12 @@ And add the route after the payments line:
 apiRouter.use("/finances", financeRouter);
 ```
 
-- [ ] **Step 4: Verify API compiles**
+- [x] **Step 4: Verify API compiles**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && npx turbo build --filter=@tatame/api`
 Expected: build succeeds
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/api/src/modules/finance/ apps/api/src/router.ts
