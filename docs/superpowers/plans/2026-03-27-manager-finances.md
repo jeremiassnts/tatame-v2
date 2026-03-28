@@ -1355,7 +1355,7 @@ git commit -m "feat(mobile): add hooks for subscription plans, academy subscript
 - Create: `apps/mobile/app/(app)/(manager)/(finances)/_layout.tsx`
 - Modify: `apps/mobile/app/(app)/(manager)/_layout.tsx`
 
-- [ ] **Step 1: Create finances stack layout**
+- [x] **Step 1: Create finances stack layout**
 
 Create `apps/mobile/app/(app)/(manager)/(finances)/_layout.tsx`:
 
@@ -1375,7 +1375,7 @@ export default function FinancesLayout() {
 }
 ```
 
-- [ ] **Step 2: Add Finanças tab to manager layout**
+- [x] **Step 2: Add Finanças tab to manager layout**
 
 In `apps/mobile/app/(app)/(manager)/_layout.tsx`, add the `CreditCard` import and the new tab:
 
@@ -1448,7 +1448,7 @@ export default function ManagerLayout() {
 }
 ```
 
-- [ ] **Step 3: Create placeholder index screen to verify tab works**
+- [x] **Step 3: Create placeholder index screen to verify tab works**
 
 Create `apps/mobile/app/(app)/(manager)/(finances)/index.tsx`:
 
@@ -1467,7 +1467,7 @@ export default function FinancialDashboard() {
 }
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(manager)/(finances)/_layout.tsx apps/mobile/app/(app)/(manager)/(finances)/index.tsx apps/mobile/app/(app)/(manager)/_layout.tsx
