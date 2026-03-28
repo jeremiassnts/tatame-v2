@@ -1,8 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useApi } from "@/lib/api";
 
 /** Mirrors `GET /subscriptions/me` (subscription + plan as sibling fields). */
-type MySubscriptionResponse = {
+export type MySubscriptionResponse = {
   subscription: {
     id: string;
     userId: string;
@@ -34,5 +34,46 @@ export function useMySubscription() {
   return useQuery({
     queryKey: ["subscription", "me"],
     queryFn: () => api.get<MySubscriptionResponse>("/subscriptions/me"),
+  });
+}
+
+type PaymentItem = {
+  id: string;
+  subscriptionId: string;
+  userId: string;
+  academyId: string;
+  amountCents: number;
+  method: string;
+  confirmedBy: string | null;
+  referenceMonth: string;
+  notes: string | null;
+  paidAt: string;
+  createdAt: string;
+};
+
+type PaymentsResponse = { items: PaymentItem[] };
+
+export function useMyPayments() {
+  const api = useApi();
+
+  return useQuery({
+    queryKey: ["payments", "me"],
+    queryFn: () => api.get<PaymentsResponse>("/payments/me"),
+    select: (data) => data.items,
+  });
+}
+
+export function useSelectPlan() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (planId: string) =>
+      api.post<MySubscriptionResponse>("/subscriptions/me/plan", { planId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["subscription", "me"] });
+      queryClient.invalidateQueries({ queryKey: ["payments", "me"] });
+      queryClient.invalidateQueries({ queryKey: ["checkins", "me"] });
+    },
   });
 }

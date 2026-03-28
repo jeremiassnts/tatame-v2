@@ -441,7 +441,7 @@ git commit -m "feat(api): add GET /checkins/me/weekly-count and /me/history endp
 - Modify: `apps/mobile/lib/hooks/use-checkin.ts`
 - Modify: `apps/mobile/lib/hooks/use-subscription.ts`
 
-- [ ] **Step 1: Add useWeeklyCheckinCount and useCheckinHistory to use-checkin.ts**
+- [x] **Step 1: Add useWeeklyCheckinCount and useCheckinHistory to use-checkin.ts**
 
 Append to the end of `apps/mobile/lib/hooks/use-checkin.ts`:
 
@@ -504,7 +504,7 @@ Also add `useInfiniteQuery` to the imports at the top:
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 ```
 
-- [ ] **Step 2: Add useMyPayments and useSelectPlan to use-subscription.ts**
+- [x] **Step 2: Add useMyPayments and useSelectPlan to use-subscription.ts**
 
 Append to the end of `apps/mobile/lib/hooks/use-subscription.ts`:
 
@@ -557,12 +557,12 @@ Also add `useMutation` and `useQueryClient` to the imports:
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 ```
 
-- [ ] **Step 3: Verify TypeScript**
+- [x] **Step 3: Verify TypeScript**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm --filter mobile exec tsc --noEmit`
 Expected: No type errors (or only pre-existing ones)
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/mobile/lib/hooks/use-checkin.ts apps/mobile/lib/hooks/use-subscription.ts

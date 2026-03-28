@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useApi } from "@/lib/api";
 import type { CreateCheckinResponse } from "@tatame/validators";
 
@@ -42,5 +47,56 @@ export function useCheckin() {
         queryKey: ["checkins", variables.classId, variables.date],
       });
     },
+  });
+}
+
+type WeeklyCheckinCountResponse = {
+  count: number;
+  weekReference: string;
+};
+
+export function useWeeklyCheckinCount() {
+  const api = useApi();
+
+  return useQuery({
+    queryKey: ["checkins", "me", "weekly-count"],
+    queryFn: () =>
+      api.get<WeeklyCheckinCountResponse>("/checkins/me/weekly-count"),
+  });
+}
+
+type CheckinHistoryWeek = {
+  weekReference: string;
+  weekLabel: string;
+  count: number;
+  checkins: Array<{
+    id: string;
+    className: string;
+    date: string;
+    dayOfWeek: string;
+    time: string;
+  }>;
+};
+
+type CheckinHistoryResponse = {
+  items: CheckinHistoryWeek[];
+  nextCursor: string | null;
+};
+
+export function useCheckinHistory() {
+  const api = useApi();
+
+  return useInfiniteQuery({
+    queryKey: ["checkins", "me", "history"],
+    queryFn: ({ pageParam }) => {
+      const params = new URLSearchParams();
+      if (pageParam) params.set("cursor", pageParam);
+      const qs = params.toString();
+      return api.get<CheckinHistoryResponse>(
+        `/checkins/me/history${qs ? `?${qs}` : ""}`,
+      );
+    },
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   });
 }
