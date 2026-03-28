@@ -1269,13 +1269,13 @@ git commit -m "feat(mobile): add Subscription Plans list screen (M-STU-08)"
 **Files:**
 - Create: `apps/mobile/app/(app)/(student)/(subscription)/plans/[planId].tsx`
 
-- [ ] **Step 1: Read design node structure and take screenshot**
+- [x] **Step 1: Read design node structure and take screenshot**
 
 Use `mcp__pencil__batch_get` with `filePath: "/Volumes/ExternalDisk1/repos/tatame-v2/design.pen"`, `nodeIds: ["LIpc2"]`, `readDepth: 4`.
 
 Also take a screenshot with `mcp__pencil__get_screenshot` for `nodeId: "LIpc2"`.
 
-- [ ] **Step 2: Create the Plan Detail screen**
+- [x] **Step 2: Create the Plan Detail screen**
 
 Create `apps/mobile/app/(app)/(student)/(subscription)/plans/[planId].tsx`:
 
@@ -1471,11 +1471,11 @@ export default function PlanDetailScreen() {
 }
 ```
 
-- [ ] **Step 3: Take screenshot to compare with design**
+- [x] **Step 3: Take screenshot to compare with design**
 
 Use `mcp__pencil__get_screenshot` on `LIpc2` to compare. Adjust styling as needed.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(student)/(subscription)/plans/[planId].tsx
