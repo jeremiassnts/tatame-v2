@@ -565,7 +565,7 @@ git commit -m "feat(api): add limit to payments list and payment-with-user query
 - Modify: `apps/api/src/modules/subscription/subscription.service.ts`
 - Modify: `apps/api/src/modules/subscription/subscription.routes.ts`
 
-- [ ] **Step 1: Add service methods**
+- [x] **Step 1: Add service methods**
 
 In `apps/api/src/modules/subscription/subscription.service.ts`, add these imports at the top:
 
@@ -650,7 +650,7 @@ Add two new methods to the `SubscriptionService` class:
   }
 ```
 
-- [ ] **Step 2: Add routes**
+- [x] **Step 2: Add routes**
 
 In `apps/api/src/modules/subscription/subscription.routes.ts`, add the new imports at the top:
 
@@ -727,12 +727,12 @@ subscriptionRouter.get(
 
 **IMPORTANT:** These routes must be placed BEFORE the `/me/plan` POST route. Express matches routes top-down, so `/academy` must come before `/:param` patterns. Currently there are no `/:param` patterns at the subscription router root level, so placing after `/me` is fine.
 
-- [ ] **Step 3: Verify API compiles**
+- [x] **Step 3: Verify API compiles**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && npx turbo build --filter=@tatame/api`
 Expected: build succeeds
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/api/src/modules/subscription/

@@ -6,6 +6,7 @@ import type {
 import { HttpError } from "../../lib/http-error.js";
 import type { IAcademyRepository } from "../academy/academy.repository.js";
 import type {
+  AcademySubscriptionItem,
   IStudentSubscriptionRepository,
   ISubscriptionPlanRepository,
   StudentSubscriptionRow,
@@ -178,6 +179,81 @@ export class SubscriptionService {
       );
 
     return { subscription, plan };
+  }
+
+  async listAcademySubscriptions(
+    managerUserId: string,
+    academyId: string,
+    opts: { status?: string; planId?: string; pendingPayment?: boolean },
+  ): Promise<
+    (AcademySubscriptionItem & {
+      effectiveStatus: "active" | "expired" | "cancelled";
+      hasPaidCurrentMonth: boolean;
+    })[]
+  > {
+    await this.assertManagerOwnsAcademy(managerUserId, academyId);
+
+    const items = await this.studentSubRepo.listByAcademy(academyId, {
+      status: opts.status,
+      planId: opts.planId,
+    });
+
+    const today = utcTodayDateString();
+    const currentMonth = today.slice(0, 7) + "-01";
+
+    const enriched = items.map((item) => {
+      const expiredByDate = isExpiredByDate(item.subscription.expiresAt, today);
+      let effectiveStatus: "active" | "expired" | "cancelled" =
+        item.subscription.status as "active" | "expired" | "cancelled";
+      if (item.subscription.status === "active" && expiredByDate) {
+        effectiveStatus = "expired";
+      }
+      const hasPaidCurrentMonth =
+        item.lastPayment?.referenceMonth === currentMonth;
+      return { ...item, effectiveStatus, hasPaidCurrentMonth };
+    });
+
+    if (opts.pendingPayment) {
+      return enriched.filter(
+        (e) => e.effectiveStatus === "active" && !e.hasPaidCurrentMonth,
+      );
+    }
+
+    return enriched;
+  }
+
+  async getAcademySubscription(
+    managerUserId: string,
+    academyId: string,
+    subscriptionId: string,
+  ): Promise<
+    AcademySubscriptionItem & {
+      effectiveStatus: "active" | "expired" | "cancelled";
+      hasPaidCurrentMonth: boolean;
+    }
+  > {
+    await this.assertManagerOwnsAcademy(managerUserId, academyId);
+
+    const item = await this.studentSubRepo.findByIdForManager(
+      subscriptionId,
+      academyId,
+    );
+    if (!item) {
+      throw new HttpError(404, "Subscription not found");
+    }
+
+    const today = utcTodayDateString();
+    const currentMonth = today.slice(0, 7) + "-01";
+    const expiredByDate = isExpiredByDate(item.subscription.expiresAt, today);
+    let effectiveStatus: "active" | "expired" | "cancelled" =
+      item.subscription.status as "active" | "expired" | "cancelled";
+    if (item.subscription.status === "active" && expiredByDate) {
+      effectiveStatus = "expired";
+    }
+    const hasPaidCurrentMonth =
+      item.lastPayment?.referenceMonth === currentMonth;
+
+    return { ...item, effectiveStatus, hasPaidCurrentMonth };
   }
 
   private async assertManagerOwnsAcademy(userId: string, academyId: string) {

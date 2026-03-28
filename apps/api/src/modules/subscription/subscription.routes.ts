@@ -7,9 +7,11 @@ import type {
 } from "@tatame/validators";
 import {
   createSubscriptionPlanBodySchema,
+  listAcademySubscriptionsQuerySchema,
   listPlansQuerySchema,
   planIdParamSchema,
   selectStudentPlanBodySchema,
+  subscriptionIdParamSchema,
   updateSubscriptionPlanBodySchema,
 } from "@tatame/validators";
 import { getDb } from "../../lib/db.js";
@@ -140,6 +142,60 @@ subscriptionRouter.get(
       const academyId = req.appAuth!.activeAcademyId!;
       const payload = await subscriptionService.getMySubscription(userId, academyId);
       res.json(payload);
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+subscriptionRouter.get(
+  "/academy",
+  authorize(Role.Manager),
+  attachActiveAcademyContext,
+  requireActiveAcademy,
+  async (req, res, next) => {
+    try {
+      const query = listAcademySubscriptionsQuerySchema.safeParse(req.query);
+      if (!query.success) {
+        throw new HttpError(400, "Invalid query");
+      }
+      const managerUserId = req.appAuth!.userId;
+      const academyId = req.appAuth!.activeAcademyId!;
+      const items = await subscriptionService.listAcademySubscriptions(
+        managerUserId,
+        academyId,
+        {
+          status: query.data.status,
+          planId: query.data.planId,
+          pendingPayment: query.data.pendingPayment,
+        },
+      );
+      res.json({ items });
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+subscriptionRouter.get(
+  "/academy/:subscriptionId",
+  authorize(Role.Manager),
+  attachActiveAcademyContext,
+  requireActiveAcademy,
+  async (req, res, next) => {
+    try {
+      const params = subscriptionIdParamSchema.safeParse(req.params);
+      if (!params.success) {
+        throw new HttpError(400, "Invalid subscription id");
+      }
+      const managerUserId = req.appAuth!.userId;
+      const academyId = req.appAuth!.activeAcademyId!;
+      const item = await subscriptionService.getAcademySubscription(
+        managerUserId,
+        academyId,
+        params.data.subscriptionId,
+      );
+      res.json(item);
     } catch (e) {
       next(e);
     }
