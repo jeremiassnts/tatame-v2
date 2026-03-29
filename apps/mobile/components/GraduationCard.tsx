@@ -111,12 +111,12 @@ export function GraduationCard({
     <View style={{ gap: 2, flexShrink: 1 }}>
       <Text className={labelClass}>Faixa atual</Text>
       {graduation ? (
-        <Text className={titleClass} style={{ fontSize: 15, lineHeight: 20 }}>
-          {(BELT_LABELS[graduation.belt] ?? graduation.belt) +
-            " — " +
-            graduation.stripes +
-            " graus"}
-        </Text>
+        <>
+          <Text className={titleClass} style={{ fontSize: 15, lineHeight: 20 }}>
+            {(BELT_LABELS[graduation.belt] ?? graduation.belt)}
+          </Text>
+          {graduation.stripes > 0 && <Text className={labelClass}>{graduation.stripes} {graduation.stripes === 1 ? "grau" : "graus"}</Text>}
+        </>
       ) : (
         <Text className={titleClass} style={{ fontSize: 15, lineHeight: 20 }}>
           Não registrada

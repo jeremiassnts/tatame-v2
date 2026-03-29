@@ -1,3 +1,4 @@
+import { BackButton } from "@/components/BackButton";
 import { useFinancialSummary, usePaymentHistory } from "@/lib/hooks/use-finances";
 import { useRouter } from "expo-router";
 import {
@@ -55,8 +56,16 @@ export default function FinancialDashboard() {
 
   if (isPending) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator color="#A078E8" />
+      <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+        <View
+          className="flex-row items-center px-6"
+          style={{ paddingTop: 8, paddingBottom: 8, minHeight: 62 }}
+        >
+          <BackButton />
+        </View>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator color="#A078E8" />
+        </View>
       </SafeAreaView>
     );
   }
@@ -86,9 +95,9 @@ export default function FinancialDashboard() {
           />
         }
       >
-        <View className="flex-row items-center justify-between" style={{ height: 62 }}>
-          <View className="h-10 w-10" />
-          <Text className="font-poppins-bold text-lg text-primary">
+        <View className="flex-row items-center gap-3" style={{ minHeight: 62, paddingTop: 8 }}>
+          <BackButton />
+          <Text className="flex-1 text-center font-poppins-bold text-lg text-primary">
             Financeiro
           </Text>
           <View className="h-10 w-10" />
