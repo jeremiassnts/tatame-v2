@@ -261,7 +261,11 @@ export default function ManagerDashboard() {
               </Text>
             </Pressable>
             <Pressable
-              onPress={() => router.push("/(app)/(manager)/(home)")}
+              onPress={() =>
+                router.push(
+                  "/(app)/(manager)/(finances)/subscriptions?filter=pending",
+                )
+              }
               className="min-w-0 flex-1 rounded-[14px] border border-surface-border bg-surface"
               style={{ padding: 16, gap: 10 }}
             >

@@ -3,9 +3,9 @@ import {
   useAcademySubscriptions,
   type AcademySubscriptionItem,
 } from "@/lib/hooks/use-academy-subscriptions";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, ChevronRight, Search } from "lucide-react-native";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -51,9 +51,29 @@ function getDisplayStatus(item: AcademySubscriptionItem): string {
   return item.effectiveStatus;
 }
 
+function parseFilterParam(v: unknown): FilterKey {
+  const raw = Array.isArray(v) ? v[0] : v;
+  if (
+    raw === "all" ||
+    raw === "active" ||
+    raw === "expired" ||
+    raw === "pending"
+  ) {
+    return raw;
+  }
+  return "all";
+}
+
 export default function SubscriptionsListScreen() {
   const router = useRouter();
-  const [filter, setFilter] = useState<FilterKey>("all");
+  const params = useLocalSearchParams<{ filter?: string }>();
+  const [filter, setFilter] = useState<FilterKey>(() =>
+    parseFilterParam(params.filter),
+  );
+
+  useEffect(() => {
+    setFilter(parseFilterParam(params.filter));
+  }, [params.filter]);
   const [search, setSearch] = useState("");
 
   const { data: subscriptions, isPending } = useAcademySubscriptions();
