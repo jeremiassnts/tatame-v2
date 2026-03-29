@@ -77,6 +77,11 @@ export default function ConfirmPaymentScreen() {
   });
 
   const selectedSubId = watch("subscriptionId");
+  const amountText = watch("amountCents");
+
+  const hasStudentSelected = Boolean(selectedSubId?.trim());
+  const hasAmountFilled = Boolean(amountText?.trim());
+  const canSubmit = hasStudentSelected && hasAmountFilled;
 
   useEffect(() => {
     if (selectedSubId && subscriptions) {
@@ -119,6 +124,7 @@ export default function ConfirmPaymentScreen() {
   };
 
   const isPreselected = !!params.subscriptionId;
+  const submitDisabled = !canSubmit || confirmPayment.isPending;
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
@@ -215,12 +221,19 @@ export default function ConfirmPaymentScreen() {
         <View style={{ paddingBottom: 24 }}>
           <Pressable
             onPress={handleSubmit(onSubmit)}
-            disabled={confirmPayment.isPending}
+            disabled={submitDisabled}
             className="flex-row items-center justify-center rounded-xl"
-            style={{ backgroundColor: "#A078E8", height: 56, gap: 8 }}
+            style={{
+              backgroundColor: submitDisabled ? "#3A3A3A" : "#A078E8",
+              height: 56,
+              gap: 8,
+            }}
           >
-            <Check size={20} color="#FFFFFF" />
-            <Text className="font-poppins-semibold text-base text-white">
+            <Check size={20} color={submitDisabled ? "#8A8A8A" : "#FFFFFF"} />
+            <Text
+              className="font-poppins-semibold text-base"
+              style={{ color: submitDisabled ? "#8A8A8A" : "#FFFFFF" }}
+            >
               Confirmar pagamento
             </Text>
           </Pressable>

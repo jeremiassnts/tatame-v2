@@ -89,7 +89,7 @@ export default function SubscriptionsListScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top"]}>
       <View className="flex-1" style={{ paddingHorizontal: 24, paddingTop: 8, gap: 20 }}>
         <View className="flex-row items-center justify-between">
           <Pressable
@@ -122,7 +122,12 @@ export default function SubscriptionsListScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 8 }}
+          style={{ flexGrow: 0 }}
+          contentContainerStyle={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+          }}
         >
           {FILTERS.map((f) => {
             const active = filter === f.key;
@@ -132,8 +137,8 @@ export default function SubscriptionsListScreen() {
                 onPress={() => setFilter(f.key)}
                 className="items-center justify-center rounded-full"
                 style={{
+                  height: 36,
                   paddingHorizontal: 14,
-                  paddingVertical: 8,
                   backgroundColor: active ? "#A078E8" : "#1A1A1A",
                   borderWidth: active ? 0 : 1,
                   borderColor: "#2A2A2A",

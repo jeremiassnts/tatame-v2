@@ -45,7 +45,7 @@ export default function PlansListScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top"]}>
       <View className="flex-1" style={{ paddingHorizontal: 24, paddingTop: 8 }}>
         <View className="flex-row items-center justify-between">
           <Pressable
@@ -131,20 +131,6 @@ export default function PlansListScreen() {
           ))}
         </ScrollView>
       </View>
-
-      <Pressable
-        onPress={() => router.push("/(app)/(manager)/(finances)/plans/create")}
-        className="absolute items-center justify-center rounded-full"
-        style={{
-          backgroundColor: "#A078E8",
-          width: 56,
-          height: 56,
-          bottom: 30,
-          right: 24,
-        }}
-      >
-        <Plus size={22} color="#FFFFFF" />
-      </Pressable>
     </SafeAreaView>
   );
 }
