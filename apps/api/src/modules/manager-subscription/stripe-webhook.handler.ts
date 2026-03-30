@@ -1,4 +1,4 @@
-import type Stripe from "stripe";
+import Stripe from "stripe";
 import type { IClassRepository } from "../class/class.repository.js";
 import type { IMembershipRepository } from "../membership/membership.repository.js";
 import type { ISubscriptionPlanRepository } from "../subscription/subscription.repository.js";
@@ -51,7 +51,7 @@ export class StripeWebhookHandler {
       plan: "pro",
       status: "active",
       stripeSubscriptionId: stripeSub.id,
-      currentPeriodEnd: new Date(stripeSub.current_period_end * 1000),
+      currentPeriodEnd: new Date((stripeSub as any).current_period_end * 1000),
     });
   }
 
@@ -79,7 +79,7 @@ export class StripeWebhookHandler {
 
     await this.subRepo.update(row.id, {
       status: newStatus,
-      currentPeriodEnd: new Date(stripeSub.current_period_end * 1000),
+      currentPeriodEnd: new Date((stripeSub as any).current_period_end * 1000),
       canceledAt: stripeSub.canceled_at
         ? new Date(stripeSub.canceled_at * 1000)
         : null,
@@ -110,10 +110,12 @@ export class StripeWebhookHandler {
   }
 
   private async onInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
-    const subId =
-      typeof invoice.subscription === "string"
-        ? invoice.subscription
-        : invoice.subscription?.id;
+    const subscription = (invoice as any).subscription as
+      | string
+      | { id: string }
+      | null
+      | undefined;
+    const subId = typeof subscription === "string" ? subscription : subscription?.id;
     if (!subId) return;
 
     const row = await this.subRepo.findByStripeSubscriptionId(subId);
@@ -123,10 +125,12 @@ export class StripeWebhookHandler {
   }
 
   private async onInvoicePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
-    const subId =
-      typeof invoice.subscription === "string"
-        ? invoice.subscription
-        : invoice.subscription?.id;
+    const subscription = (invoice as any).subscription as
+      | string
+      | { id: string }
+      | null
+      | undefined;
+    const subId = typeof subscription === "string" ? subscription : subscription?.id;
     if (!subId) return;
 
     const row = await this.subRepo.findByStripeSubscriptionId(subId);

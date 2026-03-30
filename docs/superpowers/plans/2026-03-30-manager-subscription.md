@@ -1416,7 +1416,7 @@ git commit -m "feat: add Stripe webhook handler for subscription lifecycle event
 - Modify: `apps/api/src/router.ts`
 - Modify: `apps/api/src/app.ts`
 
-- [ ] **Step 1: Create requireActivePlan middleware**
+- [x] **Step 1: Create requireActivePlan middleware**
 
 Create `apps/api/src/middleware/require-active-plan.ts`:
 
@@ -1480,7 +1480,7 @@ export function requireActivePlan(
 }
 ```
 
-- [ ] **Step 2: Create requirePlanFeature middleware**
+- [x] **Step 2: Create requirePlanFeature middleware**
 
 Create `apps/api/src/middleware/require-plan-feature.ts`:
 
@@ -1510,7 +1510,7 @@ export function requirePlanFeature(feature: PlanFeature) {
 }
 ```
 
-- [ ] **Step 3: Create routes**
+- [x] **Step 3: Create routes**
 
 Create `apps/api/src/modules/manager-subscription/manager-subscription.routes.ts`:
 
@@ -1813,7 +1813,7 @@ export function createWebhookRouter() {
 }
 ```
 
-- [ ] **Step 4: Register routes in router.ts**
+- [x] **Step 4: Register routes in router.ts**
 
 In `apps/api/src/router.ts`, add import:
 
@@ -1827,7 +1827,7 @@ Add route registration:
 apiRouter.use("/manager-subscriptions", managerSubscriptionRouter);
 ```
 
-- [ ] **Step 5: Add raw body parsing and webhook route in app.ts**
+- [x] **Step 5: Add raw body parsing and webhook route in app.ts**
 
 In `apps/api/src/app.ts`, add import:
 

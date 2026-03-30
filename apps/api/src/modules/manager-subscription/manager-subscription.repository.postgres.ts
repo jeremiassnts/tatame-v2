@@ -51,7 +51,7 @@ export class PostgresManagerSubscriptionRepository
     stripeSubscriptionId?: string | null;
     currentPeriodEnd?: Date | null;
   }): Promise<ManagerSubscriptionRow> {
-    const [row] = await this.db
+    const rows = await this.db
       .insert(managerSubscriptions)
       .values({
         academyId: data.academyId,
@@ -62,6 +62,10 @@ export class PostgresManagerSubscriptionRepository
         currentPeriodEnd: data.currentPeriodEnd ?? null,
       })
       .returning();
+    const row = rows[0];
+    if (!row) {
+      throw new Error("Failed to create manager subscription");
+    }
     return row;
   }
 
@@ -76,12 +80,12 @@ export class PostgresManagerSubscriptionRepository
       canceledAt: Date | null;
     }>,
   ): Promise<ManagerSubscriptionRow | undefined> {
-    const [row] = await this.db
+    const rows = await this.db
       .update(managerSubscriptions)
       .set({ ...data, updatedAt: new Date() })
       .where(eq(managerSubscriptions.id, id))
       .returning();
-    return row;
+    return rows[0];
   }
 }
 
