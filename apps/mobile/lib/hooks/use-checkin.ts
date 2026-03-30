@@ -54,6 +54,7 @@ export function useCheckin() {
       queryClient.invalidateQueries({
         queryKey: ["checkins", variables.classId, variables.date],
       });
+      queryClient.invalidateQueries({ queryKey: ["checkins", "me"] });
     },
   });
 }
