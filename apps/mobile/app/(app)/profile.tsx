@@ -1,4 +1,17 @@
+import { useAuth } from "@clerk/clerk-expo";
+import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Lock,
+  LogOut,
+  Mail,
+  Trash2,
+  UserCheck,
+} from "lucide-react-native";
 import { useCallback, useMemo } from "react";
+import { Controller, useForm } from "react-hook-form";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -9,19 +22,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { useAuth } from "@clerk/clerk-expo";
-import { useQueryClient } from "@tanstack/react-query";
-import { Controller, useForm } from "react-hook-form";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Lock,
-  LogOut,
-  Mail,
-  Trash2,
-  UserCheck,
-} from "lucide-react-native";
 
 import { Avatar } from "@/components/Avatar";
 import { DatePickerField } from "@/components/DatePickerField";
@@ -103,7 +103,7 @@ export default function ProfileScreen() {
   const roleLabel = ROLE_LABELS[user.activeRole ?? ""] ?? user.activeRole ?? "";
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top", "bottom"]}>
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : undefined}

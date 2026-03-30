@@ -5,8 +5,8 @@ import { ImagePickerField } from "@/components/ImagePickerField";
 import { useCreateAcademy } from "@/lib/hooks/use-academy";
 import { useUploadImage } from "@/lib/hooks/use-upload";
 import { useCurrentUser } from "@/lib/hooks/use-user";
-import { useQueryClient } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { createAcademyBodySchema, type CreateAcademyBody } from "@tatame/validators";
 import type { ImagePickerAsset } from "expo-image-picker";
 import { useRouter } from "expo-router";
@@ -85,7 +85,7 @@ export default function CreateAcademyScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top", "bottom"]}>
       <View className="flex-1 px-6 pt-2">
         <View className="mt-4 gap-2">
           <Text

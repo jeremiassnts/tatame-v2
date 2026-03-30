@@ -60,7 +60,7 @@ export default function CheckinHistoryScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top"]}>
       <View
         className="flex-row items-center gap-3"
         style={{ paddingHorizontal: 24, paddingTop: 16, paddingBottom: 12 }}

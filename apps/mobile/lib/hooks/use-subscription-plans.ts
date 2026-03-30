@@ -49,6 +49,7 @@ export function useCreatePlan() {
     }) => api.post<SubscriptionPlan>("/subscriptions/plans", body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["subscription-plans"] });
+      queryClient.invalidateQueries({ queryKey: ["academy-stats"] });
     },
   });
 }
@@ -67,6 +68,7 @@ export function useUpdatePlan(planId: string) {
     }) => api.patch<SubscriptionPlan>(`/subscriptions/plans/${planId}`, body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["subscription-plans"] });
+      queryClient.invalidateQueries({ queryKey: ["academy-stats"] });
     },
   });
 }

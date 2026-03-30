@@ -3,10 +3,12 @@ import { ModalSelect } from "@/components/ModalSelect";
 import { ApiError } from "@/lib/api";
 import { useCreatePlan } from "@/lib/hooks/use-subscription-plans";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Check } from "lucide-react-native";
 import { Controller, useForm } from "react-hook-form";
 import {
+  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -82,7 +84,7 @@ export default function CreatePlanScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top"]}>
       <View className="flex-1" style={{ paddingHorizontal: 24, paddingTop: 8, gap: 24 }}>
         <View className="flex-row items-center justify-between">
           <Pressable
@@ -194,13 +196,30 @@ export default function CreatePlanScreen() {
           <Pressable
             onPress={handleSubmit(onSubmit)}
             disabled={createPlan.isPending}
-            className="flex-row items-center justify-center rounded-xl"
-            style={{ backgroundColor: "#A078E8", height: 56, gap: 8 }}
           >
-            <Check size={20} color="#FFFFFF" />
-            <Text className="font-poppins-semibold text-base text-white">
-              Salvar plano
-            </Text>
+            <View className="overflow-hidden rounded-xl">
+              <LinearGradient
+                colors={
+                  createPlan.isPending
+                    ? ["#3A3A3A", "#3A3A3A"]
+                    : ["#A078E8", "#7C5CBF"]
+                }
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                className="h-14 flex-row items-center justify-center gap-2"
+              >
+                {createPlan.isPending ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Check size={20} color="#FFFFFF" />
+                    <Text className="font-poppins-semibold text-base text-white">
+                      Salvar plano
+                    </Text>
+                  </>
+                )}
+              </LinearGradient>
+            </View>
           </Pressable>
         </View>
       </View>

@@ -1,5 +1,5 @@
-import { BackButton } from "@/components/BackButton";
 import { Avatar } from "@/components/Avatar";
+import { BackButton } from "@/components/BackButton";
 import { useAcademyContext } from "@/lib/academy-context";
 import { useAcademy } from "@/lib/hooks/use-academy";
 import { Calendar, Mail, MapPin, Phone, ShieldCheck } from "lucide-react-native";
@@ -84,7 +84,7 @@ export function AcademyInfo({ onLeave, isLeaving, memberSince }: AcademyInfoProp
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top", "bottom"]}>
       <View className="flex-1 px-6 pt-2" style={{ gap: 8 }}>
         {/* Nav Row */}
         <View className="flex-row items-center justify-between">

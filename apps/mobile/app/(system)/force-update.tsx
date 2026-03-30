@@ -35,7 +35,7 @@ export default function ForceUpdateScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView className="flex-1 bg-background pt-4">
       <View className="flex-1 bg-background">
         <View className="h-[62px] px-6" />
 

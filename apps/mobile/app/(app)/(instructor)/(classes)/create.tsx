@@ -1,10 +1,10 @@
-import { Alert } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
 import { ClassForm, type ClassFormData } from "@/components/ClassForm";
 import { ApiError } from "@/lib/api";
 import { useCreateClass } from "@/lib/hooks/use-classes";
 import { useCurrentUser } from "@/lib/hooks/use-user";
+import { useRouter } from "expo-router";
+import { Alert } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function InstructorCreateClass() {
   const router = useRouter();
@@ -37,7 +37,7 @@ export default function InstructorCreateClass() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top"]}>
       <ClassForm
         mode="create"
         canSelectInstructor={false}

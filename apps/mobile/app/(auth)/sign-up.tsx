@@ -1,13 +1,13 @@
-import { useState } from "react";
-import { View, Text, Pressable, Alert, ActivityIndicator } from "react-native";
-import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useSignUp } from "@clerk/clerk-expo";
 import { BackButton } from "@/components/BackButton";
-import { FormInput } from "@/components/FormInput";
 import { Divider } from "@/components/Divider";
+import { FormInput } from "@/components/FormInput";
 import { SocialButtons } from "@/components/SocialButtons";
 import { useStartSSO } from "@/lib/hooks/use-start-sso";
+import { useSignUp } from "@clerk/clerk-expo";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type ClerkError = {
   errors?: Array<{
@@ -59,7 +59,7 @@ export default function SignUpScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top", "bottom"]}>
       <View className="flex-1 gap-7 px-6 pt-2">
         <BackButton />
 

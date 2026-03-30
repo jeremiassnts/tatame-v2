@@ -48,7 +48,7 @@ export default function ManagerCreateClass() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top"]}>
       <ClassForm
         mode="create"
         canSelectInstructor

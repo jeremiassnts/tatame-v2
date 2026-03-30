@@ -41,7 +41,7 @@ export default function PendingApprovalScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top"]}>
       <View className="flex-1" style={{ paddingHorizontal: 24, paddingTop: 8, gap: 24 }}>
         <View className="flex-1" />
 

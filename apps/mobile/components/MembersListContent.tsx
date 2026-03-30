@@ -84,7 +84,7 @@ export function MembersListContent({
   const canOpenMember = allowMemberDetails && typeof getMemberDetailHref === "function";
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top"]}>
       <View className="flex-1 px-6" style={{ paddingTop: 8, gap: 16 }}>
         <View className="flex-row items-center justify-between">
           {showBackButton ? (

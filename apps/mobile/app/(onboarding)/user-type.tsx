@@ -1,11 +1,11 @@
-import { useState } from "react";
-import { View, Text, Pressable } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { GradientButton } from "@/components/GradientButton";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Building2, GraduationCap, User } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { GradientButton } from "@/components/GradientButton";
+import { Building2, GraduationCap, User } from "lucide-react-native";
+import { useState } from "react";
+import { Pressable, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const ROLES = [
   {
@@ -40,7 +40,7 @@ export default function UserTypeScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top", "bottom"]}>
       <View className="flex-1 gap-8 p-6 pt-4">
         {/* Header */}
         <View className="gap-2">
@@ -64,11 +64,10 @@ export default function UserTypeScreen() {
               <Pressable
                 key={key}
                 onPress={() => setSelected(key)}
-                className={`flex-row items-center gap-4 rounded-2xl p-5 ${
-                  isSelected
+                className={`flex-row items-center gap-4 rounded-2xl p-5 ${isSelected
                     ? "border-[1.5px] border-accent bg-accent-translucent"
                     : "border border-surface-border bg-surface"
-                }`}
+                  }`}
               >
                 {isSelected ? (
                   <View className="h-12 w-12 overflow-hidden rounded-xl">

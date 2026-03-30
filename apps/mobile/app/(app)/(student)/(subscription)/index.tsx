@@ -79,7 +79,7 @@ export default function MySubscriptionScreen() {
     : `${weeklyCount?.count ?? 0}`;
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top"]}>
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}

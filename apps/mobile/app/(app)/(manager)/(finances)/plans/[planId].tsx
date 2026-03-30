@@ -1,9 +1,9 @@
 import { Avatar } from "@/components/Avatar";
+import { useAcademySubscriptions } from "@/lib/hooks/use-academy-subscriptions";
 import {
   useSubscriptionPlan,
   useUpdatePlan,
 } from "@/lib/hooks/use-subscription-plans";
-import { useAcademySubscriptions } from "@/lib/hooks/use-academy-subscriptions";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   ArrowLeft,
@@ -98,7 +98,7 @@ export default function PlanDetailScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top"]}>
       <View
         className="flex-1"
         style={{ paddingHorizontal: 24, paddingTop: 8, gap: 24 }}
@@ -286,21 +286,36 @@ export default function PlanDetailScreen() {
           <Pressable
             onPress={handleToggleActive}
             disabled={updatePlan.isPending}
-            className="flex-row items-center justify-center rounded-xl"
-            style={{
-              height: 52,
-              gap: 8,
-              backgroundColor: plan.isActive ? "#FF453A15" : "#32D74B15",
-              borderWidth: 1,
-              borderColor: plan.isActive ? "#FF453A40" : "#32D74B40",
-            }}
           >
-            <Text
-              className="font-poppins-semibold text-[15px]"
-              style={{ color: plan.isActive ? "#FF453A" : "#32D74B" }}
+            <View
+              className="flex-row items-center justify-center rounded-xl"
+              style={{
+                height: 52,
+                gap: 8,
+                ...(updatePlan.isPending
+                  ? {
+                    backgroundColor: "#3A3A3A",
+                    borderWidth: 1,
+                    borderColor: "#4A4A4A",
+                  }
+                  : {
+                    backgroundColor: plan.isActive ? "#FF453A15" : "#32D74B15",
+                    borderWidth: 1,
+                    borderColor: plan.isActive ? "#FF453A40" : "#32D74B40",
+                  }),
+              }}
             >
-              {plan.isActive ? "Desativar plano" : "Ativar plano"}
-            </Text>
+              {updatePlan.isPending ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text
+                  className="font-poppins-semibold text-[15px]"
+                  style={{ color: plan.isActive ? "#FF453A" : "#32D74B" }}
+                >
+                  {plan.isActive ? "Desativar plano" : "Ativar plano"}
+                </Text>
+              )}
+            </View>
           </Pressable>
         </View>
       </View>

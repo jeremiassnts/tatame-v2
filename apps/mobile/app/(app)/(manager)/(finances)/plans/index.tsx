@@ -24,6 +24,8 @@ const RECURRENCE_BADGE: Record<number, string> = {
   12: "12 meses",
 };
 
+const TEXT_MUTED = "#525252";
+
 function formatPrice(cents: number, recurrenceMonths: number): string {
   const reais = (cents / 100).toFixed(2).replace(".", ",");
   const suffix = RECURRENCE_LABELS[recurrenceMonths] ?? `${recurrenceMonths}m`;
@@ -66,12 +68,16 @@ export default function PlansListScreen() {
           </Pressable>
         </View>
 
-        <Text
+        {activePlans.length > 0 && <Text
           className="font-poppins-medium text-[13px]"
           style={{ color: "#ABABAB", marginTop: 20 }}
         >
           {activePlans.length} planos ativos
-        </Text>
+        </Text>}
+
+        {activePlans.length === 0 && <Text className="font-poppins text-sm text-center pt-10" style={{ color: TEXT_MUTED }}>
+          Nenhum plano ativo
+        </Text>}
 
         <ScrollView
           className="flex-1"

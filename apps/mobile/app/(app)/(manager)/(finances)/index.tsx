@@ -56,7 +56,7 @@ export default function FinancialDashboard() {
 
   if (isPending) {
     return (
-      <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+      <SafeAreaView className="flex-1 bg-background pt-4" edges={["top"]}>
         <View
           className="flex-row items-center px-6"
           style={{ paddingTop: 8, paddingBottom: 8, minHeight: 62 }}
@@ -77,7 +77,7 @@ export default function FinancialDashboard() {
     pctLabel.startsWith("+") || pctLabel === "0%" ? "#32D74B" : "#FF453A";
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top"]}>
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}

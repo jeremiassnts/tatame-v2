@@ -1,11 +1,11 @@
-import { useState, useRef, useEffect } from "react";
-import { View, Text, TextInput, Pressable, Alert, ActivityIndicator } from "react-native";
-import { useLocalSearchParams } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useSignUp } from "@clerk/clerk-expo";
-import { Timer } from "lucide-react-native";
 import { BackButton } from "@/components/BackButton";
 import { useAuthComplete } from "@/lib/hooks/use-auth-complete";
+import { useSignUp } from "@clerk/clerk-expo";
+import { useLocalSearchParams } from "expo-router";
+import { Timer } from "lucide-react-native";
+import { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Alert, Pressable, Text, TextInput, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const CODE_LENGTH = 6;
 const EXPIRY_SECONDS = 5 * 60;
@@ -100,7 +100,7 @@ export default function VerifyEmailScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top", "bottom"]}>
       <View className="flex-1 gap-7 px-6 pt-2">
         <BackButton />
 
@@ -137,9 +137,8 @@ export default function VerifyEmailScreen() {
                   onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, i)}
                   keyboardType="number-pad"
                   maxLength={1}
-                  className={`h-14 w-12 rounded-xl border bg-surface text-center font-poppins-semibold text-2xl text-primary ${
-                    isActive ? "border-2 border-accent" : "border-surface-border"
-                  }`}
+                  className={`h-14 w-12 rounded-xl border bg-surface text-center font-poppins-semibold text-2xl text-primary ${isActive ? "border-2 border-accent" : "border-surface-border"
+                    }`}
                 />
               );
             })}

@@ -77,7 +77,7 @@ export default function RegisterBelt() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top"]}>
       <View className="flex-row items-center justify-between px-6 pb-2 pt-2">
         <BackButton onPress={handleBack} />
         <Text className="font-poppins-bold text-lg text-primary">Registrar faixa</Text>

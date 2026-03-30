@@ -1,4 +1,10 @@
+import { zodResolver } from "@hookform/resolvers/zod";
+import { BELT_ORDER, MAX_STRIPES_BY_BELT } from "@tatame/config";
+import type { Belt } from "@tatame/types";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { ArrowUpRight, ChevronLeft } from "lucide-react-native";
 import { useCallback, useEffect, useMemo } from "react";
+import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -10,13 +16,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowUpRight, ChevronLeft } from "lucide-react-native";
-import { BELT_ORDER, MAX_STRIPES_BY_BELT } from "@tatame/config";
-import type { Belt } from "@tatame/types";
 
 import { Avatar } from "@/components/Avatar";
 import { ModalSelect } from "@/components/ModalSelect";
@@ -164,7 +164,7 @@ export default function PromoteGraduationScreen() {
     : "Nenhuma graduação registrada";
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top", "bottom"]}>
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : undefined}

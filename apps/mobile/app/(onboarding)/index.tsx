@@ -1,13 +1,13 @@
-import { View, Text, Image } from "react-native";
-import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { GradientButton } from "@/components/GradientButton";
+import { useRouter } from "expo-router";
+import { Image, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function WelcomeScreen() {
   const router = useRouter();
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom"]}>
+    <SafeAreaView className="flex-1 bg-background pt-4" edges={["bottom"]}>
       {/* Content — centered */}
       <View className="flex-1 items-center justify-center px-10">
         <View className="h-[120px] w-[120px] items-center justify-center rounded-3xl bg-[#242424]">

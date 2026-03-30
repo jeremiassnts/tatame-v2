@@ -29,7 +29,7 @@ export default function PendingRequestsScreen() {
   const isMutating = approveMutation.isPending || rejectMutation.isPending;
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top"]}>
       <View className="flex-1" style={{ paddingHorizontal: 24, paddingTop: 8, gap: 16 }}>
         <View className="flex-row items-center justify-between">
           <Pressable
@@ -44,9 +44,9 @@ export default function PendingRequestsScreen() {
           <View className="h-10 w-10" />
         </View>
 
-        <Text className="font-poppins text-sm" style={{ color: TEXT_SECONDARY }}>
+        {count > 0 && <Text className="font-poppins text-sm" style={{ color: TEXT_SECONDARY }}>
           {count} solicitaç{count === 1 ? "ão" : "ões"} pendente{count === 1 ? "" : "s"}
-        </Text>
+        </Text>}
 
         {isPending ? (
           <View className="flex-1 items-center justify-center">

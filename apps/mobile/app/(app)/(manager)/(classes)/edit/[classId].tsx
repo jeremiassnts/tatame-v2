@@ -1,10 +1,10 @@
-import { ActivityIndicator, Text } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams, useRouter } from "expo-router";
 import { ClassForm, type ClassFormData } from "@/components/ClassForm";
 import { useAcademyContext } from "@/lib/academy-context";
 import { useClass, useUpdateClass } from "@/lib/hooks/use-classes";
 import { useMembers } from "@/lib/hooks/use-membership";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { ActivityIndicator, Text } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 function formatTime(t: string) {
   const parts = t.split(":");
@@ -82,7 +82,7 @@ export default function ManagerEditClass() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top"]}>
       <ClassForm
         mode="edit"
         canSelectInstructor

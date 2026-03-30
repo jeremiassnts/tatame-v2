@@ -16,7 +16,7 @@ export default function AuthWelcomeScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom"]}>
+    <SafeAreaView className="flex-1 bg-background pt-4" edges={["bottom"]}>
       <View className="flex-1 items-center justify-center px-10">
         <View className="h-[88px] w-[88px] items-center justify-center overflow-hidden rounded-[22px] bg-[#242424]">
           <Image
