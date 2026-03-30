@@ -363,7 +363,7 @@ git commit -m "feat: add Stripe client, express augment, and subscription factor
 - Create: `apps/api/src/modules/manager-subscription/manager-subscription.repository.postgres.ts`
 - Create: `apps/api/src/modules/manager-subscription/manager-subscription.repository.in-memory.ts`
 
-- [ ] **Step 1: Create repository interface**
+- [x] **Step 1: Create repository interface**
 
 Create `apps/api/src/modules/manager-subscription/manager-subscription.repository.ts`:
 
@@ -411,7 +411,7 @@ export interface IManagerSubscriptionRepository {
 }
 ```
 
-- [ ] **Step 2: Create Postgres implementation**
+- [x] **Step 2: Create Postgres implementation**
 
 Create `apps/api/src/modules/manager-subscription/manager-subscription.repository.postgres.ts`:
 
@@ -506,7 +506,7 @@ export class PostgresManagerSubscriptionRepository
 }
 ```
 
-- [ ] **Step 3: Create in-memory implementation**
+- [x] **Step 3: Create in-memory implementation**
 
 Create `apps/api/src/modules/manager-subscription/manager-subscription.repository.in-memory.ts`:
 
