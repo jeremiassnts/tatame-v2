@@ -1,6 +1,6 @@
 import { Avatar } from "@/components/Avatar";
-import { ClassCard } from "@/components/ClassCard";
 import { GraduationCard } from "@/components/GraduationCard";
+import { TodayClassCard } from "@/components/TodayClassCard";
 import { useAcademyContext } from "@/lib/academy-context";
 import { useCheckin, useWeeklyCheckinCount } from "@/lib/hooks/use-checkin";
 import { useClasses } from "@/lib/hooks/use-classes";
@@ -10,7 +10,7 @@ import { useCurrentUser } from "@/lib/hooks/use-user";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { Bell, ChevronRight, CreditCard, TriangleAlert } from "lucide-react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -46,6 +46,11 @@ export default function StudentHome() {
   const checkin = useCheckin();
   const { data: weeklyCount } = useWeeklyCheckinCount();
   const [refreshing, setRefreshing] = useState(false);
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(id);
+  }, []);
 
   const hasSubscription =
     subscription != null && subscription.effectiveStatus === "active";
@@ -190,17 +195,20 @@ export default function StudentHome() {
               </View>
             ) : (
               classes.map((cls) => (
-                <ClassCard
+                <TodayClassCard
                   key={cls.id}
+                  classId={cls.id}
                   name={cls.name}
                   startTime={formatTime(cls.startTime)}
                   endTime={formatTime(cls.endTime)}
                   instructorName={cls.instructorName ?? undefined}
                   capacity={cls.capacity}
-                  showCheckinButton
+                  userId={me?.id}
+                  hasSubscription={hasSubscription}
+                  checkinPending={checkin.isPending}
+                  sessionDate={today}
+                  now={now}
                   onCheckin={() => handleCheckin(cls.id)}
-                  checkinDisabled={!hasSubscription || checkin.isPending}
-                  checkinLabel="Check-in"
                   onPress={() => router.push(`/(app)/(student)/(classes)/${cls.id}`)}
                 />
               ))
