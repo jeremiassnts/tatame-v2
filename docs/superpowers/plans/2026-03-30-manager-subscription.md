@@ -611,7 +611,7 @@ git commit -m "feat: add manager subscription repository (interface, postgres, i
 - Create: `apps/api/src/modules/manager-subscription/manager-subscription.service.ts`
 - Create: `apps/api/src/modules/manager-subscription/manager-subscription.service.test.ts`
 
-- [ ] **Step 1: Write failing tests for free plan selection**
+- [x] **Step 1: Write failing tests for free plan selection**
 
 Create `apps/api/src/modules/manager-subscription/manager-subscription.service.test.ts`:
 
@@ -959,13 +959,13 @@ describe("ManagerSubscriptionService", () => {
 });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `pnpm --filter api test -- --run src/modules/manager-subscription/manager-subscription.service.test.ts`
 
 Expected: FAIL — `ManagerSubscriptionService` not found
 
-- [ ] **Step 3: Implement the service**
+- [x] **Step 3: Implement the service**
 
 Create `apps/api/src/modules/manager-subscription/manager-subscription.service.ts`:
 
@@ -1198,7 +1198,7 @@ export class ManagerSubscriptionService {
 }
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `pnpm --filter api test -- --run src/modules/manager-subscription/manager-subscription.service.test.ts`
 
