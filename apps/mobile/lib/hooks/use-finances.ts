@@ -38,6 +38,7 @@ export function useFinancialSummary() {
 export function usePaymentHistory(opts?: {
   subscriptionId?: string;
   limit?: number;
+  enabled?: boolean;
 }) {
   const api = useApi();
 
@@ -48,6 +49,7 @@ export function usePaymentHistory(opts?: {
 
   return useQuery({
     queryKey: ["payments", opts],
+    enabled: opts?.enabled ?? true,
     queryFn: () =>
       api.get<PaymentsResponse>(`/payments${qs ? `?${qs}` : ""}`),
     select: (data) => data.items,

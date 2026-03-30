@@ -2,13 +2,20 @@ import { FormInput } from "@/components/FormInput";
 import { ModalSelect } from "@/components/ModalSelect";
 import { ApiError } from "@/lib/api";
 import { useAcademySubscriptions } from "@/lib/hooks/use-academy-subscriptions";
-import { useConfirmPayment } from "@/lib/hooks/use-finances";
+import { useConfirmPayment, usePaymentHistory } from "@/lib/hooks/use-finances";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, Check } from "lucide-react-native";
 import { useEffect, useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
 
@@ -78,10 +85,23 @@ export default function ConfirmPaymentScreen() {
 
   const selectedSubId = watch("subscriptionId");
   const amountText = watch("amountCents");
+  const selectedMonth = watch("referenceMonth");
+
+  const { data: existingPayments, isPending: paymentsPending } = usePaymentHistory({
+    subscriptionId: selectedSubId,
+    enabled: Boolean(selectedSubId?.trim()),
+  });
 
   const hasStudentSelected = Boolean(selectedSubId?.trim());
   const hasAmountFilled = Boolean(amountText?.trim());
   const canSubmit = hasStudentSelected && hasAmountFilled;
+
+  const monthAlreadyPaid = useMemo(() => {
+    if (!hasStudentSelected) return false;
+    if (!selectedMonth) return false;
+    if (!existingPayments) return false;
+    return existingPayments.some((p) => p.referenceMonth === selectedMonth);
+  }, [existingPayments, hasStudentSelected, selectedMonth]);
 
   useEffect(() => {
     if (selectedSubId && subscriptions) {
@@ -124,7 +144,8 @@ export default function ConfirmPaymentScreen() {
   };
 
   const isPreselected = !!params.subscriptionId;
-  const submitDisabled = !canSubmit || confirmPayment.isPending;
+  const submitDisabled =
+    !canSubmit || confirmPayment.isPending || paymentsPending || monthAlreadyPaid;
 
   return (
     <SafeAreaView className="flex-1 bg-background pt-4" edges={["top"]}>
@@ -219,6 +240,14 @@ export default function ConfirmPaymentScreen() {
         </ScrollView>
 
         <View style={{ paddingBottom: 24 }}>
+          {monthAlreadyPaid ? (
+            <Text
+              className="mb-3 font-poppins text-[13px]"
+              style={{ color: "#FFD60A" }}
+            >
+              Este mês já está pago para esta assinatura.
+            </Text>
+          ) : null}
           <Pressable
             onPress={handleSubmit(onSubmit)}
             disabled={submitDisabled}
@@ -229,7 +258,13 @@ export default function ConfirmPaymentScreen() {
               gap: 8,
             }}
           >
-            <Check size={20} color={submitDisabled ? "#8A8A8A" : "#FFFFFF"} />
+            {confirmPayment.isPending ? (
+              <ActivityIndicator
+                color={submitDisabled ? "#8A8A8A" : "#FFFFFF"}
+              />
+            ) : (
+              <Check size={20} color={submitDisabled ? "#8A8A8A" : "#FFFFFF"} />
+            )}
             <Text
               className="font-poppins-semibold text-base"
               style={{ color: submitDisabled ? "#8A8A8A" : "#FFFFFF" }}
