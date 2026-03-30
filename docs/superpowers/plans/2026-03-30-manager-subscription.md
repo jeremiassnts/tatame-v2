@@ -87,7 +87,7 @@ Issues are linked with **blocked by** in Linear following task dependencies.
 - Modify: `packages/config/src/env.ts`
 - Modify: `packages/db/src/schema/index.ts`
 
-- [ ] **Step 1: Add ManagerPlan and ManagerSubscriptionStatus to types**
+- [x] **Step 1: Add ManagerPlan and ManagerSubscriptionStatus to types**
 
 In `packages/types/src/index.ts`, add after the `SubscriptionStatus` block:
 
@@ -108,7 +108,7 @@ export type ManagerSubscriptionStatus =
   (typeof ManagerSubscriptionStatus)[keyof typeof ManagerSubscriptionStatus];
 ```
 
-- [ ] **Step 2: Add Stripe env vars to config**
+- [x] **Step 2: Add Stripe env vars to config**
 
 In `packages/config/src/env.ts`, add to the `envSchema` object:
 
@@ -119,7 +119,7 @@ STRIPE_WEBHOOK_SECRET: z.string().optional(),
 STRIPE_PRO_PRICE_ID: z.string().optional(),
 ```
 
-- [ ] **Step 3: Add DB schema for manager_subscriptions**
+- [x] **Step 3: Add DB schema for manager_subscriptions**
 
 In `packages/db/src/schema/index.ts`, add enums after existing enums:
 
@@ -160,15 +160,15 @@ export const managerSubscriptions = pgTable("manager_subscriptions", {
 });
 ```
 
-- [ ] **Step 4: Generate Drizzle migration**
+- [x] **Step 4: Generate Drizzle migration**
 
-Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm --filter @tatame/db db:generate`
+Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm --filter @tatame/db generate`
 
 Expected: New migration file created in `packages/db/drizzle/`
 
-- [ ] **Step 5: Run migration**
+- [x] **Step 5: Run migration**
 
-Run: `pnpm --filter @tatame/db db:migrate`
+Run: `pnpm --filter @tatame/db migrate`
 
 Expected: Migration applied successfully
 

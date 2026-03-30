@@ -46,6 +46,13 @@ export const beltEnum = pgEnum("belt", [
   "black",
 ]);
 
+export const managerPlanEnum = pgEnum("manager_plan", ["free", "pro"]);
+
+export const managerSubscriptionStatusEnum = pgEnum(
+  "manager_subscription_status",
+  ["active", "past_due", "canceled", "incomplete"],
+);
+
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   clerkUserId: text("clerk_user_id").notNull().unique(),
@@ -231,6 +238,30 @@ export const studentSubscriptions = pgTable("student_subscriptions", {
   status: subscriptionStatusEnum("status").notNull(),
   startsAt: date("starts_at").notNull(),
   expiresAt: date("expires_at").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+});
+
+export const managerSubscriptions = pgTable("manager_subscriptions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  academyId: uuid("academy_id")
+    .notNull()
+    .references(() => academies.id, { onDelete: "cascade" })
+    .unique(),
+  plan: managerPlanEnum("plan").notNull(),
+  status: managerSubscriptionStatusEnum("status").notNull(),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+  subscribedAt: timestamp("subscribed_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  canceledAt: timestamp("canceled_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),

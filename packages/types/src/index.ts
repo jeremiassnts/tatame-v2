@@ -38,6 +38,21 @@ export const SubscriptionStatus = {
 export type SubscriptionStatus =
   (typeof SubscriptionStatus)[keyof typeof SubscriptionStatus];
 
+export const ManagerPlan = {
+  Free: "free",
+  Pro: "pro",
+} as const;
+export type ManagerPlan = (typeof ManagerPlan)[keyof typeof ManagerPlan];
+
+export const ManagerSubscriptionStatus = {
+  Active: "active",
+  PastDue: "past_due",
+  Canceled: "canceled",
+  Incomplete: "incomplete",
+} as const;
+export type ManagerSubscriptionStatus =
+  (typeof ManagerSubscriptionStatus)[keyof typeof ManagerSubscriptionStatus];
+
 /** 0 = Sunday … 6 = Saturday (spec) */
 export const DayOfWeek = {
   Sunday: 0,
