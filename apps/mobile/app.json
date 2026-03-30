@@ -21,7 +21,12 @@
       "expo-router",
       "expo-font",
       "@react-native-community/datetimepicker",
-      "@stripe/stripe-react-native"
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.tatame.app"
+        }
+      ]
     ]
   }
 }
