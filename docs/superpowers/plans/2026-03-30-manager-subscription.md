@@ -2479,7 +2479,7 @@ git commit -m "feat: add subscription gate to manager layout — redirects to pl
 - Create: `apps/mobile/app/(app)/(manager)/(finances)/my-plan.tsx`
 - Modify: `apps/mobile/app/(app)/(manager)/(finances)/index.tsx`
 
-- [ ] **Step 1: Create the plan details screen**
+- [x] **Step 1: Create the plan details screen**
 
 Create `apps/mobile/app/(app)/(manager)/(finances)/my-plan.tsx`. This screen follows the design in Pencil node `vqoDI`:
 - Current plan card with badge and price
@@ -2660,7 +2660,7 @@ export default function MyPlanScreen() {
 }
 ```
 
-- [ ] **Step 2: Add "Plano atual" card to financial overview**
+- [x] **Step 2: Add "Plano atual" card to financial overview**
 
 In `apps/mobile/app/(app)/(manager)/(finances)/index.tsx`, add import:
 
