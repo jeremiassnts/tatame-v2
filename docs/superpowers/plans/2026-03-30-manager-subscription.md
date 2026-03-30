@@ -2063,11 +2063,11 @@ git commit -m "feat: add React Query hooks for manager subscription"
 **Files:**
 - Modify: `apps/mobile/package.json`
 
-- [ ] **Step 1: Install @stripe/stripe-react-native**
+- [x] **Step 1: Install @stripe/stripe-react-native**
 
 Run: `pnpm --filter mobile add @stripe/stripe-react-native`
 
-- [ ] **Step 2: Verify Expo compatibility**
+- [x] **Step 2: Verify Expo compatibility**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/mobile && npx expo install --check`
 
