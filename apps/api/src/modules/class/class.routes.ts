@@ -167,7 +167,7 @@ classRouter.delete(
 
 classRouter.get(
   "/:classId/checkins",
-  authorize(Role.Manager, Role.Instructor),
+  authorize(Role.Manager, Role.Instructor, Role.Student),
   attachActiveAcademyContext,
   requireActiveAcademy,
   async (req, res, next) => {

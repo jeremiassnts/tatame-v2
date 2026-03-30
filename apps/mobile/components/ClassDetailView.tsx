@@ -6,13 +6,21 @@ import { LinearGradient } from "expo-linear-gradient";
 import {
   Calendar,
   Check,
+  Info,
   Pencil,
   Timer,
   Trash2,
   User,
   Users,
 } from "lucide-react-native";
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 
 /** Icons + labels in info rows — design.pen M-MGR-08 (jon0a) info items. */
 const INFO_ICON = "#525252";
@@ -41,6 +49,7 @@ type ClassDetailViewProps = {
   canCheckin?: boolean;
   checkinDone?: boolean;
   checkinDisabled?: boolean;
+  checkinPending?: boolean;
   checkinDisabledReason?: string;
   showCheckins?: boolean;
   onEdit?: () => void;
@@ -83,6 +92,7 @@ export function ClassDetailView({
   canCheckin,
   checkinDone,
   checkinDisabled,
+  checkinPending,
   checkinDisabledReason,
   showCheckins,
   onEdit,
@@ -101,7 +111,7 @@ export function ClassDetailView({
   };
 
   const handleCheckinPress = () => {
-    if (checkinDone) return;
+    if (checkinDone || checkinPending) return;
     if (checkinDisabled) {
       if (checkinDisabledReason) {
         Alert.alert("Check-in indisponível", checkinDisabledReason);
@@ -234,36 +244,57 @@ export function ClassDetailView({
 
       <View className="px-6 pb-6" style={{ gap: 12 }}>
         {canCheckin ? (
-          <Pressable onPress={handleCheckinPress} disabled={checkinDone}>
-            <View className="overflow-hidden rounded-xl">
-              <LinearGradient
-                colors={
-                  checkinDone || checkinDisabled
-                    ? ["#3A3A3A", "#3A3A3A"]
-                    : ["#A078E8", "#7C5CBF"]
-                }
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                className="h-[52px] flex-row items-center justify-center gap-2"
+          <>
+            {checkinDisabled &&
+            !checkinDone &&
+            !checkinPending &&
+            checkinDisabledReason ? (
+              <View
+                className="flex-row items-start gap-3 rounded-xl px-4 py-3"
+                style={{ backgroundColor: "#A078E818" }}
               >
-                {checkinDone ? (
-                  <>
-                    <Check size={18} color="#4ADE80" />
-                    <Text
-                      className="font-poppins-semibold text-[15px]"
-                      style={{ color: "#4ADE80" }}
-                    >
-                      Check-in realizado
+                <Info size={18} color="#A078E8" style={{ marginTop: 1 }} />
+                <Text className="flex-1 font-poppins text-[13px] leading-[18px] text-primary">
+                  {checkinDisabledReason}
+                </Text>
+              </View>
+            ) : null}
+            <Pressable
+              onPress={handleCheckinPress}
+              disabled={checkinDone || checkinPending}
+            >
+              <View className="overflow-hidden rounded-xl">
+                <LinearGradient
+                  colors={
+                    checkinDone || checkinDisabled || checkinPending
+                      ? ["#3A3A3A", "#3A3A3A"]
+                      : ["#A078E8", "#7C5CBF"]
+                  }
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  className="h-[52px] flex-row items-center justify-center gap-2"
+                >
+                  {checkinDone ? (
+                    <>
+                      <Check size={18} color="#4ADE80" />
+                      <Text
+                        className="font-poppins-semibold text-[15px]"
+                        style={{ color: "#4ADE80" }}
+                      >
+                        Check-in realizado
+                      </Text>
+                    </>
+                  ) : checkinPending ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
+                    <Text className="font-poppins-semibold text-[15px] text-white">
+                      Fazer check-in
                     </Text>
-                  </>
-                ) : (
-                  <Text className="font-poppins-semibold text-[15px] text-white">
-                    Fazer check-in
-                  </Text>
-                )}
-              </LinearGradient>
-            </View>
-          </Pressable>
+                  )}
+                </LinearGradient>
+              </View>
+            </Pressable>
+          </>
         ) : null}
 
         {canDelete ? (

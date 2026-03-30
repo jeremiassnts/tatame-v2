@@ -79,6 +79,19 @@ export function sessionBoundsUtc(
   return { start, end };
 }
 
+/**
+ * Check-in is allowed from 12h before session start until session end.
+ *
+ * `sessionDate` (YYYY-MM-DD) and class `startTime` / `endTime` are interpreted as
+ * wall-clock on that **UTC civil day** (see `sessionBoundsUtc`), not the device's
+ * local timezone. `now` is an absolute instant (`Date.getTime()`).
+ *
+ * So e.g. Sunday 21:00 in Brazil is often `Monday 00:00Z` in ISO — that does not
+ * mean the "wrong day"; compare it to `start`/`end` for the **`sessionDate` sent
+ * in the request**. If that date is the **next** UTC calendar day (e.g. Monday's
+ * class while you still say "today is Sunday" locally), the window for Monday
+ * 10:00Z opens Sunday 22:00Z, and `now = Monday 00:00Z` is still inside it.
+ */
 export function isWithinCheckinWindow(
   now: Date,
   sessionDate: string,
@@ -166,7 +179,6 @@ export class CheckinService {
       opts.academyId,
     );
     const weekReference = mondayOfWeekContaining(opts.sessionDate);
-
     const redis = opts.redis ?? (await requireRedisForCheckin());
     return withCheckinLock(redis, opts.classId, opts.sessionDate, async () => {
       const classCount = await this.checkinRepo.countByClassAndDate(

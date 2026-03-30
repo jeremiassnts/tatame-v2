@@ -101,4 +101,18 @@ describe("isWithinCheckinWindow", () => {
     const now = new Date(Date.UTC(2026, 2, 17, 18, 0, 0));
     expect(isWithinCheckinWindow(now, "2026-03-18", classRow)).toBe(true);
   });
+
+  it("rejects check-in after session ended when now is next UTC calendar day", () => {
+    const classRow = { startTime: "10:00:00", endTime: "11:30:00" };
+    // Session 2026-03-29 10:00–11:30 UTC; after end, same instant as "evening" in Americas
+    const now = new Date(Date.UTC(2026, 2, 30, 0, 0, 0));
+    expect(isWithinCheckinWindow(now, "2026-03-29", classRow)).toBe(false);
+  });
+
+  it("allows check-in the UTC evening before next-day session (12h rule)", () => {
+    const classRow = { startTime: "10:00:00", endTime: "11:30:00" };
+    // Monday 2026-03-30 10:00 UTC → window opens Sunday 2026-03-29 22:00 UTC
+    const now = new Date(Date.UTC(2026, 2, 30, 0, 0, 0));
+    expect(isWithinCheckinWindow(now, "2026-03-30", classRow)).toBe(true);
+  });
 });

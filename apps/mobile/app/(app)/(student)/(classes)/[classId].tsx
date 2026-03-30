@@ -3,11 +3,13 @@ import { useCheckin, useClassCheckins } from "@/lib/hooks/use-checkin";
 import { useClass } from "@/lib/hooks/use-classes";
 import { useMySubscription } from "@/lib/hooks/use-subscription";
 import { useCurrentUser } from "@/lib/hooks/use-user";
+import { isWithinCheckinWindow } from "@/lib/checkin-window";
 import {
   parseSessionDateParam,
   resolveClassSessionDate,
 } from "@/lib/class-session-date";
-import { useLocalSearchParams } from "expo-router";
+import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -62,6 +64,22 @@ export default function StudentClassDetail() {
   });
   const checkinMutation = useCheckin();
 
+  const [now, setNow] = useState(() => new Date());
+  useFocusEffect(
+    useCallback(() => {
+      setNow(new Date());
+    }, []),
+  );
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  const withinCheckinWindow =
+    cls != null && Boolean(sessionDate)
+      ? isWithinCheckinWindow(now, sessionDate, cls.startTime, cls.endTime)
+      : false;
+
   const checkinCount = checkins?.length ?? 0;
   const checkinDone =
     me?.id != null && checkins?.some((c) => c.userId === me.id) === true;
@@ -97,6 +115,12 @@ export default function StudentClassDetail() {
       Alert.alert("Plano necessário", "Assine um plano para fazer check-in nas aulas.");
       return;
     }
+    if (
+      !cls ||
+      !isWithinCheckinWindow(new Date(), sessionDate, cls.startTime, cls.endTime)
+    ) {
+      return;
+    }
     checkinMutation.mutate({ classId, date: sessionDate });
   };
 
@@ -116,9 +140,14 @@ export default function StudentClassDetail() {
         }}
         canCheckin
         checkinDone={checkinDone}
-        checkinDisabled={!hasSubscription || checkinMutation.isPending}
+        checkinDisabled={!hasSubscription || !withinCheckinWindow}
+        checkinPending={checkinMutation.isPending}
         checkinDisabledReason={
-          !hasSubscription ? "Assine um plano para fazer check-in nas aulas." : undefined
+          !hasSubscription
+            ? "Assine um plano para fazer check-in nas aulas."
+            : !withinCheckinWindow
+              ? "O check-in abre 12 horas antes do início da aula e encerra ao fim da aula."
+              : undefined
         }
         showCheckins={false}
         onCheckin={handleCheckin}
