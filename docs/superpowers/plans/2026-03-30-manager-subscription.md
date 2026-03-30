@@ -1871,7 +1871,7 @@ git commit -m "feat: add manager subscription API routes, webhook handler, and p
 - Modify: `apps/api/src/modules/subscription/subscription.routes.ts`
 - Modify: `apps/api/src/modules/class/class.routes.ts`
 
-- [ ] **Step 1: Add plan check to membership approve route**
+- [x] **Step 1: Add plan check to membership approve route**
 
 In `apps/api/src/modules/membership/membership.routes.ts`, add import at the top:
 
@@ -1909,7 +1909,7 @@ if (pending && req.appAuth?.role === "manager") {
 }
 ```
 
-- [ ] **Step 2: Add plan check to subscription plan creation**
+- [x] **Step 2: Add plan check to subscription plan creation**
 
 In `apps/api/src/modules/subscription/subscription.routes.ts`, add similar imports and service instantiation, then add in the `POST /plans` handler BEFORE `subscriptionService.createPlan()`:
 
@@ -1919,7 +1919,7 @@ if (req.appAuth?.role === "manager") {
 }
 ```
 
-- [ ] **Step 3: Add plan check to class creation**
+- [x] **Step 3: Add plan check to class creation**
 
 In `apps/api/src/modules/class/class.routes.ts`, add similar imports and service instantiation, then add in the `POST /` handler BEFORE `classService.create()`:
 
@@ -1930,7 +1930,7 @@ if (req.appAuth?.role === "manager") {
 }
 ```
 
-- [ ] **Step 4: Verify build**
+- [x] **Step 4: Verify build**
 
 Run: `pnpm --filter api build`
 

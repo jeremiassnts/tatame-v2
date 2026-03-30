@@ -23,6 +23,10 @@ import {
 import { authorize } from "../../middleware/authorize.js";
 import { validateBody } from "../../middleware/validate.js";
 import { PostgresAcademyRepository } from "../academy/academy.repository.postgres.js";
+import { PostgresClassRepository } from "../class/class.repository.postgres.js";
+import { PostgresManagerSubscriptionRepository } from "../manager-subscription/manager-subscription.repository.postgres.js";
+import { ManagerSubscriptionService } from "../manager-subscription/manager-subscription.service.js";
+import { PostgresMembershipRepository } from "../membership/membership.repository.postgres.js";
 import {
   PostgresStudentSubscriptionRepository,
   PostgresSubscriptionPlanRepository,
@@ -36,6 +40,13 @@ const subscriptionService = new SubscriptionService(
   new PostgresSubscriptionPlanRepository(db),
   new PostgresStudentSubscriptionRepository(db),
   new PostgresAcademyRepository(db),
+);
+const managerSubService = new ManagerSubscriptionService(
+  new PostgresManagerSubscriptionRepository(db),
+  new PostgresAcademyRepository(db),
+  new PostgresMembershipRepository(db),
+  new PostgresClassRepository(db),
+  new PostgresSubscriptionPlanRepository(db),
 );
 
 subscriptionRouter.get(
@@ -72,6 +83,11 @@ subscriptionRouter.post(
       const body = req.validatedBody as CreateSubscriptionPlanBody;
       const userId = req.appAuth!.userId;
       const academyId = req.appAuth!.activeAcademyId!;
+
+      if (req.appAuth?.role === "manager") {
+        await managerSubService.canCreatePlan(academyId);
+      }
+
       const created = await subscriptionService.createPlan(userId, academyId, body);
       res.status(201).json(created);
     } catch (e) {
