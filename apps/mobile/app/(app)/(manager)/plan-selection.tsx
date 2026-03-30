@@ -1,30 +1,21 @@
+import { PlanCard } from "@/components/PlanCard";
+import { MANAGER_PLANS } from "@/constants/manager-plans";
 import {
   useSelectFreePlan,
+  useCompleteProSubscription,
   useStartProSubscription,
 } from "@/lib/hooks/use-manager-subscription";
-import { useQueryClient } from "@tanstack/react-query";
 import { useStripe } from "@stripe/stripe-react-native";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { Check } from "lucide-react-native";
 import { useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
-  Pressable,
   ScrollView,
   Text,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-function FeatureItem({ text }: { text: string }) {
-  return (
-    <View className="flex-row items-center" style={{ gap: 8 }}>
-      <Check size={16} color="#32D74B" />
-      <Text className="font-poppins text-sm text-primary">{text}</Text>
-    </View>
-  );
-}
 
 export default function PlanSelectionScreen() {
   const router = useRouter();
@@ -32,6 +23,7 @@ export default function PlanSelectionScreen() {
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const selectFree = useSelectFreePlan();
   const startPro = useStartProSubscription();
+  const completePro = useCompleteProSubscription();
   const [loading, setLoading] = useState(false);
 
   async function handleSelectFree() {
@@ -46,10 +38,11 @@ export default function PlanSelectionScreen() {
   async function handleSelectPro() {
     setLoading(true);
     try {
-      const { clientSecret } = await startPro.mutateAsync();
+      const start = await startPro.mutateAsync();
+      const setupClientSecret = start.clientSecret;
 
       const { error: initError } = await initPaymentSheet({
-        paymentIntentClientSecret: clientSecret,
+        setupIntentClientSecret: setupClientSecret,
         merchantDisplayName: "Tatame",
       });
       if (initError) {
@@ -65,11 +58,35 @@ export default function PlanSelectionScreen() {
         return;
       }
 
+      // SetupIntent succeeded. Now create the subscription and (if needed) complete payment.
+      const setupIntentId = setupClientSecret.split("_secret_")[0];
+      const complete = await completePro.mutateAsync({ setupIntentId });
+
+      if (complete.intentType === "payment") {
+        const { error: initPayError } = await initPaymentSheet({
+          paymentIntentClientSecret: complete.clientSecret,
+          merchantDisplayName: "Tatame",
+        });
+        if (initPayError) {
+          Alert.alert("Erro", initPayError.message);
+          return;
+        }
+
+        const { error: presentPayError } = await presentPaymentSheet();
+        if (presentPayError) {
+          if (presentPayError.code !== "Canceled") {
+            Alert.alert("Erro", presentPayError.message);
+          }
+          return;
+        }
+      }
+
       await queryClient.invalidateQueries({ queryKey: ["manager-subscription"] });
       await queryClient.invalidateQueries({ queryKey: ["manager-limits"] });
       await queryClient.invalidateQueries({ queryKey: ["user/me"] });
       router.replace("/(app)/(manager)/(home)");
-    } catch {
+    } catch (error) {
+      console.error(error);
       Alert.alert("Erro", "Não foi possível iniciar a assinatura Pro.");
     } finally {
       setLoading(false);
@@ -79,7 +96,7 @@ export default function PlanSelectionScreen() {
   const isLoading = selectFree.isPending || loading;
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
       <ScrollView
         className="flex-1"
         contentContainerStyle={{
@@ -99,98 +116,22 @@ export default function PlanSelectionScreen() {
           </Text>
         </View>
 
-        <View
-          className="rounded-2xl border border-surface-border bg-surface"
-          style={{ padding: 20, gap: 16 }}
-        >
-          <View style={{ gap: 4 }}>
-            <Text className="font-poppins-bold text-lg text-primary">
-              Gratuito
-            </Text>
-            <Text className="font-poppins text-xs" style={{ color: "#ABABAB" }}>
-              Para academias começando no digital
-            </Text>
-          </View>
-          <View className="flex-row items-baseline" style={{ gap: 4 }}>
-            <Text className="font-poppins-bold text-3xl text-primary">
-              R$ 0
-            </Text>
-            <Text className="font-poppins text-sm" style={{ color: "#ABABAB" }}>
-              /mês
-            </Text>
-          </View>
-          <View style={{ gap: 10 }}>
-            <FeatureItem text="Até 50 alunos" />
-            <FeatureItem text="Agenda de aulas" />
-            <FeatureItem text="Check-in de alunos" />
-            <FeatureItem text="Controle de graduações" />
-          </View>
-          <Pressable
-            onPress={handleSelectFree}
+        {MANAGER_PLANS.map((plan) => (
+          <PlanCard
+            key={plan.id}
+            title={plan.title}
+            description={plan.description}
+            price={plan.price}
+            period={plan.period}
+            features={plan.features}
+            ctaLabel={plan.ctaLabel}
+            badgeLabel={plan.badgeLabel}
+            variant={plan.id === "pro" ? "accent" : "neutral"}
             disabled={isLoading}
-            className="items-center rounded-xl bg-white"
-            style={{ paddingVertical: 14 }}
-          >
-            {selectFree.isPending ? (
-              <ActivityIndicator color="#000" />
-            ) : (
-              <Text className="font-poppins-semibold text-sm text-black">
-                Começar grátis
-              </Text>
-            )}
-          </Pressable>
-        </View>
-
-        <View
-          className="rounded-2xl border-2 bg-surface"
-          style={{ padding: 20, gap: 16, borderColor: "#A078E8" }}
-        >
-          <View
-            className="self-start rounded-full"
-            style={{
-              paddingHorizontal: 12,
-              paddingVertical: 4,
-              backgroundColor: "#A078E8",
-            }}
-          >
-            <Text className="font-poppins-bold text-[10px] text-white">
-              MAIS POPULAR
-            </Text>
-          </View>
-          <View style={{ gap: 4 }}>
-            <Text className="font-poppins-bold text-lg text-primary">Pro</Text>
-            <Text className="font-poppins text-xs" style={{ color: "#ABABAB" }}>
-              Para academias que querem crescer
-            </Text>
-          </View>
-          <View className="flex-row items-baseline" style={{ gap: 4 }}>
-            <Text className="font-poppins-bold text-3xl text-primary">
-              R$ 49
-            </Text>
-            <Text className="font-poppins text-sm" style={{ color: "#ABABAB" }}>
-              /mês
-            </Text>
-          </View>
-          <View style={{ gap: 10 }}>
-            <FeatureItem text="Alunos ilimitados" />
-            <FeatureItem text="Tudo do plano Gratuito" />
-            <FeatureItem text="Dashboard web completo" />
-          </View>
-          <Pressable
-            onPress={handleSelectPro}
-            disabled={isLoading}
-            className="items-center rounded-xl"
-            style={{ paddingVertical: 14, backgroundColor: "#A078E8" }}
-          >
-            {loading ? (
-              <ActivityIndicator color="#FFF" />
-            ) : (
-              <Text className="font-poppins-semibold text-sm text-white">
-                Assinar Pro
-              </Text>
-            )}
-          </Pressable>
-        </View>
+            loading={plan.id === "free" ? selectFree.isPending : loading}
+            onPress={plan.id === "free" ? handleSelectFree : handleSelectPro}
+          />
+        ))}
       </ScrollView>
     </SafeAreaView>
   );

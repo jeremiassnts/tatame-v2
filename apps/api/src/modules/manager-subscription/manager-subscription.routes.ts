@@ -97,29 +97,169 @@ managerSubscriptionRouter.post(
         }
       }
 
+      res.json({
+        intentType: "setup",
+        clientSecret: (
+          await stripe.setupIntents.create({
+            customer: stripeCustomerId,
+            payment_method_types: ["card"],
+            usage: "off_session",
+            metadata: { academyId, userId },
+          })
+        ).client_secret,
+        customerId: stripeCustomerId,
+      });
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+managerSubscriptionRouter.post(
+  "/pro/complete",
+  authorize(Role.Manager),
+  attachActiveAcademyContext,
+  requireActiveAcademy,
+  async (req, res, next) => {
+    try {
+      const env = loadEnv();
+      if (!env.STRIPE_SECRET_KEY || !env.STRIPE_PRO_PRICE_ID) {
+        throw new HttpError(503, "Stripe is not configured");
+      }
+
+      const setupIntentId = (req.body as { setupIntentId?: unknown })
+        ?.setupIntentId;
+      if (typeof setupIntentId !== "string" || setupIntentId.length < 5) {
+        throw new HttpError(400, "Missing setupIntentId");
+      }
+
+      const stripe = getStripe();
+      const academyId = req.appAuth!.activeAcademyId!;
+      const userId = req.appAuth!.userId;
+
+      const sub = await service.getSubscription(academyId);
+      if (!sub?.stripeCustomerId) {
+        throw new HttpError(400, "No Stripe customer found");
+      }
+
+      const si = await stripe.setupIntents.retrieve(setupIntentId, {
+        expand: ["payment_method"],
+      });
+      if (typeof si.customer !== "string" || si.customer !== sub.stripeCustomerId) {
+        throw new HttpError(403, "SetupIntent does not belong to this customer");
+      }
+
+      const paymentMethodId =
+        typeof si.payment_method === "string"
+          ? si.payment_method
+          : si.payment_method?.id;
+      if (!paymentMethodId) {
+        throw new HttpError(400, "SetupIntent missing payment method");
+      }
+
       const stripeSub = await stripe.subscriptions.create({
-        customer: stripeCustomerId,
+        customer: sub.stripeCustomerId,
         items: [{ price: env.STRIPE_PRO_PRICE_ID }],
+        collection_method: "charge_automatically",
         payment_behavior: "default_incomplete",
+        default_payment_method: paymentMethodId,
         payment_settings: {
+          payment_method_types: ["card"],
           save_default_payment_method: "on_subscription",
         },
         expand: ["latest_invoice.payment_intent"],
+        metadata: { academyId, userId },
       });
 
-      const invoice = stripeSub.latest_invoice as Stripe.Invoice;
-      const paymentIntent = (invoice as any)
-        .payment_intent as Stripe.PaymentIntent | null | undefined;
+      const latestInvoiceId =
+        typeof stripeSub.latest_invoice === "string"
+          ? stripeSub.latest_invoice
+          : stripeSub.latest_invoice?.id;
+      if (!latestInvoiceId) {
+        throw new HttpError(500, "Stripe subscription missing latest invoice");
+      }
+
+      type InvoiceWithPaymentIntent = Stripe.Invoice & {
+        payment_intent?: string | Stripe.PaymentIntent | null;
+      };
+
+      const invoice = (await stripe.invoices.retrieve(latestInvoiceId, {
+        expand: ["payment_intent"],
+      })) as InvoiceWithPaymentIntent;
+
+      // Some Stripe accounts/scenarios may create the invoice without payment_intent.
+      // In that case, attempt to pay the invoice explicitly to force PI creation.
+      const maybeInvoiceWithPI = invoice.payment_intent
+        ? invoice
+        : ((await stripe.invoices.pay(latestInvoiceId, {
+            payment_method: paymentMethodId,
+            expand: ["payment_intent"],
+          })) as InvoiceWithPaymentIntent);
+
+      const paymentIntentIdOrObj = maybeInvoiceWithPI.payment_intent;
+      if (!paymentIntentIdOrObj && maybeInvoiceWithPI.status === "paid") {
+        const freshSub = (await stripe.subscriptions.retrieve(
+          stripeSub.id,
+        )) as Stripe.Subscription;
+        const statusMap: Record<
+          string,
+          "active" | "past_due" | "canceled" | "incomplete"
+        > = {
+          active: "active",
+          past_due: "past_due",
+          canceled: "canceled",
+          incomplete: "incomplete",
+          trialing: "active",
+          unpaid: "past_due",
+          paused: "past_due",
+          incomplete_expired: "canceled",
+        };
+
+        await subRepo.update(sub.id, {
+          stripeSubscriptionId: stripeSub.id,
+          plan: "pro",
+          status: statusMap[freshSub.status] ?? "active",
+          currentPeriodEnd: (freshSub as any).current_period_end
+            ? new Date(((freshSub as any).current_period_end as number) * 1000)
+            : null,
+        });
+
+        res.json({
+          intentType: "none",
+          subscriptionId: stripeSub.id,
+        });
+        return;
+      }
+
+      const paymentIntent =
+        typeof paymentIntentIdOrObj === "string"
+          ? await stripe.paymentIntents.retrieve(paymentIntentIdOrObj)
+          : paymentIntentIdOrObj;
+
       if (!paymentIntent?.client_secret) {
+        console.warn("[manager-subscriptions/pro/complete] missing payment intent", {
+          stripeSubscriptionId: stripeSub.id,
+          latestInvoiceId,
+          invoiceStatus: maybeInvoiceWithPI.status,
+          collectionMethod: maybeInvoiceWithPI.collection_method,
+          billingReason: maybeInvoiceWithPI.billing_reason,
+          amountDue: maybeInvoiceWithPI.amount_due,
+          currency: maybeInvoiceWithPI.currency,
+        });
         throw new HttpError(500, "Stripe payment intent missing client secret");
       }
 
-      await subRepo.update(sub!.id, {
+      await subRepo.update(sub.id, {
         stripeSubscriptionId: stripeSub.id,
+        plan: "pro",
         status: "incomplete",
+        currentPeriodEnd: (stripeSub as any).current_period_end
+          ? new Date(((stripeSub as any).current_period_end as number) * 1000)
+          : null,
       });
 
       res.json({
+        intentType: "payment",
         clientSecret: paymentIntent.client_secret,
         subscriptionId: stripeSub.id,
       });
@@ -221,31 +361,17 @@ managerSubscriptionRouter.post(
         await subRepo.update(sub.id, { stripeCustomerId });
       }
 
-      const stripeSub = await stripe.subscriptions.create({
-        customer: stripeCustomerId,
-        items: [{ price: env.STRIPE_PRO_PRICE_ID }],
-        payment_behavior: "default_incomplete",
-        payment_settings: {
-          save_default_payment_method: "on_subscription",
-        },
-        expand: ["latest_invoice.payment_intent"],
-      });
-
-      const invoice = stripeSub.latest_invoice as Stripe.Invoice;
-      const paymentIntent = (invoice as any)
-        .payment_intent as Stripe.PaymentIntent | null | undefined;
-      if (!paymentIntent?.client_secret) {
-        throw new HttpError(500, "Stripe payment intent missing client secret");
-      }
-
-      await subRepo.update(sub.id, {
-        stripeSubscriptionId: stripeSub.id,
-        status: "incomplete",
-      });
-
       res.json({
-        clientSecret: paymentIntent.client_secret,
-        subscriptionId: stripeSub.id,
+        intentType: "setup",
+        clientSecret: (
+          await stripe.setupIntents.create({
+            customer: stripeCustomerId,
+            payment_method_types: ["card"],
+            usage: "off_session",
+            metadata: { academyId, userId: req.appAuth!.userId },
+          })
+        ).client_secret,
+        customerId: stripeCustomerId,
       });
     } catch (e) {
       next(e);

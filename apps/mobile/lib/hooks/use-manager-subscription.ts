@@ -21,10 +21,22 @@ type ManagerLimits = {
   blocked: boolean;
 };
 
-type StripeCheckoutResponse = {
+type StartOrReactivateProResponse = {
+  intentType: "setup";
   clientSecret: string;
-  subscriptionId: string;
+  customerId: string;
 };
+
+type CompleteProResponse =
+  | {
+      intentType: "payment";
+      clientSecret: string;
+      subscriptionId: string;
+    }
+  | {
+      intentType: "none";
+      subscriptionId: string;
+    };
 
 type StripePortalResponse = {
   url: string;
@@ -68,7 +80,16 @@ export function useStartProSubscription() {
 
   return useMutation({
     mutationFn: () =>
-      api.post<StripeCheckoutResponse>("/manager-subscriptions/pro"),
+      api.post<StartOrReactivateProResponse>("/manager-subscriptions/pro"),
+  });
+}
+
+export function useCompleteProSubscription() {
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: (input: { setupIntentId: string }) =>
+      api.post<CompleteProResponse>("/manager-subscriptions/pro/complete", input),
   });
 }
 
@@ -77,7 +98,7 @@ export function useReactivateSubscription() {
 
   return useMutation({
     mutationFn: () =>
-      api.post<StripeCheckoutResponse>("/manager-subscriptions/reactivate"),
+      api.post<StartOrReactivateProResponse>("/manager-subscriptions/reactivate"),
   });
 }
 
