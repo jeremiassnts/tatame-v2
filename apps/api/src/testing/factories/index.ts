@@ -6,6 +6,7 @@ import {
   beltPromotions,
   checkins,
   classes,
+  managerSubscriptions,
   payments,
   studentSubscriptions,
   subscriptionPlans,
@@ -25,6 +26,9 @@ export type StudentSubscriptionRow = InferSelectModel<
 >;
 export type PaymentRow = InferSelectModel<typeof payments>;
 export type BeltPromotionRow = InferSelectModel<typeof beltPromotions>;
+export type ManagerSubscriptionRow = InferSelectModel<
+  typeof managerSubscriptions
+>;
 
 function rid(): string {
   return faker.string.uuid();
@@ -199,6 +203,26 @@ export function makeStudentSubscription(
     status: "active",
     startsAt: utcIsoDate(starts),
     expiresAt: utcIsoDate(expires),
+    createdAt: t,
+    updatedAt: t,
+    ...overrides,
+  };
+}
+
+export function makeManagerSubscription(
+  overrides: Partial<ManagerSubscriptionRow> = {},
+): ManagerSubscriptionRow {
+  const t = faker.date.recent({ days: 14 });
+  return {
+    id: rid(),
+    academyId: rid(),
+    plan: "free",
+    status: "active",
+    stripeCustomerId: null,
+    stripeSubscriptionId: null,
+    currentPeriodEnd: null,
+    subscribedAt: t,
+    canceledAt: null,
     createdAt: t,
     updatedAt: t,
     ...overrides,

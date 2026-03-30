@@ -270,7 +270,7 @@ git commit -m "feat: add Zod validators for manager subscription endpoints"
 - Modify: `apps/api/src/testing/factories/index.ts`
 - Modify: `apps/api/src/express-augment.ts`
 
-- [ ] **Step 1: Create Stripe client singleton**
+- [x] **Step 1: Create Stripe client singleton**
 
 Create `apps/api/src/lib/stripe.ts`:
 
@@ -294,7 +294,7 @@ export function getStripe(): Stripe {
 }
 ```
 
-- [ ] **Step 2: Add managerPlan and managerSubscriptionStatus to express augment**
+- [x] **Step 2: Add managerPlan and managerSubscriptionStatus to express augment**
 
 In `apps/api/src/express-augment.ts`, add to the `appAuth` interface:
 
@@ -303,7 +303,7 @@ managerPlan?: "free" | "pro";
 managerSubscriptionStatus?: "active" | "past_due" | "canceled" | "incomplete";
 ```
 
-- [ ] **Step 3: Add makeManagerSubscription factory**
+- [x] **Step 3: Add makeManagerSubscription factory**
 
 In `apps/api/src/testing/factories/index.ts`, add the import:
 
@@ -343,7 +343,7 @@ export function makeManagerSubscription(
 }
 ```
 
-- [ ] **Step 4: Install Stripe SDK**
+- [x] **Step 4: Install Stripe SDK**
 
 Run: `pnpm --filter api add stripe`
 
