@@ -1218,7 +1218,7 @@ git commit -m "feat: add manager subscription service with plan enforcement (TDD
 **Files:**
 - Create: `apps/api/src/modules/manager-subscription/stripe-webhook.handler.ts`
 
-- [ ] **Step 1: Create webhook handler**
+- [x] **Step 1: Create webhook handler**
 
 Create `apps/api/src/modules/manager-subscription/stripe-webhook.handler.ts`:
 
