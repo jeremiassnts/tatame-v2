@@ -1950,7 +1950,7 @@ git commit -m "feat: wire plan enforcement checks into membership, subscription,
 **Files:**
 - Create: `apps/mobile/lib/hooks/use-manager-subscription.ts`
 
-- [ ] **Step 1: Create the hooks file**
+- [x] **Step 1: Create the hooks file**
 
 Create `apps/mobile/lib/hooks/use-manager-subscription.ts`:
 
