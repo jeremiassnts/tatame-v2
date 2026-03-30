@@ -3,6 +3,10 @@ import { useCheckin, useClassCheckins } from "@/lib/hooks/use-checkin";
 import { useClass } from "@/lib/hooks/use-classes";
 import { useMySubscription } from "@/lib/hooks/use-subscription";
 import { useCurrentUser } from "@/lib/hooks/use-user";
+import {
+  parseSessionDateParam,
+  resolveClassSessionDate,
+} from "@/lib/class-session-date";
 import { useLocalSearchParams } from "expo-router";
 import { ActivityIndicator, Alert, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -24,14 +28,6 @@ function formatTime(t: string) {
   return `${h.padStart(2, "0")}:${m}`;
 }
 
-function todayDateString(): string {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
 function paramToId(
   value: string | string[] | undefined,
 ): string | undefined {
@@ -42,16 +38,28 @@ function paramToId(
 }
 
 export default function StudentClassDetail() {
-  const { classId: rawClassId } = useLocalSearchParams<{ classId: string }>();
+  const { classId: rawClassId, sessionDate: rawSessionDate } =
+    useLocalSearchParams<{ classId: string; sessionDate?: string }>();
   const classId = paramToId(rawClassId);
-  const today = todayDateString();
+  const sessionDateFromParam = parseSessionDateParam(rawSessionDate);
   const { data: me } = useCurrentUser();
   const { data: cls, isLoading, isError } = useClass(classId ?? "");
   const { data: subResponse } = useMySubscription();
   const subscription = subResponse?.subscription;
   const hasSubscription =
     subscription != null && subscription.effectiveStatus === "active";
-  const { data: checkins } = useClassCheckins(classId ?? "", today);
+
+  const sessionDate =
+    cls != null
+      ? resolveClassSessionDate(sessionDateFromParam, cls.dayOfWeek)
+      : sessionDateFromParam ?? "";
+
+  const { data: checkins } = useClassCheckins(classId ?? "", sessionDate, {
+    enabled:
+      Boolean(classId) &&
+      Boolean(sessionDate) &&
+      (sessionDateFromParam != null || cls != null),
+  });
   const checkinMutation = useCheckin();
 
   const checkinCount = checkins?.length ?? 0;
@@ -89,7 +97,7 @@ export default function StudentClassDetail() {
       Alert.alert("Plano necessário", "Assine um plano para fazer check-in nas aulas.");
       return;
     }
-    checkinMutation.mutate({ classId, date: today });
+    checkinMutation.mutate({ classId, date: sessionDate });
   };
 
   return (

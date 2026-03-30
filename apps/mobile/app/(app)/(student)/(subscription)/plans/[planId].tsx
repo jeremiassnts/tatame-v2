@@ -29,34 +29,62 @@ export default function PlanDetailScreen() {
   const isCurrentPlan = plan?.id === currentPlanId;
   const hasActiveSubscription = currentPlanId != null;
 
+  function formatRecurrenceMonths(months: number): string {
+    if (months === 1) return "mês";
+    if (months === 3) return "trimestre";
+    if (months === 6) return "semestre";
+    return "ano";
+  }
+
   const handleSelectPlan = () => {
     if (!plan) return;
-    Alert.alert(
-      "Confirmar troca de plano",
-      `Deseja trocar para o plano ${plan.name}? Sua assinatura será atualizada imediatamente.`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Confirmar",
-          onPress: () =>
-            selectPlan.mutate(plan.id, {
-              onSuccess: () => {
-                Alert.alert(
-                  "Plano atualizado",
-                  "Sua assinatura foi atualizada com sucesso.",
-                );
-                router.dismiss(2);
-              },
-              onError: () => {
-                Alert.alert(
-                  "Erro",
-                  "Não foi possível trocar de plano. Tente novamente.",
-                );
-              },
-            }),
+
+    const runSelectPlan = () => {
+      selectPlan.mutate(plan.id, {
+        onSuccess: () => {
+          if (hasActiveSubscription) {
+            Alert.alert(
+              "Plano atualizado",
+              "Sua assinatura foi atualizada com sucesso.",
+            );
+          } else {
+            Alert.alert(
+              "Assinatura ativada",
+              "Sua assinatura foi ativada com sucesso.",
+            );
+          }
+          router.dismiss(2);
         },
-      ],
-    );
+        onError: () => {
+          Alert.alert(
+            "Erro",
+            hasActiveSubscription
+              ? "Não foi possível trocar de plano. Tente novamente."
+              : "Não foi possível concluir a assinatura. Tente novamente.",
+          );
+        },
+      });
+    };
+
+    if (hasActiveSubscription) {
+      Alert.alert(
+        "Confirmar troca de plano",
+        `Deseja trocar para o plano ${plan.name}? Sua assinatura será atualizada imediatamente.`,
+        [
+          { text: "Cancelar", style: "cancel" },
+          { text: "Confirmar", onPress: runSelectPlan },
+        ],
+      );
+    } else {
+      Alert.alert(
+        "Confirmar assinatura",
+        `Deseja assinar o plano ${plan.name}? Sua assinatura será ativada imediatamente.`,
+        [
+          { text: "Cancelar", style: "cancel" },
+          { text: "Confirmar", onPress: runSelectPlan },
+        ],
+      );
+    }
   };
 
   if (isLoading || !plan) {
@@ -73,7 +101,7 @@ export default function PlanDetailScreen() {
   const features = [
     {
       icon: RefreshCw,
-      text: "Renovação mensal automática",
+      text: "Renovação automática",
     },
     {
       icon: CheckCircle,
@@ -121,7 +149,7 @@ export default function PlanDetailScreen() {
                 </Text>
                 <Text className="font-poppins text-base" style={{ color: TEXT_SECONDARY }}>
                   {" "}
-                  / mês
+                  / {formatRecurrenceMonths(plan.recurrenceMonths)}
                 </Text>
               </View>
             </View>

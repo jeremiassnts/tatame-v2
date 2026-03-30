@@ -1,6 +1,7 @@
 import { BackButton } from "@/components/BackButton";
 import { ClassCard } from "@/components/ClassCard";
 import { WeekDayStrip } from "@/components/WeekDayStrip";
+import { localDateStringForAgendaWeekday } from "@/lib/class-session-date";
 import { useClasses } from "@/lib/hooks/use-classes";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -99,7 +100,11 @@ export default function StudentClassSchedule() {
                 endTime={formatTime(cls.endTime)}
                 instructorName={cls.instructorName ?? undefined}
                 capacity={cls.capacity}
-                onPress={() => router.push(`/(app)/(student)/(classes)/${cls.id}`)}
+                onPress={() =>
+                  router.push(
+                    `/(app)/(student)/(classes)/${cls.id}?sessionDate=${localDateStringForAgendaWeekday(selectedDay)}`,
+                  )
+                }
               />
             ))
           )}

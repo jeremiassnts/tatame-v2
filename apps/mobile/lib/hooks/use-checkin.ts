@@ -21,8 +21,16 @@ type CheckinListResponse = { items: CheckinItem[] };
 
 export type { CheckinItem };
 
-export function useClassCheckins(classId: string, date: string) {
+export function useClassCheckins(
+  classId: string,
+  date: string,
+  options?: { enabled?: boolean },
+) {
   const api = useApi();
+  const enabled =
+    options?.enabled !== undefined
+      ? options.enabled
+      : Boolean(classId) && Boolean(date);
 
   return useQuery({
     queryKey: ["checkins", classId, date],
@@ -31,7 +39,7 @@ export function useClassCheckins(classId: string, date: string) {
         `/classes/${classId}/checkins?date=${encodeURIComponent(date)}`,
       ),
     select: (data) => data.items,
-    enabled: Boolean(classId) && Boolean(date),
+    enabled: enabled && Boolean(classId) && Boolean(date),
   });
 }
 

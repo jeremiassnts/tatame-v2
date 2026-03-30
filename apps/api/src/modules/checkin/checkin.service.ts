@@ -1,6 +1,9 @@
 import type { Role } from "@tatame/types";
+import type { RedisClientType } from "redis";
+import { HttpError } from "../../lib/http-error.js";
+import { withCheckinLock } from "../../lib/lock.js";
+import { requireRedisForCheckin } from "../../lib/redis.js";
 import type { ClassRow, IClassRepository } from "../class/class.repository.js";
-import type { CheckinRow, ICheckinRepository } from "./checkin.repository.js";
 import type { IMembershipRepository } from "../membership/membership.repository.js";
 import type { IPaymentRepository } from "../payment/payment.repository.js";
 import type { IStudentSubscriptionRepository } from "../subscription/subscription.repository.js";
@@ -8,10 +11,7 @@ import {
   isExpiredByDate,
   utcTodayDateString,
 } from "../subscription/subscription.service.js";
-import { HttpError } from "../../lib/http-error.js";
-import { withCheckinLock } from "../../lib/lock.js";
-import { requireRedisForCheckin } from "../../lib/redis.js";
-import type { RedisClientType } from "redis";
+import type { CheckinRow, ICheckinRepository } from "./checkin.repository.js";
 
 function addCalendarDays(isoDate: string, days: number): string {
   const parts = isoDate.split("-").map(Number);
@@ -116,7 +116,7 @@ export class CheckinService {
     private readonly studentSubRepo: IStudentSubscriptionRepository,
     private readonly paymentRepo: IPaymentRepository,
     private readonly checkinRepo: ICheckinRepository,
-  ) {}
+  ) { }
 
   async checkIn(opts: {
     userId: string;
@@ -141,7 +141,6 @@ export class CheckinService {
     if (membership.role !== "student") {
       throw new HttpError(403, "Only students can check in");
     }
-
     const classRow = await this.classRepo.findById(
       opts.classId,
       opts.academyId,
@@ -149,14 +148,12 @@ export class CheckinService {
     if (!classRow?.isActive) {
       throw new HttpError(404, "Class not found");
     }
-
     if (utcDayOfWeek(opts.sessionDate) !== classRow.dayOfWeek) {
       throw new HttpError(
         400,
         "Session date does not match this class weekday",
       );
     }
-
     const now = opts.now ?? new Date();
     if (!isWithinCheckinWindow(now, opts.sessionDate, classRow)) {
       throw new HttpError(
@@ -164,16 +161,13 @@ export class CheckinService {
         "Check-in is only allowed from 12 hours before class start until class end",
       );
     }
-
     const { plan, warnings } = await this.resolveSubscriptionAndWarnings(
       opts.userId,
       opts.academyId,
     );
-
     const weekReference = mondayOfWeekContaining(opts.sessionDate);
 
     const redis = opts.redis ?? (await requireRedisForCheckin());
-
     return withCheckinLock(redis, opts.classId, opts.sessionDate, async () => {
       const classCount = await this.checkinRepo.countByClassAndDate(
         opts.classId,
@@ -185,7 +179,6 @@ export class CheckinService {
       ) {
         throw new HttpError(409, "Class is full");
       }
-
       const userWeekCount = await this.checkinRepo.countByUserAndWeek(
         opts.userId,
         weekReference,
@@ -196,7 +189,6 @@ export class CheckinService {
       ) {
         throw new HttpError(409, "Weekly check-in limit reached");
       }
-
       try {
         const checkin = await this.checkinRepo.insert({
           classId: opts.classId,

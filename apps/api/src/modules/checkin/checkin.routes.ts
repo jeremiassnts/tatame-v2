@@ -1,7 +1,7 @@
-import { Router } from "express";
 import { Role } from "@tatame/types";
 import type { CreateCheckinBody } from "@tatame/validators";
 import { checkinHistoryQuerySchema, createCheckinBodySchema } from "@tatame/validators";
+import { Router } from "express";
 import { getDb } from "../../lib/db.js";
 import { HttpError } from "../../lib/http-error.js";
 import {
@@ -14,8 +14,8 @@ import { PostgresClassRepository } from "../class/class.repository.postgres.js";
 import { PostgresMembershipRepository } from "../membership/membership.repository.postgres.js";
 import { PostgresPaymentRepository } from "../payment/payment.repository.postgres.js";
 import { PostgresStudentSubscriptionRepository } from "../subscription/subscription.repository.postgres.js";
-import { PostgresCheckinRepository } from "./checkin.repository.postgres.js";
 import type { CheckinRow } from "./checkin.repository.js";
+import { PostgresCheckinRepository } from "./checkin.repository.postgres.js";
 import { CheckinService } from "./checkin.service.js";
 
 export const checkinRouter = Router();
