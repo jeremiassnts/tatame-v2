@@ -8,6 +8,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ClerkProvider, ClerkLoaded } from "@clerk/clerk-expo";
 import { tokenCache } from "@/lib/clerk-token-cache";
+import { StripeProvider } from "@stripe/stripe-react-native";
 import {
   useFonts,
   Poppins_400Regular,
@@ -20,6 +21,9 @@ SplashScreen.preventAutoHideAsync();
 const publishableKey =
   (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env
     ?.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "";
+const stripePublishableKey =
+  (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env
+    ?.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "";
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -47,8 +51,10 @@ export default function RootLayout() {
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
       <ClerkLoaded>
         <SafeAreaProvider>
-          <StatusBar style="light" />
-          <Slot />
+          <StripeProvider publishableKey={stripePublishableKey}>
+            <StatusBar style="light" />
+            <Slot />
+          </StripeProvider>
         </SafeAreaProvider>
       </ClerkLoaded>
     </ClerkProvider>

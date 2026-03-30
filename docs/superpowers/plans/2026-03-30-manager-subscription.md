@@ -2090,7 +2090,7 @@ git commit -m "feat: install @stripe/stripe-react-native"
 - Create: `apps/mobile/app/(app)/(manager)/plan-selection.tsx`
 - Modify: `apps/mobile/app/(app)/_layout.tsx`
 
-- [ ] **Step 1: Create the plan selection screen**
+- [x] **Step 1: Create the plan selection screen**
 
 Create `apps/mobile/app/(app)/(manager)/plan-selection.tsx`. This screen follows the design in Pencil node `moPBD`:
 - Header: "Escolha seu plano" + subtitle
@@ -2304,7 +2304,7 @@ export default function PlanSelectionScreen() {
 }
 ```
 
-- [ ] **Step 2: Add subscription gate to app layout**
+- [x] **Step 2: Add subscription gate to app layout**
 
 In `apps/mobile/app/(app)/_layout.tsx`, add import:
 
