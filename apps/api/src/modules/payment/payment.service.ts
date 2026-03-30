@@ -2,7 +2,11 @@ import type { ConfirmManualPaymentBody } from "@tatame/validators";
 import { HttpError } from "../../lib/http-error.js";
 import type { IAcademyRepository } from "../academy/academy.repository.js";
 import type { IStudentSubscriptionRepository } from "../subscription/subscription.repository.js";
-import type { IPaymentRepository, PaymentRow } from "./payment.repository.js";
+import type {
+  IPaymentRepository,
+  PaymentRow,
+  PaymentWithUser,
+} from "./payment.repository.js";
 
 export class PaymentService {
   constructor(
@@ -48,9 +52,9 @@ export class PaymentService {
     managerUserId: string,
     academyId: string,
     opts: { subscriptionId?: string; limit?: number },
-  ): Promise<PaymentRow[]> {
+  ): Promise<PaymentWithUser[]> {
     await this.assertManagerOwnsAcademy(managerUserId, academyId);
-    return this.paymentRepo.findByAcademy(academyId, {
+    return this.paymentRepo.findByAcademyWithUser(academyId, {
       subscriptionId: opts.subscriptionId,
       limit: opts.limit,
     });

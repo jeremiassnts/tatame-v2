@@ -16520,6 +16520,143 @@
             },
             {
               "type": "frame",
+              "id": "oPH3e",
+              "name": "Plan Card",
+              "width": "fill_container",
+              "fill": "$--bg-card",
+              "cornerRadius": 14,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "$--accent-primary"
+              },
+              "padding": 14,
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "LfGa7",
+                  "name": "Plan Left",
+                  "layout": "vertical",
+                  "gap": 6,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "tKYTK",
+                      "name": "Plan Top Row",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "JTwYX",
+                          "name": "planLabel",
+                          "fill": "$--text-secondary",
+                          "content": "Plano atual",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "qeiSx",
+                          "name": "planBadge",
+                          "fill": {
+                            "type": "gradient",
+                            "gradientType": "linear",
+                            "enabled": true,
+                            "rotation": 180,
+                            "size": {
+                              "height": 1
+                            },
+                            "colors": [
+                              {
+                                "color": "#A078E8",
+                                "position": 0
+                              },
+                              {
+                                "color": "#7C5CBF",
+                                "position": 1
+                              }
+                            ]
+                          },
+                          "cornerRadius": 100,
+                          "padding": [
+                            3,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "U6rrL",
+                              "name": "planBadgeT",
+                              "fill": "#FFFFFF",
+                              "content": "Pro",
+                              "fontFamily": "Inter",
+                              "fontSize": 10,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "X4g1N",
+                      "name": "planPrice",
+                      "gap": 4,
+                      "alignItems": "end",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "a5ihr",
+                          "name": "planPriceV",
+                          "fill": "$--text-primary",
+                          "content": "R$ 49",
+                          "fontFamily": "Sora",
+                          "fontSize": 20,
+                          "fontWeight": "800",
+                          "letterSpacing": -1
+                        },
+                        {
+                          "type": "text",
+                          "id": "KS4zk",
+                          "name": "planPriceP",
+                          "fill": "$--text-muted",
+                          "content": "/mês",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "DEPyq",
+                      "name": "planNextBill",
+                      "fill": "$--text-secondary",
+                      "content": "Próxima cobrança: 01/04/2026",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
+                {
+                  "type": "icon_font",
+                  "id": "IpLMm",
+                  "name": "planChevron",
+                  "width": 18,
+                  "height": 18,
+                  "iconFontName": "chevron-right",
+                  "iconFontFamily": "lucide",
+                  "fill": "$--text-muted"
+                }
+              ]
+            },
+            {
+              "type": "frame",
               "id": "tX0XW",
               "name": "Quick Actions",
               "width": "fill_container",
@@ -45306,6 +45443,767 @@
                   "height": 5
                 }
               ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "vqoDI",
+      "x": 8958,
+      "y": 3324,
+      "name": "M-MGR-18: Plan Details",
+      "clip": true,
+      "width": 402,
+      "height": 874,
+      "fill": "#0C0C0C",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "Phg6h",
+          "name": "Status Bar",
+          "width": "fill_container",
+          "height": 62,
+          "padding": [
+            0,
+            24
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "166fV",
+              "name": "sbT",
+              "fill": "#FFFFFF",
+              "content": "9:41",
+              "fontFamily": "Inter",
+              "fontSize": 16,
+              "fontWeight": "600"
+            },
+            {
+              "type": "frame",
+              "id": "pFE6m",
+              "name": "sbIcons",
+              "gap": 6,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "DihZB",
+                  "name": "si1",
+                  "width": 16,
+                  "height": 16,
+                  "iconFontName": "signal",
+                  "iconFontFamily": "lucide",
+                  "fill": "#FFFFFF"
+                },
+                {
+                  "type": "icon_font",
+                  "id": "VwDn7",
+                  "name": "si2",
+                  "width": 16,
+                  "height": 16,
+                  "iconFontName": "wifi",
+                  "iconFontFamily": "lucide",
+                  "fill": "#FFFFFF"
+                },
+                {
+                  "type": "icon_font",
+                  "id": "nJpYM",
+                  "name": "si3",
+                  "width": 16,
+                  "height": 16,
+                  "iconFontName": "battery-full",
+                  "iconFontFamily": "lucide",
+                  "fill": "#FFFFFF"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "E9SCj",
+          "name": "Content Wrapper",
+          "width": "fill_container",
+          "height": "fill_container",
+          "layout": "vertical",
+          "gap": 20,
+          "padding": [
+            8,
+            24,
+            24,
+            24
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "SR9MF",
+              "name": "Nav Row",
+              "width": "fill_container",
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "dJV1w",
+                  "name": "Back",
+                  "width": 40,
+                  "height": 40,
+                  "fill": "#1A1A1A",
+                  "cornerRadius": 12,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#2A2A2A"
+                  },
+                  "layout": "vertical",
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "SDexI",
+                      "name": "navBackI",
+                      "width": 18,
+                      "height": 18,
+                      "iconFontName": "arrow-left",
+                      "iconFontFamily": "lucide",
+                      "fill": "#FFFFFF"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "lvxk4",
+                  "name": "navTitle",
+                  "fill": "#FFFFFF",
+                  "content": "Meu Plano",
+                  "fontFamily": "Sora",
+                  "fontSize": 18,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "frame",
+                  "id": "2UaBP",
+                  "name": "Spacer",
+                  "width": 40,
+                  "height": 40
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "bdnkd",
+              "name": "Current Plan Card",
+              "width": "fill_container",
+              "fill": "$--bg-card",
+              "cornerRadius": 16,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1.5,
+                "fill": "$--accent-primary"
+              },
+              "layout": "vertical",
+              "gap": 16,
+              "padding": 20,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "41Qjt",
+                  "name": "Plan Card Top",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "m6aO6",
+                      "name": "pcLeft",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "klMPx",
+                          "name": "pcLabel",
+                          "fill": "$--text-secondary",
+                          "content": "Plano atual",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "8X8o2",
+                          "name": "pcNameRow",
+                          "gap": 8,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "6mtvM",
+                              "name": "pcName",
+                              "fill": "$--text-primary",
+                              "content": "Pro",
+                              "fontFamily": "Sora",
+                              "fontSize": 22,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "VupJs",
+                              "name": "pcBadge",
+                              "fill": {
+                                "type": "gradient",
+                                "gradientType": "linear",
+                                "enabled": true,
+                                "rotation": 180,
+                                "size": {
+                                  "height": 1
+                                },
+                                "colors": [
+                                  {
+                                    "color": "#A078E8",
+                                    "position": 0
+                                  },
+                                  {
+                                    "color": "#7C5CBF",
+                                    "position": 1
+                                  }
+                                ]
+                              },
+                              "cornerRadius": 100,
+                              "padding": [
+                                3,
+                                10
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "2udif",
+                                  "name": "pcBadgeT",
+                                  "fill": "#FFFFFF",
+                                  "content": "ATIVO",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 9,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Tky8X",
+                      "name": "pcPriceWrap",
+                      "layout": "vertical",
+                      "alignItems": "end",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "OpZy1",
+                          "name": "pcPrice",
+                          "fill": "$--text-primary",
+                          "content": "R$ 49",
+                          "fontFamily": "Sora",
+                          "fontSize": 28,
+                          "fontWeight": "800",
+                          "letterSpacing": -1
+                        },
+                        {
+                          "type": "text",
+                          "id": "ARw7L",
+                          "name": "pcPeriod",
+                          "fill": "$--text-muted",
+                          "content": "/mês",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "rectangle",
+                  "id": "vW9n2",
+                  "name": "pcDivider",
+                  "fill": "$--border-default",
+                  "width": "fill_container",
+                  "height": 1
+                },
+                {
+                  "type": "frame",
+                  "id": "d6Vxq",
+                  "name": "Plan Meta",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "K0rvG",
+                      "name": "pcBill",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon_font",
+                          "id": "ML7Wn",
+                          "name": "pcBillI",
+                          "width": 14,
+                          "height": 14,
+                          "iconFontName": "calendar",
+                          "iconFontFamily": "lucide",
+                          "fill": "$--text-muted"
+                        },
+                        {
+                          "type": "text",
+                          "id": "fXjYb",
+                          "name": "pcBillT",
+                          "fill": "$--text-secondary",
+                          "content": "Próxima cobrança em 01/04/2026",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "jwiBw",
+                      "name": "pcSince",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon_font",
+                          "id": "cBXm1",
+                          "name": "pcSinceI",
+                          "width": 14,
+                          "height": 14,
+                          "iconFontName": "timer",
+                          "iconFontFamily": "lucide",
+                          "fill": "$--text-muted"
+                        },
+                        {
+                          "type": "text",
+                          "id": "Zaq91",
+                          "name": "pcSinceT",
+                          "fill": "$--text-secondary",
+                          "content": "Assinante desde 01/01/2026",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "rZfwo",
+              "name": "Change Plan Button",
+              "width": "fill_container",
+              "fill": "$--bg-elevated",
+              "cornerRadius": 12,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "$--border-strong"
+              },
+              "padding": [
+                14,
+                16
+              ],
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "bJm43",
+                  "name": "cpLeft",
+                  "gap": 12,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "nNlkK",
+                      "name": "cpIcon",
+                      "width": 18,
+                      "height": 18,
+                      "iconFontName": "refresh-cw",
+                      "iconFontFamily": "lucide",
+                      "fill": "$--accent-primary"
+                    },
+                    {
+                      "type": "text",
+                      "id": "WorIM",
+                      "name": "cpText",
+                      "fill": "$--text-primary",
+                      "content": "Alterar plano",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "icon_font",
+                  "id": "eI15f",
+                  "name": "cpChevron",
+                  "width": 16,
+                  "height": 16,
+                  "iconFontName": "chevron-right",
+                  "iconFontFamily": "lucide",
+                  "fill": "$--text-muted"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "QUqRq",
+              "name": "histLabel",
+              "fill": "#ABABAB",
+              "content": "Histórico de pagamentos",
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "600"
+            },
+            {
+              "type": "frame",
+              "id": "SxHPq",
+              "name": "Payment History",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "ISnjX",
+                  "name": "Pay 1",
+                  "width": "fill_container",
+                  "fill": "#1A1A1A",
+                  "cornerRadius": 12,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#2A2A2A"
+                  },
+                  "layout": "vertical",
+                  "gap": 4,
+                  "padding": [
+                    12,
+                    14
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "ibRck",
+                      "name": "p1row",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "UnQ4U",
+                          "name": "p1left",
+                          "gap": 8,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon_font",
+                              "id": "0puVP",
+                              "name": "p1icon",
+                              "width": 14,
+                              "height": 14,
+                              "iconFontName": "receipt",
+                              "iconFontFamily": "lucide",
+                              "fill": "$--text-muted"
+                            },
+                            {
+                              "type": "text",
+                              "id": "f1ouC",
+                              "name": "p1name",
+                              "fill": "#FFFFFF",
+                              "content": "Plano Pro — Março 2026",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "VxWAE",
+                          "name": "p1amount",
+                          "fill": "#32D74B",
+                          "content": "R$ 49",
+                          "fontFamily": "Sora",
+                          "fontSize": 15,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "22AcI",
+                      "name": "p1meta",
+                      "fill": "#ABABAB",
+                      "content": "01/03/2026 · Cartão ···· 4242",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "pcuFJ",
+                  "name": "Pay 2",
+                  "width": "fill_container",
+                  "fill": "#1A1A1A",
+                  "cornerRadius": 12,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#2A2A2A"
+                  },
+                  "layout": "vertical",
+                  "gap": 4,
+                  "padding": [
+                    12,
+                    14
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "ikx2q",
+                      "name": "p2row",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "F5loA",
+                          "name": "p2left",
+                          "gap": 8,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon_font",
+                              "id": "BwObn",
+                              "name": "p2icon",
+                              "width": 14,
+                              "height": 14,
+                              "iconFontName": "receipt",
+                              "iconFontFamily": "lucide",
+                              "fill": "$--text-muted"
+                            },
+                            {
+                              "type": "text",
+                              "id": "3XNsJ",
+                              "name": "p2name",
+                              "fill": "#FFFFFF",
+                              "content": "Plano Pro — Fevereiro 2026",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "wEsU8",
+                          "name": "p2amount",
+                          "fill": "#32D74B",
+                          "content": "R$ 49",
+                          "fontFamily": "Sora",
+                          "fontSize": 15,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "Z8Qdn",
+                      "name": "p2meta",
+                      "fill": "#ABABAB",
+                      "content": "01/02/2026 · Cartão ···· 4242",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "1Nd0W",
+                  "name": "Pay 3",
+                  "width": "fill_container",
+                  "fill": "#1A1A1A",
+                  "cornerRadius": 12,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#2A2A2A"
+                  },
+                  "layout": "vertical",
+                  "gap": 4,
+                  "padding": [
+                    12,
+                    14
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "38XIm",
+                      "name": "p3row",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "WGnIc",
+                          "name": "p3left",
+                          "gap": 8,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon_font",
+                              "id": "ftCoS",
+                              "name": "p3icon",
+                              "width": 14,
+                              "height": 14,
+                              "iconFontName": "receipt",
+                              "iconFontFamily": "lucide",
+                              "fill": "$--text-muted"
+                            },
+                            {
+                              "type": "text",
+                              "id": "8vYiU",
+                              "name": "p3name",
+                              "fill": "#FFFFFF",
+                              "content": "Plano Pro — Janeiro 2026",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "Ng9xs",
+                          "name": "p3amount",
+                          "fill": "#32D74B",
+                          "content": "R$ 49",
+                          "fontFamily": "Sora",
+                          "fontSize": 15,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "3F8ou",
+                      "name": "p3meta",
+                      "fill": "#ABABAB",
+                      "content": "01/01/2026 · Cartão ···· 4242",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "500"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "bcGNF",
+              "name": "Spacer",
+              "width": "fill_container",
+              "height": "fill_container"
+            },
+            {
+              "type": "frame",
+              "id": "HmOUi",
+              "name": "Cancel Plan Button",
+              "width": "fill_container",
+              "fill": "#FF453A15",
+              "cornerRadius": 12,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "#FF453A40"
+              },
+              "padding": [
+                14,
+                16
+              ],
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "XXz5U",
+                  "name": "cancelLeft",
+                  "gap": 12,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "XkWvR",
+                      "name": "cancelIcon",
+                      "width": 18,
+                      "height": 18,
+                      "iconFontName": "circle-x",
+                      "iconFontFamily": "lucide",
+                      "fill": "$--status-negative"
+                    },
+                    {
+                      "type": "text",
+                      "id": "yoSyG",
+                      "name": "cancelText",
+                      "fill": "$--status-negative",
+                      "content": "Cancelar assinatura",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "icon_font",
+                  "id": "ya5rk",
+                  "name": "cancelChev",
+                  "width": 16,
+                  "height": 16,
+                  "iconFontName": "chevron-right",
+                  "iconFontFamily": "lucide",
+                  "fill": "$--status-negative"
+                }
+              ]
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 3,
+              "id": "SxLg6",
+              "name": "Home Indicator",
+              "fill": "$--text-muted",
+              "width": 134,
+              "height": 5
             }
           ]
         }

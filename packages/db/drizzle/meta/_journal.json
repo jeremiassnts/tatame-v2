@@ -15,6 +15,13 @@
       "when": 1774623595005,
       "tag": "0001_graceful_rattler",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1774879142991,
+      "tag": "0002_demonic_true_believers",
+      "breakpoints": true
     }
   ]
 }

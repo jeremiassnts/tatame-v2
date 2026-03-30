@@ -95,3 +95,11 @@ export {
   type PromoteBeltBody,
   type RegisterInitialBeltBody,
 } from "./graduation.schema.js";
+export {
+  managerSubscriptionResponseSchema,
+  type ManagerSubscriptionResponse,
+  managerLimitsResponseSchema,
+  type ManagerLimitsResponse,
+  stripePortalResponseSchema,
+  stripeCheckoutResponseSchema,
+} from "./manager-subscription.schema.js";

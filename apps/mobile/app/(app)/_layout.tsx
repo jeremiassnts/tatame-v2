@@ -32,6 +32,7 @@ function AppRouter() {
     if (user.activeRole === "manager" && !user.activeAcademy) {
       router.replace("/(app)/create-academy");
     } else if (user.activeRole === "manager" && user.activeAcademy) {
+      // Subscription gate is handled in the (manager) layout
       router.replace("/(app)/(manager)/(home)");
     } else if (
       user.activeRole === "instructor" ||

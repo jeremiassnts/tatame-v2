@@ -1,9 +1,35 @@
-import { Tabs } from "expo-router";
+import { Tabs, useRouter, useSegments } from "expo-router";
 import { Calendar, CreditCard, Home, Users } from "lucide-react-native";
+import { useEffect } from "react";
+import { ActivityIndicator, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useManagerSubscription } from "@/lib/hooks/use-manager-subscription";
 
 export default function ManagerLayout() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const segments = useSegments();
+  const { data: subscription, isPending, isError } = useManagerSubscription();
+
+  const last = segments[segments.length - 1];
+  const isOnPlanSelection = last === "plan-selection";
+
+  useEffect(() => {
+    if (isPending) return;
+    if (!isOnPlanSelection && (isError || !subscription)) {
+      router.replace("/(app)/(manager)/plan-selection");
+    }
+  }, [isPending, isError, subscription, router, isOnPlanSelection]);
+
+  if (isPending) {
+    return (
+      <View className="flex-1 items-center justify-center bg-background">
+        <ActivityIndicator color="#A078E8" />
+      </View>
+    );
+  }
+
+  const gated = isError || !subscription;
 
   return (
     <Tabs
@@ -32,6 +58,7 @@ export default function ManagerLayout() {
         name="(home)"
         options={{
           title: "Início",
+          href: gated ? null : undefined,
           tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
         }}
       />
@@ -39,7 +66,7 @@ export default function ManagerLayout() {
         name="(members)"
         options={{
           title: "Membros",
-          href: "/(app)/(manager)/(members)",
+          href: gated ? null : "/(app)/(manager)/(members)",
           tabBarIcon: ({ color, size }) => <Users size={size} color={color} />,
         }}
       />
@@ -47,6 +74,7 @@ export default function ManagerLayout() {
         name="(classes)"
         options={{
           title: "Aulas",
+          href: gated ? null : undefined,
           tabBarIcon: ({ color, size }) => (
             <Calendar size={size} color={color} />
           ),
@@ -56,10 +84,16 @@ export default function ManagerLayout() {
         name="(finances)"
         options={{
           title: "Finanças",
-          href: "/(app)/(manager)/(finances)",
+          href: gated ? null : "/(app)/(manager)/(finances)",
           tabBarIcon: ({ color, size }) => (
             <CreditCard size={size} color={color} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="plan-selection"
+        options={{
+          href: null,
         }}
       />
     </Tabs>

@@ -44,6 +44,7 @@ export default function StudentLayout() {
         name="(classes)"
         options={{
           title: "Agenda",
+          href: "/(app)/(student)/(classes)",
           tabBarIcon: ({ color, size }) => <Calendar size={size} color={color} />,
         }}
       />

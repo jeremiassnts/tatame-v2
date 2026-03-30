@@ -65,8 +65,18 @@ export class PostgresPaymentRepository implements IPaymentRepository {
 
   async findByAcademyWithUser(
     academyId: string,
-    opts: { limit?: number },
+    opts: { subscriptionId?: string; userId?: string; limit?: number },
   ): Promise<PaymentWithUser[]> {
+    const conditions = [eq(payments.academyId, academyId)];
+    if (opts.subscriptionId) {
+      conditions.push(eq(payments.subscriptionId, opts.subscriptionId));
+    }
+    if (opts.userId) {
+      conditions.push(eq(payments.userId, opts.userId));
+    }
+    const whereClause =
+      conditions.length === 1 ? conditions[0]! : and(...conditions);
+
     const query = this.db
       .select({
         id: payments.id,
@@ -85,7 +95,7 @@ export class PostgresPaymentRepository implements IPaymentRepository {
       })
       .from(payments)
       .innerJoin(users, eq(payments.userId, users.id))
-      .where(eq(payments.academyId, academyId))
+      .where(whereClause)
       .orderBy(desc(payments.paidAt));
     if (opts.limit) {
       return query.limit(opts.limit);

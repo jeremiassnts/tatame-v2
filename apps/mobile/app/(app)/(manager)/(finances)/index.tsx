@@ -1,9 +1,11 @@
 import { BackButton } from "@/components/BackButton";
 import { useFinancialSummary, usePaymentHistory } from "@/lib/hooks/use-finances";
+import { useManagerSubscription } from "@/lib/hooks/use-manager-subscription";
 import { useRouter } from "expo-router";
 import {
   CreditCard,
   FileText,
+  Crown,
   Receipt,
   Users,
 } from "lucide-react-native";
@@ -53,6 +55,7 @@ export default function FinancialDashboard() {
     refetch,
   } = useFinancialSummary();
   const { data: recentPayments } = usePaymentHistory({ limit: 10 });
+  const { data: subscription } = useManagerSubscription();
 
   if (isPending) {
     return (
@@ -160,6 +163,60 @@ export default function FinancialDashboard() {
             <Users size={20} color="#A078E8" />
           </View>
         </View>
+
+        <Pressable
+          onPress={() => router.push("/(app)/(manager)/(finances)/my-plan")}
+          className="flex-row items-center justify-between rounded-2xl border border-surface-border bg-surface"
+          style={{ padding: 14 }}
+        >
+          <View style={{ gap: 4 }}>
+            <View className="flex-row items-center" style={{ gap: 8 }}>
+              <Text className="font-poppins text-xs" style={{ color: TEXT_SECONDARY }}>
+                Plano atual
+              </Text>
+              <View
+                className="rounded-full"
+                style={{
+                  paddingHorizontal: 8,
+                  paddingVertical: 2,
+                  backgroundColor:
+                    subscription?.plan === "pro" ? "#A078E8" : "#32D74B",
+                }}
+              >
+                <Text className="font-poppins-bold text-[9px] text-white">
+                  {subscription?.plan === "pro" ? "PRO" : "FREE"}
+                </Text>
+              </View>
+            </View>
+            <Text className="font-poppins-bold text-lg text-primary">
+              {subscription?.plan === "pro" ? "R$ 49" : "R$ 0"}
+              <Text
+                className="font-poppins text-sm"
+                style={{ color: TEXT_SECONDARY }}
+              >
+                {" "}/mês
+              </Text>
+            </Text>
+            {subscription?.currentPeriodEnd && (
+              <Text
+                className="font-poppins text-[11px]"
+                style={{ color: TEXT_SECONDARY }}
+              >
+                Próxima cobrança: {formatDate(subscription.currentPeriodEnd)}
+              </Text>
+            )}
+          </View>
+          <View
+            className="items-center justify-center rounded-lg"
+            style={{
+              width: 40,
+              height: 40,
+              backgroundColor: "#A078E820",
+            }}
+          >
+            <Crown size={20} color="#A078E8" />
+          </View>
+        </Pressable>
 
         <Text className="font-poppins-semibold text-sm" style={{ color: TEXT_SECONDARY }}>
           Ações rápidas

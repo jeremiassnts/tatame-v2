@@ -27,7 +27,7 @@ export interface IPaymentRepository {
 
   findByAcademyWithUser(
     academyId: string,
-    opts: { limit?: number },
+    opts: { subscriptionId?: string; userId?: string; limit?: number },
   ): Promise<PaymentWithUser[]>;
 
   /** `referenceMonth` is YYYY-MM-01 (billing period). */
