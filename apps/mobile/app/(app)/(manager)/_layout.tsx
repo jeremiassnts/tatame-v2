@@ -1,9 +1,29 @@
-import { Tabs } from "expo-router";
+import { Tabs, useRouter } from "expo-router";
 import { Calendar, CreditCard, Home, Users } from "lucide-react-native";
+import { useEffect } from "react";
+import { ActivityIndicator, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useManagerSubscription } from "@/lib/hooks/use-manager-subscription";
 
 export default function ManagerLayout() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { data: subscription, isPending, isError } = useManagerSubscription();
+
+  useEffect(() => {
+    if (isPending) return;
+    if (isError || !subscription) {
+      router.replace("/(app)/(manager)/plan-selection");
+    }
+  }, [isPending, isError, subscription, router]);
+
+  if (isPending || isError || !subscription) {
+    return (
+      <View className="flex-1 items-center justify-center bg-background">
+        <ActivityIndicator color="#A078E8" />
+      </View>
+    );
+  }
 
   return (
     <Tabs
@@ -60,6 +80,12 @@ export default function ManagerLayout() {
           tabBarIcon: ({ color, size }) => (
             <CreditCard size={size} color={color} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="plan-selection"
+        options={{
+          href: null,
         }}
       />
     </Tabs>

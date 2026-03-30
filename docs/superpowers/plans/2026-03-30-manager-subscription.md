@@ -2351,7 +2351,7 @@ git commit -m "feat: add plan selection gate screen (M-MGR-02, Pencil node moPBD
 **Files:**
 - Modify: `apps/mobile/app/(app)/(manager)/_layout.tsx`
 
-- [ ] **Step 1: Add subscription gate to manager layout**
+- [x] **Step 1: Add subscription gate to manager layout**
 
 In `apps/mobile/app/(app)/(manager)/_layout.tsx`, wrap the existing layout with a subscription check:
 
