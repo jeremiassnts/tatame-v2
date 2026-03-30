@@ -187,7 +187,7 @@ git commit -m "feat: add manager subscription schema, types, and Stripe env conf
 - Create: `packages/validators/src/manager-subscription.schema.ts`
 - Modify: `packages/validators/src/index.ts`
 
-- [ ] **Step 1: Create manager subscription validators**
+- [x] **Step 1: Create manager subscription validators**
 
 Create `packages/validators/src/manager-subscription.schema.ts`:
 
@@ -233,7 +233,7 @@ export const stripeCheckoutResponseSchema = z.object({
 });
 ```
 
-- [ ] **Step 2: Export from validators index**
+- [x] **Step 2: Export from validators index**
 
 In `packages/validators/src/index.ts`, add:
 
@@ -248,7 +248,7 @@ export {
 } from "./manager-subscription.schema.js";
 ```
 
-- [ ] **Step 3: Verify build**
+- [x] **Step 3: Verify build**
 
 Run: `pnpm --filter @tatame/validators build`
 
