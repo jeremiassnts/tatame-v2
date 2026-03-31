@@ -37,20 +37,8 @@ export class StripeWebhookHandler {
   }
 
   private getPeriodEndFromStripeSub(stripeSub: Stripe.Subscription): Date | null {
-    const root = (stripeSub as any).current_period_end as number | undefined;
-    const item = (stripeSub as any).items?.data?.[0]?.current_period_end as
-      | number
-      | undefined;
-    const cancelAt = (stripeSub as any).cancel_at as number | null | undefined;
-
-    const periodEndSeconds =
-      typeof root === "number"
-        ? root
-        : typeof item === "number"
-          ? item
-          : typeof cancelAt === "number"
-            ? cancelAt
-            : undefined;
+    const itemPeriodEnd = stripeSub.items?.data?.[0]?.current_period_end;
+    const periodEndSeconds = itemPeriodEnd ?? stripeSub.cancel_at;
 
     if (typeof periodEndSeconds !== "number") return null;
 
@@ -99,13 +87,9 @@ export class StripeWebhookHandler {
 
     const newStatus = statusMap[stripeSub.status] ?? "active";
 
-    const cancelAtSeconds = (stripeSub as any).cancel_at as
-      | number
-      | null
-      | undefined;
     const scheduledCancelAt =
-      typeof cancelAtSeconds === "number"
-        ? new Date(cancelAtSeconds * 1000)
+      stripeSub.cancel_at != null
+        ? new Date(stripeSub.cancel_at * 1000)
         : null;
 
     await this.subRepo.update(row.id, {
@@ -141,12 +125,8 @@ export class StripeWebhookHandler {
   }
 
   private async onInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
-    const subscription = (invoice as any).subscription as
-      | string
-      | { id: string }
-      | null
-      | undefined;
-    const subId = typeof subscription === "string" ? subscription : subscription?.id;
+    const subRef = invoice.parent?.subscription_details?.subscription;
+    const subId = typeof subRef === "string" ? subRef : subRef?.id;
     if (!subId) return;
 
     const row = await this.subRepo.findByStripeSubscriptionId(subId);
@@ -156,12 +136,8 @@ export class StripeWebhookHandler {
   }
 
   private async onInvoicePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
-    const subscription = (invoice as any).subscription as
-      | string
-      | { id: string }
-      | null
-      | undefined;
-    const subId = typeof subscription === "string" ? subscription : subscription?.id;
+    const subRef = invoice.parent?.subscription_details?.subscription;
+    const subId = typeof subRef === "string" ? subRef : subRef?.id;
     if (!subId) return;
 
     const row = await this.subRepo.findByStripeSubscriptionId(subId);

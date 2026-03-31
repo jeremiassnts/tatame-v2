@@ -212,9 +212,9 @@ managerSubscriptionRouter.post(
 
       const paymentIntentIdOrObj = maybeInvoiceWithPI.payment_intent;
       if (!paymentIntentIdOrObj && maybeInvoiceWithPI.status === "paid") {
-        const freshSub = (await stripe.subscriptions.retrieve(
+        const freshSub = await stripe.subscriptions.retrieve(
           stripeSub.id,
-        )) as Stripe.Subscription;
+        );
         const statusMap: Record<
           string,
           "active" | "past_due" | "canceled" | "incomplete"
@@ -233,8 +233,8 @@ managerSubscriptionRouter.post(
           stripeSubscriptionId: stripeSub.id,
           plan: "pro",
           status: statusMap[freshSub.status] ?? "active",
-          currentPeriodEnd: (freshSub as any).current_period_end
-            ? new Date(((freshSub as any).current_period_end as number) * 1000)
+          currentPeriodEnd: freshSub.items?.data?.[0]?.current_period_end
+            ? new Date(freshSub.items.data[0].current_period_end * 1000)
             : null,
         });
 
@@ -267,8 +267,8 @@ managerSubscriptionRouter.post(
         stripeSubscriptionId: stripeSub.id,
         plan: "pro",
         status: "incomplete",
-        currentPeriodEnd: (stripeSub as any).current_period_end
-          ? new Date(((stripeSub as any).current_period_end as number) * 1000)
+        currentPeriodEnd: stripeSub.items?.data?.[0]?.current_period_end
+          ? new Date(stripeSub.items.data[0].current_period_end * 1000)
           : null,
       });
 
