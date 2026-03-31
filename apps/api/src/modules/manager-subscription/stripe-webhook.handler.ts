@@ -3,6 +3,7 @@ import type { IClassRepository } from "../class/class.repository.js";
 import type { IMembershipRepository } from "../membership/membership.repository.js";
 import type { ISubscriptionPlanRepository } from "../subscription/subscription.repository.js";
 import type { IManagerSubscriptionRepository } from "./manager-subscription.repository.js";
+import { mapStripeStatus } from "./stripe-status.js";
 
 const FREE_STUDENT_LIMIT = 50;
 const FREE_PLAN_LIMIT = 1;
@@ -71,21 +72,7 @@ export class StripeWebhookHandler {
     const row = await this.subRepo.findByStripeSubscriptionId(stripeSub.id);
     if (!row) return;
 
-    const statusMap: Record<
-      string,
-      "active" | "past_due" | "canceled" | "incomplete"
-    > = {
-      active: "active",
-      past_due: "past_due",
-      canceled: "canceled",
-      incomplete: "incomplete",
-      incomplete_expired: "canceled",
-      trialing: "active",
-      unpaid: "past_due",
-      paused: "past_due",
-    };
-
-    const newStatus = statusMap[stripeSub.status] ?? "active";
+    const newStatus = mapStripeStatus(stripeSub.status);
 
     const scheduledCancelAt =
       stripeSub.cancel_at != null

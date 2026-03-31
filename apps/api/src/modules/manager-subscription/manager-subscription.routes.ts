@@ -17,6 +17,7 @@ import { PostgresSubscriptionPlanRepository } from "../subscription/subscription
 import { PostgresAcademyRepository } from "../academy/academy.repository.postgres.js";
 import { ManagerSubscriptionService } from "./manager-subscription.service.js";
 import { StripeWebhookHandler } from "./stripe-webhook.handler.js";
+import { mapStripeStatus } from "./stripe-status.js";
 
 const db = getDb();
 const subRepo = new PostgresManagerSubscriptionRepository(db);
@@ -215,24 +216,10 @@ managerSubscriptionRouter.post(
         const freshSub = await stripe.subscriptions.retrieve(
           stripeSub.id,
         );
-        const statusMap: Record<
-          string,
-          "active" | "past_due" | "canceled" | "incomplete"
-        > = {
-          active: "active",
-          past_due: "past_due",
-          canceled: "canceled",
-          incomplete: "incomplete",
-          trialing: "active",
-          unpaid: "past_due",
-          paused: "past_due",
-          incomplete_expired: "canceled",
-        };
-
         await subRepo.update(sub.id, {
           stripeSubscriptionId: stripeSub.id,
           plan: "pro",
-          status: statusMap[freshSub.status] ?? "active",
+          status: mapStripeStatus(freshSub.status),
           currentPeriodEnd: freshSub.items?.data?.[0]?.current_period_end
             ? new Date(freshSub.items.data[0].current_period_end * 1000)
             : null,
