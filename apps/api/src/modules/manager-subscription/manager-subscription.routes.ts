@@ -90,9 +90,10 @@ managerSubscriptionRouter.post(
 
       let stripeCustomerId = sub?.stripeCustomerId;
       if (!stripeCustomerId) {
-        const customer = await stripe.customers.create({
-          metadata: { academyId, userId },
-        });
+        const customer = await stripe.customers.create(
+          { metadata: { academyId, userId } },
+          { idempotencyKey: `create-customer-${academyId}` },
+        );
         stripeCustomerId = customer.id;
 
         if (sub) {
@@ -167,19 +168,22 @@ managerSubscriptionRouter.post(
         throw new HttpError(400, "SetupIntent missing payment method");
       }
 
-      const stripeSub = await stripe.subscriptions.create({
-        customer: sub.stripeCustomerId,
-        items: [{ price: env.STRIPE_PRO_PRICE_ID }],
-        collection_method: "charge_automatically",
-        payment_behavior: "default_incomplete",
-        default_payment_method: paymentMethodId,
-        payment_settings: {
-          payment_method_types: ["card"],
-          save_default_payment_method: "on_subscription",
+      const stripeSub = await stripe.subscriptions.create(
+        {
+          customer: sub.stripeCustomerId,
+          items: [{ price: env.STRIPE_PRO_PRICE_ID }],
+          collection_method: "charge_automatically",
+          payment_behavior: "default_incomplete",
+          default_payment_method: paymentMethodId,
+          payment_settings: {
+            payment_method_types: ["card"],
+            save_default_payment_method: "on_subscription",
+          },
+          expand: ["latest_invoice.payment_intent"],
+          metadata: { academyId, userId },
         },
-        expand: ["latest_invoice.payment_intent"],
-        metadata: { academyId, userId },
-      });
+        { idempotencyKey: `create-pro-sub-${academyId}-${setupIntentId}` },
+      );
 
       const latestInvoiceId =
         typeof stripeSub.latest_invoice === "string"
@@ -436,9 +440,10 @@ managerSubscriptionRouter.post(
 
       let stripeCustomerId = sub.stripeCustomerId;
       if (!stripeCustomerId) {
-        const customer = await stripe.customers.create({
-          metadata: { academyId, userId: req.appAuth!.userId },
-        });
+        const customer = await stripe.customers.create(
+          { metadata: { academyId, userId: req.appAuth!.userId } },
+          { idempotencyKey: `create-customer-${academyId}` },
+        );
         stripeCustomerId = customer.id;
         await subRepo.update(sub.id, { stripeCustomerId });
       }
