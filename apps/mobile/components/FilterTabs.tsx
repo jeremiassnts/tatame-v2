@@ -26,7 +26,7 @@ export function FilterTabs({ tabs, activeKey, onSelect }: FilterTabsProps) {
           <Pressable
             key={tab.key}
             onPress={() => onSelect(tab.key)}
-            className="rounded-full border px-4"
+            className="rounded-full border px-4 my-2"
             style={{
               height: 32,
               justifyContent: "center",

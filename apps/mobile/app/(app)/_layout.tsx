@@ -2,11 +2,11 @@ import { AcademyProvider } from "@/lib/academy-context";
 import { ApiError } from "@/lib/api";
 import { useCurrentUser } from "@/lib/hooks/use-user";
 import { queryClient } from "@/lib/query-client";
+import { useAuth } from "@clerk/clerk-expo";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
 import { useEffect } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
-import { useAuth } from "@clerk/clerk-expo";
 
 export default function AppLayout() {
   return (
@@ -109,16 +109,16 @@ function AppRouter() {
   const academyContext =
     user.activeRole === "manager" && user.activeAcademy
       ? {
-          academyId: user.activeAcademy.id,
-          academyName: user.activeAcademy.name,
-          academyLogoUrl: user.activeAcademy.logoUrl,
-        }
+        academyId: user.activeAcademy.id,
+        academyName: user.activeAcademy.name,
+        academyLogoUrl: user.activeAcademy.logoUrl,
+      }
       : user.activeMembership && user.activeMembership.status === "active"
         ? {
-            academyId: user.activeMembership.academyId,
-            academyName: user.activeMembership.academyName,
-            academyLogoUrl: user.activeMembership.academyLogoUrl,
-          }
+          academyId: user.activeMembership.academyId,
+          academyName: user.activeMembership.academyName,
+          academyLogoUrl: user.activeMembership.academyLogoUrl,
+        }
         : null;
 
   if (academyContext) {

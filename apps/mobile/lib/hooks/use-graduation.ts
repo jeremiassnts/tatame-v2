@@ -57,6 +57,7 @@ export function usePromoteGraduation() {
       queryClient.invalidateQueries({
         queryKey: ["graduation", variables.userId],
       });
+      queryClient.invalidateQueries({ queryKey: ["members"] });
     },
   });
 }

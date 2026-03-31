@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, ne } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import {
   academies,
   academyMemberships,
@@ -212,6 +212,15 @@ export class PostgresMembershipRepository implements IMembershipRepository {
       );
     }
 
+    const beltRank = sql<number>`case
+      when ${beltPromotions.belt} = 'black' then 5
+      when ${beltPromotions.belt} = 'brown' then 4
+      when ${beltPromotions.belt} = 'purple' then 3
+      when ${beltPromotions.belt} = 'blue' then 2
+      when ${beltPromotions.belt} = 'white' then 1
+      else 0
+    end`;
+
     const rows = await this.db
       .select({
         id: academyMemberships.id,
@@ -237,7 +246,7 @@ export class PostgresMembershipRepository implements IMembershipRepository {
         ),
       )
       .where(and(...conditions))
-      .orderBy(desc(academyMemberships.createdAt));
+      .orderBy(desc(beltRank), desc(beltPromotions.stripes), asc(users.name));
 
     if (filters.q) {
       const lower = filters.q.toLowerCase();
