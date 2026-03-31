@@ -39,10 +39,12 @@ export default function MyPlanScreen() {
   const portal = useStripePortal();
 
   const isPro = sub?.plan === "pro";
+  const isCanceled = sub?.status === "canceled";
   const isScheduledForCancel =
     sub?.status === "active" &&
     !!sub?.canceledAt &&
     new Date(sub.canceledAt).getTime() > Date.now();
+  const cancelDisabled = isCanceled || isScheduledForCancel;
   const planPrice = isPro ? "R$ 49" : "R$ 0";
   const planName = isPro ? "Pro" : "Gratuito";
   const statusLabel =
@@ -220,12 +222,12 @@ export default function MyPlanScreen() {
 
         {isPro && (
           <Pressable
-            onPress={isScheduledForCancel ? undefined : handleOpenPortal}
-            disabled={isScheduledForCancel}
+            onPress={cancelDisabled ? undefined : handleOpenPortal}
+            disabled={cancelDisabled}
             className="flex-row items-center justify-between rounded-2xl border border-surface-border bg-surface"
             style={{
               padding: 16,
-              opacity: isScheduledForCancel ? 0.6 : 1,
+              opacity: cancelDisabled ? 0.6 : 1,
             }}
           >
             <View className="flex-row items-center" style={{ gap: 10 }}>
@@ -241,7 +243,11 @@ export default function MyPlanScreen() {
           </Pressable>
         )}
 
-        {isPro && isScheduledForCancel && sub?.canceledAt ? (
+        {isPro && isCanceled ? (
+          <Text className="font-poppins text-xs" style={{ color: "#FF453A" }}>
+            Sua assinatura foi cancelada.
+          </Text>
+        ) : isPro && isScheduledForCancel && sub?.canceledAt ? (
           <Text className="font-poppins text-xs" style={{ color: TEXT_SECONDARY }}>
             Seu cancelamento já foi agendado e o plano ficará ativo até{" "}
             {formatDate(sub.canceledAt)}.

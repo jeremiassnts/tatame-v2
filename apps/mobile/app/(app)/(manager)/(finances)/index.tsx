@@ -180,11 +180,19 @@ export default function FinancialDashboard() {
                   paddingHorizontal: 8,
                   paddingVertical: 2,
                   backgroundColor:
-                    subscription?.plan === "pro" ? "#A078E8" : "#32D74B",
+                    subscription?.status === "canceled"
+                      ? "#FF453A"
+                      : subscription?.plan === "pro"
+                        ? "#A078E8"
+                        : "#32D74B",
                 }}
               >
                 <Text className="font-poppins-bold text-[9px] text-white">
-                  {subscription?.plan === "pro" ? "PRO" : "FREE"}
+                  {subscription?.status === "canceled"
+                    ? "CANCELADO"
+                    : subscription?.plan === "pro"
+                      ? "PRO"
+                      : "FREE"}
                 </Text>
               </View>
             </View>
@@ -197,14 +205,21 @@ export default function FinancialDashboard() {
                 {" "}/mês
               </Text>
             </Text>
-            {subscription?.currentPeriodEnd && (
+            {subscription?.status === "canceled" ? (
+              <Text
+                className="font-poppins text-[11px]"
+                style={{ color: "#FF453A" }}
+              >
+                Assinatura cancelada
+              </Text>
+            ) : subscription?.currentPeriodEnd ? (
               <Text
                 className="font-poppins text-[11px]"
                 style={{ color: TEXT_SECONDARY }}
               >
                 Próxima cobrança: {formatDate(subscription.currentPeriodEnd)}
               </Text>
-            )}
+            ) : null}
           </View>
           <View
             className="items-center justify-center rounded-lg"
