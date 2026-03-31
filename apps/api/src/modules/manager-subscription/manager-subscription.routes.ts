@@ -340,27 +340,23 @@ managerSubscriptionRouter.get(
         customer: sub.stripeCustomerId,
         subscription: stripeSubscriptionId,
         limit: 3,
+        expand: ["data.payments.data.payment.payment_intent.payment_method"],
       });
 
       const items: ManagerInvoiceItem[] = [];
       for (const inv of invoices.data) {
         let last4: string | null = null;
 
-        const chargeId =
-          typeof (inv as any).charge === "string"
-            ? ((inv as any).charge as string)
-            : (inv as any).charge?.id;
-        if (chargeId) {
-          try {
-            const ch = await stripe.charges.retrieve(chargeId);
-            const cardLast4 =
-              (ch.payment_method_details as any)?.card?.last4 ??
-              (ch.payment_method_details as any)?.card_present?.last4;
-            if (typeof cardLast4 === "string") last4 = cardLast4;
-          } catch {
-            // best effort — ignore
-          }
-        }
+        const paidEntry = inv.payments?.data?.find((p) => p.status === "paid");
+        const pi =
+          paidEntry?.payment.payment_intent &&
+          typeof paidEntry.payment.payment_intent === "object"
+            ? paidEntry.payment.payment_intent
+            : null;
+        const pm =
+          pi && typeof pi.payment_method === "object" ? pi.payment_method : null;
+        const cardLast4 = pm?.card?.last4;
+        if (typeof cardLast4 === "string") last4 = cardLast4;
 
         const created = new Date(inv.created * 1000);
         const ref =
