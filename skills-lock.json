@@ -1,6 +1,11 @@
 {
   "version": 1,
   "skills": {
+    "stripe-best-practices": {
+      "source": "stripe/ai",
+      "sourceType": "github",
+      "computedHash": "e35a14609076a8a7ffeec41b449dd2d36eebea6c278e73d83f86db40e6232031"
+    },
     "vercel-react-native-skills": {
       "source": "vercel-labs/agent-skills",
       "sourceType": "github",
