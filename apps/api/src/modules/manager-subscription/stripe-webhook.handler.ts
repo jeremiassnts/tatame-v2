@@ -36,6 +36,28 @@ export class StripeWebhookHandler {
     }
   }
 
+  private getPeriodEndFromStripeSub(stripeSub: Stripe.Subscription): Date | null {
+    const root = (stripeSub as any).current_period_end as number | undefined;
+    const item = (stripeSub as any).items?.data?.[0]?.current_period_end as
+      | number
+      | undefined;
+    const cancelAt = (stripeSub as any).cancel_at as number | null | undefined;
+
+    const periodEndSeconds =
+      typeof root === "number"
+        ? root
+        : typeof item === "number"
+          ? item
+          : typeof cancelAt === "number"
+            ? cancelAt
+            : undefined;
+
+    if (typeof periodEndSeconds !== "number") return null;
+
+    const d = new Date(periodEndSeconds * 1000);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
   private async onSubscriptionCreated(
     stripeSub: Stripe.Subscription,
   ): Promise<void> {
@@ -51,7 +73,7 @@ export class StripeWebhookHandler {
       plan: "pro",
       status: "active",
       stripeSubscriptionId: stripeSub.id,
-      currentPeriodEnd: new Date((stripeSub as any).current_period_end * 1000),
+      currentPeriodEnd: this.getPeriodEndFromStripeSub(stripeSub),
     });
   }
 
@@ -77,12 +99,21 @@ export class StripeWebhookHandler {
 
     const newStatus = statusMap[stripeSub.status] ?? "active";
 
+    const cancelAtSeconds = (stripeSub as any).cancel_at as
+      | number
+      | null
+      | undefined;
+    const scheduledCancelAt =
+      typeof cancelAtSeconds === "number"
+        ? new Date(cancelAtSeconds * 1000)
+        : null;
+
     await this.subRepo.update(row.id, {
       status: newStatus,
-      currentPeriodEnd: new Date((stripeSub as any).current_period_end * 1000),
+      currentPeriodEnd: this.getPeriodEndFromStripeSub(stripeSub),
       canceledAt: stripeSub.canceled_at
         ? new Date(stripeSub.canceled_at * 1000)
-        : null,
+        : scheduledCancelAt,
     });
   }
 

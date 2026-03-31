@@ -42,6 +42,18 @@ type StripePortalResponse = {
   url: string;
 };
 
+type ManagerInvoiceItem = {
+  id: string;
+  amountCents: number;
+  currency: string;
+  status: string;
+  createdAt: string;
+  referenceMonth: string | null;
+  paymentMethodLast4: string | null;
+};
+
+type ManagerInvoicesResponse = { items: ManagerInvoiceItem[] };
+
 export function useManagerSubscription() {
   const api = useApi();
 
@@ -49,6 +61,17 @@ export function useManagerSubscription() {
     queryKey: ["manager-subscription"],
     queryFn: () => api.get<ManagerSubscription>("/manager-subscriptions/me"),
     retry: false,
+  });
+}
+
+export function useManagerInvoices(opts?: { enabled?: boolean }) {
+  const api = useApi();
+
+  return useQuery({
+    queryKey: ["manager-invoices"],
+    enabled: opts?.enabled ?? true,
+    queryFn: () => api.get<ManagerInvoicesResponse>("/manager-subscriptions/invoices"),
+    select: (data) => data.items,
   });
 }
 

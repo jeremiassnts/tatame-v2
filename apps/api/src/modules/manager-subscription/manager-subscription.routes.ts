@@ -42,6 +42,16 @@ const webhookHandler = new StripeWebhookHandler(
 
 export const managerSubscriptionRouter = Router();
 
+type ManagerInvoiceItem = {
+  id: string;
+  amountCents: number;
+  currency: string;
+  status: string;
+  createdAt: string;
+  referenceMonth: string | null;
+  paymentMethodLast4: string | null;
+};
+
 managerSubscriptionRouter.post(
   "/free",
   authorize(Role.Manager),
@@ -297,6 +307,82 @@ managerSubscriptionRouter.get(
     try {
       const limits = await service.getLimits(req.appAuth!.activeAcademyId!);
       res.json(limits);
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+managerSubscriptionRouter.get(
+  "/invoices",
+  authorize(Role.Manager),
+  attachActiveAcademyContext,
+  requireActiveAcademy,
+  async (req, res, next) => {
+    try {
+      const env = loadEnv();
+      if (!env.STRIPE_SECRET_KEY) {
+        throw new HttpError(503, "Stripe is not configured");
+      }
+
+      const stripe = getStripe();
+      const academyId = req.appAuth!.activeAcademyId!;
+
+      const sub = await service.getSubscription(academyId);
+      if (!sub?.stripeCustomerId) {
+        res.json({ items: [] satisfies ManagerInvoiceItem[] });
+        return;
+      }
+
+      const stripeSubscriptionId = sub.stripeSubscriptionId ?? undefined;
+
+      const invoices = await stripe.invoices.list({
+        customer: sub.stripeCustomerId,
+        subscription: stripeSubscriptionId,
+        limit: 3,
+      });
+
+      const items: ManagerInvoiceItem[] = [];
+      for (const inv of invoices.data) {
+        let last4: string | null = null;
+
+        const chargeId =
+          typeof (inv as any).charge === "string"
+            ? ((inv as any).charge as string)
+            : (inv as any).charge?.id;
+        if (chargeId) {
+          try {
+            const ch = await stripe.charges.retrieve(chargeId);
+            const cardLast4 =
+              (ch.payment_method_details as any)?.card?.last4 ??
+              (ch.payment_method_details as any)?.card_present?.last4;
+            if (typeof cardLast4 === "string") last4 = cardLast4;
+          } catch {
+            // best effort — ignore
+          }
+        }
+
+        const created = new Date(inv.created * 1000);
+        const ref =
+          inv.lines?.data?.[0]?.period?.start != null
+            ? new Date(inv.lines.data[0].period.start * 1000)
+            : created;
+        const referenceMonth = `${ref.getUTCFullYear()}-${String(
+          ref.getUTCMonth() + 1,
+        ).padStart(2, "0")}-01`;
+
+        items.push({
+          id: inv.id,
+          amountCents: inv.amount_paid ?? inv.amount_due ?? 0,
+          currency: inv.currency ?? "brl",
+          status: inv.status ?? "unknown",
+          createdAt: created.toISOString(),
+          referenceMonth,
+          paymentMethodLast4: last4,
+        });
+      }
+
+      res.json({ items });
     } catch (e) {
       next(e);
     }
