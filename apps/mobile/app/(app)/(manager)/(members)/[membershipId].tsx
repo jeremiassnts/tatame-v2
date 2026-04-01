@@ -1,5 +1,7 @@
 import { Avatar } from "@/components/Avatar";
 import { Badge } from "@/components/Badge";
+import { BELT_LABELS_SHORT, getBeltColor } from "@/lib/belts";
+import { useGraduationHistory } from "@/lib/hooks/use-graduation";
 import {
   useBlockMembership,
   useMemberDetail,
@@ -53,6 +55,7 @@ export default function MemberDetailScreen() {
 
   const { data: member, isPending } = useMemberDetail(membershipId);
   const blockMutation = useBlockMembership();
+  const { data: gradData } = useGraduationHistory(member?.userId);
 
   const handleBlock = () => {
     if (!membershipId) return;
@@ -84,6 +87,9 @@ export default function MemberDetailScreen() {
   }
 
   const letter = (member.userName || "?").charAt(0).toUpperCase();
+  const currentGrad = gradData?.items?.find((g) => g.isCurrent) ?? null;
+  const beltLabel = currentGrad ? BELT_LABELS_SHORT[currentGrad.belt] : null;
+  const beltColor = getBeltColor(currentGrad?.belt);
 
   return (
     <SafeAreaView className="flex-1 bg-background pt-4" edges={["top"]}>
@@ -118,6 +124,18 @@ export default function MemberDetailScreen() {
               <Badge variant="role" value={member.role} />
               <Badge variant="status" value={member.status} />
             </View>
+            {beltLabel ? (
+              <View
+                className="flex-row items-center justify-center"
+                style={{ gap: 6, height: 20 }}
+              >
+                <View
+                  className="rounded-full"
+                  style={{ width: 8, height: 8, backgroundColor: beltColor }}
+                />
+                <Text className="font-poppins text-xs text-muted">{beltLabel}</Text>
+              </View>
+            ) : null}
           </View>
 
           <View

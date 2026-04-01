@@ -1,5 +1,5 @@
 {
-  "version": "2.9",
+  "version": "2.10",
   "children": [
     {
       "type": "frame",
@@ -6215,7 +6215,7 @@
       "name": "M-MGR-05: Member Detail",
       "clip": true,
       "width": 402,
-      "height": 874,
+      "height": 906,
       "fill": "$--bg-page",
       "layout": "vertical",
       "children": [
@@ -6288,7 +6288,7 @@
           "id": "vAI4H",
           "name": "Content Wrapper",
           "width": "fill_container",
-          "height": "fill_container",
+          "height": 844,
           "layout": "vertical",
           "gap": 24,
           "padding": [
@@ -6359,6 +6359,7 @@
               "id": "X0HO8",
               "name": "Profile Section",
               "width": "fill_container",
+              "height": 189,
               "layout": "vertical",
               "gap": 12,
               "alignItems": "center",
@@ -6468,6 +6469,34 @@
                           "fontWeight": "600"
                         }
                       ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "MwqdI",
+                  "name": "beltRow",
+                  "width": 354,
+                  "height": 24,
+                  "gap": 6,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "8K7r6",
+                      "fill": "#A078E8",
+                      "width": 8,
+                      "height": 8
+                    },
+                    {
+                      "type": "text",
+                      "id": "7tMGl",
+                      "fill": "$--text-secondary",
+                      "content": "Roxa",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     }
                   ]
                 }
@@ -32233,6 +32262,34 @@
                       "fontFamily": "Inter",
                       "fontSize": 13,
                       "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "s3Nos",
+                  "name": "beltRow",
+                  "width": 354,
+                  "height": 20,
+                  "gap": 6,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "fs04K",
+                      "fill": "#A078E8",
+                      "width": 8,
+                      "height": 8
+                    },
+                    {
+                      "type": "text",
+                      "id": "syP0l",
+                      "fill": "$--text-secondary",
+                      "content": "Roxa",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     }
                   ]
                 }

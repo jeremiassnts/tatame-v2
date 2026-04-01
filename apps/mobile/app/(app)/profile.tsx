@@ -27,6 +27,8 @@ import { Avatar } from "@/components/Avatar";
 import { DatePickerField } from "@/components/DatePickerField";
 import { FormInput } from "@/components/FormInput";
 import { GradientButton } from "@/components/GradientButton";
+import { BELT_LABELS_SHORT, getBeltColor } from "@/lib/belts";
+import { useMyGraduation } from "@/lib/hooks/use-graduation";
 import {
   useCurrentUser,
   useDeleteAccount,
@@ -52,6 +54,7 @@ export default function ProfileScreen() {
   const { signOut } = useAuth();
 
   const { data: user } = useCurrentUser();
+  const { data: myGrad } = useMyGraduation();
   const updateProfile = useUpdateProfile();
   const deleteAccount = useDeleteAccount();
 
@@ -101,6 +104,8 @@ export default function ProfileScreen() {
 
   const avatarLetter = (user.name?.charAt(0) || "?").toUpperCase();
   const roleLabel = ROLE_LABELS[user.activeRole ?? ""] ?? user.activeRole ?? "";
+  const beltLabel = myGrad ? BELT_LABELS_SHORT[myGrad.belt] : null;
+  const beltColor = getBeltColor(myGrad?.belt);
 
   return (
     <SafeAreaView className="flex-1 bg-background pt-4" edges={["top", "bottom"]}>
@@ -152,6 +157,18 @@ export default function ProfileScreen() {
                   >
                     {roleLabel}
                   </Text>
+                </View>
+              ) : null}
+              {beltLabel ? (
+                <View
+                  className="flex-row items-center justify-center"
+                  style={{ gap: 6, height: 20 }}
+                >
+                  <View
+                    className="rounded-full"
+                    style={{ width: 8, height: 8, backgroundColor: beltColor }}
+                  />
+                  <Text className="font-poppins text-xs text-muted">{beltLabel}</Text>
                 </View>
               ) : null}
             </View>

@@ -1,5 +1,6 @@
 import { Avatar } from "@/components/Avatar";
 import { Badge } from "@/components/Badge";
+import { getBeltColor } from "@/lib/belts";
 import { Pressable, Text, View } from "react-native";
 
 type MemberCardProps = {
@@ -18,14 +19,6 @@ const BELT_LABELS: Record<string, string> = {
   purple: "Roxa",
   brown: "Marrom",
   black: "Preta",
-};
-
-const BELT_COLORS: Record<string, string> = {
-  white: "#E5E7EB",
-  blue: "#3B82F6",
-  purple: "#8B5CF6",
-  brown: "#92400E",
-  black: "#111827",
 };
 
 function formatBeltLabel(belt?: string | null, stripes?: number | null) {
@@ -50,7 +43,7 @@ export function MemberCard({
   const letter = (name || "?").charAt(0).toUpperCase();
   const isInteractive = typeof onPress === "function";
   const beltLabel = formatBeltLabel(belt, stripes);
-  const beltColor = belt ? (BELT_COLORS[belt] ?? "#525252") : "#525252";
+  const beltColor = getBeltColor(belt as never);
 
   return (
     <Pressable
