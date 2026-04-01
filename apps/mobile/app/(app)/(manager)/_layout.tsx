@@ -1,9 +1,9 @@
+import { useManagerSubscription } from "@/lib/hooks/use-manager-subscription";
 import { Tabs, useRouter, useSegments } from "expo-router";
 import { Calendar, CreditCard, Home, Users } from "lucide-react-native";
 import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useManagerSubscription } from "@/lib/hooks/use-manager-subscription";
 
 export default function ManagerLayout() {
   const insets = useSafeAreaInsets();
@@ -74,7 +74,7 @@ export default function ManagerLayout() {
         name="(classes)"
         options={{
           title: "Aulas",
-          href: gated ? null : undefined,
+          href: gated ? null : "/(app)/(manager)/(classes)",
           tabBarIcon: ({ color, size }) => (
             <Calendar size={size} color={color} />
           ),

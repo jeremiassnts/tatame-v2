@@ -28,7 +28,6 @@ function AppRouter() {
       return;
     }
     if (isPending || !user) return;
-
     if (user.activeRole === "manager" && !user.activeAcademy) {
       router.replace("/(app)/create-academy");
     } else if (user.activeRole === "manager" && user.activeAcademy) {

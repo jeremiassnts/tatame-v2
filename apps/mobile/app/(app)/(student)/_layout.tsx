@@ -37,6 +37,7 @@ export default function StudentLayout() {
         name="(members)"
         options={{
           title: "Membros",
+          href: "/(app)/(student)/(members)",
           tabBarIcon: ({ color, size }) => <Users size={size} color={color} />,
         }}
       />
@@ -52,6 +53,7 @@ export default function StudentLayout() {
         name="(subscription)"
         options={{
           title: "Assinatura",
+          href: "/(app)/(student)/(subscription)",
           tabBarIcon: ({ color, size }) => (
             <CreditCard size={size} color={color} />
           ),

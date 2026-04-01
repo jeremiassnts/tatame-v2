@@ -5,24 +5,19 @@
  * Run with: pnpm --filter api seed
  */
 import { faker } from "@faker-js/faker/locale/pt_BR";
-import { createDb } from "@tatame/db";
-import {
-  users,
-  userRoles,
-  academies,
-  academyMemberships,
-  classes,
-  checkins,
-  subscriptionPlans,
-  studentSubscriptions,
-  payments,
-  beltPromotions,
-  managerSubscriptions,
-} from "@tatame/db";
 import { loadEnv } from "@tatame/config";
+import {
+  academies,
+  academyMemberships, beltPromotions, checkins, classes, createDb, managerSubscriptions, payments, studentSubscriptions, subscriptionPlans, userRoles, users
+} from "@tatame/db";
 
 const env = loadEnv();
 const db = createDb(env.DATABASE_URL);
+
+const provider = "fightersbjj.com.br";
+const studentCount = 80;
+const managerEmail = env.MANAGER_EMAIL ?? faker.internet.email();
+const managerClerkId = env.MANAGER_CLERK_ID ?? faker.string.uuid();
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -62,13 +57,12 @@ async function seed() {
 
   // ── Manager (academy owner) ──────────────────────────────────────────
   const managerId = rid();
-  const managerClerkId = `clerk_seed_manager_${faker.string.alphanumeric(10)}`;
   await db.insert(users).values({
     id: managerId,
     clerkUserId: managerClerkId,
-    email: "rafael.silva@tatame-test.com",
+    email: managerEmail,
     name: "Rafael Silva",
-    profileImageUrl: null,
+    profileImageUrl: faker.image.personPortrait(),
     phone: faker.phone.number({ style: "national" }),
     instagram: "rafasilva_bjj",
     birthDate: "1985-03-12",
@@ -86,10 +80,10 @@ async function seed() {
   await db.insert(academies).values({
     id: academyId,
     ownerId: managerId,
-    name: "Alliance Jiu-Jitsu Copacabana",
-    address: "Rua Barata Ribeiro, 370 - Copacabana, Rio de Janeiro - RJ",
-    contactEmail: "contato@alliancecopacabana.com.br",
-    contactPhone: "(21) 99876-5432",
+    name: "Fighter's BJJ",
+    address: faker.location.streetAddress(),
+    contactEmail: "contato@fightersbjj.com.br",
+    contactPhone: faker.phone.number({ style: "national" }),
     foundedAt: "2018-06-15",
   });
 
@@ -100,7 +94,7 @@ async function seed() {
     userId: managerId,
     role: "manager",
     status: "active",
-    isActive: false, // manager has user_roles, membership tracks association
+    isActive: true, // manager has user_roles, membership tracks association
     joinedAt: new Date("2018-06-15"),
   });
 
@@ -137,12 +131,13 @@ async function seed() {
       email: faker.internet.email({
         firstName: inst.name.split(" ")[0],
         lastName: inst.name.split(" ").slice(-1)[0],
-        provider: "tatame-test.com",
+        provider,
       }),
       name: inst.name,
       phone: faker.phone.number({ style: "national" }),
       instagram: inst.instagram,
       birthDate: utcIsoDate(faker.date.birthdate({ min: 25, max: 45, mode: "age" })),
+      profileImageUrl: faker.image.personPortrait(),
     });
 
     await db.insert(userRoles).values({
@@ -250,14 +245,6 @@ async function seed() {
   console.log(`  Classes: ${classSchedule.length} aulas semanais`);
 
   // ── Students ─────────────────────────────────────────────────────────
-  const studentFirstNames = [
-    "Lucas", "Mariana", "Pedro", "Ana", "Thiago",
-    "Juliana", "Gabriel", "Camila", "Mateus", "Larissa",
-    "Bruno", "Carolina", "Diego", "Beatriz", "André",
-    "Isabela", "Rodrigo", "Patrícia", "Vinícius", "Tatiane",
-    "Henrique", "Amanda", "Daniel", "Letícia", "Felipe",
-  ];
-
   const belts: Array<{ belt: "white" | "blue" | "purple" | "brown"; stripes: number }> = [
     { belt: "white", stripes: 0 }, { belt: "white", stripes: 1 },
     { belt: "white", stripes: 2 }, { belt: "white", stripes: 3 },
@@ -272,15 +259,15 @@ async function seed() {
   const studentIds: string[] = [];
   const studentPlanIds: string[] = [];
 
-  for (let i = 0; i < studentFirstNames.length; i++) {
+  for (let i = 0; i < studentCount; i++) {
     const id = rid();
-    const firstName = studentFirstNames[i]!;
+    const firstName = faker.person.firstName();
     const lastName = faker.person.lastName();
     const fullName = `${firstName} ${lastName}`;
     const clerkId = `clerk_seed_stu_${faker.string.alphanumeric(10)}`;
     studentIds.push(id);
 
-    const isKid = i >= 22; // last 3 are kids
+    const isKid = i >= studentCount - 3; // last 3 are kids
     const plan = isKid ? planKidsId : i % 3 === 0 ? planBasicId : planFullId;
     studentPlanIds.push(plan);
 
@@ -290,7 +277,7 @@ async function seed() {
       email: faker.internet.email({
         firstName,
         lastName,
-        provider: "tatame-test.com",
+        provider,
       }),
       name: fullName,
       phone: faker.phone.number({ style: "national" }),
@@ -303,6 +290,7 @@ async function seed() {
           ? faker.date.birthdate({ min: 6, max: 14, mode: "age" })
           : faker.date.birthdate({ min: 18, max: 55, mode: "age" }),
       ),
+      profileImageUrl: faker.image.personPortrait(),
     });
 
     await db.insert(userRoles).values({
@@ -313,7 +301,7 @@ async function seed() {
     });
 
     // Some students are inactive (left the academy)
-    const isActive = i < 22;
+    const isActive = i < studentCount - 3;
     const joinedAt = faker.date.past({ years: 2 });
 
     await db.insert(academyMemberships).values({
@@ -386,11 +374,11 @@ async function seed() {
       }
     }
   }
-  console.log(`  Students: ${studentFirstNames.length} (${studentIds.filter((_, i) => i < 22).length} active, 3 inactive)`);
+  console.log(`  Students: ${studentCount} (${studentIds.filter((_, i) => i < studentCount - 3).length} active, 3 inactive)`);
 
   // ── Checkins (last 4 weeks) ──────────────────────────────────────────
   let checkinCount = 0;
-  const activeStudentIds = studentIds.slice(0, 22);
+  const activeStudentIds = studentIds.slice(0, studentCount - 3);
 
   for (let weeksAgo = 3; weeksAgo >= 0; weeksAgo--) {
     for (const studentId of activeStudentIds) {
@@ -400,7 +388,7 @@ async function seed() {
       const sessionsThisWeek = faker.number.int({ min: 1, max: maxPerWeek });
 
       // Pick random classes for this student this week
-      const isKid = studentIdx >= 22;
+      const isKid = studentIdx >= studentCount - 3;
       const eligibleClasses = isKid
         ? classIds.filter((_, ci) => classSchedule[ci]!.name === "Kids Jiu-Jitsu")
         : classIds.filter((_, ci) => classSchedule[ci]!.name !== "Kids Jiu-Jitsu");
@@ -447,10 +435,15 @@ async function seed() {
   await db.insert(users).values({
     id: pendingId,
     clerkUserId: pendingClerkId,
-    email: "marcos.oliveira@tatame-test.com",
+    email: faker.internet.email({
+      firstName: "Marcos",
+      lastName: "Oliveira",
+      provider,
+    }),
     name: "Marcos Oliveira",
     phone: faker.phone.number({ style: "national" }),
     birthDate: "1992-08-20",
+    profileImageUrl: faker.image.personPortrait(),
   });
   await db.insert(userRoles).values({
     id: rid(),

@@ -37,6 +37,7 @@ export default function InstructorLayout() {
         name="(classes)"
         options={{
           title: "Aulas",
+          href: "/(app)/(instructor)/(classes)",
           tabBarIcon: ({ color, size }) => <Calendar size={size} color={color} />,
         }}
       />
@@ -44,6 +45,7 @@ export default function InstructorLayout() {
         name="(members)"
         options={{
           title: "Membros",
+          href: "/(app)/(instructor)/(members)",
           tabBarIcon: ({ color, size }) => <Users size={size} color={color} />,
         }}
       />
