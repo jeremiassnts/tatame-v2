@@ -354,6 +354,9 @@ async function seed() {
 
       // Payments for the last 3 months
       for (let m = 2; m >= 0; m--) {
+        // skip last payment for last 5 students to create pending payments
+        if (i >= studentCount - 5 && m === 0) continue;
+
         const payDate = new Date(now);
         payDate.setMonth(payDate.getMonth() - m);
         payDate.setDate(faker.number.int({ min: 1, max: 10 }));
