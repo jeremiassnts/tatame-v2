@@ -124,7 +124,12 @@ export default function FinancialDashboard() {
               {pctLabel} vs mês anterior
             </Text>
           </View>
-          <View
+          <Pressable
+            onPress={() =>
+              router.push(
+                "/(app)/(manager)/(finances)/subscriptions?filter=pending",
+              )
+            }
             className="flex-1 rounded-2xl border border-surface-border bg-surface"
             style={{ padding: 14, gap: 6 }}
           >
@@ -137,7 +142,7 @@ export default function FinancialDashboard() {
             <Text className="font-poppins text-[11px]" style={{ color: "#FF453A" }}>
               {formatCurrency(summary?.pendingPaymentsTotal ?? 0)} pendente
             </Text>
-          </View>
+          </Pressable>
         </View>
 
         <View
