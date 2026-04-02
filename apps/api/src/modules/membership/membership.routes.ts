@@ -109,7 +109,7 @@ membershipRouter.get(
 
 membershipRouter.get(
   "/:membershipId",
-  authorize(Role.Manager),
+  authorize(Role.Manager, Role.Instructor),
   attachActiveAcademyContext,
   async (req, res, next) => {
     try {
@@ -117,9 +117,14 @@ membershipRouter.get(
       if (!params.success) {
         throw new HttpError(400, "Invalid membership id");
       }
+      const role = req.appAuth!.role;
+      if (role !== "manager" && role !== "instructor") {
+        throw new HttpError(403, "Forbidden");
+      }
       const detail = await membershipService.getMemberDetail(
         params.data.membershipId,
         req.appAuth!.userId,
+        role,
       );
       res.json(detail);
     } catch (e) {

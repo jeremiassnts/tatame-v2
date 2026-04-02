@@ -96,4 +96,88 @@ describe("MembershipService", () => {
       statusCode: 403,
     });
   });
+
+  it("getMemberDetail allows manager owner for any membership status in academy", async () => {
+    const ownerId = randomUUID();
+    const academy = makeAcademy({ ownerId });
+    const pendingMem = makeMembership({
+      academyId: academy.id,
+      status: "pending",
+      isActive: false,
+      role: "student",
+    });
+    const { svc } = makeSvc([academy], [pendingMem]);
+    const detail = await svc.getMemberDetail(pendingMem.id, ownerId, "manager");
+    expect(detail.id).toBe(pendingMem.id);
+  });
+
+  it("getMemberDetail allows instructor in same academy for active target membership", async () => {
+    const academy = makeAcademy();
+    const instructorId = randomUUID();
+    const studentMem = makeMembership({
+      academyId: academy.id,
+      status: "active",
+      isActive: true,
+      role: "student",
+    });
+    const instructorMem = makeMembership({
+      academyId: academy.id,
+      userId: instructorId,
+      status: "active",
+      isActive: true,
+      role: "instructor",
+    });
+    const { svc } = makeSvc([academy], [studentMem, instructorMem]);
+    const detail = await svc.getMemberDetail(
+      studentMem.id,
+      instructorId,
+      "instructor",
+    );
+    expect(detail.userId).toBe(studentMem.userId);
+  });
+
+  it("getMemberDetail returns 403 for instructor when target membership is not active", async () => {
+    const academy = makeAcademy();
+    const instructorId = randomUUID();
+    const pendingMem = makeMembership({
+      academyId: academy.id,
+      status: "pending",
+      isActive: false,
+      role: "student",
+    });
+    const instructorMem = makeMembership({
+      academyId: academy.id,
+      userId: instructorId,
+      status: "active",
+      isActive: true,
+      role: "instructor",
+    });
+    const { svc } = makeSvc([academy], [pendingMem, instructorMem]);
+    await expect(
+      svc.getMemberDetail(pendingMem.id, instructorId, "instructor"),
+    ).rejects.toMatchObject({ statusCode: 403 });
+  });
+
+  it("getMemberDetail returns 403 for instructor not in target academy", async () => {
+    const a1 = makeAcademy();
+    const a2 = makeAcademy();
+    const instructorId = randomUUID();
+    const studentInA2 = makeMembership({
+      academyId: a2.id,
+      status: "active",
+      isActive: true,
+      role: "student",
+    });
+    const instructorInA1 = makeMembership({
+      academyId: a1.id,
+      userId: instructorId,
+      status: "active",
+      isActive: true,
+      role: "instructor",
+    });
+    const { svc } = makeSvc([a1, a2], [studentInA2, instructorInA1]);
+    await expect(
+      svc.getMemberDetail(studentInA2.id, instructorId, "instructor"),
+    ).rejects.toMatchObject({ statusCode: 403 });
+  });
 });

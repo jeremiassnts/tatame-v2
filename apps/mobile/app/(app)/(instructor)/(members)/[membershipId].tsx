@@ -49,13 +49,40 @@ export default function InstructorMemberDetailScreen() {
   const { membershipId } = useLocalSearchParams<{ membershipId: string }>();
   const router = useRouter();
 
-  const { data: member, isPending } = useMemberDetail(membershipId);
+  const { data: member, isPending, isError, refetch } = useMemberDetail(membershipId);
   const { data: gradData } = useGraduationHistory(member?.userId);
 
-  if (isPending || !member) {
+  if (isPending) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-background">
         <ActivityIndicator color="#A078E8" />
+      </SafeAreaView>
+    );
+  }
+
+  if (isError || !member) {
+    return (
+      <SafeAreaView className="flex-1 bg-background pt-4" edges={["top"]}>
+        <View className="flex-row items-center px-6 pb-4">
+          <Pressable
+            onPress={() => router.back()}
+            className="h-10 w-10 items-center justify-center rounded-xl border border-surface-border bg-surface"
+          >
+            <ArrowLeft size={18} color="#FFFFFF" />
+          </Pressable>
+        </View>
+        <View className="flex-1 items-center justify-center px-6">
+          <Text className="mb-4 text-center font-poppins text-sm text-muted">
+            Não foi possível carregar este membro. Verifique sua conexão ou se você tem permissão para
+            ver este perfil.
+          </Text>
+          <Pressable
+            onPress={() => void refetch()}
+            className="rounded-xl border border-surface-border bg-surface px-5 py-3"
+          >
+            <Text className="font-poppins-semibold text-sm text-primary">Tentar novamente</Text>
+          </Pressable>
+        </View>
       </SafeAreaView>
     );
   }

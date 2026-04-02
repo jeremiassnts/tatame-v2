@@ -75,12 +75,24 @@ export class MembershipService {
     });
   }
 
-  async getMemberDetail(membershipId: string, managerUserId: string) {
+  async getMemberDetail(
+    membershipId: string,
+    requesterUserId: string,
+    requesterRole: "manager" | "instructor",
+  ) {
     const m = await this.membershipRepo.findById(membershipId);
     if (!m) {
       throw new HttpError(404, "Membership not found");
     }
-    await this.assertManagerOwnsAcademy(managerUserId, m.academyId);
+
+    if (requesterRole === "manager") {
+      await this.assertManagerOwnsAcademy(requesterUserId, m.academyId);
+    } else {
+      await this.assertActiveMemberInAcademy(requesterUserId, m.academyId);
+      if (m.status !== "active") {
+        throw new HttpError(403, "Forbidden");
+      }
+    }
 
     const detail = await this.membershipRepo.findDetailById(membershipId);
     if (!detail) {
