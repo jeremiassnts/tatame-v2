@@ -1,5 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useApi } from "@/lib/api";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 type ManagerSubscription = {
   id: string;
@@ -29,14 +29,14 @@ type StartOrReactivateProResponse = {
 
 type CompleteProResponse =
   | {
-      intentType: "payment";
-      clientSecret: string;
-      subscriptionId: string;
-    }
+    intentType: "payment";
+    clientSecret: string;
+    subscriptionId: string;
+  }
   | {
-      intentType: "none";
-      subscriptionId: string;
-    };
+    intentType: "none";
+    subscriptionId: string;
+  };
 
 type StripePortalResponse = {
   url: string;
@@ -70,7 +70,7 @@ export function useManagerInvoices(opts?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ["manager-invoices"],
     enabled: opts?.enabled ?? true,
-    queryFn: () => api.get<ManagerInvoicesResponse>("/manager-subscriptions/invoices"),
+    queryFn: async () => api.get<ManagerInvoicesResponse>("/manager-subscriptions/invoices"),
     select: (data) => data.items,
   });
 }

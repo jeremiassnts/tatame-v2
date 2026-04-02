@@ -1,23 +1,23 @@
-import { Router } from "express";
 import { loadEnv } from "@tatame/config";
 import { Role } from "@tatame/types";
+import { Router } from "express";
 import Stripe from "stripe";
-import { authorize } from "../../middleware/authorize.js";
+import { getDb } from "../../lib/db.js";
+import { HttpError } from "../../lib/http-error.js";
+import { getStripe } from "../../lib/stripe.js";
 import {
   attachActiveAcademyContext,
   requireActiveAcademy,
 } from "../../middleware/academy-context.js";
-import { getDb } from "../../lib/db.js";
-import { getStripe } from "../../lib/stripe.js";
-import { HttpError } from "../../lib/http-error.js";
-import { PostgresManagerSubscriptionRepository } from "./manager-subscription.repository.postgres.js";
-import { PostgresMembershipRepository } from "../membership/membership.repository.postgres.js";
-import { PostgresClassRepository } from "../class/class.repository.postgres.js";
-import { PostgresSubscriptionPlanRepository } from "../subscription/subscription.repository.postgres.js";
+import { authorize } from "../../middleware/authorize.js";
 import { PostgresAcademyRepository } from "../academy/academy.repository.postgres.js";
+import { PostgresClassRepository } from "../class/class.repository.postgres.js";
+import { PostgresMembershipRepository } from "../membership/membership.repository.postgres.js";
+import { PostgresSubscriptionPlanRepository } from "../subscription/subscription.repository.postgres.js";
+import { PostgresManagerSubscriptionRepository } from "./manager-subscription.repository.postgres.js";
 import { ManagerSubscriptionService } from "./manager-subscription.service.js";
-import { StripeWebhookHandler } from "./stripe-webhook.handler.js";
 import { mapStripeStatus } from "./stripe-status.js";
+import { StripeWebhookHandler } from "./stripe-webhook.handler.js";
 
 const db = getDb();
 const subRepo = new PostgresManagerSubscriptionRepository(db);
@@ -52,6 +52,55 @@ type ManagerInvoiceItem = {
   referenceMonth: string | null;
   paymentMethodLast4: string | null;
 };
+
+/** Subscription id on invoices (Stripe 2024+ uses `parent.subscription_details`). */
+function stripeInvoiceSubscriptionId(inv: Stripe.Invoice): string | null {
+  const raw = inv.parent?.subscription_details?.subscription;
+  if (typeof raw === "string") return raw;
+  if (raw && typeof raw === "object" && "id" in raw) return raw.id;
+  return null;
+}
+
+/**
+ * Last 4 digits of the card used for a paid invoice.
+ * Stripe allows at most 4 levels of expand on invoice list; we expand only through
+ * `data.payments.data.payment` and load PI / charge in separate calls when needed.
+ */
+async function cardLast4FromInvoice(
+  stripe: Stripe,
+  inv: Stripe.Invoice,
+): Promise<string | null> {
+  const paidEntry = inv.payments?.data?.find((p) => p.status === "paid");
+  if (!paidEntry) return null;
+  const pay = paidEntry.payment;
+
+  let pi: Stripe.PaymentIntent | string | null | undefined = pay.payment_intent;
+  if (typeof pi === "string") {
+    pi = await stripe.paymentIntents.retrieve(pi, {
+      expand: ["payment_method"],
+    });
+  }
+  if (pi && typeof pi === "object") {
+    const pm =
+      typeof pi.payment_method === "object" ? pi.payment_method : null;
+    const fromPi = pm?.card?.last4;
+    if (typeof fromPi === "string") return fromPi;
+  }
+
+  let ch: Stripe.Charge | string | null | undefined = pay.charge;
+  if (typeof ch === "string") {
+    ch = await stripe.charges.retrieve(ch);
+  }
+  if (ch && typeof ch === "object") {
+    const card = ch.payment_method_details?.card;
+    const last4 =
+      card && typeof card === "object" && "last4" in card
+        ? (card as { last4?: string }).last4
+        : undefined;
+    if (typeof last4 === "string") return last4;
+  }
+  return null;
+}
 
 managerSubscriptionRouter.post(
   "/free",
@@ -207,9 +256,9 @@ managerSubscriptionRouter.post(
       const maybeInvoiceWithPI = invoice.payment_intent
         ? invoice
         : ((await stripe.invoices.pay(latestInvoiceId, {
-            payment_method: paymentMethodId,
-            expand: ["payment_intent"],
-          })) as InvoiceWithPaymentIntent);
+          payment_method: paymentMethodId,
+          expand: ["payment_intent"],
+        })) as InvoiceWithPaymentIntent);
 
       const paymentIntentIdOrObj = maybeInvoiceWithPI.payment_intent;
       if (!paymentIntentIdOrObj && maybeInvoiceWithPI.status === "paid") {
@@ -325,29 +374,33 @@ managerSubscriptionRouter.get(
         return;
       }
 
-      const stripeSubscriptionId = sub.stripeSubscriptionId ?? undefined;
+      const dbSubscriptionId = sub.stripeSubscriptionId;
 
+      /**
+       * List by customer only. Passing `subscription` in the list call returns nothing if
+       * `stripe_subscription_id` in our DB is stale vs the active subscription in Stripe.
+       */
+      // Max 4 expand levels on list (Stripe rejects deeper paths, e.g. ...payment_intent.payment_method).
       const invoices = await stripe.invoices.list({
         customer: sub.stripeCustomerId,
-        subscription: stripeSubscriptionId,
-        limit: 3,
-        expand: ["data.payments.data.payment.payment_intent.payment_method"],
+        limit: 24,
+        expand: ["data.payments.data.payment"],
       });
 
-      const items: ManagerInvoiceItem[] = [];
-      for (const inv of invoices.data) {
-        let last4: string | null = null;
+      let paidRows = invoices.data.filter(
+        (inv) => inv.status === "paid" && (inv.amount_paid ?? 0) > 0,
+      );
 
-        const paidEntry = inv.payments?.data?.find((p) => p.status === "paid");
-        const pi =
-          paidEntry?.payment.payment_intent &&
-          typeof paidEntry.payment.payment_intent === "object"
-            ? paidEntry.payment.payment_intent
-            : null;
-        const pm =
-          pi && typeof pi.payment_method === "object" ? pi.payment_method : null;
-        const cardLast4 = pm?.card?.last4;
-        if (typeof cardLast4 === "string") last4 = cardLast4;
+      if (dbSubscriptionId) {
+        const forSub = paidRows.filter(
+          (inv) => stripeInvoiceSubscriptionId(inv) === dbSubscriptionId,
+        );
+        paidRows = forSub.length > 0 ? forSub : paidRows;
+      }
+
+      const items: ManagerInvoiceItem[] = [];
+      for (const inv of paidRows.slice(0, 12)) {
+        const last4 = await cardLast4FromInvoice(stripe, inv);
 
         const created = new Date(inv.created * 1000);
         const ref =
