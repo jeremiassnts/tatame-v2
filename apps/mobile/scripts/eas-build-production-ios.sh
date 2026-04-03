@@ -3,6 +3,11 @@
 # Helper script to run local EAS builds for production (iOS)
 # Usage: ./eas-build-production-ios.sh
 # Example: ./eas-build-production-ios.sh
+# Large temp artifacts use EAS_BUILD_ROOT (default: /Volumes/ExternalDisk1); override with env if needed.
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=eas-build-common.sh
+source "$SCRIPT_DIR/eas-build-common.sh"
 
 # Check if we're on macOS (required for iOS builds)
 if [[ "$(uname)" != "Darwin" ]]; then
@@ -76,9 +81,10 @@ echo "Using Xcode:"
 xcodebuild -version
 echo ""
 
-# Check disk space
-echo "Checking disk space..."
-DISK_INFO=$(df -h / | tail -1)
+# Check disk space (build volume, not only the system disk)
+echo "Checking disk space on build volume..."
+eas_build_print_cache_env
+DISK_INFO=$(df -h "$EAS_BUILD_ROOT" | tail -1)
 DISK_SPACE=$(echo "$DISK_INFO" | awk '{print $4}')
 DISK_USAGE=$(echo "$DISK_INFO" | awk '{print $5}' | sed 's/%//')
 echo "Available space: $DISK_SPACE"

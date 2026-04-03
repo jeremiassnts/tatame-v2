@@ -3,6 +3,11 @@
 # Helper script to run local EAS builds with Java 17
 # Usage: ./eas-build-local.sh [profile] [platform]
 # Example: ./eas-build-local.sh preview android
+# Large temp artifacts use EAS_BUILD_ROOT (default: /Volumes/ExternalDisk1); override with env if needed.
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=eas-build-common.sh
+source "$SCRIPT_DIR/eas-build-common.sh"
 
 # Configure JAVA_HOME for Java 17
 export JAVA_HOME="/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"
@@ -31,9 +36,10 @@ echo ""
 echo "Android SDK: $ANDROID_HOME"
 echo ""
 
-# Check disk space
-echo "Checking disk space..."
-DISK_INFO=$(df -h / | tail -1)
+# Check disk space (build volume, not only the system disk)
+echo "Checking disk space on build volume..."
+eas_build_print_cache_env
+DISK_INFO=$(df -h "$EAS_BUILD_ROOT" | tail -1)
 DISK_SPACE=$(echo "$DISK_INFO" | awk '{print $4}')
 DISK_USAGE=$(echo "$DISK_INFO" | awk '{print $5}' | sed 's/%//')
 echo "Available space: $DISK_SPACE"
