@@ -7,15 +7,43 @@
     "scheme": "tatame",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
+    "icon": "./assets/images/icon.png",
+    "splash": {
+      "image": "./assets/images/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#141414"
+    },
     "ios": {
-      "supportsTablet": false,
-      "bundleIdentifier": "com.tatame.app"
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.tatame",
+      "icon": "./assets/images/icon.png",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Este app precisa de acesso à câmera para capturar fotos e vídeos.",
+        "NSMicrophoneUsageDescription": "Este app precisa de acesso ao microfone para gravar vídeos com áudio.",
+        "NSPhotoLibraryUsageDescription": "Este app precisa de acesso à biblioteca de fotos para salvar e carregar mídias.",
+        "NSPhotoLibraryAddUsageDescription": "Este app precisa de permissão para salvar fotos na sua biblioteca.",
+        "NSLocationWhenInUseUsageDescription": "Este app precisa de acesso à localização.",
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleAllowMixedLocalizations": true,
+        "CFBundleLocalizations": [
+          "pt-BR"
+        ]
+      },
+      "buildNumber": "1"
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "backgroundColor": "#0C0C0C"
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "monochromeImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#141414"
       },
-      "package": "com.tatame.app"
+      "edgeToEdgeEnabled": true,
+      "package": "com.anonymous.tatame",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -24,7 +52,7 @@
       [
         "@stripe/stripe-react-native",
         {
-          "merchantIdentifier": "merchant.com.tatame.app"
+          "merchantIdentifier": "merchant.com.anonymous.tatame"
         }
       ]
     ]
