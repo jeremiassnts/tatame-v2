@@ -43,12 +43,8 @@ COPY --from=build /app/deploy/node_modules ./node_modules
 # Copy migration SQL files and meta
 COPY --from=build /app/packages/db/drizzle ./drizzle
 
-# Copy entrypoint
-COPY apps/api/docker-entrypoint.sh ./docker-entrypoint.sh
-RUN chmod +x ./docker-entrypoint.sh
-
 ENV NODE_ENV=production
 
 USER appuser
 
-ENTRYPOINT ["./docker-entrypoint.sh"]
+CMD ["node", "dist/server.js"]
