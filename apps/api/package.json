@@ -16,6 +16,8 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1016.0",
+    "@bull-board/api": "6.20.6",
+    "@bull-board/express": "6.20.6",
     "@clerk/backend": "3.2.1",
     "@clerk/express": "2.0.5",
     "@react-email/components": "0.0.36",
