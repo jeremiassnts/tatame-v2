@@ -3,6 +3,9 @@ import type { IClassRepository } from "../class/class.repository.js";
 import type { IMembershipRepository } from "../membership/membership.repository.js";
 import type { ISubscriptionPlanRepository } from "../subscription/subscription.repository.js";
 import type { IManagerSubscriptionRepository } from "./manager-subscription.repository.js";
+import type { IUserRepository } from "../user/user.repository.js";
+import type { IAcademyRepository } from "../academy/academy.repository.js";
+import type { EmailService } from "../email/email.service.js";
 import { mapStripeStatus } from "./stripe-status.js";
 
 const FREE_STUDENT_LIMIT = 50;
@@ -15,6 +18,9 @@ export class StripeWebhookHandler {
     private readonly memRepo: IMembershipRepository,
     private readonly classRepo: IClassRepository,
     private readonly planRepo: ISubscriptionPlanRepository,
+    private readonly userRepo: IUserRepository,
+    private readonly academyRepo: IAcademyRepository,
+    private readonly emailService: EmailService | null,
   ) {}
 
   async handleEvent(event: Stripe.Event): Promise<void> {
@@ -47,6 +53,14 @@ export class StripeWebhookHandler {
     return Number.isNaN(d.getTime()) ? null : d;
   }
 
+  private async resolveOwner(academyId: string) {
+    const academy = await this.academyRepo.findById(academyId);
+    if (!academy) return null;
+    const owner = await this.userRepo.findById(academy.ownerId);
+    if (!owner) return null;
+    return { academy, owner };
+  }
+
   private async onSubscriptionCreated(
     stripeSub: Stripe.Subscription,
   ): Promise<void> {
@@ -64,6 +78,20 @@ export class StripeWebhookHandler {
       stripeSubscriptionId: stripeSub.id,
       currentPeriodEnd: this.getPeriodEndFromStripeSub(stripeSub),
     });
+
+    if (this.emailService) {
+      const resolved = await this.resolveOwner(row.academyId);
+      if (resolved) {
+        await this.emailService.sendProActivated(
+          {
+            email: resolved.owner.email,
+            managerName: resolved.owner.name,
+            academyName: resolved.academy.name,
+          },
+          stripeSub.id,
+        );
+      }
+    }
   }
 
   private async onSubscriptionUpdated(
@@ -109,6 +137,24 @@ export class StripeWebhookHandler {
         canceledAt: new Date(),
       });
     }
+
+    if (this.emailService) {
+      const resolved = await this.resolveOwner(row.academyId);
+      if (resolved) {
+        const periodEnd = this.getPeriodEndFromStripeSub(stripeSub);
+        await this.emailService.sendSubscriptionCanceled(
+          {
+            email: resolved.owner.email,
+            managerName: resolved.owner.name,
+            academyName: resolved.academy.name,
+            endsAt: periodEnd
+              ? periodEnd.toLocaleDateString("pt-BR")
+              : "imediatamente",
+          },
+          stripeSub.id,
+        );
+      }
+    }
   }
 
   private async onInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
@@ -120,6 +166,22 @@ export class StripeWebhookHandler {
     if (!row) return;
 
     await this.subRepo.update(row.id, { status: "active" });
+
+    if (this.emailService) {
+      const resolved = await this.resolveOwner(row.academyId);
+      if (resolved) {
+        await this.emailService.sendInvoicePaid(
+          {
+            email: resolved.owner.email,
+            managerName: resolved.owner.name,
+            academyName: resolved.academy.name,
+            amountCents: invoice.amount_paid ?? 0,
+            invoiceUrl: invoice.hosted_invoice_url ?? undefined,
+          },
+          invoice.id,
+        );
+      }
+    }
   }
 
   private async onInvoicePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
@@ -131,6 +193,21 @@ export class StripeWebhookHandler {
     if (!row) return;
 
     await this.subRepo.update(row.id, { status: "past_due" });
+
+    if (this.emailService) {
+      const resolved = await this.resolveOwner(row.academyId);
+      if (resolved) {
+        await this.emailService.sendPaymentFailed(
+          {
+            email: resolved.owner.email,
+            managerName: resolved.owner.name,
+            academyName: resolved.academy.name,
+            amountCents: invoice.amount_due ?? 0,
+          },
+          invoice.id,
+        );
+      }
+    }
   }
 
   private async canDowngradeToFree(academyId: string): Promise<boolean> {
@@ -162,4 +239,3 @@ export class StripeWebhookHandler {
     return true;
   }
 }
-

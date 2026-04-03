@@ -18,16 +18,27 @@ import { PostgresClassRepository } from "../class/class.repository.postgres.js";
 import { PostgresManagerSubscriptionRepository } from "../manager-subscription/manager-subscription.repository.postgres.js";
 import { ManagerSubscriptionService } from "../manager-subscription/manager-subscription.service.js";
 import { PostgresSubscriptionPlanRepository } from "../subscription/subscription.repository.postgres.js";
+import { PostgresUserRepository } from "../user/user.repository.postgres.js";
+import { getEmailQueue } from "../email/email.queue.js";
+import { EmailService } from "../email/email.service.js";
+import { loadEnv } from "@tatame/config";
 import { PostgresMembershipRepository } from "./membership.repository.postgres.js";
 import { MembershipService } from "./membership.service.js";
 
 export const membershipRouter = Router();
 
 const db = getDb();
+const env = loadEnv();
 const membershipRepo = new PostgresMembershipRepository(db);
+const academyRepo = new PostgresAcademyRepository(db);
+const userRepo = new PostgresUserRepository(db);
+const emailService = env.REDIS_URL
+  ? new EmailService(getEmailQueue(env.REDIS_URL))
+  : null;
+
 const membershipService = new MembershipService(
   membershipRepo,
-  new PostgresAcademyRepository(db),
+  academyRepo,
 );
 const managerSubService = new ManagerSubscriptionService(
   new PostgresManagerSubscriptionRepository(db),
@@ -157,6 +168,39 @@ membershipRouter.patch(
         params.data.membershipId,
         req.appAuth!.userId,
       );
+
+      // Send email notifications
+      if (emailService && updated) {
+        const member = await userRepo.findById(updated.userId);
+        const academy = await academyRepo.findById(updated.academyId);
+        const manager = await userRepo.findById(req.appAuth!.userId);
+
+        if (member && academy) {
+          await emailService.sendMemberApproved(
+            {
+              email: member.email,
+              memberName: member.name,
+              academyName: academy.name,
+              role: updated.role as "student" | "instructor",
+            },
+            updated.id,
+          );
+
+          if (manager) {
+            await emailService.sendManagerNewMember(
+              {
+                email: manager.email,
+                managerName: manager.name,
+                memberName: member.name,
+                academyName: academy.name,
+                role: updated.role as "student" | "instructor",
+              },
+              updated.id,
+            );
+          }
+        }
+      }
+
       res.json(updated);
     } catch (e) {
       next(e);

@@ -18,13 +18,22 @@ import { PostgresManagerSubscriptionRepository } from "./manager-subscription.re
 import { ManagerSubscriptionService } from "./manager-subscription.service.js";
 import { mapStripeStatus } from "./stripe-status.js";
 import { StripeWebhookHandler } from "./stripe-webhook.handler.js";
+import { PostgresUserRepository } from "../user/user.repository.postgres.js";
+import { getEmailQueue } from "../email/email.queue.js";
+import { EmailService } from "../email/email.service.js";
 
 const db = getDb();
+const env = loadEnv();
 const subRepo = new PostgresManagerSubscriptionRepository(db);
 const acadRepo = new PostgresAcademyRepository(db);
 const memRepo = new PostgresMembershipRepository(db);
 const classRepo = new PostgresClassRepository(db);
 const planRepo = new PostgresSubscriptionPlanRepository(db);
+const userRepo = new PostgresUserRepository(db);
+
+const emailService = env.REDIS_URL
+  ? new EmailService(getEmailQueue(env.REDIS_URL))
+  : null;
 
 const service = new ManagerSubscriptionService(
   subRepo,
@@ -39,6 +48,9 @@ const webhookHandler = new StripeWebhookHandler(
   memRepo,
   classRepo,
   planRepo,
+  userRepo,
+  acadRepo,
+  emailService,
 );
 
 export const managerSubscriptionRouter = Router();

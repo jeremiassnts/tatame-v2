@@ -44,6 +44,10 @@ export class InMemoryUserRepository implements IUserRepository {
     });
   }
 
+  async findById(userId: string): Promise<UserRow | undefined> {
+    return this.users.find((u) => u.id === userId && !u.deletedAt);
+  }
+
   async findByClerkId(clerkUserId: string): Promise<UserRow | undefined> {
     return this.users.find((u) => u.clerkUserId === clerkUserId && !u.deletedAt);
   }

@@ -13,6 +13,16 @@ config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, "node_modules"),
   path.resolve(monorepoRoot, "node_modules"),
 ];
+
+// Packages that must be singletons (two copies = broken hooks / invalid hook call).
+// In a pnpm monorepo Metro can resolve these from the monorepo root AND from the app,
+// producing two instances. extraNodeModules overrides resolution to always use the
+// app's copy regardless of which package is doing the import.
+config.resolver.extraNodeModules = {
+  react: path.resolve(projectRoot, "node_modules/react"),
+  "react-native": path.resolve(projectRoot, "node_modules/react-native"),
+  "react-dom": path.resolve(projectRoot, "node_modules/react-dom"),
+};
 config.transformer.babelTransformerPath = require.resolve(
   "react-native-svg-transformer/expo"
 );
