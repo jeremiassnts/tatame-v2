@@ -32,18 +32,29 @@ import {
   PostgresSubscriptionPlanRepository,
 } from "./subscription.repository.postgres.js";
 import { SubscriptionService } from "./subscription.service.js";
+import { loadEnv } from "@tatame/config";
+import { PostgresUserRepository } from "../user/user.repository.postgres.js";
+import { getEmailQueue } from "../email/email.queue.js";
+import { EmailService } from "../email/email.service.js";
 
 export const subscriptionRouter = Router();
 
 const db = getDb();
+const env = loadEnv();
+const academyRepo = new PostgresAcademyRepository(db);
+const userRepo = new PostgresUserRepository(db);
+const emailService = env.REDIS_URL
+  ? new EmailService(getEmailQueue(env.REDIS_URL))
+  : null;
+
 const subscriptionService = new SubscriptionService(
   new PostgresSubscriptionPlanRepository(db),
   new PostgresStudentSubscriptionRepository(db),
-  new PostgresAcademyRepository(db),
+  academyRepo,
 );
 const managerSubService = new ManagerSubscriptionService(
   new PostgresManagerSubscriptionRepository(db),
-  new PostgresAcademyRepository(db),
+  academyRepo,
   new PostgresMembershipRepository(db),
   new PostgresClassRepository(db),
   new PostgresSubscriptionPlanRepository(db),
@@ -236,6 +247,26 @@ subscriptionRouter.post(
       const userId = req.appAuth!.userId;
       const academyId = req.appAuth!.activeAcademyId!;
       const result = await subscriptionService.selectPlan(userId, academyId, planId);
+
+      // Send enrollment email
+      if (emailService) {
+        const student = await userRepo.findById(userId);
+        const academy = await academyRepo.findById(academyId);
+        if (student && academy) {
+          await emailService.sendPlanEnrolled(
+            {
+              email: student.email,
+              studentName: student.name,
+              planName: result.plan.name,
+              academyName: academy.name,
+              startsAt: result.subscription.startsAt,
+              expiresAt: result.subscription.expiresAt,
+            },
+            result.subscription.id,
+          );
+        }
+      }
+
       res.status(201).json(result);
     } catch (e) {
       next(e);
