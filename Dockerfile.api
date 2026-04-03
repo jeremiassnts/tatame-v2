@@ -13,6 +13,9 @@ COPY packages/db/package.json packages/db/
 COPY packages/types/package.json packages/types/
 COPY packages/validators/package.json packages/validators/
 
+# PaaS (e.g. Coolify) often sets NODE_ENV=production for prod deploys. That makes pnpm
+# skip devDependencies — but turbo and typescript are devDependencies and required to build.
+ENV NODE_ENV=development
 RUN pnpm install --frozen-lockfile
 
 # ── Stage 2: Build ──
@@ -26,7 +29,8 @@ COPY turbo.json tsconfig.base.json ./
 # Build all packages in dependency order, then the API
 RUN pnpm turbo build --filter=@tatame/api
 
-# Create isolated production bundle
+# Create isolated production bundle (use production for deploy output)
+ENV NODE_ENV=production
 RUN pnpm deploy --filter=@tatame/api --prod /app/deploy
 
 # ── Stage 3: Production ──
