@@ -11,6 +11,8 @@ export interface IUserRepository {
     profileImageUrl: string | null;
   }): Promise<void>;
 
+  findById(userId: string): Promise<UserRow | undefined>;
+
   findByClerkId(clerkUserId: string): Promise<UserRow | undefined>;
 
   update(

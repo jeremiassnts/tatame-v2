@@ -36,6 +36,15 @@ export class PostgresUserRepository implements IUserRepository {
       });
   }
 
+  async findById(userId: string): Promise<UserRow | undefined> {
+    const [row] = await this.db
+      .select()
+      .from(users)
+      .where(and(eq(users.id, userId), isNull(users.deletedAt)))
+      .limit(1);
+    return row;
+  }
+
   async findByClerkId(clerkUserId: string): Promise<UserRow | undefined> {
     const [row] = await this.db
       .select()
