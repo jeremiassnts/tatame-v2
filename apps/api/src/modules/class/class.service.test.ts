@@ -3,6 +3,7 @@ import type { Role } from "@tatame/types";
 import { describe, expect, it } from "vitest";
 import {
   makeAcademy,
+  makeClass,
   makeMembership,
 } from "../../testing/factories/index.js";
 import { InMemoryAcademyRepository } from "../academy/academy.repository.in-memory.js";
@@ -91,6 +92,192 @@ describe("ClassService", () => {
         dayOfWeek: 1,
         startTime: "10:00",
         endTime: "11:00",
+      }),
+    ).rejects.toMatchObject({ statusCode: 403 });
+  });
+
+  it("instructor list includes classes taught by other instructors", async () => {
+    const academyId = randomUUID();
+    const managerId = randomUUID();
+    const instructorA = randomUUID();
+    const instructorB = randomUUID();
+    const academy = makeAcademy({ id: academyId, ownerId: managerId });
+    const classA = makeClass({
+      academyId,
+      instructorId: instructorA,
+      name: "Mine",
+      isActive: true,
+    });
+    const classB = makeClass({
+      academyId,
+      instructorId: instructorB,
+      name: "Theirs",
+      isActive: true,
+    });
+    const memRows: MembershipRow[] = [
+      makeMembership({
+        userId: managerId,
+        academyId,
+        role: "manager",
+        status: "active",
+        isActive: true,
+      }),
+      makeMembership({
+        userId: instructorA,
+        academyId,
+        role: "instructor",
+        status: "active",
+        isActive: true,
+      }),
+      makeMembership({
+        userId: instructorB,
+        academyId,
+        role: "instructor",
+        status: "active",
+        isActive: true,
+      }),
+    ];
+    const svc = new ClassService(
+      new InMemoryClassRepository([classA, classB]),
+      new InMemoryMembershipRepository(memRows),
+      new InMemoryAcademyRepository([academy]),
+    );
+    const items = await svc.list(ctx(instructorA, "instructor", academyId), {});
+    expect(items.map((c) => c.name).sort()).toEqual(["Mine", "Theirs"]);
+  });
+
+  it("instructor can getById another instructor active class", async () => {
+    const academyId = randomUUID();
+    const managerId = randomUUID();
+    const instructorA = randomUUID();
+    const instructorB = randomUUID();
+    const academy = makeAcademy({ id: academyId, ownerId: managerId });
+    const classB = makeClass({
+      academyId,
+      instructorId: instructorB,
+      isActive: true,
+    });
+    const memRows: MembershipRow[] = [
+      makeMembership({
+        userId: managerId,
+        academyId,
+        role: "manager",
+        status: "active",
+        isActive: true,
+      }),
+      makeMembership({
+        userId: instructorA,
+        academyId,
+        role: "instructor",
+        status: "active",
+        isActive: true,
+      }),
+      makeMembership({
+        userId: instructorB,
+        academyId,
+        role: "instructor",
+        status: "active",
+        isActive: true,
+      }),
+    ];
+    const svc = new ClassService(
+      new InMemoryClassRepository([classB]),
+      new InMemoryMembershipRepository(memRows),
+      new InMemoryAcademyRepository([academy]),
+    );
+    const row = await svc.getById(
+      ctx(instructorA, "instructor", academyId),
+      classB.id,
+    );
+    expect(row.id).toBe(classB.id);
+  });
+
+  it("instructor cannot getById another instructor inactive class", async () => {
+    const academyId = randomUUID();
+    const managerId = randomUUID();
+    const instructorA = randomUUID();
+    const instructorB = randomUUID();
+    const academy = makeAcademy({ id: academyId, ownerId: managerId });
+    const classB = makeClass({
+      academyId,
+      instructorId: instructorB,
+      isActive: false,
+    });
+    const memRows: MembershipRow[] = [
+      makeMembership({
+        userId: managerId,
+        academyId,
+        role: "manager",
+        status: "active",
+        isActive: true,
+      }),
+      makeMembership({
+        userId: instructorA,
+        academyId,
+        role: "instructor",
+        status: "active",
+        isActive: true,
+      }),
+      makeMembership({
+        userId: instructorB,
+        academyId,
+        role: "instructor",
+        status: "active",
+        isActive: true,
+      }),
+    ];
+    const svc = new ClassService(
+      new InMemoryClassRepository([classB]),
+      new InMemoryMembershipRepository(memRows),
+      new InMemoryAcademyRepository([academy]),
+    );
+    await expect(
+      svc.getById(ctx(instructorA, "instructor", academyId), classB.id),
+    ).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  it("instructor cannot update another instructor class", async () => {
+    const academyId = randomUUID();
+    const managerId = randomUUID();
+    const instructorA = randomUUID();
+    const instructorB = randomUUID();
+    const academy = makeAcademy({ id: academyId, ownerId: managerId });
+    const classB = makeClass({
+      academyId,
+      instructorId: instructorB,
+      isActive: true,
+    });
+    const memRows: MembershipRow[] = [
+      makeMembership({
+        userId: managerId,
+        academyId,
+        role: "manager",
+        status: "active",
+        isActive: true,
+      }),
+      makeMembership({
+        userId: instructorA,
+        academyId,
+        role: "instructor",
+        status: "active",
+        isActive: true,
+      }),
+      makeMembership({
+        userId: instructorB,
+        academyId,
+        role: "instructor",
+        status: "active",
+        isActive: true,
+      }),
+    ];
+    const svc = new ClassService(
+      new InMemoryClassRepository([classB]),
+      new InMemoryMembershipRepository(memRows),
+      new InMemoryAcademyRepository([academy]),
+    );
+    await expect(
+      svc.update(ctx(instructorA, "instructor", academyId), classB.id, {
+        name: "Hacked",
       }),
     ).rejects.toMatchObject({ statusCode: 403 });
   });

@@ -5,6 +5,7 @@ import {
 } from "@/lib/class-session-date";
 import { useClassCheckins } from "@/lib/hooks/use-checkin";
 import { useClass } from "@/lib/hooks/use-classes";
+import { useCurrentUser } from "@/lib/hooks/use-user";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ActivityIndicator, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -41,7 +42,9 @@ export default function InstructorClassDetail() {
   const classId = paramToId(rawClassId);
   const sessionDateFromParam = parseSessionDateParam(rawSessionDate);
   const router = useRouter();
+  const { data: me } = useCurrentUser();
   const { data: cls, isLoading, isError } = useClass(classId ?? "");
+  const canEditClass = Boolean(me?.id && cls && cls.instructorId === me.id);
 
   const sessionDate =
     cls != null
@@ -100,9 +103,13 @@ export default function InstructorClassDetail() {
           userName: c.userName ?? "Aluno",
           userProfileImageUrl: c.userProfileImageUrl,
         }))}
-        canEdit
+        canEdit={canEditClass}
         showCheckins
-        onEdit={() => router.push(`/(app)/(instructor)/(classes)/edit/${classId}`)}
+        onEdit={
+          canEditClass
+            ? () => router.push(`/(app)/(instructor)/(classes)/edit/${classId}`)
+            : undefined
+        }
       />
     </SafeAreaView>
   );

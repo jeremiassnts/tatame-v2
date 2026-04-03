@@ -42,11 +42,9 @@ export class ClassService {
   ) {
     const includeInactive =
       ctx.role === "manager" ? Boolean(query.includeInactive) : false;
-    const instructorId = ctx.role === "instructor" ? ctx.userId : undefined;
     return this.classRepo.findByAcademyId(ctx.activeAcademyId, {
       dayOfWeek: query.dayOfWeek,
       includeInactive,
-      instructorId,
     });
   }
 
@@ -56,8 +54,12 @@ export class ClassService {
     if (ctx.role === "student" && !row.isActive) {
       throw new HttpError(404, "Class not found");
     }
-    if (ctx.role === "instructor" && row.instructorId !== ctx.userId) {
-      throw new HttpError(403, "You can only view your own classes");
+    if (
+      ctx.role === "instructor" &&
+      row.instructorId !== ctx.userId &&
+      !row.isActive
+    ) {
+      throw new HttpError(404, "Class not found");
     }
     return row;
   }

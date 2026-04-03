@@ -84,6 +84,8 @@ export default function InstructorHome() {
     return classesTodayList.filter((c) => c.instructorId === instructorId);
   }, [classesTodayList, instructorId]);
 
+  const allClassesToday = classesTodayList ?? [];
+
   const classesThisWeek = useMemo(() => {
     if (!instructorId) return 0;
     return weekClassQueries.reduce((sum, q) => {
@@ -188,7 +190,7 @@ export default function InstructorHome() {
                   {classesTodayCount}
                 </Text>
                 <Text className="font-poppins text-center text-[11px]" style={{ color: TEXT_SECONDARY }}>
-                  Aulas{"\n"}hoje
+                  Minhas aulas{"\n"}hoje
                 </Text>
               </View>
             </View>
@@ -206,17 +208,17 @@ export default function InstructorHome() {
           />
 
           <Text className="font-poppins-semibold text-sm" style={{ color: TEXT_SECONDARY }}>
-            Aulas de hoje
+            Aulas de hoje na academia
           </Text>
           <View style={{ gap: 10 }}>
-            {myClassesToday.length === 0 ? (
+            {allClassesToday.length === 0 ? (
               <View className="items-center rounded-[14px] border border-surface-border bg-surface py-8">
                 <Text className="font-poppins text-sm" style={{ color: TEXT_MUTED }}>
                   Nenhuma aula agendada para hoje
                 </Text>
               </View>
             ) : (
-              myClassesToday.map((cls) => (
+              allClassesToday.map((cls) => (
                 <ClassCard
                   key={cls.id}
                   name={cls.name}

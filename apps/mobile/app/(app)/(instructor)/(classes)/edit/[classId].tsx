@@ -2,7 +2,7 @@ import { ClassForm, type ClassFormData } from "@/components/ClassForm";
 import { useClass, useUpdateClass } from "@/lib/hooks/use-classes";
 import { useCurrentUser } from "@/lib/hooks/use-user";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ActivityIndicator, Text } from "react-native";
+import { ActivityIndicator, Pressable, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 function formatTime(t: string) {
@@ -51,6 +51,19 @@ export default function InstructorEditClass() {
         <Text className="font-poppins text-sm text-muted">
           Não foi possível carregar esta aula
         </Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (me?.id && cls.instructorId !== me.id) {
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center bg-background px-8">
+        <Text className="mb-4 text-center font-poppins text-sm text-muted">
+          Você só pode editar aulas em que é o professor responsável.
+        </Text>
+        <Pressable onPress={() => router.back()}>
+          <Text className="font-poppins-semibold text-sm text-accent">Voltar</Text>
+        </Pressable>
       </SafeAreaView>
     );
   }
