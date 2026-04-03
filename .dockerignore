@@ -1,0 +1,12 @@
+node_modules
+.git
+.gitignore
+.env
+.env.*
+dist
+.turbo
+.vscode
+.idea
+*.md
+apps/mobile
+docs
