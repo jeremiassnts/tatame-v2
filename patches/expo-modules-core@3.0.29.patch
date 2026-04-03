@@ -1,0 +1,17 @@
+diff --git a/android/src/main/java/expo/modules/core/interfaces/ReactActivityHandler.java b/android/src/main/java/expo/modules/core/interfaces/ReactActivityHandler.java
+index 92611192c08e8d88cca76fcac3ad747ce2e21a9f..98b86843858888b3ed9d5e05fbf97bda7e1ae8ec 100644
+--- a/android/src/main/java/expo/modules/core/interfaces/ReactActivityHandler.java
++++ b/android/src/main/java/expo/modules/core/interfaces/ReactActivityHandler.java
+@@ -72,6 +72,12 @@ public interface ReactActivityHandler {
+     return null;
+   }
+ 
++  /**
++   * Gives modules a chance to override invoke side-effects when activity delegate is created.
++   */
++  default void onDidCreateReactActivityDelegateNotification(ReactActivity activity, ReactActivityDelegate delegate) {
++  }
++
+   /**
+    * For modules to delay the call for react-native `loadApp`.
+    * This gives modules a chance to do some early and heavy initialization in background thread and avoid ANR.
