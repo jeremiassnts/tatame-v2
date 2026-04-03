@@ -43,8 +43,6 @@ export default function ManagerLayout() {
           borderTopColor: "#2A2A2A",
           borderTopWidth: 1,
           height: 56 + Math.max(insets.bottom, 8),
-          paddingBottom: Math.max(insets.bottom, 8),
-          paddingTop: 8,
         },
         tabBarActiveTintColor: "#A078E8",
         tabBarInactiveTintColor: "#ABABAB",
