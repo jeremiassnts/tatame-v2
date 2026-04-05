@@ -2,7 +2,7 @@ import type { Queue } from "bullmq";
 import type { EmailJobMap, EmailJobName } from "./email.queue.js";
 
 export class EmailService {
-  constructor(private readonly queue: Queue) {}
+  constructor(private readonly queue: Queue) { }
 
   private async enqueue<N extends EmailJobName>(
     name: N,

@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { loadEnv } from "@tatame/config";
 import { Role } from "@tatame/types";
 import type { RequestMembershipBody } from "@tatame/validators";
 import {
@@ -7,6 +7,7 @@ import {
   pendingQuerySchema,
   requestMembershipBodySchema,
 } from "@tatame/validators";
+import { Router } from "express";
 import { z } from "zod";
 import { getDb } from "../../lib/db.js";
 import { HttpError } from "../../lib/http-error.js";
@@ -15,13 +16,12 @@ import { authorize } from "../../middleware/authorize.js";
 import { validateBody } from "../../middleware/validate.js";
 import { PostgresAcademyRepository } from "../academy/academy.repository.postgres.js";
 import { PostgresClassRepository } from "../class/class.repository.postgres.js";
+import { getEmailQueue } from "../email/email.queue.js";
+import { EmailService } from "../email/email.service.js";
 import { PostgresManagerSubscriptionRepository } from "../manager-subscription/manager-subscription.repository.postgres.js";
 import { ManagerSubscriptionService } from "../manager-subscription/manager-subscription.service.js";
 import { PostgresSubscriptionPlanRepository } from "../subscription/subscription.repository.postgres.js";
 import { PostgresUserRepository } from "../user/user.repository.postgres.js";
-import { getEmailQueue } from "../email/email.queue.js";
-import { EmailService } from "../email/email.service.js";
-import { loadEnv } from "@tatame/config";
 import { PostgresMembershipRepository } from "./membership.repository.postgres.js";
 import { MembershipService } from "./membership.service.js";
 

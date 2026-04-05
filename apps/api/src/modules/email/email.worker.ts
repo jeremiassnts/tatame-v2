@@ -1,16 +1,16 @@
+import {
+  InvoicePaid,
+  ManagerNewMember,
+  MemberApproved,
+  PaymentConfirmed,
+  PaymentFailed,
+  PlanEnrolled,
+  ProActivated,
+  renderEmail,
+  SubscriptionCanceled,
+} from "@tatame/email";
 import { Worker, type Job } from "bullmq";
 import { createElement } from "react";
-import {
-  renderEmail,
-  InvoicePaid,
-  PaymentFailed,
-  ProActivated,
-  SubscriptionCanceled,
-  PlanEnrolled,
-  PaymentConfirmed,
-  MemberApproved,
-  ManagerNewMember,
-} from "@tatame/email";
 import { getResend } from "../../lib/resend.js";
 import type { EmailJobName } from "./email.queue.js";
 
