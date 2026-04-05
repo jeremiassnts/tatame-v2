@@ -83,7 +83,8 @@ export default function ProfileScreen() {
   const handleLogout = useCallback(async () => {
     queryClient.clear();
     await signOut();
-  }, [queryClient, signOut]);
+    router.replace("/(auth)");
+  }, [queryClient, router, signOut]);
 
   const handleDeleteAccount = useCallback(() => {
     Alert.alert(
