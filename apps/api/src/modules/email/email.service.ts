@@ -16,7 +16,7 @@ export class EmailService {
     data: EmailJobMap["invoice-paid"],
     stripeInvoiceId: string,
   ) {
-    await this.enqueue("invoice-paid", data, `invoice-paid:${stripeInvoiceId}`);
+    await this.enqueue("invoice-paid", data, `invoice-paid-${stripeInvoiceId}`);
   }
 
   async sendPaymentFailed(
@@ -26,7 +26,7 @@ export class EmailService {
     await this.enqueue(
       "payment-failed",
       data,
-      `payment-failed:${stripeInvoiceId}`,
+      `payment-failed-${stripeInvoiceId}`,
     );
   }
 
@@ -37,7 +37,7 @@ export class EmailService {
     await this.enqueue(
       "pro-activated",
       data,
-      `pro-activated:${stripeSubscriptionId}`,
+      `pro-activated-${stripeSubscriptionId}`,
     );
   }
 
@@ -48,7 +48,7 @@ export class EmailService {
     await this.enqueue(
       "subscription-canceled",
       data,
-      `subscription-canceled:${stripeSubscriptionId}`,
+      `subscription-canceled-${stripeSubscriptionId}`,
     );
   }
 
@@ -59,7 +59,7 @@ export class EmailService {
     await this.enqueue(
       "plan-enrolled",
       data,
-      `plan-enrolled:${studentSubscriptionId}`,
+      `plan-enrolled-${studentSubscriptionId}`,
     );
   }
 
@@ -70,7 +70,7 @@ export class EmailService {
     await this.enqueue(
       "payment-confirmed",
       data,
-      `payment-confirmed:${paymentId}`,
+      `payment-confirmed-${paymentId}`,
     );
   }
 
@@ -81,7 +81,7 @@ export class EmailService {
     await this.enqueue(
       "member-approved",
       data,
-      `member-approved:${membershipId}`,
+      `member-approved-${membershipId}`,
     );
   }
 
@@ -92,7 +92,7 @@ export class EmailService {
     await this.enqueue(
       "manager-new-member",
       data,
-      `manager-new-member:${membershipId}`,
+      `manager-new-member-${membershipId}`,
     );
   }
 }
