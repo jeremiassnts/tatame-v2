@@ -158,7 +158,11 @@ export default function ManagerDashboard() {
             <View className="h-px w-full bg-surface-border" />
 
             <View className="flex-row">
-              <View className="flex-1 items-center" style={{ gap: 4 }}>
+              <Pressable
+                onPress={() => router.push("/(app)/(manager)/(members)")}
+                className="flex-1 items-center"
+                style={{ gap: 4 }}
+              >
                 <Text
                   className="font-poppins-bold text-primary"
                   style={{ fontSize: 22 }}
@@ -171,8 +175,12 @@ export default function ManagerDashboard() {
                 >
                   Membros
                 </Text>
-              </View>
-              <View className="flex-1 items-center" style={{ gap: 4 }}>
+              </Pressable>
+              <Pressable
+                onPress={() => router.push("/(app)/(manager)/(members)/pending")}
+                className="flex-1 items-center"
+                style={{ gap: 4 }}
+              >
                 <Text className="font-poppins-bold text-[22px]" style={{ color: WARNING }}>
                   {stats?.pendingRequests ?? 0}
                 </Text>
@@ -182,8 +190,12 @@ export default function ManagerDashboard() {
                 >
                   Pendentes
                 </Text>
-              </View>
-              <View className="flex-1 items-center" style={{ gap: 4 }}>
+              </Pressable>
+              <Pressable
+                onPress={() => router.push("/(app)/(manager)/(classes)")}
+                className="flex-1 items-center"
+                style={{ gap: 4 }}
+              >
                 <Text
                   className="font-poppins-bold text-primary"
                   style={{ fontSize: 22 }}
@@ -196,8 +208,12 @@ export default function ManagerDashboard() {
                 >
                   Aulas hoje
                 </Text>
-              </View>
-              <View className="flex-1 items-center" style={{ gap: 4 }}>
+              </Pressable>
+              <Pressable
+                onPress={() => router.push("/(app)/(manager)/(finances)/plans")}
+                className="flex-1 items-center"
+                style={{ gap: 4 }}
+              >
                 <Text
                   className="font-poppins-bold text-primary"
                   style={{ fontSize: 22 }}
@@ -210,7 +226,7 @@ export default function ManagerDashboard() {
                 >
                   Planos
                 </Text>
-              </View>
+              </Pressable>
             </View>
           </View>
 
