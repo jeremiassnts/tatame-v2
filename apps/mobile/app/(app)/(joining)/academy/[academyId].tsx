@@ -58,7 +58,7 @@ export default function AcademyDetailScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top", "bottom"]}>
       <View
         className="flex-1"
         style={{

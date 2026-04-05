@@ -5,6 +5,7 @@ import {
   usePendingRequests,
   useRejectMembership,
 } from "@/lib/hooks/use-membership";
+import { queryClient } from "@/lib/query-client";
 import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import { ActivityIndicator, FlatList, Pressable, Text, View } from "react-native";
@@ -24,6 +25,22 @@ export default function PendingRequestsScreen() {
   const { data: pending, isPending } = usePendingRequests(academyId);
   const approveMutation = useApproveMembership();
   const rejectMutation = useRejectMembership();
+
+  async function approveMembership(membershipId: string) {
+    await approveMutation.mutateAsync(membershipId);
+    onMembershipChange();
+  }
+
+  async function rejectMembership(membershipId: string) {
+    await rejectMutation.mutateAsync(membershipId);
+    onMembershipChange();
+  }
+
+  function onMembershipChange() {
+    void queryClient.invalidateQueries({ queryKey: ["pending-requests"] });
+    void queryClient.invalidateQueries({ queryKey: ["members"] });
+    void queryClient.invalidateQueries({ queryKey: ["academy-stats"] });
+  }
 
   const count = pending?.length ?? 0;
   const isMutating = approveMutation.isPending || rejectMutation.isPending;
@@ -63,8 +80,8 @@ export default function PendingRequestsScreen() {
                 name={item.userName}
                 role={item.role}
                 createdAt={toDateLabel(item.createdAt)}
-                onApprove={() => approveMutation.mutate(item.id)}
-                onReject={() => rejectMutation.mutate(item.id)}
+                onApprove={() => approveMembership(item.id)}
+                onReject={() => rejectMembership(item.id)}
                 isLoading={isMutating}
               />
             )}
