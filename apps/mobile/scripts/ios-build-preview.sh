@@ -4,6 +4,9 @@
 # Usage: ./ios-build-preview.sh
 # This will create a preview build for iOS devices (TestFlight)
 
+# Ensure we run from the mobile app directory
+cd "$(dirname "$0")/.." || exit 1
+
 echo "🍎 iOS Preview Build"
 echo "===================="
 echo ""

@@ -4,6 +4,9 @@
 # Usage: ./ios-build-production.sh
 # This will create a production build for iOS (App Store)
 
+# Ensure we run from the mobile app directory
+cd "$(dirname "$0")/.." || exit 1
+
 echo "🍎 iOS Production Build"
 echo "======================="
 echo ""

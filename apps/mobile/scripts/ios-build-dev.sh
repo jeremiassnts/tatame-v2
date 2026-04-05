@@ -4,6 +4,9 @@
 # Usage: ./ios-build-dev.sh
 # This will create a development build for iOS simulator
 
+# Ensure we run from the mobile app directory
+cd "$(dirname "$0")/.." || exit 1
+
 echo "🍎 iOS Development Build"
 echo "========================"
 echo ""
