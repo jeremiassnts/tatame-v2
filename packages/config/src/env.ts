@@ -27,6 +27,8 @@ const envSchema = z.object({
   RESEND_API_KEY: z.string().optional(),
   MANAGER_EMAIL: z.string().optional(),
   MANAGER_CLERK_ID: z.string().optional(),
+  BULL_BOARD_USER: z.string().optional(),
+  BULL_BOARD_PASS: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

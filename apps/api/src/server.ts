@@ -10,6 +10,7 @@ import {
 import { createBullBoard } from "@bull-board/api";
 import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
 import { ExpressAdapter } from "@bull-board/express";
+import basicAuth from "express-basic-auth";
 
 const env = loadEnv();
 
@@ -31,7 +32,19 @@ if (env.REDIS_URL) {
     queues: [new BullMQAdapter(getEmailQueue(env.REDIS_URL))],
     serverAdapter,
   });
-  app.use("/admin/queues", serverAdapter.getRouter());
+  const bullUser = env.BULL_BOARD_USER;
+  const bullPass = env.BULL_BOARD_PASS;
+  if (bullUser && bullPass) {
+    app.use(
+      "/admin/queues",
+      basicAuth({ users: { [bullUser]: bullPass }, challenge: true }),
+      serverAdapter.getRouter(),
+    );
+  } else {
+    console.warn(
+      "[bull-board] BULL_BOARD_USER/BULL_BOARD_PASS not set — dashboard disabled",
+    );
+  }
   console.log("[bull-board] Dashboard at /admin/queues");
 }
 
