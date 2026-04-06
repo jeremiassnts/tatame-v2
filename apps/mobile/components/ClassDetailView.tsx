@@ -246,9 +246,9 @@ export function ClassDetailView({
         {canCheckin ? (
           <>
             {checkinDisabled &&
-            !checkinDone &&
-            !checkinPending &&
-            checkinDisabledReason ? (
+              !checkinDone &&
+              !checkinPending &&
+              checkinDisabledReason ? (
               <View
                 className="flex-row items-start gap-3 rounded-xl px-4 py-3"
                 style={{ backgroundColor: "#A078E818" }}
@@ -272,7 +272,13 @@ export function ClassDetailView({
                   }
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
-                  className="h-[52px] flex-row items-center justify-center gap-2"
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    height: 52,
+                  }}
                 >
                   {checkinDone ? (
                     <>

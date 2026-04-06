@@ -126,7 +126,7 @@ export function ClassForm({
           placeholder="Descrição opcional da aula..."
           multiline
           numberOfLines={3}
-          style={{ height: 80 }}
+          style={{ height: 80, paddingTop: 15 }}
         />
 
         <View style={{ gap: 6 }}>
@@ -277,7 +277,13 @@ export function ClassForm({
               }
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
-              className="h-14 flex-row items-center justify-center gap-2"
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                height: 40,
+              }}
             >
               {isSubmitting ? (
                 <ActivityIndicator color="#FFFFFF" />

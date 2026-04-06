@@ -65,15 +65,19 @@ export default function UserTypeScreen() {
                 key={key}
                 onPress={() => setSelected(key)}
                 className={`flex-row items-center gap-4 rounded-2xl p-5 ${isSelected
-                    ? "border-[1.5px] border-accent bg-accent-translucent"
-                    : "border border-surface-border bg-surface"
+                  ? "border-[1.5px] border-accent bg-accent-translucent"
+                  : "border border-surface-border bg-surface"
                   }`}
               >
                 {isSelected ? (
                   <View className="h-12 w-12 overflow-hidden rounded-xl">
                     <LinearGradient
                       colors={["#A078E8", "#7C5CBF"]}
-                      className="flex-1 items-center justify-center"
+                      style={{
+                        flex: 1,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
                     >
                       <Icon size={24} color="#FFFFFF" />
                     </LinearGradient>

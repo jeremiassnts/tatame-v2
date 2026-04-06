@@ -206,7 +206,13 @@ export default function CreatePlanScreen() {
                 }
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
-                className="h-14 flex-row items-center justify-center gap-2"
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  height: 40,
+                }}
               >
                 {createPlan.isPending ? (
                   <ActivityIndicator color="#FFFFFF" />

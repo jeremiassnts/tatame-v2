@@ -238,7 +238,12 @@ export default function AcademySettingsScreen() {
                 colors={["#A078E8", "#7C5CBF"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
-                className="h-14 items-center justify-center"
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: 40,
+                }}
               >
                 <Text className="font-poppins-semibold text-base text-white">
                   Salvo!
@@ -260,7 +265,12 @@ export default function AcademySettingsScreen() {
                   }
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
-                  className="h-14 flex-row items-center justify-center"
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: 40,
+                  }}
                 >
                   {submitting ? (
                     <ActivityIndicator color="#FFFFFF" />
