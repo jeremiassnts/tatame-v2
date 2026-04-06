@@ -1,7 +1,7 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Calendar } from "lucide-react-native";
 import { useState } from "react";
-import { Platform, Pressable, Text, View } from "react-native";
+import { Modal, Platform, Pressable, Text, View } from "react-native";
 
 type DatePickerFieldProps = {
   label: string;
@@ -11,6 +11,13 @@ type DatePickerFieldProps = {
   /** When true, calendar icon on the right (M-MGR-03 settings). */
   iconTrailing?: boolean;
 };
+
+function toDateString(date: Date) {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
 
 export function DatePickerField({
   label,
@@ -30,13 +37,8 @@ export function DatePickerField({
   };
 
   const handleChange = (_event: unknown, selectedDate?: Date) => {
-    setShow(Platform.OS === "ios");
-    if (selectedDate) {
-      const yyyy = selectedDate.getFullYear();
-      const mm = String(selectedDate.getMonth() + 1).padStart(2, "0");
-      const dd = String(selectedDate.getDate()).padStart(2, "0");
-      onChange(`${yyyy}-${mm}-${dd}`);
-    }
+    if (Platform.OS === "android") setShow(false);
+    if (selectedDate) onChange(toDateString(selectedDate));
   };
 
   return (
@@ -59,15 +61,46 @@ export function DatePickerField({
         </Text>
         {iconTrailing ? <Calendar size={18} color="#525252" /> : null}
       </Pressable>
-      {show ? (
+
+      {Platform.OS === "ios" && show ? (
+        <Modal transparent animationType="fade" onRequestClose={() => setShow(false)}>
+          <Pressable
+            className="flex-1 items-center justify-center bg-black/80"
+            onPress={() => setShow(false)}
+          >
+            <Pressable className="mx-6 w-[90%] rounded-2xl bg-surface-card pb-6 pt-2">
+              <DateTimePicker
+                value={dateValue}
+                mode="date"
+                display="spinner"
+                onChange={handleChange}
+                themeVariant="dark"
+              />
+              <View className="px-4">
+                <Pressable
+                  onPress={() => setShow(false)}
+                  className="h-[48px] items-center justify-center rounded-xl bg-accent"
+                >
+                  <Text className="font-poppins-semibold text-[15px] text-white">
+                    OK
+                  </Text>
+                </Pressable>
+              </View>
+            </Pressable>
+          </Pressable>
+        </Modal>
+      ) : null}
+
+      {Platform.OS === "android" && show ? (
         <DateTimePicker
           value={dateValue}
           mode="date"
-          display={Platform.OS === "ios" ? "spinner" : "default"}
+          display="default"
           onChange={handleChange}
           themeVariant="dark"
         />
       ) : null}
+
       {error ? (
         <Text className="font-poppins text-xs text-red-500">{error}</Text>
       ) : null}
