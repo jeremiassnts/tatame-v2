@@ -13,7 +13,8 @@
     "db:migrate": "pnpm --filter @tatame/db migrate",
     "db:studio": "pnpm --filter @tatame/db studio",
     "api:dev": "pnpm --filter @tatame/api dev",
-    "mobile:dev": "pnpm --filter @tatame/mobile dev"
+    "mobile:dev": "pnpm --filter @tatame/mobile dev",
+    "web:dev": "pnpm --filter @tatame/web dev"
   },
   "devDependencies": {
     "turbo": "2.8.20",
