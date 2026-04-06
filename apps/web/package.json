@@ -3,8 +3,23 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "node -e \"console.log('web: Next.js scaffold pending')\"",
-    "dev": "node -e \"console.log('Run Next.js init when ready')\"",
-    "lint": "echo \"no lint configured\""
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "^15",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "lucide-react": "^0.460"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "tailwindcss": "^4",
+    "typescript": "5.9.3",
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19"
   }
 }
