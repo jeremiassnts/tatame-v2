@@ -29,7 +29,7 @@ const sections = [
   {
     title: "5. Seus direitos",
     content:
-      "De acordo com a LGPD, você tem direito a: acessar seus dados pessoais, corrigir dados incompletos ou desatualizados, solicitar a exclusão dos seus dados, revogar o consentimento a qualquer momento e solicitar a portabilidade dos dados. Para exercer esses direitos, entre em contato pelo e-mail privacidade@tatame.app.",
+      "De acordo com a LGPD, você tem direito a: acessar seus dados pessoais, corrigir dados incompletos ou desatualizados, solicitar a exclusão dos seus dados, revogar o consentimento a qualquer momento e solicitar a portabilidade dos dados. Para exercer esses direitos, entre em contato pelo e-mail contato@tatame.app.",
   },
   {
     title: "6. Cookies e rastreamento",
@@ -39,7 +39,7 @@ const sections = [
   {
     title: "7. Contato",
     content:
-      "Para dúvidas sobre esta política ou sobre o tratamento dos seus dados, entre em contato conosco pelo e-mail privacidade@tatame.app ou pelo nosso canal de suporte dentro da plataforma.",
+      "Para dúvidas sobre esta política ou sobre o tratamento dos seus dados, entre em contato conosco pelo e-mail contato@tatame.app ou pelo nosso canal de suporte dentro da plataforma.",
   },
 ];
 
@@ -53,7 +53,7 @@ export default function Privacidade() {
             Política de Privacidade
           </h1>
           <p className="text-sm text-text-muted">
-            Última atualização: 01 de abril de 2026
+            Última atualização: 06 de abril de 2026
           </p>
         </div>
 

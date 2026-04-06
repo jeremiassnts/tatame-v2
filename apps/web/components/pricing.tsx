@@ -6,7 +6,7 @@ const freePlan = {
   description: "Para academias começando no digital",
   price: "R$ 0",
   features: [
-    "Até 30 alunos",
+    "Até 50 alunos",
     "Agenda de aulas",
     "Check-in de alunos",
     "Controle de graduações",
@@ -21,10 +21,9 @@ const proPlan = {
   price: "R$ 49",
   features: [
     "Alunos ilimitados",
-    "Tudo do plano Gratuito",
-    "Dashboard web completo",
-    "Relatórios avançados",
-    "Suporte prioritário",
+    "Agenda ilimitada",
+    "Controle financeiro completo",
+    "Acesso ilimitado de instrutores"
   ],
   ctaLabel: "Assinar agora",
   highlighted: true,
@@ -33,9 +32,8 @@ const proPlan = {
 function PricingCard({ plan }: { plan: typeof freePlan }) {
   return (
     <div
-      className={`flex flex-col gap-8 rounded-[20px] bg-background p-8 md:p-10 ${
-        plan.highlighted ? "border-2 border-primary" : "border border-border"
-      }`}
+      className={`flex flex-col gap-8 rounded-[20px] bg-background p-8 md:p-10 ${plan.highlighted ? "border-2 border-primary" : "border border-border"
+        }`}
     >
       {plan.highlighted && (
         <span className="w-fit rounded-full bg-gradient-to-b from-primary to-primary-dark px-3 py-1 text-[10px] font-bold uppercase tracking-[1.5px] text-white">
@@ -65,9 +63,8 @@ function PricingCard({ plan }: { plan: typeof freePlan }) {
         {plan.features.map((feature) => (
           <div key={feature} className="flex items-center gap-3">
             <Check
-              className={`h-[18px] w-[18px] ${
-                plan.highlighted ? "text-primary" : "text-success"
-              }`}
+              className={`h-[18px] w-[18px] ${plan.highlighted ? "text-primary" : "text-success"
+                }`}
             />
             <span className="text-sm text-white">{feature}</span>
           </div>
@@ -76,11 +73,10 @@ function PricingCard({ plan }: { plan: typeof freePlan }) {
 
       <a
         href="#download"
-        className={`flex items-center justify-center rounded-xl py-3.5 text-[15px] font-semibold text-white transition-opacity hover:opacity-90 ${
-          plan.highlighted
-            ? "bg-gradient-to-b from-primary to-primary-dark"
-            : "border border-border-light bg-[#242424]"
-        }`}
+        className={`flex items-center justify-center rounded-xl py-3.5 text-[15px] font-semibold text-white transition-opacity hover:opacity-90 ${plan.highlighted
+          ? "bg-gradient-to-b from-primary to-primary-dark"
+          : "border border-border-light bg-[#242424]"
+          }`}
       >
         {plan.ctaLabel}
       </a>

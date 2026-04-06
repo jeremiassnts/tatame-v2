@@ -1,40 +1,41 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
+import Image from "next/image";
 import { useState } from "react";
-import { ChevronDown, MessageCircle } from "lucide-react";
 import { AnimateOnScroll } from "./animate-on-scroll";
 
 const faqItems = [
   {
     question: "Como funciona o período gratuito?",
     answer:
-      "Você pode usar todas as funcionalidades do Tatame por 14 dias sem compromisso. Não pedimos cartão de crédito — basta criar sua conta, cadastrar sua academia e começar a usar. Ao final do período, escolha o plano que melhor se encaixa.",
+      "Você pode utilizar o plano gratuito por tempo indeterminado sem cadastro de cartão de crédito, porém as funcionalidades serão limitadas.",
   },
   {
-    question: "Quantos alunos posso cadastrar?",
+    question: "Quantos alunos posso cadastrar no plano gratuito?",
     answer:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
+      "Você pode cadastrar até 50 alunos no plano gratuito.",
   },
   {
     question: "O app funciona no celular?",
     answer:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
+      "Sim, o app foi feito com foco em dispositivos móveis. Você pode baixar o app no Google Play ou na App Store.",
   },
   {
     question: "Posso migrar dados de outro sistema?",
     answer:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
-  },
-  {
-    question: "Como funciona o suporte?",
-    answer:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
+      "A princípio não temos essa funcionalidade, mas entre em contato conosco para avaliar a possibilidade de implementação.",
   },
   {
     question: "Preciso de conhecimento técnico para usar?",
     answer:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
+      "Não, a plataforma é extremamente intuitiva e não requer conhecimento técnico para ser utilizada.",
   },
+  {
+    question: "Meus alunos podem pagar diretamente no app?",
+    answer:
+      "Ainda não, por enquanto é necessário que você confirme o pagamento manualmente no app, mas em breve os alunos poderão pagar diretamente no app.",
+  }
 ];
 
 function FaqItem({
@@ -60,17 +61,15 @@ function FaqItem({
             {question}
           </span>
           <ChevronDown
-            className={`h-5 w-5 shrink-0 transition-transform duration-300 ${
-              isOpen ? "rotate-180 text-primary" : "text-text-muted"
-            }`}
+            className={`h-5 w-5 shrink-0 transition-transform duration-300 ${isOpen ? "rotate-180 text-primary" : "text-text-muted"
+              }`}
           />
         </button>
         <div
-          className={`grid transition-all duration-300 ease-out ${
-            isOpen
-              ? "mt-4 grid-rows-[1fr] opacity-100"
-              : "grid-rows-[0fr] opacity-0"
-          }`}
+          className={`grid transition-all duration-300 ease-out ${isOpen
+            ? "mt-4 grid-rows-[1fr] opacity-100"
+            : "grid-rows-[0fr] opacity-0"
+            }`}
         >
           <div className="overflow-hidden">
             <p className="text-base leading-[1.7] text-text-secondary">
@@ -126,7 +125,7 @@ export function Faq() {
               rel="noopener noreferrer"
               className="flex items-center gap-2.5 rounded-[14px] bg-whatsapp px-7 py-3.5 text-base font-semibold text-white transition-opacity hover:opacity-90"
             >
-              <MessageCircle className="h-5 w-5" />
+              <Image src="/whatsapp.svg" alt="WhatsApp" width={20} height={20} />
               Fale conosco pelo WhatsApp
             </a>
           </div>

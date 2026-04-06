@@ -58,7 +58,7 @@ export default function Termos() {
             Termos de Uso
           </h1>
           <p className="text-sm text-text-muted">
-            Última atualização: 01 de abril de 2026
+            Última atualização: 06 de abril de 2026
           </p>
         </div>
 

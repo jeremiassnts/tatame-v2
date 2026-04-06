@@ -1,4 +1,4 @@
-import { Apple } from "lucide-react";
+import Image from "next/image";
 import { AnimateOnScroll } from "./animate-on-scroll";
 
 function PlayStoreIcon({ className }: { className?: string }) {
@@ -29,10 +29,11 @@ export function FinalCta() {
             </p>
             <div className="flex flex-col gap-4 sm:flex-row">
               <a
-                href="#"
+                target="_blank"
+                href="https://ios.apptatame.com.br"
                 className="flex items-center gap-3 rounded-xl bg-white px-7 py-3.5 text-background transition-opacity hover:opacity-90"
               >
-                <Apple className="h-6 w-6" />
+                <Image src="/apple.svg" alt="Apple" width={20} height={20} />
                 <div className="flex flex-col">
                   <span className="text-[10px] leading-none">Baixar na</span>
                   <span className="text-sm font-semibold leading-tight">
@@ -41,10 +42,11 @@ export function FinalCta() {
                 </div>
               </a>
               <a
-                href="#"
+                target="_blank"
+                href="https://android.app.tatame.com.br"
                 className="flex items-center gap-3 rounded-xl bg-white px-7 py-3.5 text-background transition-opacity hover:opacity-90"
               >
-                <PlayStoreIcon className="h-5 w-5" />
+                <Image src="/google.svg" alt="Google Play" width={20} height={20} />
                 <div className="flex flex-col">
                   <span className="text-[10px] leading-none">
                     Disponível no

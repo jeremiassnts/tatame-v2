@@ -1,4 +1,4 @@
-import { Grid3X3, Instagram, Twitter, Youtube } from "lucide-react";
+import Image from "next/image";
 
 export function Footer() {
   return (
@@ -9,9 +9,12 @@ export function Footer() {
           {/* Brand */}
           <div className="flex max-w-[320px] flex-col gap-4">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-b from-primary to-primary-dark">
-                <Grid3X3 className="h-4 w-4 text-white" />
-              </div>
+              <Image
+                src="/icon.png"
+                alt="Tatame"
+                width={20}
+                height={20}
+              />
               <span className="font-[family-name:var(--font-sora)] text-lg font-bold text-white">
                 TATAME
               </span>
@@ -33,7 +36,7 @@ export function Footer() {
                 Início
               </a>
               <a
-                href="#recursos"
+                href="https://apptatame.com.br/"
                 className="text-[13px] text-text-secondary hover:text-white"
               >
                 Recursos
@@ -71,7 +74,7 @@ export function Footer() {
           <p className="text-xs text-text-muted">
             © 2026 Tatame. Todos os direitos reservados.
           </p>
-          <div className="flex items-center gap-4">
+          {/* <div className="flex items-center gap-4">
             <a href="#" aria-label="Instagram">
               <Instagram className="h-[18px] w-[18px] text-text-muted hover:text-white" />
             </a>
@@ -81,7 +84,7 @@ export function Footer() {
             <a href="#" aria-label="YouTube">
               <Youtube className="h-[18px] w-[18px] text-text-muted hover:text-white" />
             </a>
-          </div>
+          </div> */}
         </div>
       </div>
     </footer>
