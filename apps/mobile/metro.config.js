@@ -23,6 +23,31 @@ config.resolver.extraNodeModules = {
   "react-native": path.resolve(projectRoot, "node_modules/react-native"),
   "react-dom": path.resolve(projectRoot, "node_modules/react-dom"),
 };
+// Workspace packages use the "react-native" field to point at TypeScript source.
+// Their internal imports use the ESM ".js" extension convention (e.g. "./env.js")
+// but the actual files are ".ts". Intercept resolution to rewrite .js → .ts when
+// the .js file doesn't exist inside packages/.
+const fs = require("fs");
+const workspacePkgs = path.resolve(monorepoRoot, "packages");
+const originalResolveRequest = config.resolver.resolveRequest;
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (
+    context.originModulePath.startsWith(workspacePkgs) &&
+    moduleName.startsWith("./") &&
+    moduleName.endsWith(".js")
+  ) {
+    const tsName = moduleName.replace(/\.js$/, ".ts");
+    const tsPath = path.resolve(path.dirname(context.originModulePath), tsName);
+    if (fs.existsSync(tsPath)) {
+      return context.resolveRequest(context, tsName, platform);
+    }
+  }
+  if (originalResolveRequest) {
+    return originalResolveRequest(context, moduleName, platform);
+  }
+  return context.resolveRequest(context, moduleName, platform);
+};
+
 config.transformer.babelTransformerPath = require.resolve(
   "react-native-svg-transformer/expo"
 );
