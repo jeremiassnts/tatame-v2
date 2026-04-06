@@ -1,8 +1,7 @@
 import { useAuth } from "@clerk/clerk-expo";
 
 const API_BASE_URL =
-  (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env
-    ?.EXPO_PUBLIC_API_URL ?? "http://localhost:3001/v1";
+  process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001/v1";
 
 type FetchOptions = {
   method?: string;

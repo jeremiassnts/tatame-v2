@@ -19,13 +19,37 @@
       }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "node": "24.11.0",
+      "android": {
+        "env": {
+          "JAVA_HOME": "/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home",
+          "ANDROID_HOME": "/Users/jeremiassantos/Library/Android/sdk"
+        }
+      },
+      "ios": {
+        "simulator": false
+      }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "node": "24.11.0",
+      "android": {
+        "env": {
+          "JAVA_HOME": "/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home",
+          "ANDROID_HOME": "/Users/jeremiassantos/Library/Android/sdk"
+        }
+      },
+      "ios": {
+        "autoIncrement": true
+      }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "ascAppId": "6758624564"
+      }
+    }
   }
 }

@@ -18,12 +18,8 @@ import {
 } from "@expo-google-fonts/poppins";
 
 SplashScreen.preventAutoHideAsync();
-const publishableKey =
-  (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env
-    ?.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "";
-const stripePublishableKey =
-  (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env
-    ?.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "";
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
+const stripePublishableKey = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!;
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({

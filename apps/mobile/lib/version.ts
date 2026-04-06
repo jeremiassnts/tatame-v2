@@ -24,8 +24,7 @@ export function isVersionLessThan(current: string, minimum: string): boolean {
 
 export function shouldForceUpdate(): boolean {
   const minVersion =
-    (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env
-      ?.EXPO_PUBLIC_MIN_APP_VERSION ?? "";
+    process.env.EXPO_PUBLIC_MIN_APP_VERSION ?? "";
   if (!minVersion) return false;
 
   const currentVersion = Constants.expoConfig?.version ?? "0.0.0";

@@ -4,19 +4,16 @@ import { Alert, Linking, Platform, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 function getStoreUrl() {
-  const env = (globalThis as { process?: { env?: Record<string, string | undefined> } })
-    .process?.env;
   if (Platform.OS === "ios") {
-    return env?.EXPO_PUBLIC_IOS_STORE_URL ?? "";
+    return process.env.EXPO_PUBLIC_IOS_STORE_URL ?? "";
   }
-  return env?.EXPO_PUBLIC_ANDROID_STORE_URL ?? "";
+  return process.env.EXPO_PUBLIC_ANDROID_STORE_URL ?? "";
 }
 
 export default function ForceUpdateScreen() {
   const currentVersion = Constants.expoConfig?.version ?? "1.0.0";
   const minVersion =
-    (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env
-      ?.EXPO_PUBLIC_MIN_APP_VERSION ?? "2.0.0";
+    process.env.EXPO_PUBLIC_MIN_APP_VERSION ?? "2.0.0";
 
   const handleUpdateNow = async () => {
     const storeUrl = getStoreUrl();
