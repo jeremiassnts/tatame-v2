@@ -1,14 +1,6 @@
 import { ArrowRight, Sparkles } from "lucide-react";
-import Image from "next/image";
 import { AnimateOnScroll } from "./animate-on-scroll";
-
-function MockupPlaceholder({ src, alt }: { src: string; alt: string }) {
-  return (
-    <div className="relative h-[400px] w-[200px] overflow-hidden rounded-[32px] border border-border bg-surface shadow-[0_20px_60px_#A078E830] md:h-[560px] md:w-[280px]">
-      <Image src={src} alt={alt} fill className="object-cover" />
-    </div>
-  );
-}
+import { HeroMockups } from "./hero-mockups";
 
 export function Hero() {
   return (
@@ -45,19 +37,8 @@ export function Hero() {
           </a>
         </AnimateOnScroll>
 
-        {/* Mockups */}
-        <AnimateOnScroll className="flex w-full items-center justify-center gap-6 md:gap-10">
-          <MockupPlaceholder src="/mockup-1.png" alt="Tatame app - Home" />
-          <div className="hidden md:block">
-            <MockupPlaceholder
-              src="/mockup-2.png"
-              alt="Tatame app - Agenda"
-            />
-          </div>
-          <MockupPlaceholder
-            src="/mockup-3.png"
-            alt="Tatame app - Financeiro"
-          />
+        <AnimateOnScroll className="flex w-full items-center justify-center">
+          <HeroMockups />
         </AnimateOnScroll>
       </div>
     </section>
