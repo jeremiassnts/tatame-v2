@@ -1,0 +1,48 @@
+# ── Stage 1: Install dependencies ──
+FROM node:20-alpine AS deps
+
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+
+WORKDIR /app
+
+# Copy dependency manifests only (for layer caching)
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY patches/ patches/
+COPY apps/web/package.json apps/web/
+
+# PaaS (e.g. Coolify) often sets NODE_ENV=production for prod deploys.
+# That makes pnpm skip devDependencies — but they are required to build.
+ENV NODE_ENV=development
+RUN pnpm install --frozen-lockfile
+
+# ── Stage 2: Build ──
+FROM deps AS build
+
+# Copy source code
+COPY apps/web/ apps/web/
+COPY turbo.json ./
+
+# Build the web app
+RUN pnpm turbo build --filter=@tatame/web
+
+# ── Stage 3: Production ──
+FROM node:20-alpine AS production
+
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+WORKDIR /app
+
+# Copy standalone output
+COPY --from=build /app/apps/web/.next/standalone ./
+COPY --from=build /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=build /app/apps/web/public ./apps/web/public
+
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+USER appuser
+
+EXPOSE 3000
+
+CMD ["node", "apps/web/server.js"]
