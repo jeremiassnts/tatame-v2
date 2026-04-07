@@ -4,6 +4,7 @@ import { Router } from "express";
 import Stripe from "stripe";
 import { getDb } from "../../lib/db.js";
 import { HttpError } from "../../lib/http-error.js";
+import { logger } from "../../lib/logger.js";
 import { getStripe } from "../../lib/stripe.js";
 import {
   attachActiveAcademyContext,
@@ -299,7 +300,7 @@ managerSubscriptionRouter.post(
           : paymentIntentIdOrObj;
 
       if (!paymentIntent?.client_secret) {
-        console.warn("[manager-subscriptions/pro/complete] missing payment intent", {
+        logger.warn({
           stripeSubscriptionId: stripeSub.id,
           latestInvoiceId,
           invoiceStatus: maybeInvoiceWithPI.status,
@@ -307,7 +308,7 @@ managerSubscriptionRouter.post(
           billingReason: maybeInvoiceWithPI.billing_reason,
           amountDue: maybeInvoiceWithPI.amount_due,
           currency: maybeInvoiceWithPI.currency,
-        });
+        }, "[manager-subscriptions/pro/complete] missing payment intent");
         throw new HttpError(500, "Stripe payment intent missing client secret");
       }
 
