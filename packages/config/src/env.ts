@@ -29,6 +29,7 @@ const envSchema = z.object({
   MANAGER_CLERK_ID: z.string().optional(),
   BULL_BOARD_USER: z.string().optional(),
   BULL_BOARD_PASS: z.string().optional(),
+  OTEL_COLLECTOR_URL: z.string().url().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
