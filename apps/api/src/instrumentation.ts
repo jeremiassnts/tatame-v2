@@ -1,51 +1,30 @@
 import { loadEnv } from "@tatame/config";
+import { NodeSDK } from "@opentelemetry/sdk-node";
+import { resourceFromAttributes } from "@opentelemetry/resources";
+import {
+  SEMRESATTRS_SERVICE_NAME,
+  SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
+} from "@opentelemetry/semantic-conventions";
+import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-grpc";
+import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-grpc";
+import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-grpc";
+import { PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
+import { BatchLogRecordProcessor } from "@opentelemetry/sdk-logs";
+import { HttpInstrumentation } from "@opentelemetry/instrumentation-http";
+import { ExpressInstrumentation } from "@opentelemetry/instrumentation-express";
+import { PgInstrumentation } from "@opentelemetry/instrumentation-pg";
+import { RedisInstrumentation } from "@opentelemetry/instrumentation-redis-4";
+import { UndiciInstrumentation } from "@opentelemetry/instrumentation-undici";
 
 const env = loadEnv();
 
 if (env.OTEL_COLLECTOR_URL) {
-  const { NodeSDK } = await import("@opentelemetry/sdk-node");
-  const { Resource } = await import("@opentelemetry/resources");
-  const {
-    ATTR_SERVICE_NAME,
-    ATTR_DEPLOYMENT_ENVIRONMENT_NAME,
-  } = await import("@opentelemetry/semantic-conventions");
-  const { OTLPTraceExporter } = await import(
-    "@opentelemetry/exporter-trace-otlp-grpc"
-  );
-  const { OTLPMetricExporter } = await import(
-    "@opentelemetry/exporter-metrics-otlp-grpc"
-  );
-  const { OTLPLogExporter } = await import(
-    "@opentelemetry/exporter-logs-otlp-grpc"
-  );
-  const { PeriodicExportingMetricReader } = await import(
-    "@opentelemetry/sdk-metrics"
-  );
-  const { BatchLogRecordProcessor } = await import(
-    "@opentelemetry/sdk-logs"
-  );
-  const { HttpInstrumentation } = await import(
-    "@opentelemetry/instrumentation-http"
-  );
-  const { ExpressInstrumentation } = await import(
-    "@opentelemetry/instrumentation-express"
-  );
-  const { PgInstrumentation } = await import(
-    "@opentelemetry/instrumentation-pg"
-  );
-  const { RedisInstrumentation } = await import(
-    "@opentelemetry/instrumentation-redis-4"
-  );
-  const { UndiciInstrumentation } = await import(
-    "@opentelemetry/instrumentation-undici"
-  );
-
   const collectorUrl = env.OTEL_COLLECTOR_URL;
 
   const sdk = new NodeSDK({
-    resource: new Resource({
-      [ATTR_SERVICE_NAME]: "tatame-api",
-      [ATTR_DEPLOYMENT_ENVIRONMENT_NAME]: env.NODE_ENV,
+    resource: resourceFromAttributes({
+      [SEMRESATTRS_SERVICE_NAME]: "tatame-api",
+      [SEMRESATTRS_DEPLOYMENT_ENVIRONMENT]: env.NODE_ENV,
     }),
     traceExporter: new OTLPTraceExporter({ url: collectorUrl }),
     metricReader: new PeriodicExportingMetricReader({
