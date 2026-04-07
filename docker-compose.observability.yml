@@ -9,6 +9,7 @@ services:
       - "4318:4318" # OTLP HTTP
     networks:
       - observability
+      - coolify
     restart: unless-stopped
 
   tempo:
@@ -70,6 +71,8 @@ services:
 networks:
   observability:
     driver: bridge
+  coolify:
+    external: true
 
 volumes:
   tempo_data:
