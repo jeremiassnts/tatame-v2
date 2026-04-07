@@ -30,18 +30,23 @@ exporters:
     endpoint: http://prometheus:9090/api/v1/write
   otlphttp/loki:
     endpoint: http://loki:3100/otlp
+  debug:
+    verbosity: basic
 
 service:
+  telemetry:
+    logs:
+      level: debug
   pipelines:
     traces:
       receivers: [otlp]
       processors: [memory_limiter, attributes/scrub, batch]
-      exporters: [otlphttp/tempo]
+      exporters: [otlphttp/tempo, debug]
     metrics:
       receivers: [otlp]
       processors: [memory_limiter, batch]
-      exporters: [prometheusremotewrite]
+      exporters: [prometheusremotewrite, debug]
     logs:
       receivers: [otlp]
       processors: [memory_limiter, attributes/scrub, batch]
-      exporters: [otlphttp/loki]
+      exporters: [otlphttp/loki, debug]
