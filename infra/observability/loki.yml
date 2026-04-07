@@ -33,3 +33,4 @@ compactor:
   compaction_interval: 10m
   retention_enabled: true
   delete_request_cancel_period: 10m
+  delete_request_store: filesystem
