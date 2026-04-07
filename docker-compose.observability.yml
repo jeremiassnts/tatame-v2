@@ -12,7 +12,7 @@ services:
     restart: unless-stopped
 
   tempo:
-    image: grafana/tempo:latest
+    image: grafana/tempo:2.7.2
     command: ["-config.file=/etc/tempo/tempo.yml"]
     volumes:
       - ./infra/observability/tempo.yml:/etc/tempo/tempo.yml:ro

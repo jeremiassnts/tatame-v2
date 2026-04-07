@@ -8,6 +8,15 @@ distributor:
         http:
           endpoint: 0.0.0.0:4318
 
+ingester:
+  lifecycler:
+    ring:
+      replication_factor: 1
+
+compactor:
+  compaction:
+    block_retention: 168h # 7 days
+
 storage:
   trace:
     backend: local
