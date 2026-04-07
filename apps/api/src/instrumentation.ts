@@ -1,4 +1,3 @@
-import { loadEnv } from "@tatame/config";
 import { NodeSDK } from "@opentelemetry/sdk-node";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import {
@@ -16,15 +15,15 @@ import { PgInstrumentation } from "@opentelemetry/instrumentation-pg";
 import { RedisInstrumentation } from "@opentelemetry/instrumentation-redis-4";
 import { UndiciInstrumentation } from "@opentelemetry/instrumentation-undici";
 
-const env = loadEnv();
+const collectorUrl = process.env.OTEL_COLLECTOR_URL;
 
-if (env.OTEL_COLLECTOR_URL) {
-  const collectorUrl = env.OTEL_COLLECTOR_URL;
+if (collectorUrl) {
+  console.log(`[otel] initializing SDK, exporting to ${collectorUrl}`);
 
   const sdk = new NodeSDK({
     resource: resourceFromAttributes({
       [SEMRESATTRS_SERVICE_NAME]: "tatame-api",
-      [SEMRESATTRS_DEPLOYMENT_ENVIRONMENT]: env.NODE_ENV,
+      [SEMRESATTRS_DEPLOYMENT_ENVIRONMENT]: process.env.NODE_ENV ?? "development",
     }),
     traceExporter: new OTLPTraceExporter({ url: collectorUrl }),
     metricReader: new PeriodicExportingMetricReader({
@@ -50,4 +49,6 @@ if (env.OTEL_COLLECTOR_URL) {
   };
   process.on("SIGTERM", shutdown);
   process.on("SIGINT", shutdown);
+} else {
+  console.log("[otel] OTEL_COLLECTOR_URL not set, skipping SDK init");
 }
