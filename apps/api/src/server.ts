@@ -1,5 +1,7 @@
 import "./env-bootstrap.js";
+import "./instrumentation.js";
 import { loadEnv } from "@tatame/config";
+import { logger } from "./lib/logger.js";
 import { createApp } from "./app.js";
 import { runMigrations } from "./migrate.js";
 import { closeEmailQueue, getEmailQueue } from "./modules/email/email.queue.js";
@@ -15,7 +17,7 @@ import basicAuth from "express-basic-auth";
 const env = loadEnv();
 
 if (env.NODE_ENV === "production") {
-  console.log("Running database migrations...");
+  logger.info("Running database migrations...");
   await runMigrations(env.DATABASE_URL, "./drizzle");
 }
 
@@ -24,7 +26,7 @@ const app = createApp();
 // Start email worker if Redis is available
 if (env.REDIS_URL) {
   startEmailWorker(env.REDIS_URL);
-  console.log("[email] Worker started");
+  logger.info("[email] Worker started");
 
   const serverAdapter = new ExpressAdapter();
   serverAdapter.setBasePath("/admin/queues");
@@ -41,20 +43,18 @@ if (env.REDIS_URL) {
       serverAdapter.getRouter(),
     );
   } else {
-    console.warn(
-      "[bull-board] BULL_BOARD_USER/BULL_BOARD_PASS not set — dashboard disabled",
-    );
+    logger.warn("[bull-board] BULL_BOARD_USER/BULL_BOARD_PASS not set — dashboard disabled");
   }
-  console.log("[bull-board] Dashboard at /admin/queues");
+  logger.info("[bull-board] Dashboard at /admin/queues");
 }
 
 const server = app.listen(env.API_PORT, () => {
-  console.log(`API listening on http://localhost:${env.API_PORT}/v1`);
+  logger.info({ port: env.API_PORT }, "API listening");
 });
 
 // Graceful shutdown
 async function shutdown() {
-  console.log("Shutting down...");
+  logger.info("Shutting down...");
   server.close();
   await closeEmailWorker();
   await closeEmailQueue();

@@ -8,6 +8,7 @@ import {
 import { Router } from "express";
 import { getClerkClient } from "../../lib/clerk.js";
 import { getDb } from "../../lib/db.js";
+import { logger } from "../../lib/logger.js";
 import { requireSession } from "../../middleware/require-session.js";
 import { validateBody } from "../../middleware/validate.js";
 import { PostgresMembershipRepository } from "../membership/membership.repository.postgres.js";
@@ -227,7 +228,7 @@ userRouter.delete("/me", requireSession, async (req, res, next) => {
       const clerkClient = getClerkClient();
       await clerkClient.users.deleteUser(clerkUserId);
     } catch (clerkErr) {
-      console.error("Failed to delete Clerk user:", clerkErr);
+      logger.error({ err: clerkErr }, "Failed to delete Clerk user");
     }
 
     res.status(204).send();
