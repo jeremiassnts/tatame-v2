@@ -1,5 +1,4 @@
 import "./env-bootstrap.js";
-import "./instrumentation.js";
 import { loadEnv } from "@tatame/config";
 import { logger } from "./lib/logger.js";
 import { createApp } from "./app.js";
