@@ -85,7 +85,7 @@ export default function CreateAcademyScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-background py-4" edges={["top", "bottom"]}>
       <View className="flex-1 px-6 pt-2">
         <View className="mt-4 gap-2">
           <Text

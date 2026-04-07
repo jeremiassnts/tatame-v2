@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNotNull, isNull } from "drizzle-orm";
 import {
   academies,
   academyMemberships,
@@ -34,6 +34,37 @@ export class PostgresUserRepository implements IUserRepository {
           updatedAt: new Date(),
         },
       });
+  }
+
+  async findDeletedByEmail(email: string): Promise<UserRow | undefined> {
+    const [row] = await this.db
+      .select()
+      .from(users)
+      .where(and(eq(users.email, email), isNotNull(users.deletedAt)))
+      .limit(1);
+    return row;
+  }
+
+  async reactivate(
+    id: string,
+    data: {
+      clerkUserId: string;
+      email: string;
+      name: string;
+      profileImageUrl: string | null;
+    },
+  ): Promise<void> {
+    await this.db
+      .update(users)
+      .set({
+        clerkUserId: data.clerkUserId,
+        email: data.email,
+        name: data.name,
+        profileImageUrl: data.profileImageUrl,
+        deletedAt: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, id));
   }
 
   async findById(userId: string): Promise<UserRow | undefined> {

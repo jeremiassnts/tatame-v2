@@ -10,6 +10,11 @@ export class UserService {
     name: string;
     profileImageUrl: string | null;
   }): Promise<void> {
+    const deleted = await this.userRepo.findDeletedByEmail(data.email);
+    if (deleted) {
+      await this.userRepo.reactivate(deleted.id, data);
+      return;
+    }
     await this.userRepo.upsert(data);
   }
 

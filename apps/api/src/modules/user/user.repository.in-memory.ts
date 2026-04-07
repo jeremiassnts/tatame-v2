@@ -44,6 +44,30 @@ export class InMemoryUserRepository implements IUserRepository {
     });
   }
 
+  async findDeletedByEmail(email: string): Promise<UserRow | undefined> {
+    return this.users.find((u) => u.email === email && u.deletedAt !== null);
+  }
+
+  async reactivate(
+    id: string,
+    data: {
+      clerkUserId: string;
+      email: string;
+      name: string;
+      profileImageUrl: string | null;
+    },
+  ): Promise<void> {
+    const user = this.users.find((u) => u.id === id);
+    if (user) {
+      user.clerkUserId = data.clerkUserId;
+      user.email = data.email;
+      user.name = data.name;
+      user.profileImageUrl = data.profileImageUrl;
+      user.deletedAt = null;
+      user.updatedAt = new Date();
+    }
+  }
+
   async findById(userId: string): Promise<UserRow | undefined> {
     return this.users.find((u) => u.id === userId && !u.deletedAt);
   }

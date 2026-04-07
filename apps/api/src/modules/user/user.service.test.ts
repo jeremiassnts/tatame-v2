@@ -148,6 +148,40 @@ describe("UserService", () => {
     expect(result).toBeNull();
   });
 
+  it("upsertFromClerk reactivates a soft-deleted user with the same email", async () => {
+    const repo = new InMemoryUserRepository();
+    const svc = new UserService(repo);
+
+    await svc.upsertFromClerk({
+      clerkUserId: "clerk_old",
+      email: "returning@example.com",
+      name: "Original",
+      profileImageUrl: null,
+    });
+    const original = (await svc.getByClerkId("clerk_old"))!;
+    await svc.softDelete(original.id);
+
+    // User returns with a new Clerk account but the same email
+    await svc.upsertFromClerk({
+      clerkUserId: "clerk_new",
+      email: "returning@example.com",
+      name: "Returning User",
+      profileImageUrl: "https://img.example.com/new.jpg",
+    });
+
+    const reactivated = await svc.getByClerkId("clerk_new");
+    expect(reactivated).not.toBeNull();
+    expect(reactivated!.id).toBe(original.id);
+    expect(reactivated!.email).toBe("returning@example.com");
+    expect(reactivated!.name).toBe("Returning User");
+    expect(reactivated!.profileImageUrl).toBe("https://img.example.com/new.jpg");
+    expect(reactivated!.deletedAt).toBeNull();
+
+    // Old clerk ID should no longer resolve
+    const oldLookup = await svc.getByClerkId("clerk_old");
+    expect(oldLookup).toBeNull();
+  });
+
   it("softDelete sets deletedAt and user is no longer findable", async () => {
     const repo = new InMemoryUserRepository();
     const svc = new UserService(repo);

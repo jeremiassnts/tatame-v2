@@ -11,6 +11,18 @@ export interface IUserRepository {
     profileImageUrl: string | null;
   }): Promise<void>;
 
+  findDeletedByEmail(email: string): Promise<UserRow | undefined>;
+
+  reactivate(
+    id: string,
+    data: {
+      clerkUserId: string;
+      email: string;
+      name: string;
+      profileImageUrl: string | null;
+    },
+  ): Promise<void>;
+
   findById(userId: string): Promise<UserRow | undefined>;
 
   findByClerkId(clerkUserId: string): Promise<UserRow | undefined>;

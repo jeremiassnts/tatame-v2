@@ -95,7 +95,12 @@ export default function ProfileScreen() {
         {
           text: "Excluir",
           style: "destructive",
-          onPress: () => deleteAccount.mutate(),
+          onPress: async () => {
+            await deleteAccount.mutateAsync()
+            queryClient.clear();
+            await signOut();
+            router.replace("/(auth)");
+          },
         },
       ],
     );
