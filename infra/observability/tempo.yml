@@ -8,6 +8,10 @@ distributor:
         http:
           endpoint: 0.0.0.0:4318
 
+compactor:
+  compaction:
+    block_retention: 168h # 7 days
+
 storage:
   trace:
     backend: local
@@ -15,11 +19,6 @@ storage:
       path: /var/tempo/traces
     wal:
       path: /var/tempo/wal
-    block:
-      bloom_filter_false_positive: 0.05
-    compactor:
-      compaction:
-        block_retention: 168h # 7 days
 
 metrics_generator:
   registry:
