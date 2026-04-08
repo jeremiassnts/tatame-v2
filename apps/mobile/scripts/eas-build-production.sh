@@ -75,6 +75,11 @@ fi
 # Clean EAS temporary files
 echo "Cleaning EAS temporary files..."
 find /private/var/folders -name "*eas-build-local*" -type d -maxdepth 3 -exec rm -rf {} + 2>/dev/null || true
+# Clean previous local build working directory
+if [ -d "$EAS_LOCAL_BUILD_WORKINGDIR" ]; then
+  rm -rf "$EAS_LOCAL_BUILD_WORKINGDIR"
+  echo "Removed previous build workingdir: $EAS_LOCAL_BUILD_WORKINGDIR"
+fi
 echo "Cleanup completed."
 echo ""
 
