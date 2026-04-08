@@ -46,7 +46,9 @@ if (collectorUrl) {
   console.log("[otel] SDK started");
 
   const shutdown = async () => {
+    console.log("[otel] Shutting down SDK");
     await sdk.shutdown();
+    console.log("[otel] SDK shut down");
   };
   process.on("SIGTERM", shutdown);
   process.on("SIGINT", shutdown);
