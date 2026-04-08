@@ -30,6 +30,15 @@ function buildTransport():
     targets.push({
       target: "pino-opentelemetry-transport",
       options: {
+        logRecordProcessorOptions: {
+          recordProcessorType: "batch",
+          exporterOptions: {
+            protocol: "grpc",
+            grpcExporterOptions: {
+              url: env.OTEL_COLLECTOR_URL,
+            },
+          },
+        },
         resourceAttributes: {
           "service.name": "tatame-api",
           "deployment.environment": env.NODE_ENV,
