@@ -51,13 +51,14 @@ fi
 # Check for Apple WWDR intermediate certificate (required for distribution cert trust chain)
 # Without it you get: "Distribution certificate with fingerprint ... hasn't been imported successfully"
 HAS_WWDR=false
+WWDR_CN="Apple Worldwide Developer Relations Certification Authority"
 for keychain in ~/Library/Keychains/login.keychain-db ~/Library/Keychains/login.keychain; do
-  if [[ -f "$keychain" ]] && security find-certificate -a -c "WWDR" "$keychain" 2>/dev/null | grep -qi "WWDR"; then
+  if [[ -f "$keychain" ]] && security find-certificate -a -c "$WWDR_CN" "$keychain" 2>/dev/null | grep -qi "Worldwide Developer Relations"; then
     HAS_WWDR=true
     break
   fi
 done
-if [[ "$HAS_WWDR" != "true" ]] && ! security find-certificate -a 2>/dev/null | grep -qi "WWDR"; then
+if [[ "$HAS_WWDR" != "true" ]] && ! security find-certificate -a 2>/dev/null | grep -qi "Worldwide Developer Relations"; then
   echo "⚠️  Apple WWDR intermediate certificate not found in your keychain."
   echo "   This often causes 'Distribution certificate hasn't been imported successfully' on local iOS builds."
   echo ""
