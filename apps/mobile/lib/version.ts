@@ -1,5 +1,8 @@
 import Constants from "expo-constants";
 
+const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001/v1";
+
 function parseVersion(version: string): number[] {
   return version
     .split(".")
@@ -22,11 +25,20 @@ export function isVersionLessThan(current: string, minimum: string): boolean {
   return false;
 }
 
-export function shouldForceUpdate(): boolean {
-  const minVersion =
-    process.env.EXPO_PUBLIC_MIN_APP_VERSION ?? "";
-  if (!minVersion) return false;
+export async function shouldForceUpdate(): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/version`, {
+      signal: AbortSignal.timeout(3000),
+    });
+    if (!res.ok) return false;
 
-  const currentVersion = Constants.expoConfig?.version ?? "0.0.0";
-  return isVersionLessThan(currentVersion, minVersion);
+    const data: { minMobileVersion?: string } = await res.json();
+    const minVersion = data.minMobileVersion ?? "";
+    if (!minVersion) return false;
+
+    const currentVersion = Constants.expoConfig?.version ?? "0.0.0";
+    return isVersionLessThan(currentVersion, minVersion);
+  } catch {
+    return false;
+  }
 }

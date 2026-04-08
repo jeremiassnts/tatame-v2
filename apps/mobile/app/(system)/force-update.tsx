@@ -1,5 +1,5 @@
 import Constants from "expo-constants";
-import { ArrowRight, Download, ExternalLink } from "lucide-react-native";
+import { Download, ExternalLink } from "lucide-react-native";
 import { Alert, Linking, Platform, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -12,8 +12,6 @@ function getStoreUrl() {
 
 export default function ForceUpdateScreen() {
   const currentVersion = Constants.expoConfig?.version ?? "1.0.0";
-  const minVersion =
-    process.env.EXPO_PUBLIC_MIN_APP_VERSION ?? "2.0.0";
 
   const handleUpdateNow = async () => {
     const storeUrl = getStoreUrl();
@@ -54,10 +52,10 @@ export default function ForceUpdateScreen() {
             </Text>
           </View>
 
-          <View className="flex-row items-center gap-1 rounded-[20px] border border-surface-border bg-surface px-4 py-2">
-            <Text className="font-poppins-medium text-[13px] text-muted">v{currentVersion}</Text>
-            <ArrowRight size={14} color="#525252" />
-            <Text className="font-poppins-semibold text-[13px] text-accent">v{minVersion}</Text>
+          <View className="rounded-[20px] border border-surface-border bg-surface px-4 py-2">
+            <Text className="font-poppins-medium text-[13px] text-muted">
+              Versão atual: v{currentVersion}
+            </Text>
           </View>
         </View>
 
