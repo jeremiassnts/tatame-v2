@@ -111,6 +111,7 @@ paymentRouter.post(
         academyId,
         student.email,
         stripe,
+        env.API_PUBLIC_URL ?? `http://localhost:${env.API_PORT}/v1`,
         { subscriptionId: body.subscriptionId },
       );
 
@@ -151,6 +152,20 @@ paymentRouter.post(
     }
   },
 );
+
+paymentRouter.get("/checkout-result", (_req, res) => {
+  const success = _req.query.status === "success";
+  res.setHeader("Content-Type", "text/html");
+  res.send(`<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>body{background:#0C0C0C;color:#fff;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;text-align:center}
+.card{padding:40px 24px}.icon{font-size:48px;margin-bottom:16px}h1{font-size:20px;margin:0 0 8px}p{color:#ABABAB;font-size:14px;margin:0}</style>
+</head><body><div class="card">
+<div class="icon">${success ? "✅" : "❌"}</div>
+<h1>${success ? "Pagamento realizado!" : "Pagamento cancelado"}</h1>
+<p>${success ? "Você já pode fechar esta página e voltar ao app." : "Nenhuma cobrança foi feita. Feche esta página para voltar ao app."}</p>
+</div></body></html>`);
+});
 
 paymentRouter.get(
   "/pix-status/:pixQrCodeId",

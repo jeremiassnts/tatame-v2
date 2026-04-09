@@ -8,7 +8,6 @@ import { Calendar, ChevronRight, CreditCard, QrCode } from "lucide-react-native"
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Linking,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -49,16 +48,17 @@ export default function MySubscriptionScreen() {
   const createCheckout = useCreateCheckout();
   const [showProcessingBanner, setShowProcessingBanner] = useState(false);
 
+  // Hide banner when payment for current month appears
   useEffect(() => {
-    const sub = Linking.addEventListener("url", ({ url }) => {
-      if (url.includes("payment-success")) {
-        setShowProcessingBanner(true);
+    if (showProcessingBanner && payments) {
+      const today = new Date().toISOString().slice(0, 10);
+      const currentMonth = today.slice(0, 7) + "-01";
+      const hasPaid = payments.some((p) => p.referenceMonth === currentMonth);
+      if (hasPaid) {
+        setShowProcessingBanner(false);
       }
-    });
-    return () => sub.remove();
-  }, []);
-
-
+    }
+  }, [payments, showProcessingBanner]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -75,13 +75,10 @@ export default function MySubscriptionScreen() {
       const result = await createCheckout.mutateAsync({
         subscriptionId: subscription!.id,
       });
-      const browserResult = await WebBrowser.openAuthSessionAsync(
-        result.checkoutUrl,
-        "tatame://payment-success",
-      );
-      if (browserResult.type === "success") {
-        setShowProcessingBanner(true);
-      }
+      await WebBrowser.openBrowserAsync(result.checkoutUrl);
+      // After browser closes (user returns), show banner and refresh
+      setShowProcessingBanner(true);
+      queryClient.invalidateQueries({ queryKey: ["payments", "me"] });
     } catch {
       // Checkout creation failed
     }

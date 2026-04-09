@@ -74,6 +74,7 @@ export class PaymentService {
     academyId: string,
     studentEmail: string,
     stripe: Stripe,
+    apiPublicUrl: string,
     opts?: { subscriptionId?: string },
   ): Promise<{ checkoutUrl: string }> {
     const subs = await this.studentSubRepo.listWithPlanByUserAndAcademy(
@@ -125,8 +126,8 @@ export class PaymentService {
         academyId,
         referenceMonth,
       },
-      success_url: `tatame://payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: "tatame://payment-cancel",
+      success_url: `${apiPublicUrl}/payments/checkout-result?status=success`,
+      cancel_url: `${apiPublicUrl}/payments/checkout-result?status=cancel`,
     });
 
     if (!session.url) {
