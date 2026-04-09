@@ -111,7 +111,7 @@ paymentRouter.post(
         academyId,
         student.email,
         stripe,
-        env.API_PUBLIC_URL ?? `http://localhost:${env.API_PORT}/v1`,
+        `${(env.API_PUBLIC_URL ?? `http://localhost:${env.API_PORT}`).replace(/\/$/, "")}/v1`,
         { subscriptionId: body.subscriptionId },
       );
 
