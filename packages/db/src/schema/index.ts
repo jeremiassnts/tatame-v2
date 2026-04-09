@@ -53,6 +53,13 @@ export const managerSubscriptionStatusEnum = pgEnum(
   ["active", "past_due", "canceled", "incomplete"],
 );
 
+export const pixKeyTypeEnum = pgEnum("pix_key_type", [
+  "cpf",
+  "email",
+  "phone",
+  "random",
+]);
+
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   clerkUserId: text("clerk_user_id").notNull().unique(),
@@ -104,6 +111,8 @@ export const academies = pgTable("academies", {
   contactEmail: text("contact_email"),
   contactPhone: text("contact_phone"),
   foundedAt: date("founded_at"),
+  pixKey: text("pix_key"),
+  pixKeyType: pixKeyTypeEnum("pix_key_type"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
