@@ -9,7 +9,7 @@ import { useMyPayments, useMySubscription } from "@/lib/hooks/use-subscription";
 import { useCurrentUser } from "@/lib/hooks/use-user";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { Bell, ChevronRight, CreditCard, TriangleAlert } from "lucide-react-native";
+import { ChevronRight, CreditCard, TriangleAlert } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -106,9 +106,6 @@ export default function StudentHome() {
               </Text>
             </Pressable>
             <View className="flex-row items-center gap-2">
-              <Pressable className="h-10 w-10 items-center justify-center rounded-xl border border-surface-border bg-surface">
-                <Bell size={18} color="#FFFFFF" />
-              </Pressable>
               <Pressable onPress={() => router.push("/(app)/profile")}>
                 <Avatar
                   variant="user"
