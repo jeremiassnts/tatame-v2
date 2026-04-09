@@ -1,9 +1,9 @@
-import { BackButton } from "@/components/BackButton";
 import {
   useCreatePixCheckout,
   usePixPaymentStatus,
   type PixQrCodeResponse,
 } from "@/lib/hooks/use-subscription";
+import { useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ChevronLeft, Copy, RefreshCw, Timer, X } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -17,7 +17,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useQueryClient } from "@tanstack/react-query";
 
 function formatCurrency(cents: number): string {
   return `R$ ${(cents / 100).toFixed(2).replace(".", ",")}`;
@@ -254,7 +253,7 @@ export default function PixPaymentScreen() {
           >
             <X size={18} color="#FFFFFF" />
             <Text className="font-poppins-semibold text-[15px] text-white">
-              Sair
+              Cancelar
             </Text>
           </Pressable>
         </View>

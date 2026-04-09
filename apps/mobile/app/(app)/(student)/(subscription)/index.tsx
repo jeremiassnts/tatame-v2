@@ -75,7 +75,13 @@ export default function MySubscriptionScreen() {
       const result = await createCheckout.mutateAsync({
         subscriptionId: subscription!.id,
       });
-      await WebBrowser.openBrowserAsync(result.checkoutUrl);
+      const browserResult = await WebBrowser.openAuthSessionAsync(
+        result.checkoutUrl,
+        "tatame://payment-success",
+      );
+      if (browserResult.type === "success") {
+        setShowProcessingBanner(true);
+      }
     } catch {
       // Checkout creation failed
     }
