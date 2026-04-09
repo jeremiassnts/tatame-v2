@@ -5,7 +5,7 @@ import { useAcademyContext } from "@/lib/academy-context";
 import { useCheckin, useWeeklyCheckinCount } from "@/lib/hooks/use-checkin";
 import { useClasses } from "@/lib/hooks/use-classes";
 import { useMyGraduation } from "@/lib/hooks/use-graduation";
-import { useMySubscription } from "@/lib/hooks/use-subscription";
+import { useMyPayments, useMySubscription } from "@/lib/hooks/use-subscription";
 import { useCurrentUser } from "@/lib/hooks/use-user";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
@@ -42,6 +42,7 @@ export default function StudentHome() {
   const { data: subResponse } = useMySubscription();
   const subscription = subResponse?.subscription;
   const plan = subResponse?.plan;
+  const { data: payments } = useMyPayments();
   const { data: graduation } = useMyGraduation();
   const checkin = useCheckin();
   const { data: weeklyCount } = useWeeklyCheckinCount();
@@ -55,6 +56,9 @@ export default function StudentHome() {
   const hasSubscription =
     subscription != null && subscription.effectiveStatus === "active";
   const today = todayDateString();
+  const currentMonth = today.slice(0, 7) + "-01";
+  const hasPendingPayment =
+    hasSubscription && payments != null && !payments.some((p) => p.referenceMonth === currentMonth);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -114,6 +118,22 @@ export default function StudentHome() {
               </Pressable>
             </View>
           </View>
+
+          {hasPendingPayment && (
+            <Pressable
+              onPress={() => router.push("/(app)/(student)/(subscription)")}
+              className="flex-row items-center rounded-xl"
+              style={{ padding: 12, gap: 10, backgroundColor: "#FF453A20" }}
+            >
+              <CreditCard size={16} color="#FF453A" />
+              <Text
+                className="font-poppins-medium text-xs"
+                style={{ color: "#FF453A", flex: 1 }}
+              >
+                Seu pagamento está pendente. Toque para pagar.
+              </Text>
+            </Pressable>
+          )}
 
           {!hasSubscription ? (
             <View
