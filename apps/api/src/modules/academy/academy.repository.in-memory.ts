@@ -43,6 +43,8 @@ export class InMemoryAcademyRepository implements IAcademyRepository {
       contactEmail: data.contactEmail,
       contactPhone: data.contactPhone,
       foundedAt: data.foundedAt,
+      pixKey: null,
+      pixKeyType: null,
       createdAt: t,
       updatedAt: t,
     };

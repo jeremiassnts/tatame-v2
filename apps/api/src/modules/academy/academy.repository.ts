@@ -33,7 +33,7 @@ export interface IAcademyRepository {
 
   updatePixKey(
     academyId: string,
-    data: { pixKey: string | null; pixKeyType: string | null },
+    data: { pixKey: string | null; pixKeyType: "cpf" | "email" | "phone" | "random" | null },
   ): Promise<AcademyRow | undefined>;
 
   existsByOwner(userId: string): Promise<boolean>;

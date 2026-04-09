@@ -64,7 +64,7 @@ export class PostgresAcademyRepository implements IAcademyRepository {
 
   async updatePixKey(
     academyId: string,
-    data: { pixKey: string | null; pixKeyType: string | null },
+    data: { pixKey: string | null; pixKeyType: "cpf" | "email" | "phone" | "random" | null },
   ): Promise<AcademyRow | undefined> {
     const [row] = await this.db
       .update(academies)
