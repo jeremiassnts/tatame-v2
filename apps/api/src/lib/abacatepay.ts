@@ -1,3 +1,4 @@
+import AbacatePaySdk from "abacatepay-nodejs-sdk";
 import { loadEnv } from "@tatame/config";
 
 type AbacatePayClient = {
@@ -15,10 +16,7 @@ export function getAbacatePay(): AbacatePayClient {
     if (!env.ABACATEPAY_API_KEY) {
       throw new Error("ABACATEPAY_API_KEY is not configured");
     }
-    // Dynamic import to handle ESM/CJS interop
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const mod = require("abacatepay-nodejs-sdk");
-    const factory = mod.default ?? mod;
+    const factory = (AbacatePaySdk as any).default ?? AbacatePaySdk;
     client = factory(env.ABACATEPAY_API_KEY);
   }
   return client!;
