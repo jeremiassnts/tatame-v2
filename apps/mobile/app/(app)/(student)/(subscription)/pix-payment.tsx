@@ -5,7 +5,7 @@ import {
 } from "@/lib/hooks/use-subscription";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ChevronLeft, Copy, RefreshCw, Timer, X } from "lucide-react-native";
+import { Check, ChevronLeft, Copy, RefreshCw, Timer, X } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -214,9 +214,14 @@ export default function PixPaymentScreen() {
                 <Pressable
                   onPress={handleCopy}
                   className="flex-row items-center rounded-lg"
-                  style={{ paddingVertical: 8, paddingHorizontal: 12, gap: 6, backgroundColor: "#6C63FF" }}
+                  style={{
+                    paddingVertical: 8,
+                    paddingHorizontal: 12,
+                    gap: 6,
+                    backgroundColor: copied ? "#32D74B" : "#6C63FF",
+                  }}
                 >
-                  <Copy size={14} color="#FFFFFF" />
+                  {copied ? <Check size={14} color="#FFFFFF" /> : <Copy size={14} color="#FFFFFF" />}
                   <Text className="font-poppins-semibold text-xs text-white">
                     {copied ? "Copiado!" : "Copiar"}
                   </Text>
