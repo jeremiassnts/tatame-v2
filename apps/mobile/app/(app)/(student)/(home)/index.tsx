@@ -122,16 +122,24 @@ export default function StudentHome() {
           {hasPendingPayment && (
             <Pressable
               onPress={() => router.push("/(app)/(student)/(subscription)")}
-              className="flex-row items-center rounded-xl"
-              style={{ padding: 12, gap: 10, backgroundColor: "#FF453A20" }}
+              className="flex-row items-center rounded-2xl border border-surface-border bg-surface"
+              style={{ padding: 14, gap: 12 }}
             >
-              <CreditCard size={16} color="#FF453A" />
-              <Text
-                className="font-poppins-medium text-xs"
-                style={{ color: "#FF453A", flex: 1 }}
+              <View
+                className="items-center justify-center rounded-lg"
+                style={{ width: 36, height: 36, backgroundColor: "#FF950020" }}
               >
-                Seu pagamento está pendente. Toque para pagar.
-              </Text>
+                <TriangleAlert size={18} color="#FF9500" />
+              </View>
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text className="font-poppins-semibold text-[13px] text-primary">
+                  Pagamento pendente
+                </Text>
+                <Text className="font-poppins text-[11px]" style={{ color: TEXT_SECONDARY }}>
+                  Toque aqui para realizar o pagamento
+                </Text>
+              </View>
+              <ChevronRight size={16} color={TEXT_MUTED} />
             </Pressable>
           )}
 
