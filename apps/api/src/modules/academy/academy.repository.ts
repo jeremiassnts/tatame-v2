@@ -31,6 +31,11 @@ export interface IAcademyRepository {
     }>,
   ): Promise<AcademyRow | undefined>;
 
+  updatePixKey(
+    academyId: string,
+    data: { pixKey: string | null; pixKeyType: string | null },
+  ): Promise<AcademyRow | undefined>;
+
   existsByOwner(userId: string): Promise<boolean>;
 
   getStats(academyId: string, currentDayOfWeek: number): Promise<{

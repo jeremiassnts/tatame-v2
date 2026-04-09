@@ -62,6 +62,18 @@ export class PostgresAcademyRepository implements IAcademyRepository {
     return row;
   }
 
+  async updatePixKey(
+    academyId: string,
+    data: { pixKey: string | null; pixKeyType: string | null },
+  ): Promise<AcademyRow | undefined> {
+    const [row] = await this.db
+      .update(academies)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(academies.id, academyId))
+      .returning();
+    return row;
+  }
+
   async existsByOwner(userId: string): Promise<boolean> {
     const [row] = await this.db
       .select({ id: academies.id })
