@@ -13,8 +13,9 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
     userId: string;
     academyId: string;
     amountCents: number;
-    method: "manual";
-    confirmedBy: string;
+    method: "manual" | "stripe";
+    confirmedBy: string | null;
+    stripePaymentId: string | null;
     referenceMonth: string;
     notes: string | null;
     paidAt: Date;
@@ -28,7 +29,7 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
       amountCents: data.amountCents,
       method: data.method,
       confirmedBy: data.confirmedBy,
-      stripePaymentId: null,
+      stripePaymentId: data.stripePaymentId,
       referenceMonth: data.referenceMonth,
       notes: data.notes,
       paidAt: data.paidAt,
@@ -36,6 +37,12 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
     };
     this.rows.push(row);
     return row;
+  }
+
+  async findByStripePaymentId(
+    stripePaymentId: string,
+  ): Promise<PaymentRow | undefined> {
+    return this.rows.find((p) => p.stripePaymentId === stripePaymentId);
   }
 
   async findByAcademy(

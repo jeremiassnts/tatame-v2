@@ -3,8 +3,11 @@ import { Role } from "@tatame/types";
 import type { ConfirmManualPaymentBody } from "@tatame/validators";
 import {
   confirmManualPaymentBodySchema,
+  createCheckoutBodySchema,
   listPaymentsQuerySchema,
+  type CreateCheckoutBody,
 } from "@tatame/validators";
+import { getStripe } from "../../lib/stripe.js";
 import { getDb } from "../../lib/db.js";
 import { HttpError } from "../../lib/http-error.js";
 import {
@@ -74,6 +77,38 @@ paymentRouter.post(
       }
 
       res.status(201).json(created);
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+paymentRouter.post(
+  "/checkout",
+  authorize(Role.Student),
+  attachActiveAcademyContext,
+  requireActiveAcademy,
+  validateBody(createCheckoutBodySchema),
+  async (req, res, next) => {
+    try {
+      const env = loadEnv();
+      if (!env.STRIPE_SECRET_KEY) {
+        throw new HttpError(503, "Stripe is not configured");
+      }
+
+      const body = req.validatedBody as CreateCheckoutBody;
+      const studentUserId = req.appAuth!.userId;
+      const academyId = req.appAuth!.activeAcademyId!;
+      const stripe = getStripe();
+
+      const result = await paymentService.createCheckoutSession(
+        studentUserId,
+        academyId,
+        stripe,
+        { subscriptionId: body.subscriptionId },
+      );
+
+      res.json(result);
     } catch (e) {
       next(e);
     }
