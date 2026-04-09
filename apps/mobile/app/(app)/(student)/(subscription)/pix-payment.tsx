@@ -14,6 +14,7 @@ import {
   Pressable,
   ScrollView,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -102,14 +103,11 @@ export default function PixPaymentScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleCopy = async () => {
+  const handleCopy = () => {
     if (!pixData?.brCode) return;
-    try {
-      const Clipboard = await import("expo-clipboard");
-      await Clipboard.setStringAsync(pixData.brCode);
-    } catch {
-      // Fallback: not critical, button still shows "Copiado"
-    }
+    import("expo-clipboard")
+      .then((Clipboard) => Clipboard.setStringAsync(pixData.brCode))
+      .catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 3000);
   };
@@ -211,10 +209,13 @@ export default function PixPaymentScreen() {
                 <Text className="font-poppins text-[13px]" style={{ color: "#ABABAB" }}>
                   Ou copie o código Pix
                 </Text>
-                <Pressable
+                <TouchableOpacity
                   onPress={handleCopy}
-                  className="flex-row items-center rounded-lg"
+                  activeOpacity={0.7}
                   style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    borderRadius: 8,
                     paddingVertical: 8,
                     paddingHorizontal: 12,
                     gap: 6,
@@ -225,7 +226,7 @@ export default function PixPaymentScreen() {
                   <Text className="font-poppins-semibold text-xs text-white">
                     {copied ? "Copiado!" : "Copiar"}
                   </Text>
-                </Pressable>
+                </TouchableOpacity>
               </View>
             </>
           )}
