@@ -219,7 +219,7 @@ export default function PixPaymentScreen() {
                     paddingVertical: 8,
                     paddingHorizontal: 12,
                     gap: 6,
-                    backgroundColor: copied ? "#32D74B" : "#6C63FF",
+                    backgroundColor: copied ? "#1B8C30" : "#6C63FF",
                   }}
                 >
                   {copied ? <Check size={14} color="#FFFFFF" /> : <Copy size={14} color="#FFFFFF" />}
