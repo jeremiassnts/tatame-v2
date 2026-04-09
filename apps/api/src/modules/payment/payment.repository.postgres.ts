@@ -14,7 +14,7 @@ export class PostgresPaymentRepository implements IPaymentRepository {
     userId: string;
     academyId: string;
     amountCents: number;
-    method: "manual" | "stripe";
+    method: "manual" | "stripe" | "pix";
     confirmedBy: string | null;
     stripePaymentId: string | null;
     referenceMonth: string;

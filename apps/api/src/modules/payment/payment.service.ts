@@ -106,6 +106,7 @@ export class PaymentService {
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
+      payment_method_types: ["card"],
       line_items: [
         {
           price_data: {
@@ -131,6 +132,75 @@ export class PaymentService {
     }
 
     return { checkoutUrl: session.url };
+  }
+
+  async createPixCheckoutSession(
+    studentUserId: string,
+    academyId: string,
+    studentEmail: string,
+    abacatePay: { billing: { create: (data: any) => Promise<any> } },
+    opts?: { subscriptionId?: string },
+  ): Promise<{ checkoutUrl: string }> {
+    const subs = await this.studentSubRepo.listWithPlanByUserAndAcademy(
+      studentUserId,
+      academyId,
+    );
+    const active = opts?.subscriptionId
+      ? subs.find(
+          (s) =>
+            s.subscription.id === opts.subscriptionId &&
+            s.subscription.status === "active",
+        )
+      : subs.find((s) => s.subscription.status === "active");
+
+    if (!active) {
+      throw new HttpError(404, "No active subscription found");
+    }
+
+    const { subscription, plan } = active;
+
+    const today = new Date().toISOString().slice(0, 10);
+    const referenceMonth = today.slice(0, 7) + "-01";
+
+    const alreadyPaid = await this.paymentRepo.existsForSubscriptionReferenceMonth(
+      subscription.id,
+      referenceMonth,
+    );
+    if (alreadyPaid) {
+      throw new HttpError(409, "Payment already exists for this period");
+    }
+
+    const metadata = JSON.stringify({
+      subscriptionId: subscription.id,
+      userId: studentUserId,
+      academyId,
+      referenceMonth,
+    });
+
+    const billing = await abacatePay.billing.create({
+      frequency: "ONE_TIME",
+      methods: ["PIX"],
+      products: [
+        {
+          externalId: metadata,
+          name: `${plan.name} — ${referenceMonth.slice(0, 7)}`,
+          quantity: 1,
+          price: plan.priceCents,
+        },
+      ],
+      returnUrl: "tatame://payment-success",
+      completionUrl: "tatame://payment-success",
+      customer: {
+        email: studentEmail,
+      },
+    });
+
+    const checkoutUrl = billing?.data?.url ?? billing?.url;
+    if (!checkoutUrl) {
+      throw new HttpError(500, "Failed to create AbacatePay billing");
+    }
+
+    return { checkoutUrl };
   }
 
   private async assertManagerOwnsAcademy(userId: string, academyId: string) {

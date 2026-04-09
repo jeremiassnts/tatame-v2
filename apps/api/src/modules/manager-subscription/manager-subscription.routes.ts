@@ -23,6 +23,7 @@ import { PostgresUserRepository } from "../user/user.repository.postgres.js";
 import { getEmailQueue } from "../email/email.queue.js";
 import { EmailService } from "../email/email.service.js";
 import { PostgresPaymentRepository } from "../payment/payment.repository.postgres.js";
+import { AbacatePayWebhookHandler } from "../payment/abacatepay-webhook.handler.js";
 
 const db = getDb();
 const env = loadEnv();
@@ -553,6 +554,22 @@ export function createWebhookRouter() {
         res.status(400).json({ error: "Invalid webhook signature" });
         return;
       }
+      next(e);
+    }
+  });
+
+  const abacatePayHandler = new AbacatePayWebhookHandler(
+    paymentRepo,
+    userRepo,
+    acadRepo,
+    emailService,
+  );
+
+  webhookRouter.post("/abacatepay", async (req, res, next) => {
+    try {
+      await abacatePayHandler.handleEvent(req.body);
+      res.json({ received: true });
+    } catch (e) {
       next(e);
     }
   });

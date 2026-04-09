@@ -8,6 +8,7 @@ import {
   type CreateCheckoutBody,
 } from "@tatame/validators";
 import { getStripe } from "../../lib/stripe.js";
+import { getAbacatePay } from "../../lib/abacatepay.js";
 import { getDb } from "../../lib/db.js";
 import { HttpError } from "../../lib/http-error.js";
 import {
@@ -105,6 +106,45 @@ paymentRouter.post(
         studentUserId,
         academyId,
         stripe,
+        { subscriptionId: body.subscriptionId },
+      );
+
+      res.json(result);
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+paymentRouter.post(
+  "/checkout/pix",
+  authorize(Role.Student),
+  attachActiveAcademyContext,
+  requireActiveAcademy,
+  validateBody(createCheckoutBodySchema),
+  async (req, res, next) => {
+    try {
+      const env = loadEnv();
+      if (!env.ABACATEPAY_API_KEY) {
+        throw new HttpError(503, "AbacatePay is not configured");
+      }
+
+      const body = req.validatedBody as CreateCheckoutBody;
+      const studentUserId = req.appAuth!.userId;
+      const academyId = req.appAuth!.activeAcademyId!;
+
+      const student = await userRepo.findById(studentUserId);
+      if (!student) {
+        throw new HttpError(404, "Student not found");
+      }
+
+      const abacatePay = getAbacatePay();
+
+      const result = await paymentService.createPixCheckoutSession(
+        studentUserId,
+        academyId,
+        student.email,
+        abacatePay,
         { subscriptionId: body.subscriptionId },
       );
 

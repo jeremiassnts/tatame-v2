@@ -1,10 +1,10 @@
 import { BackButton } from "@/components/BackButton";
 import { useWeeklyCheckinCount } from "@/lib/hooks/use-checkin";
-import { useCreateCheckout, useMyPayments, useMySubscription } from "@/lib/hooks/use-subscription";
+import { useCreateCheckout, useCreatePixCheckout, useMyPayments, useMySubscription } from "@/lib/hooks/use-subscription";
 import { useQueryClient } from "@tanstack/react-query";
 import * as WebBrowser from "expo-web-browser";
-import { useRouter } from "expo-router";
-import { Calendar, ChevronRight } from "lucide-react-native";
+import { Redirect, useRouter } from "expo-router";
+import { Calendar, ChevronRight, CreditCard, QrCode } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -47,6 +47,7 @@ export default function MySubscriptionScreen() {
     subscription != null && subscription.effectiveStatus === "active";
 
   const createCheckout = useCreateCheckout();
+  const createPixCheckout = useCreatePixCheckout();
   const [showProcessingBanner, setShowProcessingBanner] = useState(false);
 
   useEffect(() => {
@@ -58,11 +59,7 @@ export default function MySubscriptionScreen() {
     return () => sub.remove();
   }, []);
 
-  useEffect(() => {
-    if (!subLoading && !hasActive) {
-      router.replace("/(app)/(student)/(subscription)/plans");
-    }
-  }, [subLoading, hasActive, router]);
+
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -85,6 +82,17 @@ export default function MySubscriptionScreen() {
     }
   };
 
+  const handlePayPix = async () => {
+    try {
+      const result = await createPixCheckout.mutateAsync({
+        subscriptionId: subscription!.id,
+      });
+      await WebBrowser.openBrowserAsync(result.checkoutUrl);
+    } catch {
+      // Pix checkout creation failed
+    }
+  };
+
   if (subLoading) {
     return (
       <SafeAreaView
@@ -96,7 +104,9 @@ export default function MySubscriptionScreen() {
     );
   }
 
-  if (!hasActive || !plan || !subscription) return null;
+  if (!hasActive || !plan || !subscription) {
+    return <Redirect href="/(app)/(student)/(subscription)/plans" />;
+  }
 
   const checkinLimit = plan.weeklyCheckinLimit;
   const checkinLabel = checkinLimit
@@ -248,26 +258,56 @@ export default function MySubscriptionScreen() {
                   </Text>
                 </View>
 
-                <Pressable
-                  onPress={hasPaid ? undefined : handlePay}
-                  disabled={hasPaid || createCheckout.isPending}
-                  className="items-center justify-center rounded-xl"
-                  style={{
-                    height: 48,
-                    backgroundColor: hasPaid ? "#3A3A3A" : "#6C63FF",
-                  }}
-                >
-                  {createCheckout.isPending ? (
-                    <ActivityIndicator color="#FFFFFF" />
-                  ) : (
+                {hasPaid ? (
+                  <View
+                    className="items-center justify-center rounded-xl"
+                    style={{ height: 48, backgroundColor: "#3A3A3A" }}
+                  >
                     <Text
                       className="font-poppins-semibold text-base"
-                      style={{ color: hasPaid ? "#8A8A8A" : "#FFFFFF" }}
+                      style={{ color: "#8A8A8A" }}
                     >
-                      {hasPaid ? "Pago" : "Pagar agora"}
+                      Pago
                     </Text>
-                  )}
-                </Pressable>
+                  </View>
+                ) : (
+                  <View className="flex-row" style={{ gap: 10 }}>
+                    <Pressable
+                      onPress={handlePayPix}
+                      disabled={createPixCheckout.isPending || createCheckout.isPending}
+                      className="flex-1 flex-row items-center justify-center rounded-xl"
+                      style={{ height: 48, gap: 8, backgroundColor: "#A078E8" }}
+                    >
+                      {createPixCheckout.isPending ? (
+                        <ActivityIndicator color="#FFFFFF" size="small" />
+                      ) : (
+                        <>
+                          <QrCode size={18} color="#FFFFFF" />
+                          <Text className="font-poppins-semibold text-sm text-white">
+                            Pix
+                          </Text>
+                        </>
+                      )}
+                    </Pressable>
+                    <Pressable
+                      onPress={handlePay}
+                      disabled={createCheckout.isPending || createPixCheckout.isPending}
+                      className="flex-1 flex-row items-center justify-center rounded-xl"
+                      style={{ height: 48, gap: 8, backgroundColor: "#6C63FF" }}
+                    >
+                      {createCheckout.isPending ? (
+                        <ActivityIndicator color="#FFFFFF" size="small" />
+                      ) : (
+                        <>
+                          <CreditCard size={18} color="#FFFFFF" />
+                          <Text className="font-poppins-semibold text-sm text-white">
+                            Cartão
+                          </Text>
+                        </>
+                      )}
+                    </Pressable>
+                  </View>
+                )}
               </View>
             );
           })()}

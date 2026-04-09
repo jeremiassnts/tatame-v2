@@ -1,6 +1,7 @@
 import { BackButton } from "@/components/BackButton";
 import { useMySubscription, useSelectPlan } from "@/lib/hooks/use-subscription";
 import { useSubscriptionPlan } from "@/lib/hooks/use-subscription-plans";
+import { useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Calendar, CheckCircle, Clock, RefreshCw } from "lucide-react-native";
 import {
@@ -21,6 +22,7 @@ export default function PlanDetailScreen() {
   const { data: plan, isLoading } = useSubscriptionPlan(planId);
   const { data: subResponse } = useMySubscription();
   const selectPlan = useSelectPlan();
+  const queryClient = useQueryClient();
 
   const currentPlanId =
     subResponse?.subscription?.effectiveStatus === "active"
@@ -39,31 +41,25 @@ export default function PlanDetailScreen() {
   const handleSelectPlan = () => {
     if (!plan) return;
 
-    const runSelectPlan = () => {
-      selectPlan.mutate(plan.id, {
-        onSuccess: () => {
-          if (hasActiveSubscription) {
-            Alert.alert(
-              "Plano atualizado",
-              "Sua assinatura foi atualizada com sucesso.",
-            );
-          } else {
-            Alert.alert(
-              "Assinatura ativada",
-              "Sua assinatura foi ativada com sucesso.",
-            );
-          }
-          router.dismiss(2);
-        },
-        onError: () => {
-          Alert.alert(
-            "Erro",
-            hasActiveSubscription
-              ? "Não foi possível trocar de plano. Tente novamente."
-              : "Não foi possível concluir a assinatura. Tente novamente.",
-          );
-        },
-      });
+    const runSelectPlan = async () => {
+      try {
+        await selectPlan.mutateAsync(plan.id);
+        await queryClient.refetchQueries({ queryKey: ["subscription", "me"] });
+        Alert.alert(
+          hasActiveSubscription ? "Plano atualizado" : "Assinatura ativada",
+          hasActiveSubscription
+            ? "Sua assinatura foi atualizada com sucesso."
+            : "Sua assinatura foi ativada com sucesso.",
+        );
+        router.replace("/(app)/(student)/(subscription)");
+      } catch {
+        Alert.alert(
+          "Erro",
+          hasActiveSubscription
+            ? "Não foi possível trocar de plano. Tente novamente."
+            : "Não foi possível concluir a assinatura. Tente novamente.",
+        );
+      }
     };
 
     if (hasActiveSubscription) {

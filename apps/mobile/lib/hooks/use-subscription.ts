@@ -86,3 +86,12 @@ export function useCreateCheckout() {
       api.post<{ checkoutUrl: string }>("/payments/checkout", body ?? {}),
   });
 }
+
+export function useCreatePixCheckout() {
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: (body?: { subscriptionId?: string }) =>
+      api.post<{ checkoutUrl: string }>("/payments/checkout/pix", body ?? {}),
+  });
+}

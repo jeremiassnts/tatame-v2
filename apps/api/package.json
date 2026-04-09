@@ -41,6 +41,7 @@
     "@tatame/email": "workspace:*",
     "@tatame/types": "workspace:*",
     "@tatame/validators": "workspace:*",
+    "abacatepay-nodejs-sdk": "1.6.0",
     "bullmq": "5.73.0",
     "cors": "2.8.6",
     "dotenv": "17.3.1",

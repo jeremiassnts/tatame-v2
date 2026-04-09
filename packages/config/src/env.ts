@@ -24,6 +24,7 @@ const envSchema = z.object({
   STRIPE_PUBLISHABLE_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   STRIPE_PRO_PRICE_ID: z.string().optional(),
+  ABACATEPAY_API_KEY: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
   MANAGER_EMAIL: z.string().optional(),
   MANAGER_CLERK_ID: z.string().optional(),
