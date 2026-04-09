@@ -338,9 +338,9 @@ export default function MySubscriptionScreen() {
                     </View>
                     <Text
                       className="font-poppins-semibold text-sm"
-                      style={{ color: "#FF453A" }}
+                      style={{ color: "#32D74B" }}
                     >
-                      {formatCurrency(p.amountCents)}
+                      {formatCurrency(p.amountCents)} ✓
                     </Text>
                   </View>
                 ))}
