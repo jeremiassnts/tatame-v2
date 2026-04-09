@@ -101,9 +101,15 @@ paymentRouter.post(
       const academyId = req.appAuth!.activeAcademyId!;
       const stripe = getStripe();
 
+      const student = await userRepo.findById(studentUserId);
+      if (!student) {
+        throw new HttpError(404, "Student not found");
+      }
+
       const result = await paymentService.createCheckoutSession(
         studentUserId,
         academyId,
+        student.email,
         stripe,
         { subscriptionId: body.subscriptionId },
       );

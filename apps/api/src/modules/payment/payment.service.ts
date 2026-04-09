@@ -72,6 +72,7 @@ export class PaymentService {
   async createCheckoutSession(
     studentUserId: string,
     academyId: string,
+    studentEmail: string,
     stripe: Stripe,
     opts?: { subscriptionId?: string },
   ): Promise<{ checkoutUrl: string }> {
@@ -107,6 +108,7 @@ export class PaymentService {
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],
+      customer_email: studentEmail,
       line_items: [
         {
           price_data: {
