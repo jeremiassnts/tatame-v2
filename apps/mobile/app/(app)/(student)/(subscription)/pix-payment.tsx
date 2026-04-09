@@ -4,6 +4,7 @@ import {
   type PixQrCodeResponse,
 } from "@/lib/hooks/use-subscription";
 import { useQueryClient } from "@tanstack/react-query";
+import * as Clipboard from "expo-clipboard";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Check, ChevronLeft, Copy, RefreshCw, Timer, X } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -103,11 +104,9 @@ export default function PixPaymentScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     if (!pixData?.brCode) return;
-    import("expo-clipboard")
-      .then((Clipboard) => Clipboard.setStringAsync(pixData.brCode))
-      .catch(() => {});
+    await Clipboard.setStringAsync(pixData.brCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 3000);
   };
