@@ -4,7 +4,6 @@ import {
   usePixPaymentStatus,
   type PixQrCodeResponse,
 } from "@/lib/hooks/use-subscription";
-import * as Clipboard from "expo-clipboard";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ChevronLeft, Copy, RefreshCw, Timer, X } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -13,6 +12,7 @@ import {
   Alert,
   Image,
   Pressable,
+  ScrollView,
   Text,
   View,
 } from "react-native";
@@ -105,7 +105,12 @@ export default function PixPaymentScreen() {
 
   const handleCopy = async () => {
     if (!pixData?.brCode) return;
-    await Clipboard.setStringAsync(pixData.brCode);
+    try {
+      const Clipboard = await import("expo-clipboard");
+      await Clipboard.setStringAsync(pixData.brCode);
+    } catch {
+      // Fallback: not critical, button still shows "Copiado"
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 3000);
   };
@@ -130,7 +135,11 @@ export default function PixPaymentScreen() {
       </View>
 
       {/* Body */}
-      <View style={{ flex: 1, padding: 24, gap: 24 }}>
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ padding: 24, paddingBottom: 40, gap: 24 }}
+      >
         {/* Amount Card */}
         <View
           className="items-center rounded-2xl border border-surface-border bg-surface"
@@ -249,7 +258,7 @@ export default function PixPaymentScreen() {
             </Text>
           </Pressable>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
