@@ -36,6 +36,7 @@ export const subscriptionStatusEnum = pgEnum("subscription_status", [
 export const paymentMethodEnum = pgEnum("payment_method", [
   "manual",
   "stripe",
+  "pix",
 ]);
 
 export const beltEnum = pgEnum("belt", [
