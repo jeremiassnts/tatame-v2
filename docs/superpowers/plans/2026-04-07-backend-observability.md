@@ -18,13 +18,13 @@
 - Create: `apps/api/src/lib/logger.ts`
 - Modify: `apps/api/package.json`
 
-- [ ] **Step 1: Install Pino dependencies**
+- [x] **Step 1: Install Pino dependencies**
 
 ```bash
 cd apps/api && pnpm add pino pino-pretty
 ```
 
-- [ ] **Step 2: Create the logger module**
+- [x] **Step 2: Create the logger module**
 
 Create `apps/api/src/lib/logger.ts`:
 
@@ -47,7 +47,7 @@ export const logger = pino({
 
 Note: In Task 3 we will add the OTel transport for production. For now, Pino outputs JSON to stdout in production and pretty-prints in dev.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/api/src/lib/logger.ts apps/api/package.json pnpm-lock.yaml
@@ -67,7 +67,7 @@ git commit -m "feat(api): add Pino structured logger"
 - Modify: `apps/api/src/modules/user/user.routes.ts`
 - Modify: `apps/api/src/middleware/error-handler.ts`
 
-- [ ] **Step 1: Update `server.ts`**
+- [x] **Step 1: Update `server.ts`**
 
 Add import at top:
 ```typescript
@@ -95,7 +95,7 @@ logger.info({ port: env.API_PORT }, "API listening");
 logger.info("Shutting down...");
 ```
 
-- [ ] **Step 2: Update `migrate.ts`**
+- [x] **Step 2: Update `migrate.ts`**
 
 Add import at top:
 ```typescript
@@ -108,7 +108,7 @@ Replace:
 logger.info("Migrations completed successfully");
 ```
 
-- [ ] **Step 3: Update `lib/redis.ts`**
+- [x] **Step 3: Update `lib/redis.ts`**
 
 Add import at top:
 ```typescript
@@ -121,7 +121,7 @@ Replace:
 logger.error({ err: msg }, "[redis] connection error");
 ```
 
-- [ ] **Step 4: Update `modules/email/email.worker.ts`**
+- [x] **Step 4: Update `modules/email/email.worker.ts`**
 
 Add import at top:
 ```typescript
@@ -140,7 +140,7 @@ logger.error({ jobName }, "[email] Unknown job name");
 logger.error({ jobName: job?.name, jobId: job?.id, err: err.message }, "[email] Job failed");
 ```
 
-- [ ] **Step 5: Update `modules/manager-subscription/manager-subscription.routes.ts`**
+- [x] **Step 5: Update `modules/manager-subscription/manager-subscription.routes.ts`**
 
 Add import at top:
 ```typescript
@@ -155,7 +155,7 @@ logger.warn({ ...contextObject }, "[manager-subscriptions/pro/complete] missing 
 
 (Keep the existing context object as-is, just change `console.warn` → `logger.warn`.)
 
-- [ ] **Step 6: Update `modules/user/user.routes.ts`**
+- [x] **Step 6: Update `modules/user/user.routes.ts`**
 
 Add import at top:
 ```typescript
@@ -168,7 +168,7 @@ Replace:
 logger.error({ err: clerkErr }, "Failed to delete Clerk user");
 ```
 
-- [ ] **Step 7: Update `middleware/error-handler.ts`**
+- [x] **Step 7: Update `middleware/error-handler.ts`**
 
 Add import at top:
 ```typescript
@@ -182,7 +182,7 @@ Add logging for 500 errors (unhandled). Before the `res.status(500)` line:
   res.status(500).json({ error: message });
 ```
 
-- [ ] **Step 8: Run tests to verify nothing broke**
+- [x] **Step 8: Run tests to verify nothing broke**
 
 ```bash
 cd apps/api && pnpm test:unit
@@ -190,7 +190,7 @@ cd apps/api && pnpm test:unit
 
 Expected: All existing tests pass.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add apps/api/src/server.ts apps/api/src/migrate.ts apps/api/src/lib/redis.ts apps/api/src/modules/email/email.worker.ts apps/api/src/modules/manager-subscription/manager-subscription.routes.ts apps/api/src/modules/user/user.routes.ts apps/api/src/middleware/error-handler.ts
@@ -207,7 +207,7 @@ git commit -m "refactor(api): replace console.log/error with Pino logger"
 - Modify: `packages/config/src/env.ts`
 - Modify: `apps/api/src/lib/logger.ts`
 
-- [ ] **Step 1: Add `OTEL_COLLECTOR_URL` env var**
+- [x] **Step 1: Add `OTEL_COLLECTOR_URL` env var**
 
 In `packages/config/src/env.ts`, add to the `envSchema` object:
 
@@ -215,7 +215,7 @@ In `packages/config/src/env.ts`, add to the `envSchema` object:
   OTEL_COLLECTOR_URL: z.string().url().optional(),
 ```
 
-- [ ] **Step 2: Install OTel dependencies**
+- [x] **Step 2: Install OTel dependencies**
 
 ```bash
 cd apps/api && pnpm add \
@@ -236,7 +236,7 @@ cd apps/api && pnpm add \
   pino-opentelemetry-transport
 ```
 
-- [ ] **Step 3: Create `instrumentation.ts`**
+- [x] **Step 3: Create `instrumentation.ts`**
 
 Create `apps/api/src/instrumentation.ts`:
 
@@ -319,7 +319,7 @@ if (env.OTEL_COLLECTOR_URL) {
 
 When `OTEL_COLLECTOR_URL` is not set, nothing is imported or started — zero overhead.
 
-- [ ] **Step 4: Update logger to include OTel transport in production**
+- [x] **Step 4: Update logger to include OTel transport in production**
 
 Update `apps/api/src/lib/logger.ts`:
 
@@ -374,7 +374,7 @@ export const logger = pino({
 });
 ```
 
-- [ ] **Step 5: Wire instrumentation into server startup**
+- [x] **Step 5: Wire instrumentation into server startup**
 
 In `apps/api/src/server.ts`, add as the very first line (before all other imports):
 
@@ -384,7 +384,7 @@ import "./instrumentation.js";
 
 This must be the first import so OTel can patch modules before they are loaded.
 
-- [ ] **Step 6: Run tests to verify nothing broke**
+- [x] **Step 6: Run tests to verify nothing broke**
 
 ```bash
 cd apps/api && pnpm test:unit
@@ -392,7 +392,7 @@ cd apps/api && pnpm test:unit
 
 Expected: All existing tests pass. OTel is not started in tests because `OTEL_COLLECTOR_URL` is not set.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/api/src/instrumentation.ts apps/api/src/lib/logger.ts apps/api/src/server.ts apps/api/package.json packages/config/src/env.ts pnpm-lock.yaml
@@ -406,7 +406,7 @@ git commit -m "feat(api): add OpenTelemetry SDK instrumentation and Pino OTel tr
 **Files:**
 - Modify: `Dockerfile.api`
 
-- [ ] **Step 1: Add `@opentelemetry/sdk-logs` dependency**
+- [x] **Step 1: Add `@opentelemetry/sdk-logs` dependency**
 
 This package is needed at runtime but may be pulled in transitively. Verify it's in the lockfile after Task 3's install. If not:
 
@@ -414,11 +414,11 @@ This package is needed at runtime but may be pulled in transitively. Verify it's
 cd apps/api && pnpm add @opentelemetry/sdk-logs
 ```
 
-- [ ] **Step 2: Update Dockerfile.api CMD**
+- [x] **Step 2: Update Dockerfile.api CMD**
 
 No changes needed. The instrumentation is imported directly in `server.ts` (via `import "./instrumentation.js"`), so it works with the existing `CMD ["node", "dist/server.js"]`.
 
-- [ ] **Step 3: Commit (if any changes)**
+- [x] **Step 3: Commit (if any changes)**
 
 ```bash
 git add Dockerfile.api
@@ -434,13 +434,13 @@ Skip this commit if no Dockerfile changes were needed.
 **Files:**
 - Create: `infra/observability/otel-collector-config.yml`
 
-- [ ] **Step 1: Create the config directory**
+- [x] **Step 1: Create the config directory**
 
 ```bash
 mkdir -p infra/observability
 ```
 
-- [ ] **Step 2: Create `otel-collector-config.yml`**
+- [x] **Step 2: Create `otel-collector-config.yml`**
 
 Create `infra/observability/otel-collector-config.yml`:
 
@@ -494,7 +494,7 @@ service:
       exporters: [loki]
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add infra/observability/otel-collector-config.yml
@@ -508,7 +508,7 @@ git commit -m "feat(infra): add OTel Collector configuration"
 **Files:**
 - Create: `infra/observability/tempo.yml`
 
-- [ ] **Step 1: Create `tempo.yml`**
+- [x] **Step 1: Create `tempo.yml`**
 
 Create `infra/observability/tempo.yml`:
 
@@ -551,7 +551,7 @@ overrides:
       processors: [service-graphs, span-metrics]
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add infra/observability/tempo.yml
@@ -565,7 +565,7 @@ git commit -m "feat(infra): add Tempo trace storage configuration"
 **Files:**
 - Create: `infra/observability/prometheus.yml`
 
-- [ ] **Step 1: Create `prometheus.yml`**
+- [x] **Step 1: Create `prometheus.yml`**
 
 Create `infra/observability/prometheus.yml`:
 
@@ -592,7 +592,7 @@ scrape_configs:
 
 Note: The OTel Collector exposes a Prometheus metrics endpoint on port 8889 by default when using the `prometheusremotewrite` exporter. We also need to enable the `--web.enable-remote-write-receiver` flag on Prometheus (done in docker-compose).
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add infra/observability/prometheus.yml
@@ -606,7 +606,7 @@ git commit -m "feat(infra): add Prometheus metrics configuration"
 **Files:**
 - Create: `infra/observability/loki.yml`
 
-- [ ] **Step 1: Create `loki.yml`**
+- [x] **Step 1: Create `loki.yml`**
 
 Create `infra/observability/loki.yml`:
 
@@ -648,7 +648,7 @@ compactor:
   delete_request_cancel_period: 10m
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add infra/observability/loki.yml
@@ -662,13 +662,13 @@ git commit -m "feat(infra): add Loki log storage configuration"
 **Files:**
 - Create: `infra/observability/grafana/provisioning/datasources/datasources.yml`
 
-- [ ] **Step 1: Create directory structure**
+- [x] **Step 1: Create directory structure**
 
 ```bash
 mkdir -p infra/observability/grafana/provisioning/datasources
 ```
 
-- [ ] **Step 2: Create `datasources.yml`**
+- [x] **Step 2: Create `datasources.yml`**
 
 Create `infra/observability/grafana/provisioning/datasources/datasources.yml`:
 
@@ -713,7 +713,7 @@ datasources:
 
 This auto-provisions all three datasources with cross-linking (logs → traces, traces → logs, traces → metrics).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add infra/observability/grafana/
@@ -728,7 +728,7 @@ git commit -m "feat(infra): add Grafana datasource provisioning"
 - Create: `infra/observability/grafana/provisioning/dashboards/dashboards.yml`
 - Create: `infra/observability/grafana/provisioning/dashboards/tatame-api-overview.json`
 
-- [ ] **Step 1: Create dashboard provisioning config**
+- [x] **Step 1: Create dashboard provisioning config**
 
 Create `infra/observability/grafana/provisioning/dashboards/dashboards.yml`:
 
@@ -747,7 +747,7 @@ providers:
       foldersFromFilesStructure: false
 ```
 
-- [ ] **Step 2: Create the API overview dashboard JSON**
+- [x] **Step 2: Create the API overview dashboard JSON**
 
 Create `infra/observability/grafana/provisioning/dashboards/tatame-api-overview.json`:
 
@@ -875,7 +875,7 @@ Create `infra/observability/grafana/provisioning/dashboards/tatame-api-overview.
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add infra/observability/grafana/provisioning/dashboards/
@@ -889,13 +889,13 @@ git commit -m "feat(infra): add Grafana dashboard provisioning with API overview
 **Files:**
 - Create: `infra/observability/grafana/provisioning/alerting/alerts.yml`
 
-- [ ] **Step 1: Create alerting directory**
+- [x] **Step 1: Create alerting directory**
 
 ```bash
 mkdir -p infra/observability/grafana/provisioning/alerting
 ```
 
-- [ ] **Step 2: Create `alerts.yml`**
+- [x] **Step 2: Create `alerts.yml`**
 
 Create `infra/observability/grafana/provisioning/alerting/alerts.yml`:
 
@@ -1015,7 +1015,7 @@ groups:
           severity: critical
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add infra/observability/grafana/provisioning/alerting/
@@ -1029,7 +1029,7 @@ git commit -m "feat(infra): add Grafana alert rules (error rate, latency, servic
 **Files:**
 - Create: `docker-compose.observability.yml`
 
-- [ ] **Step 1: Create `docker-compose.observability.yml`**
+- [x] **Step 1: Create `docker-compose.observability.yml`**
 
 Create `docker-compose.observability.yml` at project root:
 
@@ -1114,7 +1114,7 @@ volumes:
   grafana_data:
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add docker-compose.observability.yml
@@ -1128,7 +1128,7 @@ git commit -m "feat(infra): add docker-compose for observability stack"
 **Files:**
 - Modify: `.env.example`
 
-- [ ] **Step 1: Add observability env vars to `.env.example`**
+- [x] **Step 1: Add observability env vars to `.env.example`**
 
 Append to `.env.example`:
 
@@ -1148,7 +1148,7 @@ Append to `.env.example`:
 # GRAFANA_SMTP_FROM=noreply@apptatame.com.br
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add .env.example
@@ -1159,19 +1159,19 @@ git commit -m "docs: add observability env vars to .env.example"
 
 ### Task 14: End-to-End Smoke Test
 
-- [ ] **Step 1: Start the observability stack locally**
+- [x] **Step 1: Start the observability stack locally**
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.observability.yml up -d
 ```
 
-- [ ] **Step 2: Start the API with OTel enabled**
+- [x] **Step 2: Start the API with OTel enabled**
 
 ```bash
 OTEL_COLLECTOR_URL=http://localhost:4317 pnpm --filter @tatame/api dev
 ```
 
-- [ ] **Step 3: Generate some traffic**
+- [x] **Step 3: Generate some traffic**
 
 ```bash
 curl http://localhost:3001/v1/health
@@ -1179,7 +1179,7 @@ curl http://localhost:3001/v1/ready
 curl http://localhost:3001/v1/nonexistent  # should 404
 ```
 
-- [ ] **Step 4: Verify in Grafana**
+- [x] **Step 4: Verify in Grafana**
 
 Open `http://localhost:4000` (admin / admin).
 
@@ -1189,17 +1189,17 @@ Check:
 - **Explore → Prometheus:** Query `http_server_request_duration_seconds_count`. Verify metrics are arriving.
 - **Dashboards → Tatame API Overview:** Verify panels show data.
 
-- [ ] **Step 5: Verify log↔trace correlation**
+- [x] **Step 5: Verify log↔trace correlation**
 
 In Loki, find a log entry. It should have a `trace_id` field. Click it to navigate to the corresponding trace in Tempo.
 
-- [ ] **Step 6: Stop everything**
+- [x] **Step 6: Stop everything**
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.observability.yml down
 ```
 
-- [ ] **Step 7: Run unit tests one final time**
+- [x] **Step 7: Run unit tests one final time**
 
 ```bash
 cd apps/api && pnpm test:unit

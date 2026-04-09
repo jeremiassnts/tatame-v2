@@ -45,7 +45,7 @@
 **Files:**
 - Modify: `packages/db/src/schema/index.ts`
 
-- [ ] **Step 1: Add pixKeyTypeEnum and new columns to academies table**
+- [x] **Step 1: Add pixKeyTypeEnum and new columns to academies table**
 
 In `packages/db/src/schema/index.ts`, add the enum after `managerSubscriptionStatusEnum` (line ~54):
 
@@ -65,7 +65,7 @@ pixKey: text("pix_key"),
 pixKeyType: pixKeyTypeEnum("pix_key_type"),
 ```
 
-- [ ] **Step 2: Generate migration**
+- [x] **Step 2: Generate migration**
 
 Run:
 ```bash
@@ -74,7 +74,7 @@ cd packages/db && pnpm generate
 
 Expected: A new SQL migration file `drizzle/0003_*.sql` is created with `CREATE TYPE "pix_key_type"` and `ALTER TABLE "academies" ADD COLUMN` statements.
 
-- [ ] **Step 3: Apply migration to local DB**
+- [x] **Step 3: Apply migration to local DB**
 
 Run:
 ```bash
@@ -83,7 +83,7 @@ cd packages/db && pnpm migrate
 
 Expected: Migration applied successfully.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/db/src/schema/index.ts packages/db/drizzle/
@@ -99,7 +99,7 @@ git commit -m "feat(db): add pix_key and pix_key_type columns to academies table
 - Modify: `packages/validators/src/payment.schema.ts`
 - Modify: `packages/validators/src/index.ts`
 
-- [ ] **Step 1: Add updatePixKeyBodySchema to academy.schema.ts**
+- [x] **Step 1: Add updatePixKeyBodySchema to academy.schema.ts**
 
 Append to `packages/validators/src/academy.schema.ts`:
 
@@ -114,7 +114,7 @@ export const updatePixKeyBodySchema = z.object({
 export type UpdatePixKeyBody = z.infer<typeof updatePixKeyBodySchema>;
 ```
 
-- [ ] **Step 2: Add createCheckoutBodySchema to payment.schema.ts**
+- [x] **Step 2: Add createCheckoutBodySchema to payment.schema.ts**
 
 Append to `packages/validators/src/payment.schema.ts`:
 
@@ -126,7 +126,7 @@ export const createCheckoutBodySchema = z.object({
 export type CreateCheckoutBody = z.infer<typeof createCheckoutBodySchema>;
 ```
 
-- [ ] **Step 3: Export new schemas from validators index**
+- [x] **Step 3: Export new schemas from validators index**
 
 In `packages/validators/src/index.ts`, update the academy export block:
 
@@ -160,7 +160,7 @@ export {
 } from "./payment.schema.js";
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/validators/src/
@@ -175,7 +175,7 @@ git commit -m "feat(validators): add pix key and checkout session schemas"
 - Modify: `apps/api/src/modules/academy/academy.repository.ts`
 - Modify: `apps/api/src/modules/academy/academy.repository.postgres.ts`
 
-- [ ] **Step 1: Add updatePixKey to IAcademyRepository interface**
+- [x] **Step 1: Add updatePixKey to IAcademyRepository interface**
 
 In `apps/api/src/modules/academy/academy.repository.ts`, add to the interface before `existsByOwner`:
 
@@ -186,7 +186,7 @@ updatePixKey(
 ): Promise<AcademyRow | undefined>;
 ```
 
-- [ ] **Step 2: Implement in PostgresAcademyRepository**
+- [x] **Step 2: Implement in PostgresAcademyRepository**
 
 In `apps/api/src/modules/academy/academy.repository.postgres.ts`, add method after `update`:
 
@@ -204,7 +204,7 @@ async updatePixKey(
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/api/src/modules/academy/
@@ -218,7 +218,7 @@ git commit -m "feat(api): add updatePixKey to academy repository"
 **Files:**
 - Modify: `apps/api/src/modules/academy/academy.routes.ts`
 
-- [ ] **Step 1: Add PUT and DELETE pix-key routes**
+- [x] **Step 1: Add PUT and DELETE pix-key routes**
 
 Add imports at top of `apps/api/src/modules/academy/academy.routes.ts`:
 
@@ -306,7 +306,7 @@ And `Role` import:
 import { Role } from "@tatame/types";
 ```
 
-- [ ] **Step 2: Verify the app builds**
+- [x] **Step 2: Verify the app builds**
 
 Run:
 ```bash
@@ -315,7 +315,7 @@ cd apps/api && pnpm build
 
 Expected: Build succeeds.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/api/src/modules/academy/
@@ -330,7 +330,7 @@ git commit -m "feat(api): add PUT/DELETE /academies/pix-key endpoints"
 - Modify: `apps/api/src/modules/payment/payment.repository.ts`
 - Modify: `apps/api/src/modules/payment/payment.repository.postgres.ts`
 
-- [ ] **Step 1: Widen the create method type signature in IPaymentRepository**
+- [x] **Step 1: Widen the create method type signature in IPaymentRepository**
 
 In `apps/api/src/modules/payment/payment.repository.ts`, replace the `create` method signature:
 
@@ -355,7 +355,7 @@ Also add a method to check existence by stripePaymentId:
 findByStripePaymentId(stripePaymentId: string): Promise<PaymentRow | undefined>;
 ```
 
-- [ ] **Step 2: Update PostgresPaymentRepository.create to accept wider type**
+- [x] **Step 2: Update PostgresPaymentRepository.create to accept wider type**
 
 In `apps/api/src/modules/payment/payment.repository.postgres.ts`, update the `create` method signature and body:
 
@@ -407,7 +407,7 @@ async findByStripePaymentId(
 }
 ```
 
-- [ ] **Step 3: Update PaymentService.confirmManual to pass new fields**
+- [x] **Step 3: Update PaymentService.confirmManual to pass new fields**
 
 In `apps/api/src/modules/payment/payment.service.ts`, update the `confirmManual` return statement to include the new fields:
 
@@ -426,7 +426,7 @@ return this.paymentRepo.create({
 });
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/api/src/modules/payment/
@@ -441,7 +441,7 @@ git commit -m "feat(api): widen payment repository for stripe payments"
 - Modify: `apps/api/src/modules/payment/payment.service.ts`
 - Modify: `apps/api/src/modules/payment/payment.routes.ts`
 
-- [ ] **Step 1: Add createCheckoutSession to PaymentService**
+- [x] **Step 1: Add createCheckoutSession to PaymentService**
 
 In `apps/api/src/modules/payment/payment.service.ts`, add import at top:
 
@@ -532,7 +532,7 @@ async createCheckoutSession(
 }
 ```
 
-- [ ] **Step 2: Add POST /checkout route**
+- [x] **Step 2: Add POST /checkout route**
 
 In `apps/api/src/modules/payment/payment.routes.ts`, add imports:
 
@@ -577,7 +577,7 @@ paymentRouter.post(
 );
 ```
 
-- [ ] **Step 3: Verify the API builds**
+- [x] **Step 3: Verify the API builds**
 
 Run:
 ```bash
@@ -586,7 +586,7 @@ cd apps/api && pnpm build
 
 Expected: Build succeeds.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/api/src/modules/payment/
@@ -603,7 +603,7 @@ git commit -m "feat(api): add POST /payments/checkout endpoint for Stripe Checko
 - Modify: `apps/api/src/modules/email/email.queue.ts`
 - Modify: `apps/api/src/modules/email/email.service.ts`
 
-- [ ] **Step 1: Create the student-payment-received email template**
+- [x] **Step 1: Create the student-payment-received email template**
 
 Create `packages/email/src/templates/student-payment-received.tsx`:
 
@@ -674,7 +674,7 @@ const warningText = {
 };
 ```
 
-- [ ] **Step 2: Export from packages/email/src/index.ts**
+- [x] **Step 2: Export from packages/email/src/index.ts**
 
 Add to `packages/email/src/index.ts`:
 
@@ -682,7 +682,7 @@ Add to `packages/email/src/index.ts`:
 export { StudentPaymentReceived, type StudentPaymentReceivedProps } from "./templates/student-payment-received.js";
 ```
 
-- [ ] **Step 3: Add job type to email queue**
+- [x] **Step 3: Add job type to email queue**
 
 In `apps/api/src/modules/email/email.queue.ts`, add the import:
 
@@ -696,7 +696,7 @@ Add to the `EmailJobMap` type:
 "student-payment-received": StudentPaymentReceivedProps & { email: string };
 ```
 
-- [ ] **Step 4: Add send method to EmailService**
+- [x] **Step 4: Add send method to EmailService**
 
 In `apps/api/src/modules/email/email.service.ts`, add method:
 
@@ -713,7 +713,7 @@ async sendStudentPaymentReceived(
 }
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/email/src/ apps/api/src/modules/email/
@@ -728,7 +728,7 @@ git commit -m "feat(email): add student-payment-received email template for mana
 - Modify: `apps/api/src/modules/manager-subscription/stripe-webhook.handler.ts`
 - Modify: `apps/api/src/modules/manager-subscription/manager-subscription.routes.ts`
 
-- [ ] **Step 1: Add payment dependencies to StripeWebhookHandler**
+- [x] **Step 1: Add payment dependencies to StripeWebhookHandler**
 
 In `apps/api/src/modules/manager-subscription/stripe-webhook.handler.ts`, add imports:
 
@@ -752,7 +752,7 @@ export class StripeWebhookHandler {
   ) {}
 ```
 
-- [ ] **Step 2: Add checkout.session.completed handler**
+- [x] **Step 2: Add checkout.session.completed handler**
 
 In `handleEvent`, add a new case:
 
@@ -838,7 +838,7 @@ private async onCheckoutSessionCompleted(
 }
 ```
 
-- [ ] **Step 3: Update webhook handler instantiation in routes**
+- [x] **Step 3: Update webhook handler instantiation in routes**
 
 In `apps/api/src/modules/manager-subscription/manager-subscription.routes.ts`, add import:
 
@@ -863,7 +863,7 @@ const webhookHandler = new StripeWebhookHandler(
 );
 ```
 
-- [ ] **Step 4: Verify the API builds**
+- [x] **Step 4: Verify the API builds**
 
 Run:
 ```bash
@@ -872,7 +872,7 @@ cd apps/api && pnpm build
 
 Expected: Build succeeds.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/api/src/modules/manager-subscription/ apps/api/src/modules/payment/
@@ -887,7 +887,7 @@ git commit -m "feat(api): handle checkout.session.completed webhook for student 
 - Modify: `apps/mobile/lib/hooks/use-subscription.ts`
 - Modify: `apps/mobile/lib/hooks/use-academy.ts`
 
-- [ ] **Step 1: Add useCreateCheckout mutation**
+- [x] **Step 1: Add useCreateCheckout mutation**
 
 In `apps/mobile/lib/hooks/use-subscription.ts`, add:
 
@@ -902,7 +902,7 @@ export function useCreateCheckout() {
 }
 ```
 
-- [ ] **Step 2: Add Pix key hooks to use-academy.ts**
+- [x] **Step 2: Add Pix key hooks to use-academy.ts**
 
 In `apps/mobile/lib/hooks/use-academy.ts`, add:
 
@@ -935,7 +935,7 @@ export function useDeletePixKey(academyId: string) {
 
 Note: The `useApi()` hook exposes `put` and `delete` methods — verify they exist. If `put` doesn't exist, use `patch` with the same semantics or add `put` to the api client. Check `apps/mobile/lib/api.ts`.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/mobile/lib/hooks/
@@ -951,7 +951,7 @@ git commit -m "feat(mobile): add checkout and pix key hooks"
 
 Reference designs: Use MCP Pencil `batch_get` on node IDs `YYbfl` (pending) and `Nk0pL` (paid) from `design.pen` for exact visual reference.
 
-- [ ] **Step 1: Add imports for WebBrowser and new hook**
+- [x] **Step 1: Add imports for WebBrowser and new hook**
 
 At the top of the file, add:
 
@@ -960,7 +960,7 @@ import * as WebBrowser from "expo-web-browser";
 import { useCreateCheckout } from "@/lib/hooks/use-subscription";
 ```
 
-- [ ] **Step 2: Add state and hook inside the component**
+- [x] **Step 2: Add state and hook inside the component**
 
 Inside `MySubscriptionScreen`, after the existing hooks:
 
@@ -969,7 +969,7 @@ const createCheckout = useCreateCheckout();
 const [showProcessingBanner, setShowProcessingBanner] = useState(false);
 ```
 
-- [ ] **Step 3: Add deep link listener for payment-success**
+- [x] **Step 3: Add deep link listener for payment-success**
 
 Add this `useEffect` after the existing one:
 
@@ -990,7 +990,7 @@ Add `Linking` to the react-native imports:
 import { ..., Linking } from "react-native";
 ```
 
-- [ ] **Step 4: Add handlePay function**
+- [x] **Step 4: Add handlePay function**
 
 ```typescript
 const handlePay = async () => {
@@ -1005,7 +1005,7 @@ const handlePay = async () => {
 };
 ```
 
-- [ ] **Step 5: Add payment card and processing banner to the JSX**
+- [x] **Step 5: Add payment card and processing banner to the JSX**
 
 After the check-in card (`</Pressable>`) and before the "Pagamentos" section, add the processing banner and payment card. Replace the existing `<View style={{ gap: 12 }}>` payments section with:
 
@@ -1102,7 +1102,7 @@ After the check-in card (`</Pressable>`) and before the "Pagamentos" section, ad
 
 (Continue with the existing payment list code unchanged.)
 
-- [ ] **Step 6: Verify the mobile app builds**
+- [x] **Step 6: Verify the mobile app builds**
 
 Run:
 ```bash
@@ -1111,7 +1111,7 @@ cd apps/mobile && npx expo export --platform ios 2>&1 | head -5
 
 Expected: No TypeScript errors. (Export may not fully complete without EAS, but TS errors would appear early.)
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(student)/(subscription)/index.tsx
@@ -1127,7 +1127,7 @@ git commit -m "feat(mobile): add payment card with Stripe Checkout to student su
 
 Reference designs: Use MCP Pencil `batch_get` on node IDs `3sIUB` (card `55ENs` — registered) and `KSv3g` (card `L5lJb` — unregistered) from `design.pen` for exact visual reference.
 
-- [ ] **Step 1: Add imports**
+- [x] **Step 1: Add imports**
 
 Add to the top of the file:
 
@@ -1140,7 +1140,7 @@ import { Modal, TextInput } from "react-native";
 import { useState } from "react";
 ```
 
-- [ ] **Step 2: Add hooks and state inside the component**
+- [x] **Step 2: Add hooks and state inside the component**
 
 Inside `FinancialDashboard`, after existing hooks:
 
@@ -1154,7 +1154,7 @@ const [pixKeyType, setPixKeyType] = useState("");
 const [pixKeyValue, setPixKeyValue] = useState("");
 ```
 
-- [ ] **Step 3: Add the Pix modal and card JSX**
+- [x] **Step 3: Add the Pix modal and card JSX**
 
 Add the Pix key card after the "Ações rápidas" section (before "Histórico de pagamentos"). Also add the Pix modal.
 
@@ -1336,7 +1336,7 @@ Add the Modal at the end, just before `</SafeAreaView>`:
 </Modal>
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(manager)/(finances)/index.tsx
@@ -1350,7 +1350,7 @@ git commit -m "feat(mobile): add Pix key card and modal to manager finance scree
 **Files:**
 - Modify: `apps/mobile/app/(app)/(manager)/(home)/index.tsx`
 
-- [ ] **Step 1: Add academy query and alert banner**
+- [x] **Step 1: Add academy query and alert banner**
 
 Add import:
 
@@ -1389,7 +1389,7 @@ pixKey: z.string().nullable(),
 pixKeyType: z.string().nullable(),
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(manager)/(home)/index.tsx packages/validators/src/academy.schema.ts
@@ -1403,7 +1403,7 @@ git commit -m "feat(mobile): add Pix key alert banner on manager home screen"
 **Files:**
 - Modify: `apps/mobile/lib/api.ts` (only if `put` method doesn't exist)
 
-- [ ] **Step 1: Check if put method exists in api.ts**
+- [x] **Step 1: Check if put method exists in api.ts**
 
 Read `apps/mobile/lib/api.ts` and check if there's a `put<T>` method. If not, add one following the same pattern as `patch<T>`:
 
@@ -1439,7 +1439,7 @@ async delete<T>(path: string): Promise<T> {
 }
 ```
 
-- [ ] **Step 2: Commit (if changes were made)**
+- [x] **Step 2: Commit (if changes were made)**
 
 ```bash
 git add apps/mobile/lib/api.ts
@@ -1453,7 +1453,7 @@ git commit -m "feat(mobile): add put and delete methods to API client"
 **Files:**
 - Check: `apps/api/src/modules/email/email.worker.ts` or wherever the BullMQ worker processes jobs
 
-- [ ] **Step 1: Find and update the email worker**
+- [x] **Step 1: Find and update the email worker**
 
 Search for the email worker file that processes BullMQ jobs. It should have a `Worker` instance that processes jobs from the "email" queue. Add handling for the `student-payment-received` job name.
 
@@ -1473,7 +1473,7 @@ case "student-payment-received": {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/api/src/modules/email/
@@ -1484,7 +1484,7 @@ git commit -m "feat(api): handle student-payment-received email in worker"
 
 ### Task 15: Final Build Verification and PR
 
-- [ ] **Step 1: Run full build**
+- [x] **Step 1: Run full build**
 
 ```bash
 cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm build
@@ -1492,7 +1492,7 @@ cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm build
 
 Expected: All packages and apps build successfully.
 
-- [ ] **Step 2: Run existing tests**
+- [x] **Step 2: Run existing tests**
 
 ```bash
 cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm test 2>&1 || true
@@ -1500,7 +1500,7 @@ cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm test 2>&1 || true
 
 Fix any failing tests.
 
-- [ ] **Step 3: Create pull request**
+- [x] **Step 3: Create pull request**
 
 ```bash
 git push -u origin feature/TAT-94

@@ -172,7 +172,7 @@ Run: `pnpm --filter @tatame/db migrate`
 
 Expected: Migration applied successfully
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add packages/types/src/index.ts packages/config/src/env.ts packages/db/src/schema/index.ts packages/db/drizzle/
@@ -254,7 +254,7 @@ Run: `pnpm --filter @tatame/validators build`
 
 Expected: Build succeeds
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/validators/src/manager-subscription.schema.ts packages/validators/src/index.ts
@@ -347,7 +347,7 @@ export function makeManagerSubscription(
 
 Run: `pnpm --filter api add stripe`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/api/src/lib/stripe.ts apps/api/src/express-augment.ts apps/api/src/testing/factories/index.ts apps/api/package.json pnpm-lock.yaml
@@ -596,7 +596,7 @@ export class InMemoryManagerSubscriptionRepository
 }
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/api/src/modules/manager-subscription/
@@ -1204,7 +1204,7 @@ Run: `pnpm --filter api test -- --run src/modules/manager-subscription/manager-s
 
 Expected: All tests PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/api/src/modules/manager-subscription/manager-subscription.service.ts apps/api/src/modules/manager-subscription/manager-subscription.service.test.ts
@@ -1398,7 +1398,7 @@ export class StripeWebhookHandler {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/api/src/modules/manager-subscription/stripe-webhook.handler.ts
@@ -1855,7 +1855,7 @@ Add webhook router AFTER the raw body middleware and BEFORE the main `/v1` route
 app.use("/v1/webhooks", createWebhookRouter());
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/api/src/middleware/require-active-plan.ts apps/api/src/middleware/require-plan-feature.ts apps/api/src/modules/manager-subscription/manager-subscription.routes.ts apps/api/src/router.ts apps/api/src/app.ts
@@ -1936,7 +1936,7 @@ Run: `pnpm --filter api build`
 
 Expected: Build succeeds
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/api/src/modules/membership/membership.routes.ts apps/api/src/modules/subscription/subscription.routes.ts apps/api/src/modules/class/class.routes.ts
@@ -2049,7 +2049,7 @@ export function useStripePortal() {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/lib/hooks/use-manager-subscription.ts
@@ -2073,7 +2073,7 @@ Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/mobile && npx expo install 
 
 Expected: No critical incompatibilities
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/mobile/package.json pnpm-lock.yaml
@@ -2337,7 +2337,7 @@ With:
 
 The actual gate will be in the manager `_layout.tsx` — see Task 12.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(manager)/plan-selection.tsx
@@ -2460,7 +2460,7 @@ export default function ManagerLayout() {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(manager)/_layout.tsx
@@ -2734,7 +2734,7 @@ Add the "Plano atual" card JSX after the "Membros ativos" card (after line 162) 
 </Pressable>
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/mobile/app/(app)/(manager)/(finances)/my-plan.tsx apps/mobile/app/(app)/(manager)/(finances)/index.tsx

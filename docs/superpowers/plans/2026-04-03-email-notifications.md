@@ -21,7 +21,7 @@
 - Create: `packages/email/src/templates/components/button.tsx`
 - Create: `packages/email/src/templates/components/heading.tsx`
 
-- [ ] **Step 1: Create package.json**
+- [x] **Step 1: Create package.json**
 
 ```json
 {
@@ -54,7 +54,7 @@
 }
 ```
 
-- [ ] **Step 2: Create tsconfig.json**
+- [x] **Step 2: Create tsconfig.json**
 
 ```json
 {
@@ -68,7 +68,7 @@
 }
 ```
 
-- [ ] **Step 3: Create layout component**
+- [x] **Step 3: Create layout component**
 
 Create `packages/email/src/templates/components/layout.tsx`:
 
@@ -151,7 +151,7 @@ const footerText = {
 };
 ```
 
-- [ ] **Step 4: Create button component**
+- [x] **Step 4: Create button component**
 
 Create `packages/email/src/templates/components/button.tsx`:
 
@@ -184,7 +184,7 @@ const buttonStyle = {
 };
 ```
 
-- [ ] **Step 5: Create heading component**
+- [x] **Step 5: Create heading component**
 
 Create `packages/email/src/templates/components/heading.tsx`:
 
@@ -209,7 +209,7 @@ const headingStyle = {
 };
 ```
 
-- [ ] **Step 6: Create render utility**
+- [x] **Step 6: Create render utility**
 
 Create `packages/email/src/render.ts`:
 
@@ -222,7 +222,7 @@ export async function renderEmail(element: ReactElement): Promise<string> {
 }
 ```
 
-- [ ] **Step 7: Create index.ts with exports**
+- [x] **Step 7: Create index.ts with exports**
 
 Create `packages/email/src/index.ts`:
 
@@ -233,7 +233,7 @@ export { Button } from "./templates/components/button.js";
 export { Heading } from "./templates/components/heading.js";
 ```
 
-- [ ] **Step 8: Install dependencies and verify build**
+- [x] **Step 8: Install dependencies and verify build**
 
 Run:
 ```bash
@@ -241,7 +241,7 @@ cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm install && pnpm --filter @tata
 ```
 Expected: Build succeeds with no errors.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add packages/email/
@@ -263,7 +263,7 @@ git commit -m "feat(email): create packages/email with React Email base componen
 - Create: `packages/email/src/templates/manager-new-member.tsx`
 - Modify: `packages/email/src/index.ts`
 
-- [ ] **Step 1: Create invoice-paid template**
+- [x] **Step 1: Create invoice-paid template**
 
 Create `packages/email/src/templates/invoice-paid.tsx`:
 
@@ -323,7 +323,7 @@ const link = {
 };
 ```
 
-- [ ] **Step 2: Create payment-failed template**
+- [x] **Step 2: Create payment-failed template**
 
 Create `packages/email/src/templates/payment-failed.tsx`:
 
@@ -374,7 +374,7 @@ const text = {
 };
 ```
 
-- [ ] **Step 3: Create pro-activated template**
+- [x] **Step 3: Create pro-activated template**
 
 Create `packages/email/src/templates/pro-activated.tsx`:
 
@@ -411,7 +411,7 @@ const text = {
 };
 ```
 
-- [ ] **Step 4: Create subscription-canceled template**
+- [x] **Step 4: Create subscription-canceled template**
 
 Create `packages/email/src/templates/subscription-canceled.tsx`:
 
@@ -451,7 +451,7 @@ const text = {
 };
 ```
 
-- [ ] **Step 5: Create plan-enrolled template**
+- [x] **Step 5: Create plan-enrolled template**
 
 Create `packages/email/src/templates/plan-enrolled.tsx`:
 
@@ -497,7 +497,7 @@ const text = {
 };
 ```
 
-- [ ] **Step 6: Create payment-confirmed template**
+- [x] **Step 6: Create payment-confirmed template**
 
 Create `packages/email/src/templates/payment-confirmed.tsx`:
 
@@ -546,7 +546,7 @@ const text = {
 };
 ```
 
-- [ ] **Step 7: Create member-approved template**
+- [x] **Step 7: Create member-approved template**
 
 Create `packages/email/src/templates/member-approved.tsx`:
 
@@ -591,7 +591,7 @@ const text = {
 };
 ```
 
-- [ ] **Step 8: Create manager-new-member template**
+- [x] **Step 8: Create manager-new-member template**
 
 Create `packages/email/src/templates/manager-new-member.tsx`:
 
@@ -638,7 +638,7 @@ const text = {
 };
 ```
 
-- [ ] **Step 9: Update index.ts exports**
+- [x] **Step 9: Update index.ts exports**
 
 Replace `packages/email/src/index.ts`:
 
@@ -661,7 +661,7 @@ export { MemberApproved, type MemberApprovedProps } from "./templates/member-app
 export { ManagerNewMember, type ManagerNewMemberProps } from "./templates/manager-new-member.js";
 ```
 
-- [ ] **Step 10: Build and verify**
+- [x] **Step 10: Build and verify**
 
 Run:
 ```bash
@@ -669,7 +669,7 @@ cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm --filter @tatame/email build
 ```
 Expected: Build succeeds.
 
-- [ ] **Step 11: Commit**
+- [x] **Step 11: Commit**
 
 ```bash
 git add packages/email/src/templates/ packages/email/src/index.ts
@@ -685,7 +685,7 @@ git commit -m "feat(email): add all 8 email templates with React Email"
 - Modify: `apps/api/package.json`
 - Create: `apps/api/src/lib/resend.ts`
 
-- [ ] **Step 1: Add RESEND_API_KEY to env schema**
+- [x] **Step 1: Add RESEND_API_KEY to env schema**
 
 In `packages/config/src/env.ts`, add after the `STRIPE_PRO_PRICE_ID` line (line 26):
 
@@ -693,7 +693,7 @@ In `packages/config/src/env.ts`, add after the `STRIPE_PRO_PRICE_ID` line (line 
   RESEND_API_KEY: z.string().optional(),
 ```
 
-- [ ] **Step 2: Create Resend singleton**
+- [x] **Step 2: Create Resend singleton**
 
 Create `apps/api/src/lib/resend.ts`:
 
@@ -713,14 +713,14 @@ export function getResend(): Resend | null {
 }
 ```
 
-- [ ] **Step 3: Install resend and bullmq in the API**
+- [x] **Step 3: Install resend and bullmq in the API**
 
 Run:
 ```bash
 cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm --filter @tatame/api add resend bullmq && pnpm --filter @tatame/api add -D @types/react
 ```
 
-- [ ] **Step 4: Add @tatame/email dependency to the API**
+- [x] **Step 4: Add @tatame/email dependency to the API**
 
 In `apps/api/package.json`, add to `dependencies`:
 
@@ -733,7 +733,7 @@ Then run:
 cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm install
 ```
 
-- [ ] **Step 5: Build to verify**
+- [x] **Step 5: Build to verify**
 
 Run:
 ```bash
@@ -741,7 +741,7 @@ cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm --filter @tatame/config build 
 ```
 Expected: All packages build successfully.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add packages/config/src/env.ts apps/api/src/lib/resend.ts apps/api/package.json pnpm-lock.yaml
@@ -757,7 +757,7 @@ git commit -m "feat(api): add Resend SDK, BullMQ deps, and RESEND_API_KEY env co
 - Create: `apps/api/src/modules/email/email.worker.ts`
 - Create: `apps/api/src/modules/email/email.service.ts`
 
-- [ ] **Step 1: Create email queue with job types**
+- [x] **Step 1: Create email queue with job types**
 
 Create `apps/api/src/modules/email/email.queue.ts`:
 
@@ -810,7 +810,7 @@ export async function closeEmailQueue(): Promise<void> {
 }
 ```
 
-- [ ] **Step 2: Create email worker**
+- [x] **Step 2: Create email worker**
 
 Create `apps/api/src/modules/email/email.worker.ts`:
 
@@ -920,7 +920,7 @@ export async function closeEmailWorker(): Promise<void> {
 }
 ```
 
-- [ ] **Step 3: Create email service**
+- [x] **Step 3: Create email service**
 
 Create `apps/api/src/modules/email/email.service.ts`:
 
@@ -1025,7 +1025,7 @@ export class EmailService {
 }
 ```
 
-- [ ] **Step 4: Build to verify**
+- [x] **Step 4: Build to verify**
 
 Run:
 ```bash
@@ -1033,7 +1033,7 @@ cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm --filter @tatame/api build
 ```
 Expected: Build succeeds.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/api/src/modules/email/
@@ -1047,7 +1047,7 @@ git commit -m "feat(api): add email queue, worker, and service with BullMQ"
 **Files:**
 - Modify: `apps/api/src/server.ts`
 
-- [ ] **Step 1: Add worker startup and shutdown**
+- [x] **Step 1: Add worker startup and shutdown**
 
 Replace the contents of `apps/api/src/server.ts`:
 
@@ -1091,7 +1091,7 @@ process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);
 ```
 
-- [ ] **Step 2: Build to verify**
+- [x] **Step 2: Build to verify**
 
 Run:
 ```bash
@@ -1099,7 +1099,7 @@ cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm --filter @tatame/api build
 ```
 Expected: Build succeeds.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/api/src/server.ts
@@ -1114,7 +1114,7 @@ git commit -m "feat(api): start email worker on boot with graceful shutdown"
 - Modify: `apps/api/src/modules/manager-subscription/stripe-webhook.handler.ts`
 - Modify: `apps/api/src/modules/manager-subscription/manager-subscription.routes.ts`
 
-- [ ] **Step 1: Add EmailService dependency to StripeWebhookHandler**
+- [x] **Step 1: Add EmailService dependency to StripeWebhookHandler**
 
 Modify `apps/api/src/modules/manager-subscription/stripe-webhook.handler.ts` to accept an `EmailService` and user/academy repositories. The handler needs to resolve manager name and email from the DB.
 
@@ -1147,7 +1147,7 @@ export class StripeWebhookHandler {
   ) {}
 ```
 
-- [ ] **Step 2: Add email sending to onSubscriptionCreated**
+- [x] **Step 2: Add email sending to onSubscriptionCreated**
 
 After the `subRepo.update` call in `onSubscriptionCreated`, add:
 
@@ -1199,7 +1199,7 @@ A simpler approach: add the email/name lookup directly in the webhook handler us
 
 Let me revise — we'll add a minimal `findById` to the user repository interface and postgres implementation.
 
-- [ ] **Step 2 (revised): Add findById to IUserRepository**
+- [x] **Step 2 (revised): Add findById to IUserRepository**
 
 In `apps/api/src/modules/user/user.repository.ts`, add to the interface:
 
@@ -1228,7 +1228,7 @@ In `apps/api/src/modules/user/user.repository.in-memory.ts`, add the implementat
   }
 ```
 
-- [ ] **Step 3: Add email to onInvoicePaid**
+- [x] **Step 3: Add email to onInvoicePaid**
 
 In the `onInvoicePaid` method, after `subRepo.update`, add:
 
@@ -1264,7 +1264,7 @@ In the `onInvoicePaid` method, after `subRepo.update`, add:
   }
 ```
 
-- [ ] **Step 4: Add email to onInvoicePaymentFailed**
+- [x] **Step 4: Add email to onInvoicePaymentFailed**
 
 ```typescript
   private async onInvoicePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
@@ -1297,7 +1297,7 @@ In the `onInvoicePaid` method, after `subRepo.update`, add:
   }
 ```
 
-- [ ] **Step 5: Add email to onSubscriptionDeleted**
+- [x] **Step 5: Add email to onSubscriptionDeleted**
 
 In `onSubscriptionDeleted`, after the downgrade/cancel logic:
 
@@ -1347,7 +1347,7 @@ In `onSubscriptionDeleted`, after the downgrade/cancel logic:
   }
 ```
 
-- [ ] **Step 6: Update webhook handler instantiation in routes**
+- [x] **Step 6: Update webhook handler instantiation in routes**
 
 In `apps/api/src/modules/manager-subscription/manager-subscription.routes.ts`, update imports and the handler construction:
 
@@ -1381,7 +1381,7 @@ const webhookHandler = new StripeWebhookHandler(
 );
 ```
 
-- [ ] **Step 7: Build to verify**
+- [x] **Step 7: Build to verify**
 
 Run:
 ```bash
@@ -1389,7 +1389,7 @@ cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm --filter @tatame/api build
 ```
 Expected: Build succeeds.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add apps/api/src/modules/manager-subscription/ apps/api/src/modules/user/user.repository.ts apps/api/src/modules/user/user.repository.postgres.ts apps/api/src/modules/user/user.repository.in-memory.ts
@@ -1403,7 +1403,7 @@ git commit -m "feat(api): add email notifications to Stripe webhook events"
 **Files:**
 - Modify: `apps/api/src/modules/membership/membership.routes.ts`
 
-- [ ] **Step 1: Add email service and user/academy repos to the approve route**
+- [x] **Step 1: Add email service and user/academy repos to the approve route**
 
 In `apps/api/src/modules/membership/membership.routes.ts`, add imports:
 
@@ -1424,7 +1424,7 @@ const emailService = env.REDIS_URL
   : null;
 ```
 
-- [ ] **Step 2: Send emails after approval**
+- [x] **Step 2: Send emails after approval**
 
 In the `/:membershipId/approve` route handler (around line 156), after `membershipService.approve` returns, add email sending:
 
@@ -1499,7 +1499,7 @@ const membershipService = new MembershipService(
 
 (Replace the existing inline `new PostgresAcademyRepository(db)` call.)
 
-- [ ] **Step 3: Build to verify**
+- [x] **Step 3: Build to verify**
 
 Run:
 ```bash
@@ -1507,7 +1507,7 @@ cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm --filter @tatame/api build
 ```
 Expected: Build succeeds.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/api/src/modules/membership/membership.routes.ts
@@ -1521,7 +1521,7 @@ git commit -m "feat(api): send email notifications on membership approval"
 **Files:**
 - Modify: `apps/api/src/modules/subscription/subscription.routes.ts`
 
-- [ ] **Step 1: Add email service imports and instantiation**
+- [x] **Step 1: Add email service imports and instantiation**
 
 In `apps/api/src/modules/subscription/subscription.routes.ts`, add:
 
@@ -1545,7 +1545,7 @@ const emailService = env.REDIS_URL
 
 Note: `PostgresAcademyRepository` is already imported and used inline. Extract it to a variable (`academyRepo`) and pass it to both `SubscriptionService` and email sending.
 
-- [ ] **Step 2: Send email after plan selection**
+- [x] **Step 2: Send email after plan selection**
 
 In the `POST /me/plan` route handler (around line 238), after `subscriptionService.selectPlan` returns:
 
@@ -1574,7 +1574,7 @@ In the `POST /me/plan` route handler (around line 238), after `subscriptionServi
       res.status(201).json(result);
 ```
 
-- [ ] **Step 3: Build to verify**
+- [x] **Step 3: Build to verify**
 
 Run:
 ```bash
@@ -1582,7 +1582,7 @@ cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm --filter @tatame/api build
 ```
 Expected: Build succeeds.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/api/src/modules/subscription/subscription.routes.ts
@@ -1596,7 +1596,7 @@ git commit -m "feat(api): send email notification on student plan enrollment"
 **Files:**
 - Modify: `apps/api/src/modules/payment/payment.routes.ts`
 
-- [ ] **Step 1: Add email service imports and instantiation**
+- [x] **Step 1: Add email service imports and instantiation**
 
 In `apps/api/src/modules/payment/payment.routes.ts`, add:
 
@@ -1620,7 +1620,7 @@ const emailService = env.REDIS_URL
 
 Note: `PostgresAcademyRepository` is already imported. Extract the existing inline usage to a shared variable.
 
-- [ ] **Step 2: Send email after payment confirmation**
+- [x] **Step 2: Send email after payment confirmation**
 
 In the `POST /` route handler (around line 41), after `paymentService.confirmManual` returns:
 
@@ -1652,7 +1652,7 @@ In the `POST /` route handler (around line 41), after `paymentService.confirmMan
       res.status(201).json(created);
 ```
 
-- [ ] **Step 3: Build to verify**
+- [x] **Step 3: Build to verify**
 
 Run:
 ```bash
@@ -1660,7 +1660,7 @@ cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm --filter @tatame/api build
 ```
 Expected: Build succeeds.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/api/src/modules/payment/payment.routes.ts
@@ -1674,7 +1674,7 @@ git commit -m "feat(api): send email notification on manual payment confirmation
 **Files:**
 - Modify: `.env.example`
 
-- [ ] **Step 1: Add RESEND_API_KEY to .env.example**
+- [x] **Step 1: Add RESEND_API_KEY to .env.example**
 
 Add to `.env.example`:
 
@@ -1683,7 +1683,7 @@ Add to `.env.example`:
 RESEND_API_KEY=
 ```
 
-- [ ] **Step 2: Full build verification**
+- [x] **Step 2: Full build verification**
 
 Run:
 ```bash
@@ -1691,7 +1691,7 @@ cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm install && pnpm -r build
 ```
 Expected: All packages build successfully.
 
-- [ ] **Step 3: Run existing tests**
+- [x] **Step 3: Run existing tests**
 
 Run:
 ```bash
@@ -1699,7 +1699,7 @@ cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm --filter @tatame/api test:unit
 ```
 Expected: All existing tests pass. If any tests break due to the new constructor parameter in `StripeWebhookHandler`, fix them by adding `null` as the last three constructor arguments (userRepo, academyRepo, emailService).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add .env.example

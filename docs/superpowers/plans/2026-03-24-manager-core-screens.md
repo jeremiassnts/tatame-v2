@@ -2260,7 +2260,7 @@ npx tsc --noEmit
 
 Expected: no type errors.
 
-- [ ] **Step 4: Test mobile app manually**
+- [x] **Step 4: Test mobile app manually**
 
 ```bash
 cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/mobile
