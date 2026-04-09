@@ -67,6 +67,13 @@ export class InMemoryAcademyRepository implements IAcademyRepository {
     return row;
   }
 
+  async updatePixKey(
+    academyId: string,
+    data: { pixKey: string | null; pixKeyType: string | null },
+  ): Promise<AcademyRow | undefined> {
+    throw new Error("Not implemented");
+  }
+
   async existsByOwner(userId: string): Promise<boolean> {
     return this.rows.some((a) => a.ownerId === userId);
   }
