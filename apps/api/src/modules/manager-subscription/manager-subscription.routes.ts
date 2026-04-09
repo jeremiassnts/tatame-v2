@@ -22,6 +22,7 @@ import { StripeWebhookHandler } from "./stripe-webhook.handler.js";
 import { PostgresUserRepository } from "../user/user.repository.postgres.js";
 import { getEmailQueue } from "../email/email.queue.js";
 import { EmailService } from "../email/email.service.js";
+import { PostgresPaymentRepository } from "../payment/payment.repository.postgres.js";
 
 const db = getDb();
 const env = loadEnv();
@@ -35,6 +36,8 @@ const userRepo = new PostgresUserRepository(db);
 const emailService = env.REDIS_URL
   ? new EmailService(getEmailQueue(env.REDIS_URL))
   : null;
+
+const paymentRepo = new PostgresPaymentRepository(db);
 
 const service = new ManagerSubscriptionService(
   subRepo,
@@ -52,6 +55,7 @@ const webhookHandler = new StripeWebhookHandler(
   userRepo,
   acadRepo,
   emailService,
+  paymentRepo,
 );
 
 export const managerSubscriptionRouter = Router();

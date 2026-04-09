@@ -7,6 +7,7 @@ import type { PlanEnrolledProps } from "@tatame/email";
 import type { PaymentConfirmedProps } from "@tatame/email";
 import type { MemberApprovedProps } from "@tatame/email";
 import type { ManagerNewMemberProps } from "@tatame/email";
+import type { StudentPaymentReceivedProps } from "@tatame/email";
 
 export type EmailJobMap = {
   "invoice-paid": InvoicePaidProps & { email: string };
@@ -17,6 +18,7 @@ export type EmailJobMap = {
   "payment-confirmed": PaymentConfirmedProps & { email: string };
   "member-approved": MemberApprovedProps & { email: string };
   "manager-new-member": ManagerNewMemberProps & { email: string };
+  "student-payment-received": StudentPaymentReceivedProps & { email: string };
 };
 
 export type EmailJobName = keyof EmailJobMap;

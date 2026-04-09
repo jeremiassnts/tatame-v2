@@ -6,6 +6,7 @@ import type { IManagerSubscriptionRepository } from "./manager-subscription.repo
 import type { IUserRepository } from "../user/user.repository.js";
 import type { IAcademyRepository } from "../academy/academy.repository.js";
 import type { EmailService } from "../email/email.service.js";
+import type { IPaymentRepository } from "../payment/payment.repository.js";
 import { mapStripeStatus } from "./stripe-status.js";
 
 const FREE_STUDENT_LIMIT = 50;
@@ -21,6 +22,7 @@ export class StripeWebhookHandler {
     private readonly userRepo: IUserRepository,
     private readonly academyRepo: IAcademyRepository,
     private readonly emailService: EmailService | null,
+    private readonly paymentRepo: IPaymentRepository | null,
   ) {}
 
   async handleEvent(event: Stripe.Event): Promise<void> {
@@ -39,6 +41,11 @@ export class StripeWebhookHandler {
         break;
       case "invoice.payment_failed":
         await this.onInvoicePaymentFailed(event.data.object as Stripe.Invoice);
+        break;
+      case "checkout.session.completed":
+        await this.onCheckoutSessionCompleted(
+          event.data.object as Stripe.Checkout.Session,
+        );
         break;
     }
   }
@@ -208,6 +215,73 @@ export class StripeWebhookHandler {
         );
       }
     }
+  }
+
+  private async onCheckoutSessionCompleted(
+    session: Stripe.Checkout.Session,
+  ): Promise<void> {
+    const meta = session.metadata;
+    if (!meta?.subscriptionId || !meta.userId || !meta.academyId || !meta.referenceMonth) {
+      return;
+    }
+
+    if (!this.paymentRepo) return;
+
+    const paymentIntentId =
+      typeof session.payment_intent === "string"
+        ? session.payment_intent
+        : session.payment_intent?.id;
+
+    if (paymentIntentId) {
+      const existing = await this.paymentRepo.findByStripePaymentId(paymentIntentId);
+      if (existing) return;
+    }
+
+    const payment = await this.paymentRepo.create({
+      subscriptionId: meta.subscriptionId,
+      userId: meta.userId,
+      academyId: meta.academyId,
+      amountCents: session.amount_total ?? 0,
+      method: "stripe",
+      confirmedBy: null,
+      stripePaymentId: paymentIntentId ?? session.id,
+      referenceMonth: meta.referenceMonth,
+      notes: null,
+      paidAt: new Date(),
+    });
+
+    if (!this.emailService) return;
+
+    const student = await this.userRepo.findById(meta.userId);
+    const academy = await this.academyRepo.findById(meta.academyId);
+    if (!student || !academy) return;
+
+    await this.emailService.sendPaymentConfirmed(
+      {
+        email: student.email,
+        studentName: student.name,
+        academyName: academy.name,
+        amountCents: payment.amountCents,
+        referenceMonth: payment.referenceMonth,
+      },
+      payment.id,
+    );
+
+    const owner = await this.userRepo.findById(academy.ownerId);
+    if (!owner) return;
+
+    await this.emailService.sendStudentPaymentReceived(
+      {
+        email: owner.email,
+        managerName: owner.name,
+        academyName: academy.name,
+        studentName: student.name,
+        amountCents: payment.amountCents,
+        referenceMonth: payment.referenceMonth,
+        hasPixKey: !!academy.pixKey,
+      },
+      payment.id,
+    );
   }
 
   private async canDowngradeToFree(academyId: string): Promise<boolean> {

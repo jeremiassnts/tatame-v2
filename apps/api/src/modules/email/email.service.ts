@@ -95,4 +95,15 @@ export class EmailService {
       `manager-new-member-${membershipId}`,
     );
   }
+
+  async sendStudentPaymentReceived(
+    data: EmailJobMap["student-payment-received"],
+    paymentId: string,
+  ) {
+    await this.enqueue(
+      "student-payment-received",
+      data,
+      `student-payment-received-${paymentId}`,
+    );
+  }
 }

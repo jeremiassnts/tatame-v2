@@ -14,3 +14,4 @@ export { PlanEnrolled, type PlanEnrolledProps } from "./templates/plan-enrolled.
 export { PaymentConfirmed, type PaymentConfirmedProps } from "./templates/payment-confirmed.js";
 export { MemberApproved, type MemberApprovedProps } from "./templates/member-approved.js";
 export { ManagerNewMember, type ManagerNewMemberProps } from "./templates/manager-new-member.js";
+export { StudentPaymentReceived, type StudentPaymentReceivedProps } from "./templates/student-payment-received.js";
