@@ -134,13 +134,19 @@ export class PaymentService {
     return { checkoutUrl: session.url };
   }
 
-  async createPixCheckoutSession(
+  async createPixQrCode(
     studentUserId: string,
     academyId: string,
-    studentEmail: string,
-    abacatePay: { billing: { create: (data: any) => Promise<any> } },
+    abacatePayApiKey: string,
     opts?: { subscriptionId?: string },
-  ): Promise<{ checkoutUrl: string }> {
+  ): Promise<{
+    pixQrCodeId: string;
+    brCode: string;
+    brCodeBase64: string;
+    amount: number;
+    expiresAt: string;
+    metadata: { subscriptionId: string; userId: string; academyId: string; referenceMonth: string };
+  }> {
     const subs = await this.studentSubRepo.listWithPlanByUserAndAcademy(
       studentUserId,
       academyId,
@@ -170,37 +176,53 @@ export class PaymentService {
       throw new HttpError(409, "Payment already exists for this period");
     }
 
-    const metadata = JSON.stringify({
+    const description = `${plan.name} — ${referenceMonth.slice(0, 7)}`;
+
+    const abacateRes = await fetch("https://api.abacatepay.com/v1/pixQrCode/create", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${abacatePayApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        amount: plan.priceCents,
+        expiresIn: 1800, // 30 minutes
+        description,
+      }),
+    });
+
+    const rawText = await abacateRes.text();
+    let result: any;
+    try {
+      result = JSON.parse(rawText);
+    } catch {
+      throw new HttpError(502, `AbacatePay returned invalid response: ${rawText.slice(0, 200)}`);
+    }
+
+    if (!abacateRes.ok || result.error) {
+      throw new HttpError(502, result?.error ?? "AbacatePay request failed");
+    }
+
+    const data = result.data;
+    if (!data?.brCode) {
+      throw new HttpError(500, "Failed to create Pix QR code");
+    }
+
+    const metadata = {
       subscriptionId: subscription.id,
       userId: studentUserId,
       academyId,
       referenceMonth,
-    });
+    };
 
-    const billing = await abacatePay.billing.create({
-      frequency: "ONE_TIME",
-      methods: ["PIX"],
-      products: [
-        {
-          externalId: metadata,
-          name: `${plan.name} — ${referenceMonth.slice(0, 7)}`,
-          quantity: 1,
-          price: plan.priceCents,
-        },
-      ],
-      returnUrl: "tatame://payment-success",
-      completionUrl: "tatame://payment-success",
-      customer: {
-        email: studentEmail,
-      },
-    });
-
-    const checkoutUrl = billing?.data?.url ?? billing?.url;
-    if (!checkoutUrl) {
-      throw new HttpError(500, "Failed to create AbacatePay billing");
-    }
-
-    return { checkoutUrl };
+    return {
+      pixQrCodeId: data.id,
+      brCode: data.brCode,
+      brCodeBase64: data.brCodeBase64,
+      amount: data.amount,
+      expiresAt: data.expiresAt,
+      metadata,
+    };
   }
 
   private async assertManagerOwnsAcademy(userId: string, academyId: string) {

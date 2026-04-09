@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { loadEnv } from "@tatame/config";
 import { Role } from "@tatame/types";
 import type { ConfirmManualPaymentBody } from "@tatame/validators";
 import {
@@ -7,10 +7,10 @@ import {
   listPaymentsQuerySchema,
   type CreateCheckoutBody,
 } from "@tatame/validators";
-import { getStripe } from "../../lib/stripe.js";
-import { getAbacatePay } from "../../lib/abacatepay.js";
+import { Router } from "express";
 import { getDb } from "../../lib/db.js";
 import { HttpError } from "../../lib/http-error.js";
+import { getStripe } from "../../lib/stripe.js";
 import {
   attachActiveAcademyContext,
   requireActiveAcademy,
@@ -18,11 +18,10 @@ import {
 import { authorize } from "../../middleware/authorize.js";
 import { validateBody } from "../../middleware/validate.js";
 import { PostgresAcademyRepository } from "../academy/academy.repository.postgres.js";
-import { PostgresStudentSubscriptionRepository } from "../subscription/subscription.repository.postgres.js";
-import { loadEnv } from "@tatame/config";
-import { PostgresUserRepository } from "../user/user.repository.postgres.js";
 import { getEmailQueue } from "../email/email.queue.js";
 import { EmailService } from "../email/email.service.js";
+import { PostgresStudentSubscriptionRepository } from "../subscription/subscription.repository.postgres.js";
+import { PostgresUserRepository } from "../user/user.repository.postgres.js";
 import { PostgresPaymentRepository } from "./payment.repository.postgres.js";
 import { PaymentService } from "./payment.service.js";
 
@@ -133,22 +132,53 @@ paymentRouter.post(
       const studentUserId = req.appAuth!.userId;
       const academyId = req.appAuth!.activeAcademyId!;
 
-      const student = await userRepo.findById(studentUserId);
-      if (!student) {
-        throw new HttpError(404, "Student not found");
-      }
-
-      const abacatePay = getAbacatePay();
-
-      const result = await paymentService.createPixCheckoutSession(
+      const result = await paymentService.createPixQrCode(
         studentUserId,
         academyId,
-        student.email,
-        abacatePay,
+        env.ABACATEPAY_API_KEY,
         { subscriptionId: body.subscriptionId },
       );
 
       res.json(result);
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+paymentRouter.get(
+  "/pix-status/:pixQrCodeId",
+  authorize(Role.Student),
+  attachActiveAcademyContext,
+  requireActiveAcademy,
+  async (req, res, next) => {
+    try {
+      const env = loadEnv();
+      if (!env.ABACATEPAY_API_KEY) {
+        throw new HttpError(503, "AbacatePay is not configured");
+      }
+
+      const pixQrCodeId = req.params.pixQrCodeId ?? "";
+      const abacateRes = await fetch(
+        `https://api.abacatepay.com/v1/pixQrCode/check?id=${encodeURIComponent(pixQrCodeId)}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${env.ABACATEPAY_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      const rawText = await abacateRes.text();
+      let result: any;
+      try {
+        result = JSON.parse(rawText);
+      } catch {
+        throw new HttpError(502, "AbacatePay returned invalid response");
+      }
+
+      res.json({ status: result?.data?.status ?? "UNKNOWN" });
     } catch (e) {
       next(e);
     }
