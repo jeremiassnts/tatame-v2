@@ -77,3 +77,12 @@ export function useSelectPlan() {
     },
   });
 }
+
+export function useCreateCheckout() {
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: (body?: { subscriptionId?: string }) =>
+      api.post<{ checkoutUrl: string }>("/payments/checkout", body ?? {}),
+  });
+}
