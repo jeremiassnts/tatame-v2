@@ -1,6 +1,6 @@
 import { BackButton } from "@/components/BackButton";
 import { useWeeklyCheckinCount } from "@/lib/hooks/use-checkin";
-import { useCreateCheckout, useCreatePixCheckout, useMyPayments, useMySubscription } from "@/lib/hooks/use-subscription";
+import { useCreateCheckout, useMyPayments, useMySubscription } from "@/lib/hooks/use-subscription";
 import { useQueryClient } from "@tanstack/react-query";
 import * as WebBrowser from "expo-web-browser";
 import { Redirect, useRouter } from "expo-router";
@@ -47,7 +47,6 @@ export default function MySubscriptionScreen() {
     subscription != null && subscription.effectiveStatus === "active";
 
   const createCheckout = useCreateCheckout();
-  const createPixCheckout = useCreatePixCheckout();
   const [showProcessingBanner, setShowProcessingBanner] = useState(false);
 
   useEffect(() => {
@@ -82,15 +81,15 @@ export default function MySubscriptionScreen() {
     }
   };
 
-  const handlePayPix = async () => {
-    try {
-      const result = await createPixCheckout.mutateAsync({
+  const handlePayPix = () => {
+    router.push({
+      pathname: "/(app)/(student)/(subscription)/pix-payment",
+      params: {
         subscriptionId: subscription!.id,
-      });
-      await WebBrowser.openBrowserAsync(result.checkoutUrl);
-    } catch {
-      // Pix checkout creation failed
-    }
+        planName: plan!.name,
+        priceCents: String(plan!.priceCents),
+      },
+    });
   };
 
   if (subLoading) {
@@ -274,24 +273,18 @@ export default function MySubscriptionScreen() {
                   <View className="flex-row" style={{ gap: 10 }}>
                     <Pressable
                       onPress={handlePayPix}
-                      disabled={createPixCheckout.isPending || createCheckout.isPending}
+                      disabled={createCheckout.isPending}
                       className="flex-1 flex-row items-center justify-center rounded-xl"
                       style={{ height: 48, gap: 8, backgroundColor: "#A078E8" }}
                     >
-                      {createPixCheckout.isPending ? (
-                        <ActivityIndicator color="#FFFFFF" size="small" />
-                      ) : (
-                        <>
-                          <QrCode size={18} color="#FFFFFF" />
-                          <Text className="font-poppins-semibold text-sm text-white">
-                            Pix
-                          </Text>
-                        </>
-                      )}
+                      <QrCode size={18} color="#FFFFFF" />
+                      <Text className="font-poppins-semibold text-sm text-white">
+                        Pix
+                      </Text>
                     </Pressable>
                     <Pressable
                       onPress={handlePay}
-                      disabled={createCheckout.isPending || createPixCheckout.isPending}
+                      disabled={createCheckout.isPending}
                       className="flex-1 flex-row items-center justify-center rounded-xl"
                       style={{ height: 48, gap: 8, backgroundColor: "#6C63FF" }}
                     >
