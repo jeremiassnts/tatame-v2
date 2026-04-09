@@ -8,7 +8,7 @@ import { useMyGraduation } from "@/lib/hooks/use-graduation";
 import { useCurrentUser } from "@/lib/hooks/use-user";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { Calendar, CreditCard, UserPlus } from "lucide-react-native";
+import { AlertTriangle, Calendar, CreditCard, UserPlus } from "lucide-react-native";
 import { useState } from "react";
 import {
   Pressable,
@@ -134,6 +134,19 @@ export default function ManagerDashboard() {
               />
             </Pressable>
           </View>
+
+          {academy && !academy.pixKey && (
+            <Pressable
+              onPress={() => router.push("/(app)/(manager)/(finances)")}
+              className="flex-row items-center rounded-xl"
+              style={{ padding: 12, gap: 10, backgroundColor: "#FF453A20" }}
+            >
+              <AlertTriangle size={16} color="#FF453A" />
+              <Text className="font-poppins-medium text-xs" style={{ color: "#FF453A", flex: 1 }}>
+                Configure sua chave PIX para receber pagamentos dos alunos
+              </Text>
+            </Pressable>
+          )}
 
           <View
             className="rounded-2xl border border-surface-border bg-surface"

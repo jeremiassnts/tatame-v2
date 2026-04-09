@@ -22,6 +22,8 @@ import { StripeWebhookHandler } from "./stripe-webhook.handler.js";
 import { PostgresUserRepository } from "../user/user.repository.postgres.js";
 import { getEmailQueue } from "../email/email.queue.js";
 import { EmailService } from "../email/email.service.js";
+import { PostgresPaymentRepository } from "../payment/payment.repository.postgres.js";
+import { AbacatePayWebhookHandler } from "../payment/abacatepay-webhook.handler.js";
 
 const db = getDb();
 const env = loadEnv();
@@ -35,6 +37,8 @@ const userRepo = new PostgresUserRepository(db);
 const emailService = env.REDIS_URL
   ? new EmailService(getEmailQueue(env.REDIS_URL))
   : null;
+
+const paymentRepo = new PostgresPaymentRepository(db);
 
 const service = new ManagerSubscriptionService(
   subRepo,
@@ -52,6 +56,7 @@ const webhookHandler = new StripeWebhookHandler(
   userRepo,
   acadRepo,
   emailService,
+  paymentRepo,
 );
 
 export const managerSubscriptionRouter = Router();
@@ -549,6 +554,22 @@ export function createWebhookRouter() {
         res.status(400).json({ error: "Invalid webhook signature" });
         return;
       }
+      next(e);
+    }
+  });
+
+  const abacatePayHandler = new AbacatePayWebhookHandler(
+    paymentRepo,
+    userRepo,
+    acadRepo,
+    emailService,
+  );
+
+  webhookRouter.post("/abacatepay", async (req, res, next) => {
+    try {
+      await abacatePayHandler.handleEvent(req.body);
+      res.json({ received: true });
+    } catch (e) {
       next(e);
     }
   });

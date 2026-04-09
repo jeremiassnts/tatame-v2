@@ -7,6 +7,7 @@ import {
   PlanEnrolled,
   ProActivated,
   renderEmail,
+  StudentPaymentReceived,
   SubscriptionCanceled,
 } from "@tatame/email";
 import { Worker, type Job } from "bullmq";
@@ -26,6 +27,7 @@ const subjectMap: Record<EmailJobName, (data: Record<string, unknown>) => string
   "payment-confirmed": () => "Pagamento confirmado",
   "member-approved": (d) => `Aprovado na ${d.academyName}!`,
   "manager-new-member": () => "Novo membro aprovado",
+  "student-payment-received": () => "Pagamento de aluno recebido",
 };
 
 type TemplateComponent = (props: Record<string, unknown>) => React.ReactElement;
@@ -39,6 +41,7 @@ const templateMap: Record<EmailJobName, TemplateComponent> = {
   "payment-confirmed": PaymentConfirmed as unknown as TemplateComponent,
   "member-approved": MemberApproved as unknown as TemplateComponent,
   "manager-new-member": ManagerNewMember as unknown as TemplateComponent,
+  "student-payment-received": StudentPaymentReceived as unknown as TemplateComponent,
 };
 
 async function processEmailJob(job: Job): Promise<void> {

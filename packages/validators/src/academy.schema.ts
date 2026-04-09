@@ -32,6 +32,8 @@ export const academyResponseSchema = z.object({
   contactEmail: z.string().nullable(),
   contactPhone: z.string().nullable(),
   foundedAt: z.string().nullable(),
+  pixKey: z.string().nullable(),
+  pixKeyType: z.string().nullable(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 });
@@ -46,3 +48,12 @@ export const academyStatsResponseSchema = z.object({
 });
 
 export type AcademyStatsResponse = z.infer<typeof academyStatsResponseSchema>;
+
+export const pixKeyTypeSchema = z.enum(["cpf", "email", "phone", "random"]);
+
+export const updatePixKeyBodySchema = z.object({
+  pixKeyType: pixKeyTypeSchema,
+  pixKey: z.string().min(1).max(255),
+});
+
+export type UpdatePixKeyBody = z.infer<typeof updatePixKeyBodySchema>;

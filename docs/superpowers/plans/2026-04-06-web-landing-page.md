@@ -24,7 +24,7 @@
 - Create: `apps/web/app/layout.tsx`
 - Create: `apps/web/app/page.tsx`
 
-- [ ] **Step 1: Update `apps/web/package.json` with dependencies**
+- [x] **Step 1: Update `apps/web/package.json` with dependencies**
 
 ```json
 {
@@ -54,7 +54,7 @@
 }
 ```
 
-- [ ] **Step 2: Update `apps/web/turbo.json`**
+- [x] **Step 2: Update `apps/web/turbo.json`**
 
 ```json
 {
@@ -67,7 +67,7 @@
 }
 ```
 
-- [ ] **Step 3: Create `apps/web/next.config.ts`**
+- [x] **Step 3: Create `apps/web/next.config.ts`**
 
 ```ts
 import type { NextConfig } from "next";
@@ -79,7 +79,7 @@ const nextConfig: NextConfig = {
 export default nextConfig;
 ```
 
-- [ ] **Step 4: Create `apps/web/tsconfig.json`**
+- [x] **Step 4: Create `apps/web/tsconfig.json`**
 
 ```json
 {
@@ -107,7 +107,7 @@ export default nextConfig;
 }
 ```
 
-- [ ] **Step 5: Create `apps/web/postcss.config.mjs`**
+- [x] **Step 5: Create `apps/web/postcss.config.mjs`**
 
 ```js
 const config = {
@@ -119,7 +119,7 @@ const config = {
 export default config;
 ```
 
-- [ ] **Step 6: Create `apps/web/app/globals.css` with Tailwind + design tokens + animation**
+- [x] **Step 6: Create `apps/web/app/globals.css` with Tailwind + design tokens + animation**
 
 ```css
 @import "tailwindcss";
@@ -170,7 +170,7 @@ body {
 }
 ```
 
-- [ ] **Step 7: Create `apps/web/app/layout.tsx` — root layout with fonts and metadata**
+- [x] **Step 7: Create `apps/web/app/layout.tsx` — root layout with fonts and metadata**
 
 ```tsx
 import type { Metadata } from "next";
@@ -210,7 +210,7 @@ export default function RootLayout({
 }
 ```
 
-- [ ] **Step 8: Create minimal `apps/web/app/page.tsx`**
+- [x] **Step 8: Create minimal `apps/web/app/page.tsx`**
 
 ```tsx
 export default function Home() {
@@ -224,7 +224,7 @@ export default function Home() {
 }
 ```
 
-- [ ] **Step 9: Install dependencies and verify dev server starts**
+- [x] **Step 9: Install dependencies and verify dev server starts**
 
 ```bash
 cd /Volumes/ExternalDisk1/repos/tatame-v2
@@ -234,7 +234,7 @@ pnpm --filter @tatame/web dev
 
 Open `http://localhost:3000` — verify "Tatame Landing Page" renders with correct font and white text on dark background. Stop the dev server.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add apps/web/
@@ -248,7 +248,7 @@ git commit -m "feat(web): scaffold Next.js 15 with Tailwind v4 and design tokens
 **Files:**
 - Create: `apps/web/components/animate-on-scroll.tsx`
 
-- [ ] **Step 1: Create `apps/web/components/animate-on-scroll.tsx`**
+- [x] **Step 1: Create `apps/web/components/animate-on-scroll.tsx`**
 
 ```tsx
 "use client";
@@ -291,7 +291,7 @@ export function AnimateOnScroll({
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/web/components/animate-on-scroll.tsx
@@ -305,7 +305,7 @@ git commit -m "feat(web): add AnimateOnScroll Intersection Observer wrapper"
 **Files:**
 - Create: `apps/web/components/header.tsx`
 
-- [ ] **Step 1: Create `apps/web/components/header.tsx`**
+- [x] **Step 1: Create `apps/web/components/header.tsx`**
 
 ```tsx
 "use client";
@@ -398,7 +398,7 @@ export function Header() {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/web/components/header.tsx
@@ -412,7 +412,7 @@ git commit -m "feat(web): add Header with sticky nav and mobile hamburger menu"
 **Files:**
 - Create: `apps/web/components/footer.tsx`
 
-- [ ] **Step 1: Create `apps/web/components/footer.tsx`**
+- [x] **Step 1: Create `apps/web/components/footer.tsx`**
 
 ```tsx
 import { Grid3X3, Instagram, Twitter, Youtube } from "lucide-react";
@@ -491,7 +491,7 @@ export function Footer() {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/web/components/footer.tsx
@@ -508,7 +508,7 @@ git commit -m "feat(web): add Footer with links and social icons"
 - Create: `apps/web/public/mockup-2.png`
 - Create: `apps/web/public/mockup-3.png`
 
-- [ ] **Step 1: Create placeholder images**
+- [x] **Step 1: Create placeholder images**
 
 Generate three 280x560 placeholder PNG files. Use simple gray rectangles:
 
@@ -523,7 +523,7 @@ convert -size 280x560 xc:'#1A1A1A' public/mockup-3.png
 
 If `convert` (ImageMagick) is not available, create a simple SVG placeholder approach — or skip and use a CSS div as placeholder instead. The component below handles both cases.
 
-- [ ] **Step 2: Create `apps/web/components/hero.tsx`**
+- [x] **Step 2: Create `apps/web/components/hero.tsx`**
 
 ```tsx
 import { Sparkles, ArrowRight } from "lucide-react";
@@ -593,7 +593,7 @@ export function Hero() {
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/web/components/hero.tsx apps/web/public/
@@ -607,7 +607,7 @@ git commit -m "feat(web): add Hero section with mockup placeholders"
 **Files:**
 - Create: `apps/web/components/features.tsx`
 
-- [ ] **Step 1: Create `apps/web/components/features.tsx`**
+- [x] **Step 1: Create `apps/web/components/features.tsx`**
 
 ```tsx
 import {
@@ -721,7 +721,7 @@ export function Features() {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/web/components/features.tsx
@@ -735,7 +735,7 @@ git commit -m "feat(web): add Features section with 6 cards and coming soon badg
 **Files:**
 - Create: `apps/web/components/pricing.tsx`
 
-- [ ] **Step 1: Create `apps/web/components/pricing.tsx`**
+- [x] **Step 1: Create `apps/web/components/pricing.tsx`**
 
 ```tsx
 import { Check } from "lucide-react";
@@ -864,7 +864,7 @@ export function Pricing() {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/web/components/pricing.tsx
@@ -878,7 +878,7 @@ git commit -m "feat(web): add Pricing section with Free and Pro cards"
 **Files:**
 - Create: `apps/web/components/final-cta.tsx`
 
-- [ ] **Step 1: Create `apps/web/components/final-cta.tsx`**
+- [x] **Step 1: Create `apps/web/components/final-cta.tsx`**
 
 ```tsx
 import { Apple } from "lucide-react";
@@ -944,7 +944,7 @@ export function FinalCta() {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/web/components/final-cta.tsx
@@ -958,7 +958,7 @@ git commit -m "feat(web): add Final CTA section with store buttons"
 **Files:**
 - Create: `apps/web/components/faq.tsx`
 
-- [ ] **Step 1: Create `apps/web/components/faq.tsx`**
+- [x] **Step 1: Create `apps/web/components/faq.tsx`**
 
 ```tsx
 "use client";
@@ -1100,7 +1100,7 @@ export function Faq() {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/web/components/faq.tsx
@@ -1115,7 +1115,7 @@ git commit -m "feat(web): add FAQ accordion with WhatsApp CTA"
 - Modify: `apps/web/app/layout.tsx`
 - Modify: `apps/web/app/page.tsx`
 
-- [ ] **Step 1: Update `apps/web/app/layout.tsx` to include Header and Footer**
+- [x] **Step 1: Update `apps/web/app/layout.tsx` to include Header and Footer**
 
 ```tsx
 import type { Metadata } from "next";
@@ -1159,7 +1159,7 @@ export default function RootLayout({
 }
 ```
 
-- [ ] **Step 2: Update `apps/web/app/page.tsx` to assemble all sections**
+- [x] **Step 2: Update `apps/web/app/page.tsx` to assemble all sections**
 
 ```tsx
 import { Hero } from "@/components/hero";
@@ -1181,7 +1181,7 @@ export default function Home() {
 }
 ```
 
-- [ ] **Step 3: Run dev server and verify all sections render**
+- [x] **Step 3: Run dev server and verify all sections render**
 
 ```bash
 pnpm --filter @tatame/web dev
@@ -1189,7 +1189,7 @@ pnpm --filter @tatame/web dev
 
 Open `http://localhost:3000` — verify: sticky header, hero with badge/headline/CTA/mockup placeholders, features grid (6 cards), pricing (2 cards), final CTA with store buttons, FAQ accordion (first item open), WhatsApp button, footer with links. Scroll animations trigger on each section. Mobile view shows hamburger menu, single-column layouts, stacked pricing cards.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/web/app/layout.tsx apps/web/app/page.tsx
@@ -1203,7 +1203,7 @@ git commit -m "feat(web): assemble landing page with all sections"
 **Files:**
 - Create: `apps/web/app/privacidade/page.tsx`
 
-- [ ] **Step 1: Create `apps/web/app/privacidade/page.tsx`**
+- [x] **Step 1: Create `apps/web/app/privacidade/page.tsx`**
 
 ```tsx
 import type { Metadata } from "next";
@@ -1287,9 +1287,9 @@ export default function Privacidade() {
 }
 ```
 
-- [ ] **Step 2: Verify page renders at `http://localhost:3000/privacidade`**
+- [x] **Step 2: Verify page renders at `http://localhost:3000/privacidade`**
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/web/app/privacidade/
@@ -1303,7 +1303,7 @@ git commit -m "feat(web): add Privacy Policy page"
 **Files:**
 - Create: `apps/web/app/termos/page.tsx`
 
-- [ ] **Step 1: Create `apps/web/app/termos/page.tsx`**
+- [x] **Step 1: Create `apps/web/app/termos/page.tsx`**
 
 ```tsx
 import type { Metadata } from "next";
@@ -1392,9 +1392,9 @@ export default function Termos() {
 }
 ```
 
-- [ ] **Step 2: Verify page renders at `http://localhost:3000/termos`**
+- [x] **Step 2: Verify page renders at `http://localhost:3000/termos`**
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/web/app/termos/
@@ -1409,7 +1409,7 @@ git commit -m "feat(web): add Terms of Use page"
 - Create: `Dockerfile.web`
 - Create: `apps/web/.dockerignore`
 
-- [ ] **Step 1: Create `Dockerfile.web` at the monorepo root (same pattern as `Dockerfile.api`)**
+- [x] **Step 1: Create `Dockerfile.web` at the monorepo root (same pattern as `Dockerfile.api`)**
 
 ```dockerfile
 # ── Stage 1: Install dependencies ──
@@ -1462,7 +1462,7 @@ EXPOSE 3000
 CMD ["node", "apps/web/server.js"]
 ```
 
-- [ ] **Step 2: Create `apps/web/.dockerignore`**
+- [x] **Step 2: Create `apps/web/.dockerignore`**
 
 ```
 node_modules
@@ -1471,7 +1471,7 @@ node_modules
 *.md
 ```
 
-- [ ] **Step 3: Run a production build to verify standalone output works**
+- [x] **Step 3: Run a production build to verify standalone output works**
 
 ```bash
 pnpm --filter @tatame/web build
@@ -1480,7 +1480,7 @@ ls apps/web/.next/standalone/
 
 Expected: `apps/` directory, `node_modules/`, `package.json` in standalone output.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add Dockerfile.web apps/web/.dockerignore
@@ -1491,7 +1491,7 @@ git commit -m "feat(web): add Dockerfile for Coolify deployment"
 
 ### Task 14: Final verification
 
-- [ ] **Step 1: Run full build from monorepo root**
+- [x] **Step 1: Run full build from monorepo root**
 
 ```bash
 pnpm build
@@ -1499,7 +1499,7 @@ pnpm build
 
 Expected: all packages and apps build successfully.
 
-- [ ] **Step 2: Start production server and verify all routes**
+- [x] **Step 2: Start production server and verify all routes**
 
 ```bash
 cd apps/web
@@ -1510,7 +1510,7 @@ Open `http://localhost:3000` — verify landing page.
 Open `http://localhost:3000/privacidade` — verify privacy policy.
 Open `http://localhost:3000/termos` — verify terms of use.
 
-- [ ] **Step 3: Test Docker build (optional, if Docker is available)**
+- [x] **Step 3: Test Docker build (optional, if Docker is available)**
 
 ```bash
 cd /Volumes/ExternalDisk1/repos/tatame-v2
@@ -1518,7 +1518,7 @@ docker build -f Dockerfile.web -t tatame-web .
 docker run -p 3000:3000 tatame-web
 ```
 
-- [ ] **Step 4: Final commit if any fixes were needed**
+- [x] **Step 4: Final commit if any fixes were needed**
 
 ```bash
 git add -A

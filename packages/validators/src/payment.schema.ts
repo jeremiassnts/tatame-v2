@@ -29,3 +29,9 @@ export const listPaymentsQuerySchema = z.object({
     .transform((v) => (v ? parseInt(v, 10) : undefined))
     .pipe(z.number().int().min(1).max(100).optional()),
 });
+
+export const createCheckoutBodySchema = z.object({
+  subscriptionId: z.string().uuid().optional(),
+});
+
+export type CreateCheckoutBody = z.infer<typeof createCheckoutBodySchema>;

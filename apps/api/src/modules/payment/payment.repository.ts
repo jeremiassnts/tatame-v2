@@ -13,8 +13,9 @@ export interface IPaymentRepository {
     userId: string;
     academyId: string;
     amountCents: number;
-    method: "manual";
-    confirmedBy: string;
+    method: "manual" | "stripe" | "pix";
+    confirmedBy: string | null;
+    stripePaymentId: string | null;
     referenceMonth: string;
     notes: string | null;
     paidAt: Date;
@@ -29,6 +30,8 @@ export interface IPaymentRepository {
     academyId: string,
     opts: { subscriptionId?: string; userId?: string; limit?: number },
   ): Promise<PaymentWithUser[]>;
+
+  findByStripePaymentId(stripePaymentId: string): Promise<PaymentRow | undefined>;
 
   /** `referenceMonth` is YYYY-MM-01 (billing period). */
   existsForSubscriptionReferenceMonth(

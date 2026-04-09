@@ -52,3 +52,28 @@ export function useUpdateAcademy(academyId: string) {
     },
   });
 }
+
+export function useUpdatePixKey(academyId: string) {
+  const api = useApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: { pixKeyType: string; pixKey: string }) =>
+      api.put<AcademyResponse>("/academies/pix-key", body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["academy", academyId] });
+    },
+  });
+}
+
+export function useDeletePixKey(academyId: string) {
+  const api = useApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => api.delete<AcademyResponse>("/academies/pix-key"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["academy", academyId] });
+    },
+  });
+}

@@ -5,11 +5,11 @@ import { useAcademyContext } from "@/lib/academy-context";
 import { useCheckin, useWeeklyCheckinCount } from "@/lib/hooks/use-checkin";
 import { useClasses } from "@/lib/hooks/use-classes";
 import { useMyGraduation } from "@/lib/hooks/use-graduation";
-import { useMySubscription } from "@/lib/hooks/use-subscription";
+import { useMyPayments, useMySubscription } from "@/lib/hooks/use-subscription";
 import { useCurrentUser } from "@/lib/hooks/use-user";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { Bell, ChevronRight, CreditCard, TriangleAlert } from "lucide-react-native";
+import { ChevronRight, CreditCard, TriangleAlert } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -42,6 +42,7 @@ export default function StudentHome() {
   const { data: subResponse } = useMySubscription();
   const subscription = subResponse?.subscription;
   const plan = subResponse?.plan;
+  const { data: payments } = useMyPayments();
   const { data: graduation } = useMyGraduation();
   const checkin = useCheckin();
   const { data: weeklyCount } = useWeeklyCheckinCount();
@@ -55,6 +56,9 @@ export default function StudentHome() {
   const hasSubscription =
     subscription != null && subscription.effectiveStatus === "active";
   const today = todayDateString();
+  const currentMonth = today.slice(0, 7) + "-01";
+  const hasPendingPayment =
+    hasSubscription && payments != null && !payments.some((p) => p.referenceMonth === currentMonth);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -102,9 +106,6 @@ export default function StudentHome() {
               </Text>
             </Pressable>
             <View className="flex-row items-center gap-2">
-              <Pressable className="h-10 w-10 items-center justify-center rounded-xl border border-surface-border bg-surface">
-                <Bell size={18} color="#FFFFFF" />
-              </Pressable>
               <Pressable onPress={() => router.push("/(app)/profile")}>
                 <Avatar
                   variant="user"
@@ -114,6 +115,30 @@ export default function StudentHome() {
               </Pressable>
             </View>
           </View>
+
+          {hasPendingPayment && (
+            <Pressable
+              onPress={() => router.push("/(app)/(student)/(subscription)")}
+              className="flex-row items-center rounded-2xl border border-surface-border bg-surface"
+              style={{ padding: 14, gap: 12 }}
+            >
+              <View
+                className="items-center justify-center rounded-lg"
+                style={{ width: 36, height: 36, backgroundColor: "#FF950020" }}
+              >
+                <TriangleAlert size={18} color="#FF9500" />
+              </View>
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text className="font-poppins-semibold text-[13px] text-primary">
+                  Pagamento pendente
+                </Text>
+                <Text className="font-poppins text-[11px]" style={{ color: TEXT_SECONDARY }}>
+                  Toque aqui para realizar o pagamento
+                </Text>
+              </View>
+              <ChevronRight size={16} color={TEXT_MUTED} />
+            </Pressable>
+          )}
 
           {!hasSubscription ? (
             <View

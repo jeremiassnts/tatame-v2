@@ -1,14 +1,22 @@
 import { Role } from "@tatame/types";
-import type { CreateAcademyBody, UpdateAcademyBody } from "@tatame/validators";
+import type {
+  CreateAcademyBody,
+  UpdateAcademyBody,
+  UpdatePixKeyBody,
+} from "@tatame/validators";
 import {
   academyIdParamSchema,
   createAcademyBodySchema,
   updateAcademyBodySchema,
+  updatePixKeyBodySchema,
 } from "@tatame/validators";
 import { Router } from "express";
 import { getDb } from "../../lib/db.js";
 import { HttpError } from "../../lib/http-error.js";
-import { attachActiveAcademyContext } from "../../middleware/academy-context.js";
+import {
+  attachActiveAcademyContext,
+  requireActiveAcademy,
+} from "../../middleware/academy-context.js";
 import { authorize } from "../../middleware/authorize.js";
 import { requireSession } from "../../middleware/require-session.js";
 import { validateBody } from "../../middleware/validate.js";
@@ -109,6 +117,60 @@ academyRouter.patch(
         params.data.academyId,
         userId,
         body,
+      );
+      res.json(updated);
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+academyRouter.put(
+  "/pix-key",
+  authorize(Role.Manager),
+  attachActiveAcademyContext,
+  requireActiveAcademy,
+  validateBody(updatePixKeyBodySchema),
+  async (req, res, next) => {
+    try {
+      const body = req.validatedBody as UpdatePixKeyBody;
+      const academyId = req.appAuth!.activeAcademyId!;
+      const userId = req.appAuth!.userId;
+
+      const academy = await academyService.getById(academyId);
+      if (!academy || academy.ownerId !== userId) {
+        throw new HttpError(403, "You do not manage this academy");
+      }
+
+      const updated = await new PostgresAcademyRepository(db).updatePixKey(
+        academyId,
+        { pixKey: body.pixKey, pixKeyType: body.pixKeyType },
+      );
+      res.json(updated);
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+academyRouter.delete(
+  "/pix-key",
+  authorize(Role.Manager),
+  attachActiveAcademyContext,
+  requireActiveAcademy,
+  async (req, res, next) => {
+    try {
+      const academyId = req.appAuth!.activeAcademyId!;
+      const userId = req.appAuth!.userId;
+
+      const academy = await academyService.getById(academyId);
+      if (!academy || academy.ownerId !== userId) {
+        throw new HttpError(403, "You do not manage this academy");
+      }
+
+      const updated = await new PostgresAcademyRepository(db).updatePixKey(
+        academyId,
+        { pixKey: null, pixKeyType: null },
       );
       res.json(updated);
     } catch (e) {
