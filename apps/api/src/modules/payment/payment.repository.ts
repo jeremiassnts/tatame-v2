@@ -1,7 +1,7 @@
 import type { InferSelectModel } from "drizzle-orm";
 import type { payments } from "@tatame/db";
 
-export type PaymentRow = InferSelectModel<typeof payments>;
+export type PaymentRow = Omit<InferSelectModel<typeof payments>, "transferredAt">;
 
 export type PaymentWithUser = PaymentRow & {
   userName: string;

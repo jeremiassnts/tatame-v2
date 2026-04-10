@@ -65,7 +65,20 @@ export class PostgresPaymentRepository implements IPaymentRepository {
     const whereClause =
       conditions.length === 1 ? conditions[0]! : and(...conditions);
     const query = this.db
-      .select()
+      .select({
+        id: payments.id,
+        subscriptionId: payments.subscriptionId,
+        userId: payments.userId,
+        academyId: payments.academyId,
+        amountCents: payments.amountCents,
+        method: payments.method,
+        confirmedBy: payments.confirmedBy,
+        stripePaymentId: payments.stripePaymentId,
+        referenceMonth: payments.referenceMonth,
+        notes: payments.notes,
+        paidAt: payments.paidAt,
+        createdAt: payments.createdAt,
+      })
       .from(payments)
       .where(whereClause)
       .orderBy(desc(payments.paidAt));
