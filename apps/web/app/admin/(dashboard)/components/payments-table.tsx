@@ -68,14 +68,14 @@ export function PaymentsTable({
   function handleBulkTransfer() {
     const ids = Array.from(selected);
     startTransition(async () => {
-      await confirmTransfer(ids, academyId);
+      await confirmTransfer(ids);
       setSelected(new Set());
     });
   }
 
   function handleSingleTransfer(id: string) {
     startTransition(async () => {
-      await confirmTransfer([id], academyId);
+      await confirmTransfer([id]);
       setSelected((prev) => {
         const next = new Set(prev);
         next.delete(id);

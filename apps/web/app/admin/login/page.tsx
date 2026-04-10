@@ -1,14 +1,13 @@
 "use client";
 
-import { useClerk, useSignIn } from "@clerk/nextjs";
 import { Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/v1";
 
 export default function AdminLoginPage() {
-  const { signIn } = useSignIn();
-  const { signOut, isSignedIn } = useClerk();
   const router = useRouter();
 
   const [email, setEmail] = useState("");
@@ -17,68 +16,30 @@ export default function AdminLoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (isSignedIn) {
-      router.replace("/admin");
-    }
-  }, [isSignedIn, router]);
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!signIn) return;
-
     setError("");
     setLoading(true);
 
     try {
-      const createResult = await signIn.create({ identifier: email });
-      if (createResult.error) {
-        if (createResult.error.code === "session_exists") {
-          await signOut();
-          const retryResult = await signIn.create({ identifier: email });
-          if (retryResult.error) {
-            setError("E-mail ou senha incorretos");
-            setLoading(false);
-            return;
-          }
-        } else {
-          setError("E-mail ou senha incorretos");
-          setLoading(false);
-          return;
-        }
-      }
+      const res = await fetch(`${API_URL}/admin/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-      const passwordResult = await signIn.password({ password });
-      if (passwordResult.error) {
-        setError("E-mail ou senha incorretos");
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error ?? "Erro ao fazer login");
         setLoading(false);
         return;
       }
 
-      if (signIn.status === "complete") {
-        const finalizeResult = await signIn.finalize();
-        if (finalizeResult.error) {
-          setError("Erro ao finalizar autenticação");
-          setLoading(false);
-          return;
-        }
-        router.push("/admin");
-      } else {
-        setError("Erro inesperado ao autenticar");
-        setLoading(false);
-      }
-    } catch (err: any) {
-      const clerkError = err?.errors?.[0];
-      const code = clerkError?.code;
-
-      if (
-        code === "form_identifier_not_found" ||
-        code === "form_password_incorrect"
-      ) {
-        setError("E-mail ou senha incorretos");
-      } else {
-        setError(clerkError?.longMessage ?? "Erro ao fazer login");
-      }
+      localStorage.setItem("admin_token", data.token);
+      router.push("/admin");
+    } catch {
+      setError("Erro ao conectar com o servidor");
       setLoading(false);
     }
   }

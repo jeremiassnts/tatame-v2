@@ -1,25 +1,30 @@
+"use client";
+
 import Link from "next/link";
-import { SignOutButton } from "@clerk/nextjs";
-import { LayoutDashboard, LogOut, Grid3x3 } from "lucide-react";
+import Image from "next/image";
+import { LayoutDashboard, LogOut } from "lucide-react";
+import { clearAdminToken } from "@/lib/api";
+import { useRouter } from "next/navigation";
 
-export const metadata = {
-  title: "Tatame — Admin",
-};
-
-export default function AdminLayout({
+export default function AdminDashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
+
+  function handleLogout() {
+    clearAdminToken();
+    router.replace("/admin/login");
+  }
+
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
       <aside className="flex w-[260px] flex-col border-r border-border bg-surface py-6">
         {/* Logo */}
         <div className="flex items-center gap-2.5 border-b border-border px-6 pb-5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-border bg-[#242424]">
-            <Grid3x3 className="h-[18px] w-[18px] text-primary" />
-          </div>
+          <Image src="/icon.png" alt="Tatame" width={36} height={36} />
           <span className="font-[family-name:var(--font-sora)] text-base font-bold tracking-[1px] text-text-primary">
             TATAME
           </span>
@@ -38,12 +43,13 @@ export default function AdminLayout({
 
         {/* Logout */}
         <div className="px-3">
-          <SignOutButton redirectUrl="/admin/login">
-            <button className="flex h-[42px] w-full items-center gap-2.5 rounded-[10px] px-3 text-sm text-text-secondary hover:bg-white/5">
-              <LogOut className="h-5 w-5" />
-              Sair
-            </button>
-          </SignOutButton>
+          <button
+            onClick={handleLogout}
+            className="flex h-[42px] w-full items-center gap-2.5 rounded-[10px] px-3 text-sm text-text-secondary hover:bg-white/5"
+          >
+            <LogOut className="h-5 w-5" />
+            Sair
+          </button>
         </div>
       </aside>
 

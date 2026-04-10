@@ -1,6 +1,9 @@
-import { auth } from "@clerk/nextjs/server";
+"use client";
+
 import Link from "next/link";
-import { adminFetch } from "@/lib/api";
+import { useEffect, useState } from "react";
+import { adminFetch, getAdminToken } from "@/lib/api";
+import { useRouter } from "next/navigation";
 import { KpiCard } from "./components/kpi-card";
 import { CheckinsChart } from "./components/checkins-chart";
 
@@ -31,16 +34,45 @@ function formatBRL(cents: number): string {
   return `R$ ${(cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 0 })}`;
 }
 
-export default async function AdminDashboardPage() {
-  const { getToken } = await auth();
-  const token = (await getToken()) ?? "";
+export default function AdminDashboardPage() {
+  const router = useRouter();
+  const [dashboard, setDashboard] = useState<DashboardData | null>(null);
+  const [financial, setFinancial] = useState<FinancialSummary | null>(null);
+  const [checkins, setCheckins] = useState<CheckinItem[]>([]);
+  const [academies, setAcademies] = useState<AcademyItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [dashboard, financial, checkins, academies] = await Promise.all([
-    adminFetch<DashboardData>("/dashboard", token),
-    adminFetch<FinancialSummary>("/dashboard/financial-summary", token),
-    adminFetch<{ items: CheckinItem[] }>("/dashboard/checkins", token),
-    adminFetch<{ items: AcademyItem[] }>("/dashboard/academies", token),
-  ]);
+  useEffect(() => {
+    if (!getAdminToken()) {
+      router.replace("/admin/login");
+      return;
+    }
+
+    Promise.all([
+      adminFetch<DashboardData>("/dashboard"),
+      adminFetch<FinancialSummary>("/dashboard/financial-summary"),
+      adminFetch<{ items: CheckinItem[] }>("/dashboard/checkins"),
+      adminFetch<{ items: AcademyItem[] }>("/dashboard/academies"),
+    ])
+      .then(([d, f, c, a]) => {
+        setDashboard(d);
+        setFinancial(f);
+        setCheckins(c.items);
+        setAcademies(a.items);
+        setLoading(false);
+      })
+      .catch(() => {
+        // adminFetch redirects to login on 401/403
+      });
+  }, [router]);
+
+  if (loading || !dashboard || !financial) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <span className="text-sm text-text-muted">Carregando...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-7 p-8 px-10">
@@ -75,7 +107,7 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* Checkins Chart */}
-      <CheckinsChart data={checkins.items} />
+      <CheckinsChart data={checkins} />
 
       {/* Financial Summary */}
       <div className="flex flex-col gap-4">
@@ -115,7 +147,7 @@ export default async function AdminDashboardPage() {
             Pendência
           </span>
         </div>
-        {academies.items.map((academy) => (
+        {academies.map((academy) => (
           <Link
             key={academy.id}
             href={`/admin/academies/${academy.id}`}

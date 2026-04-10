@@ -1,5 +1,7 @@
+import { createHmac } from "node:crypto";
 import { Router } from "express";
 import { z } from "zod";
+import { loadEnv } from "@tatame/config";
 import { getDb } from "../../lib/db.js";
 import { HttpError } from "../../lib/http-error.js";
 import { adminOnly } from "../../middleware/admin-only.js";
@@ -10,6 +12,41 @@ export const adminRouter = Router();
 
 const db = getDb();
 const adminService = new AdminService(new PostgresAdminRepository(db));
+
+const loginBodySchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
+
+adminRouter.post("/login", (req, res) => {
+  const env = loadEnv();
+  if (!env.ADMIN_EMAIL || !env.ADMIN_PASSWORD || !env.ADMIN_JWT_SECRET) {
+    res.status(503).json({ error: "Admin not configured" });
+    return;
+  }
+
+  const body = loginBodySchema.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ error: "Invalid body" });
+    return;
+  }
+
+  if (body.data.email !== env.ADMIN_EMAIL || body.data.password !== env.ADMIN_PASSWORD) {
+    res.status(401).json({ error: "E-mail ou senha incorretos" });
+    return;
+  }
+
+  const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
+  const payload = Buffer.from(JSON.stringify({
+    role: "admin",
+    exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7, // 7 days
+  })).toString("base64url");
+  const signature = createHmac("sha256", env.ADMIN_JWT_SECRET)
+    .update(`${header}.${payload}`)
+    .digest("base64url");
+
+  res.json({ token: `${header}.${payload}.${signature}` });
+});
 
 adminRouter.use(adminOnly);
 

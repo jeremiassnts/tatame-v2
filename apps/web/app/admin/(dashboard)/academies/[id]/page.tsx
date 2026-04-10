@@ -1,7 +1,10 @@
-import { auth } from "@clerk/nextjs/server";
+"use client";
+
 import Link from "next/link";
 import { ArrowLeft, User } from "lucide-react";
-import { adminFetch } from "@/lib/api";
+import { useEffect, useState } from "react";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
+import { adminFetch, getAdminToken } from "@/lib/api";
 import { KpiCard } from "../../components/kpi-card";
 import { PaymentsTable } from "../../components/payments-table";
 
@@ -35,28 +38,47 @@ function formatBRL(cents: number): string {
   return `R$ ${(cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 0 })}`;
 }
 
-export default async function AcademyDetailPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ id: string }>;
-  searchParams: Promise<{ limit?: string; offset?: string }>;
-}) {
-  const { id } = await params;
-  const { limit: limitStr, offset: offsetStr } = await searchParams;
-  const limit = Number(limitStr) || 20;
-  const offset = Number(offsetStr) || 0;
+export default function AcademyDetailPage() {
+  const router = useRouter();
+  const params = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
+  const id = params.id;
+  const limit = Number(searchParams.get("limit")) || 20;
+  const offset = Number(searchParams.get("offset")) || 0;
 
-  const { getToken } = await auth();
-  const token = (await getToken()) ?? "";
+  const [detail, setDetail] = useState<AcademyDetail | null>(null);
+  const [payments, setPayments] = useState<PaymentItem[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  const [detail, paymentsData] = await Promise.all([
-    adminFetch<AcademyDetail>(`/academies/${id}`, token),
-    adminFetch<{ items: PaymentItem[]; total: number }>(
-      `/academies/${id}/payments?limit=${limit}&offset=${offset}`,
-      token,
-    ),
-  ]);
+  useEffect(() => {
+    if (!getAdminToken()) {
+      router.replace("/admin/login");
+      return;
+    }
+
+    Promise.all([
+      adminFetch<AcademyDetail>(`/academies/${id}`),
+      adminFetch<{ items: PaymentItem[]; total: number }>(
+        `/academies/${id}/payments?limit=${limit}&offset=${offset}`,
+      ),
+    ])
+      .then(([d, p]) => {
+        setDetail(d);
+        setPayments(p.items);
+        setTotal(p.total);
+        setLoading(false);
+      })
+      .catch(() => {});
+  }, [id, limit, offset, router]);
+
+  if (loading || !detail) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <span className="text-sm text-text-muted">Carregando...</span>
+      </div>
+    );
+  }
 
   const { academy } = detail;
 
@@ -125,9 +147,9 @@ export default async function AcademyDetailPage({
 
       {/* Payments Table */}
       <PaymentsTable
-        payments={paymentsData.items}
+        payments={payments}
         academyId={id}
-        total={paymentsData.total}
+        total={total}
         limit={limit}
         offset={offset}
       />

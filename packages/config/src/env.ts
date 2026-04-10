@@ -32,6 +32,8 @@ const envSchema = z.object({
   BULL_BOARD_PASS: z.string().optional(),
   OTEL_COLLECTOR_URL: z.string().url().optional(),
   ADMIN_EMAIL: z.string().email().optional(),
+  ADMIN_PASSWORD: z.string().optional(),
+  ADMIN_JWT_SECRET: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

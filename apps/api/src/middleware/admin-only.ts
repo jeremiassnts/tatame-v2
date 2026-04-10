@@ -1,41 +1,51 @@
-import { getAuth } from "@clerk/express";
 import { loadEnv } from "@tatame/config";
 import type { NextFunction, Request, Response } from "express";
-import { getClerkClient } from "../lib/clerk.js";
+import { createHmac, timingSafeEqual } from "node:crypto";
+
+function verifyAdminToken(token: string, secret: string): boolean {
+  try {
+    const [headerB64, payloadB64, signatureB64] = token.split(".");
+    if (!headerB64 || !payloadB64 || !signatureB64) return false;
+
+    const expected = createHmac("sha256", secret)
+      .update(`${headerB64}.${payloadB64}`)
+      .digest("base64url");
+
+    if (expected.length !== signatureB64.length) return false;
+    if (!timingSafeEqual(Buffer.from(expected), Buffer.from(signatureB64))) return false;
+
+    const payload = JSON.parse(Buffer.from(payloadB64, "base64url").toString());
+    if (payload.role !== "admin") return false;
+    if (payload.exp && Date.now() / 1000 > payload.exp) return false;
+
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Middleware that restricts access to the platform admin.
- * Validates the authenticated Clerk user's email against ADMIN_EMAIL env var.
+ * Validates a simple JWT signed with ADMIN_JWT_SECRET.
  */
 export function adminOnly(req: Request, res: Response, next: NextFunction): void {
-  void (async () => {
-    const env = loadEnv();
-    if (!env.CLERK_SECRET_KEY || !env.ADMIN_EMAIL) {
-      res.status(503).json({ error: "Admin not configured" });
-      return;
-    }
+  const env = loadEnv();
+  if (!env.ADMIN_JWT_SECRET) {
+    res.status(503).json({ error: "Admin not configured" });
+    return;
+  }
 
-    const { userId: clerkUserId } = getAuth(req);
-    if (!clerkUserId) {
-      res.status(401).json({ error: "Unauthorized" });
-      return;
-    }
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer ")) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
 
-    try {
-      const clerk = getClerkClient();
-      const clerkUser = await clerk.users.getUser(clerkUserId);
-      const email = clerkUser.emailAddresses.find(
-        (e) => e.id === clerkUser.primaryEmailAddressId,
-      )?.emailAddress;
+  const token = authHeader.slice(7);
+  if (!verifyAdminToken(token, env.ADMIN_JWT_SECRET)) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
 
-      if (!email || email !== env.ADMIN_EMAIL) {
-        res.status(403).json({ error: "Forbidden" });
-        return;
-      }
-
-      next();
-    } catch (e) {
-      next(e);
-    }
-  })();
+  next();
 }
