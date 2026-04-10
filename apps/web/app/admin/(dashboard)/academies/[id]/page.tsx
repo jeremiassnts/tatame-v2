@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import { ArrowLeft, User } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { adminFetch, getAdminToken } from "@/lib/api";
+import { ArrowLeft, User } from "lucide-react";
+import Link from "next/link";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { KpiCard } from "../../components/kpi-card";
 import { PaymentsTable } from "../../components/payments-table";
 
@@ -69,7 +69,7 @@ export default function AcademyDetailPage() {
         setTotal(p.total);
         setLoading(false);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [id, limit, offset, router]);
 
   if (loading || !detail) {
@@ -101,7 +101,7 @@ export default function AcademyDetailPage() {
       </div>
 
       {/* Manager Info */}
-      <div className="flex items-center gap-3.5 rounded-[14px] border border-border bg-surface px-5 py-4">
+      <div className="flex items-center gap-6 rounded-[14px] border border-border bg-surface px-5 py-4">
         <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/[0.125]">
           <User className="h-[22px] w-[22px] text-primary" />
         </div>
