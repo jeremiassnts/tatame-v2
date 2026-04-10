@@ -4,11 +4,11 @@ import { useClerk, useSignIn } from "@clerk/nextjs";
 import { Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function AdminLoginPage() {
   const { signIn } = useSignIn();
-  const { signOut } = useClerk();
+  const { signOut, isSignedIn } = useClerk();
   const router = useRouter();
 
   const [email, setEmail] = useState("");
@@ -16,6 +16,12 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isSignedIn) {
+      router.replace("/admin");
+    }
+  }, [isSignedIn, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -32,10 +38,12 @@ export default function AdminLoginPage() {
           const retryResult = await signIn.create({ identifier: email });
           if (retryResult.error) {
             setError("E-mail ou senha incorretos");
+            setLoading(false);
             return;
           }
         } else {
           setError("E-mail ou senha incorretos");
+          setLoading(false);
           return;
         }
       }
@@ -43,6 +51,7 @@ export default function AdminLoginPage() {
       const passwordResult = await signIn.password({ password });
       if (passwordResult.error) {
         setError("E-mail ou senha incorretos");
+        setLoading(false);
         return;
       }
 
@@ -50,11 +59,13 @@ export default function AdminLoginPage() {
         const finalizeResult = await signIn.finalize();
         if (finalizeResult.error) {
           setError("Erro ao finalizar autenticação");
+          setLoading(false);
           return;
         }
         router.push("/admin");
       } else {
         setError("Erro inesperado ao autenticar");
+        setLoading(false);
       }
     } catch (err: any) {
       const clerkError = err?.errors?.[0];
@@ -68,7 +79,6 @@ export default function AdminLoginPage() {
       } else {
         setError(clerkError?.longMessage ?? "Erro ao fazer login");
       }
-    } finally {
       setLoading(false);
     }
   }
