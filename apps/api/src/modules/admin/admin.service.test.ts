@@ -4,7 +4,7 @@ import type { IAdminRepository, AcademyDetailRow } from "./admin.repository.js";
 
 function makeFakeRepo(overrides: Partial<IAdminRepository> = {}): IAdminRepository {
   return {
-    countActiveSubscribers: async () => 10,
+    countManagerSubscriptions: async () => ({ total: 10, pro: 7, free: 3 }),
     countTotalUsers: async () => 50,
     sumAppRevenueCents: async () => 100_000,
     sumTransferredCents: async () => 60_000,
@@ -27,7 +27,7 @@ describe("AdminService", () => {
     const svc = new AdminService(makeFakeRepo());
     const result = await svc.getDashboard();
     expect(result).toEqual({
-      activeSubscribers: 10,
+      subscribers: { total: 10, pro: 7, free: 3 },
       totalUsers: 50,
       appRevenueCents: 100_000,
       transferredCents: 60_000,

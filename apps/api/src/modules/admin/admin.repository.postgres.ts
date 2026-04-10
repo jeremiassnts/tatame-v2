@@ -15,23 +15,29 @@ import type {
   AdminPaymentRow,
   DailyCheckinCount,
   IAdminRepository,
+  ManagerSubscriptionCounts,
 } from "./admin.repository.js";
 
 export class PostgresAdminRepository implements IAdminRepository {
   constructor(private readonly db: Database) {}
 
-  async countActiveSubscribers(): Promise<number> {
-    const today = new Date().toISOString().slice(0, 10);
-    const [row] = await this.db
-      .select({ count: count() })
-      .from(studentSubscriptions)
-      .where(
-        and(
-          eq(studentSubscriptions.status, "active"),
-          sql`${studentSubscriptions.expiresAt} >= ${today}::date`,
-        ),
-      );
-    return row?.count ?? 0;
+  async countManagerSubscriptions(): Promise<ManagerSubscriptionCounts> {
+    const rows = await this.db
+      .select({
+        plan: managerSubscriptions.plan,
+        count: count(),
+      })
+      .from(managerSubscriptions)
+      .where(eq(managerSubscriptions.status, "active"))
+      .groupBy(managerSubscriptions.plan);
+
+    let pro = 0;
+    let free = 0;
+    for (const row of rows) {
+      if (row.plan === "pro") pro = row.count;
+      else if (row.plan === "free") free = row.count;
+    }
+    return { total: pro + free, pro, free };
   }
 
   async countTotalUsers(): Promise<number> {

@@ -35,8 +35,14 @@ export type DailyCheckinCount = {
   count: number;
 };
 
+export type ManagerSubscriptionCounts = {
+  total: number;
+  pro: number;
+  free: number;
+};
+
 export interface IAdminRepository {
-  countActiveSubscribers(): Promise<number>;
+  countManagerSubscriptions(): Promise<ManagerSubscriptionCounts>;
   countTotalUsers(): Promise<number>;
   sumAppRevenueCents(): Promise<number>;
   sumTransferredCents(): Promise<number>;

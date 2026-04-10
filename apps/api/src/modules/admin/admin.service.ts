@@ -5,10 +5,11 @@ import type {
   AdminPaymentRow,
   DailyCheckinCount,
   IAdminRepository,
+  ManagerSubscriptionCounts,
 } from "./admin.repository.js";
 
 export type DashboardData = {
-  activeSubscribers: number;
+  subscribers: ManagerSubscriptionCounts;
   totalUsers: number;
   appRevenueCents: number;
   transferredCents: number;
@@ -36,15 +37,15 @@ export class AdminService {
   constructor(private readonly repo: IAdminRepository) {}
 
   async getDashboard(): Promise<DashboardData> {
-    const [activeSubscribers, totalUsers, appRevenueCents, transferredCents] =
+    const [subscribers, totalUsers, appRevenueCents, transferredCents] =
       await Promise.all([
-        this.repo.countActiveSubscribers(),
+        this.repo.countManagerSubscriptions(),
         this.repo.countTotalUsers(),
         this.repo.sumAppRevenueCents(),
         this.repo.sumTransferredCents(),
       ]);
 
-    return { activeSubscribers, totalUsers, appRevenueCents, transferredCents };
+    return { subscribers, totalUsers, appRevenueCents, transferredCents };
   }
 
   async getCheckins(): Promise<DailyCheckinCount[]> {

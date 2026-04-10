@@ -8,7 +8,7 @@ import { KpiCard } from "./components/kpi-card";
 import { CheckinsChart } from "./components/checkins-chart";
 
 type DashboardData = {
-  activeSubscribers: number;
+  subscribers: { total: number; pro: number; free: number };
   totalUsers: number;
   appRevenueCents: number;
   transferredCents: number;
@@ -90,7 +90,8 @@ export default function AdminDashboardPage() {
       <div className="flex gap-4">
         <KpiCard
           label="Assinantes"
-          value={dashboard.activeSubscribers.toLocaleString("pt-BR")}
+          value={dashboard.subscribers.total.toLocaleString("pt-BR")}
+          subtitle={`${dashboard.subscribers.pro} pagos · ${dashboard.subscribers.free} gratuitos`}
         />
         <KpiCard
           label="Usuários"
