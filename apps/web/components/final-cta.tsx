@@ -43,7 +43,7 @@ export function FinalCta() {
               </a>
               <a
                 target="_blank"
-                href="https://android.app.tatame.com.br"
+                href="https://android.apptatame.com.br"
                 className="flex items-center gap-3 rounded-xl bg-white px-7 py-3.5 text-background transition-opacity hover:opacity-90"
               >
                 <Image src="/google.svg" alt="Google Play" width={20} height={20} />
