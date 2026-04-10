@@ -304,6 +304,7 @@ export const payments = pgTable("payments", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
+  transferredAt: timestamp("transferred_at", { withTimezone: true }),
 });
 
 export const beltPromotions = pgTable(

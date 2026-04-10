@@ -36,6 +36,13 @@
       "when": 1775752111894,
       "tag": "0004_luxuriant_franklin_storm",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1775826492204,
+      "tag": "0005_daily_speed_demon",
+      "breakpoints": true
     }
   ]
 }
