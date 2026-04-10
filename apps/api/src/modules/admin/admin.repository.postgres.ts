@@ -28,7 +28,7 @@ export class PostgresAdminRepository implements IAdminRepository {
       .where(
         and(
           eq(studentSubscriptions.status, "active"),
-          sql`${studentSubscriptions.expiresAt} >= ${today}`,
+          sql`${studentSubscriptions.expiresAt} >= ${today}::date`,
         ),
       );
     return row?.count ?? 0;
@@ -83,7 +83,7 @@ export class PostgresAdminRepository implements IAdminRepository {
         count: count(),
       })
       .from(checkins)
-      .where(sql`${checkins.date} >= CURRENT_DATE - ${days}`)
+      .where(sql`${checkins.date} >= CURRENT_DATE - ${days}::integer`)
       .groupBy(checkins.date)
       .orderBy(checkins.date);
     return rows.map((r) => ({ date: r.date, count: r.count }));
