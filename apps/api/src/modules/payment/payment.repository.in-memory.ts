@@ -34,7 +34,6 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
       notes: data.notes,
       paidAt: data.paidAt,
       createdAt: t,
-      transferredAt: null,
     };
     this.rows.push(row);
     return row;

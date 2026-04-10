@@ -252,7 +252,6 @@ export function makePayment(overrides: Partial<PaymentRow> = {}): PaymentRow {
       }) ?? null,
     paidAt: t,
     createdAt: t,
-    transferredAt: null,
     ...overrides,
   };
 }
