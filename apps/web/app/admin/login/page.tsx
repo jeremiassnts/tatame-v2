@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useSignIn } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { Grid3x3, Eye, EyeOff } from "lucide-react";
+import Image from "next/image";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function AdminLoginPage() {
   const { signIn } = useSignIn();
@@ -70,9 +71,12 @@ export default function AdminLoginPage() {
       >
         {/* Logo */}
         <div className="flex flex-col items-center gap-3">
-          <div className="flex h-14 w-14 items-center justify-center rounded-[14px] border border-border bg-[#242424]">
-            <Grid3x3 className="h-7 w-7 text-primary" />
-          </div>
+          <Image
+            src="/icon.png"
+            alt="Tatame"
+            width={45}
+            height={45}
+          />
           <h1 className="font-[family-name:var(--font-sora)] text-[22px] font-extrabold tracking-[2px] text-text-primary">
             TATAME
           </h1>

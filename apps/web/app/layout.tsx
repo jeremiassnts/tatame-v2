@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Sora, Inter } from "next/font/google";
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
 import "./globals.css";
 
 const sora = Sora({
@@ -32,9 +30,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="pt-BR" className={`${sora.variable} ${inter.variable}`}>
         <body className="font-[family-name:var(--font-inter)] antialiased">
-          <Header />
           {children}
-          <Footer />
         </body>
       </html>
     </ClerkProvider>
