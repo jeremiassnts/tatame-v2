@@ -34,7 +34,7 @@ const faqItems = [
   {
     question: "Meus alunos podem pagar diretamente no app?",
     answer:
-      "Ainda não, por enquanto é necessário que você confirme o pagamento manualmente no app, mas em breve os alunos poderão pagar diretamente no app.",
+      "Sim. O aluno pode pagar diretamente pelo app via Pix ou cartão. O valor é repassado para a conta do gestor através de uma chave Pix que ele cadastra.",
   }
 ];
 

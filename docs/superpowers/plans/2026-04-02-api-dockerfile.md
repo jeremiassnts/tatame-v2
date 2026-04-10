@@ -29,7 +29,7 @@
 
 The migration script uses `drizzle-orm/postgres-js/migrator` to run SQL migrations programmatically. This avoids needing `drizzle-kit` in production. It imports `postgres` directly (available as a transitive dependency via `@tatame/db`).
 
-- [ ] **Step 1: Create `apps/api/src/migrate.ts`**
+- [x] **Step 1: Create `apps/api/src/migrate.ts`**
 
 ```ts
 import "./env-bootstrap.js";
@@ -63,13 +63,13 @@ Key details:
 - Closes connection with `sql.end()` before the process exits
 - Migration folder `./drizzle` is relative to working directory (`/app` in container)
 
-- [ ] **Step 2: Verify it compiles**
+- [x] **Step 2: Verify it compiles**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2 && pnpm turbo build --filter=api`
 
 Expected: Build succeeds, `apps/api/dist/migrate.js` exists.
 
-- [ ] **Step 3: Test the migration script locally**
+- [x] **Step 3: Test the migration script locally**
 
 Run: `cd /Volumes/ExternalDisk1/repos/tatame-v2/apps/api && node dist/migrate.js`
 
@@ -85,7 +85,7 @@ Run: `ls apps/api/dist/migrate.js`
 
 Expected: File exists.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/api/src/migrate.ts
@@ -99,7 +99,7 @@ git commit -m "feat(api): add programmatic migration script for Docker"
 **Files:**
 - Create: `apps/api/docker-entrypoint.sh`
 
-- [ ] **Step 1: Create `apps/api/docker-entrypoint.sh`**
+- [x] **Step 1: Create `apps/api/docker-entrypoint.sh`**
 
 ```sh
 #!/bin/sh
@@ -117,11 +117,11 @@ Key details:
 - `exec` replaces the shell process with Node, so the container receives signals (SIGTERM) correctly for graceful shutdown
 - No `env-bootstrap` needed — Docker injects env vars directly
 
-- [ ] **Step 2: Make it executable**
+- [x] **Step 2: Make it executable**
 
 Run: `chmod +x apps/api/docker-entrypoint.sh`
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/api/docker-entrypoint.sh
@@ -135,7 +135,7 @@ git commit -m "feat(api): add Docker entrypoint script"
 **Files:**
 - Create: `apps/api/Dockerfile`
 
-- [ ] **Step 1: Create `apps/api/Dockerfile`**
+- [x] **Step 1: Create `apps/api/Dockerfile`**
 
 ```dockerfile
 # ── Stage 1: Install dependencies ──
@@ -203,7 +203,7 @@ Key details:
 - No `EXPOSE` directive — port is fully dynamic via `API_PORT` env var
 - Runs as non-root `appuser`
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/api/Dockerfile
@@ -217,7 +217,7 @@ git commit -m "feat(api): add multi-stage Dockerfile for production"
 **Files:**
 - Create: `.dockerignore`
 
-- [ ] **Step 1: Create `.dockerignore`**
+- [x] **Step 1: Create `.dockerignore`**
 
 ```
 node_modules
@@ -243,7 +243,7 @@ Key details:
 - Excludes `dist` (rebuilt inside container)
 - Excludes `docs`, markdown files, editor configs
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add .dockerignore
@@ -257,7 +257,7 @@ git commit -m "chore: add .dockerignore for API builds"
 **Files:**
 - Create: `docker-compose.prod.yml`
 
-- [ ] **Step 1: Create `docker-compose.prod.yml`**
+- [x] **Step 1: Create `docker-compose.prod.yml`**
 
 ```yaml
 services:
@@ -277,7 +277,7 @@ Key details:
 - Port mapping uses `API_PORT` from env with fallback to 3001
 - `restart: unless-stopped` keeps the container running through crashes
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add docker-compose.prod.yml
@@ -290,7 +290,7 @@ git commit -m "feat: add production docker-compose for API"
 
 This task verifies the entire setup works end-to-end.
 
-- [ ] **Step 1: Build the image**
+- [x] **Step 1: Build the image**
 
 Run: `docker compose -f docker-compose.prod.yml build`
 
@@ -299,13 +299,13 @@ Expected: Multi-stage build completes successfully. Watch for:
 - turbo build compiles all packages
 - pnpm deploy creates the production bundle
 
-- [ ] **Step 2: Verify image size**
+- [x] **Step 2: Verify image size**
 
 Run: `docker images | grep tatame`
 
 Expected: Image should be under ~300MB (Alpine + Node + production deps).
 
-- [ ] **Step 3: Test the container starts**
+- [x] **Step 3: Test the container starts**
 
 Ensure PostgreSQL and Redis are running (via dev docker-compose), then:
 
@@ -317,17 +317,17 @@ Expected:
 3. "Starting API server..."
 4. "API listening on http://localhost:3001/v1"
 
-- [ ] **Step 4: Test API responds**
+- [x] **Step 4: Test API responds**
 
 Run: `curl http://localhost:3001/v1`
 
 Expected: API responds (exact response depends on root route handler).
 
-- [ ] **Step 5: Stop and clean up**
+- [x] **Step 5: Stop and clean up**
 
 Run: `docker compose -f docker-compose.prod.yml down`
 
-- [ ] **Step 6: Final commit (if any fixes were needed)**
+- [x] **Step 6: Final commit (if any fixes were needed)**
 
 ```bash
 git add -A

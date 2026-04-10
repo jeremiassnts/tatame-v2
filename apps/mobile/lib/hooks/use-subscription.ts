@@ -77,3 +77,48 @@ export function useSelectPlan() {
     },
   });
 }
+
+export function useCreateCheckout() {
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: (body?: { subscriptionId?: string }) =>
+      api.post<{ checkoutUrl: string }>("/payments/checkout", body ?? {}),
+  });
+}
+
+export type PixQrCodeResponse = {
+  pixQrCodeId: string;
+  brCode: string;
+  brCodeBase64: string;
+  amount: number;
+  expiresAt: string;
+  metadata: {
+    subscriptionId: string;
+    userId: string;
+    academyId: string;
+    referenceMonth: string;
+  };
+};
+
+export function useCreatePixCheckout() {
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: (body?: { subscriptionId?: string }) =>
+      api.post<PixQrCodeResponse>("/payments/checkout/pix", body ?? {}),
+  });
+}
+
+export function usePixPaymentStatus(pixQrCodeId: string | null) {
+  const api = useApi();
+
+  return useQuery({
+    queryKey: ["pix-status", pixQrCodeId],
+    queryFn: () =>
+      api.get<{ status: string }>(`/payments/pix-status/${pixQrCodeId}`),
+    enabled: !!pixQrCodeId,
+    refetchInterval: 5000, // Poll every 5 seconds
+    select: (data) => data.status,
+  });
+}

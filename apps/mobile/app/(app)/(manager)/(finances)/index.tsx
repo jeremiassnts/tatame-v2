@@ -1,26 +1,50 @@
 import { BackButton } from "@/components/BackButton";
+import { ModalSelect } from "@/components/ModalSelect";
+import { useAcademyContext } from "@/lib/academy-context";
 import { useFinancialSummary, usePaymentHistory } from "@/lib/hooks/use-finances";
+import { useAcademy, useUpdatePixKey } from "@/lib/hooks/use-academy";
 import { useManagerSubscription } from "@/lib/hooks/use-manager-subscription";
 import { useRouter } from "expo-router";
 import {
   CreditCard,
   FileText,
   Crown,
+  KeyRound,
+  Pencil,
+  Plus,
+  QrCode,
   Receipt,
   Users,
 } from "lucide-react-native";
+import { useState } from "react";
 import {
   ActivityIndicator,
+  Modal,
   Pressable,
   RefreshControl,
   ScrollView,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const TEXT_SECONDARY = "#ABABAB";
 const TEXT_MUTED = "#525252";
+
+const PIX_TYPE_LABELS: Record<string, string> = {
+  cpf: "CPF",
+  email: "E-mail",
+  phone: "Telefone",
+  random: "Chave aleatória",
+};
+
+const PIX_TYPE_OPTIONS = [
+  { value: "cpf", label: "CPF" },
+  { value: "email", label: "E-mail" },
+  { value: "phone", label: "Telefone" },
+  { value: "random", label: "Chave aleatória" },
+];
 
 function formatCurrency(cents: number): string {
   return `R$${(cents / 100).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
@@ -56,6 +80,12 @@ export default function FinancialDashboard() {
   } = useFinancialSummary();
   const { data: recentPayments } = usePaymentHistory({ limit: 10 });
   const { data: subscription } = useManagerSubscription();
+  const { academyId } = useAcademyContext();
+  const { data: academy } = useAcademy(academyId);
+  const updatePixKey = useUpdatePixKey(academyId);
+  const [pixModalVisible, setPixModalVisible] = useState(false);
+  const [pixKeyType, setPixKeyType] = useState("");
+  const [pixKeyValue, setPixKeyValue] = useState("");
 
   if (isPending) {
     return (
@@ -273,6 +303,55 @@ export default function FinancialDashboard() {
           ))}
         </View>
 
+        {academy?.pixKey ? (
+          <View className="rounded-2xl border border-surface-border bg-surface" style={{ padding: 14, gap: 12 }}>
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center" style={{ gap: 8 }}>
+                <QrCode size={18} color="#A078E8" />
+                <Text className="font-poppins-bold text-[15px] text-primary">Chave PIX</Text>
+              </View>
+              <Pressable
+                onPress={() => { setPixKeyType(academy!.pixKeyType ?? ""); setPixKeyValue(academy!.pixKey ?? ""); setPixModalVisible(true); }}
+                className="flex-row items-center rounded-lg"
+                style={{ padding: 6, paddingHorizontal: 12, gap: 6, backgroundColor: "#2A2A2A" }}
+              >
+                <Pencil size={14} color="#ABABAB" />
+                <Text className="font-poppins text-xs" style={{ color: "#ABABAB" }}>Editar</Text>
+              </Pressable>
+            </View>
+            <View style={{ gap: 4 }}>
+              <Text className="font-poppins text-xs" style={{ color: "#ABABAB" }}>{PIX_TYPE_LABELS[academy!.pixKeyType as string] ?? academy!.pixKeyType}</Text>
+              <Text className="font-poppins-medium text-sm text-primary">{academy!.pixKey}</Text>
+            </View>
+            <View className="flex-row items-center" style={{ gap: 6 }}>
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#32D74B" }} />
+              <Text className="font-poppins text-xs" style={{ color: "#32D74B" }}>Chave ativa para recebimentos</Text>
+            </View>
+          </View>
+        ) : (
+          <View className="rounded-2xl border border-surface-border bg-surface" style={{ padding: 14, gap: 16 }}>
+            <View className="flex-row items-center" style={{ gap: 8 }}>
+              <QrCode size={18} color="#A078E8" />
+              <Text className="font-poppins-bold text-[15px] text-primary">Chave PIX</Text>
+            </View>
+            <View className="items-center" style={{ gap: 8, paddingVertical: 8 }}>
+              <KeyRound size={32} color="#525252" />
+              <Text className="font-poppins-medium text-sm" style={{ color: "#ABABAB" }}>Nenhuma chave cadastrada</Text>
+              <Text className="font-poppins text-xs text-center" style={{ color: "#525252" }}>
+                Cadastre sua chave PIX para receber pagamentos dos alunos diretamente.
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => { setPixKeyType(""); setPixKeyValue(""); setPixModalVisible(true); }}
+              className="flex-row items-center justify-center rounded-lg"
+              style={{ height: 44, gap: 8, backgroundColor: "#A078E8" }}
+            >
+              <Plus size={16} color="#FFFFFF" />
+              <Text className="font-poppins-semibold text-sm text-white">Cadastrar chave PIX</Text>
+            </Pressable>
+          </View>
+        )}
+
         <Text className="font-poppins-semibold text-sm" style={{ color: TEXT_SECONDARY }}>
           Histórico de pagamentos
         </Text>
@@ -306,6 +385,47 @@ export default function FinancialDashboard() {
           )}
         </View>
       </ScrollView>
+
+      <Modal visible={pixModalVisible} transparent animationType="fade" onRequestClose={() => setPixModalVisible(false)}>
+        <View className="flex-1 justify-center px-6">
+          <Pressable className="absolute inset-0 bg-black/60" onPress={() => setPixModalVisible(false)} />
+          <View className="rounded-2xl border border-surface-border bg-surface" style={{ padding: 20, gap: 16 }}>
+            <Text className="font-poppins-bold text-base text-primary">
+              {academy?.pixKey ? "Editar chave PIX" : "Cadastrar chave PIX"}
+            </Text>
+            <View style={{ gap: 8 }}>
+              <Text className="font-poppins-medium text-xs" style={{ color: "#ABABAB" }}>Tipo da chave</Text>
+              <ModalSelect value={pixKeyType} onChange={setPixKeyType} options={PIX_TYPE_OPTIONS} placeholder="Selecionar tipo" />
+            </View>
+            <View style={{ gap: 8 }}>
+              <Text className="font-poppins-medium text-xs" style={{ color: "#ABABAB" }}>Chave</Text>
+              <TextInput
+                value={pixKeyValue}
+                onChangeText={setPixKeyValue}
+                placeholder="Digite sua chave PIX"
+                placeholderTextColor="#525252"
+                className="h-[52px] rounded-xl border border-surface-border bg-surface px-4 font-poppins text-[15px] text-primary"
+              />
+            </View>
+            <Pressable
+              onPress={async () => {
+                if (!pixKeyType || !pixKeyValue.trim()) return;
+                await updatePixKey.mutateAsync({ pixKeyType, pixKey: pixKeyValue.trim() });
+                setPixModalVisible(false);
+              }}
+              disabled={!pixKeyType || !pixKeyValue.trim() || updatePixKey.isPending}
+              className="items-center justify-center rounded-xl"
+              style={{ height: 48, backgroundColor: pixKeyType && pixKeyValue.trim() ? "#A078E8" : "#3A3A3A" }}
+            >
+              {updatePixKey.isPending ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text className="font-poppins-semibold text-base text-white">Salvar</Text>
+              )}
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

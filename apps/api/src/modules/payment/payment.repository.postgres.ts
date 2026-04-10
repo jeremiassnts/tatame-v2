@@ -14,8 +14,9 @@ export class PostgresPaymentRepository implements IPaymentRepository {
     userId: string;
     academyId: string;
     amountCents: number;
-    method: "manual";
-    confirmedBy: string;
+    method: "manual" | "stripe" | "pix";
+    confirmedBy: string | null;
+    stripePaymentId: string | null;
     referenceMonth: string;
     notes: string | null;
     paidAt: Date;
@@ -29,13 +30,24 @@ export class PostgresPaymentRepository implements IPaymentRepository {
         amountCents: data.amountCents,
         method: data.method,
         confirmedBy: data.confirmedBy,
-        stripePaymentId: null,
+        stripePaymentId: data.stripePaymentId,
         referenceMonth: data.referenceMonth,
         notes: data.notes,
         paidAt: data.paidAt,
       })
       .returning();
     if (!row) throw new Error("Failed to create payment");
+    return row;
+  }
+
+  async findByStripePaymentId(
+    stripePaymentId: string,
+  ): Promise<PaymentRow | undefined> {
+    const [row] = await this.db
+      .select()
+      .from(payments)
+      .where(eq(payments.stripePaymentId, stripePaymentId))
+      .limit(1);
     return row;
   }
 
@@ -53,7 +65,20 @@ export class PostgresPaymentRepository implements IPaymentRepository {
     const whereClause =
       conditions.length === 1 ? conditions[0]! : and(...conditions);
     const query = this.db
-      .select()
+      .select({
+        id: payments.id,
+        subscriptionId: payments.subscriptionId,
+        userId: payments.userId,
+        academyId: payments.academyId,
+        amountCents: payments.amountCents,
+        method: payments.method,
+        confirmedBy: payments.confirmedBy,
+        stripePaymentId: payments.stripePaymentId,
+        referenceMonth: payments.referenceMonth,
+        notes: payments.notes,
+        paidAt: payments.paidAt,
+        createdAt: payments.createdAt,
+      })
       .from(payments)
       .where(whereClause)
       .orderBy(desc(payments.paidAt));

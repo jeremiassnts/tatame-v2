@@ -108,6 +108,8 @@ export function makeAcademy(overrides: Partial<AcademyRow> = {}): AcademyRow {
       faker.helpers.maybe(() => utcIsoDate(faker.date.past({ years: 20 })), {
         probability: 0.3,
       }) ?? null,
+    pixKey: null,
+    pixKeyType: null,
     createdAt: t,
     updatedAt: t,
     ...overrides,
@@ -250,6 +252,7 @@ export function makePayment(overrides: Partial<PaymentRow> = {}): PaymentRow {
       }) ?? null,
     paidAt: t,
     createdAt: t,
+    transferredAt: null,
     ...overrides,
   };
 }

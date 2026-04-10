@@ -22,6 +22,27 @@
       "when": 1774879142991,
       "tag": "0002_demonic_true_believers",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1775746143071,
+      "tag": "0003_fair_husk",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1775752111894,
+      "tag": "0004_luxuriant_franklin_storm",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1775826492204,
+      "tag": "0005_daily_speed_demon",
+      "breakpoints": true
     }
   ]
 }

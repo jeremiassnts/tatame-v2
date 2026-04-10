@@ -24,11 +24,14 @@ export {
   academyResponseSchema,
   academyStatsResponseSchema,
   createAcademyBodySchema,
+  pixKeyTypeSchema,
   updateAcademyBodySchema,
+  updatePixKeyBodySchema,
   type AcademyResponse,
   type AcademyStatsResponse,
   type CreateAcademyBody,
   type UpdateAcademyBody,
+  type UpdatePixKeyBody,
 } from "./academy.schema.js";
 export {
   listMembersQuerySchema,
@@ -71,9 +74,11 @@ export {
 } from "./subscription.schema.js";
 export {
   confirmManualPaymentBodySchema,
+  createCheckoutBodySchema,
   listPaymentsQuerySchema,
   referenceMonthSchema,
   type ConfirmManualPaymentBody,
+  type CreateCheckoutBody,
 } from "./payment.schema.js";
 export {
   checkinHistoryQuerySchema,

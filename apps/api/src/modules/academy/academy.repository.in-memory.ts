@@ -43,6 +43,8 @@ export class InMemoryAcademyRepository implements IAcademyRepository {
       contactEmail: data.contactEmail,
       contactPhone: data.contactPhone,
       foundedAt: data.foundedAt,
+      pixKey: null,
+      pixKeyType: null,
       createdAt: t,
       updatedAt: t,
     };
@@ -65,6 +67,13 @@ export class InMemoryAcademyRepository implements IAcademyRepository {
     if (!row) return undefined;
     Object.assign(row, data, { updatedAt: new Date() });
     return row;
+  }
+
+  async updatePixKey(
+    academyId: string,
+    data: { pixKey: string | null; pixKeyType: string | null },
+  ): Promise<AcademyRow | undefined> {
+    throw new Error("Not implemented");
   }
 
   async existsByOwner(userId: string): Promise<boolean> {

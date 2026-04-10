@@ -15,7 +15,7 @@
 **Files:**
 - Modify: `apps/mobile/lib/version.ts`
 
-- [ ] **Step 1: Rewrite `shouldForceUpdate` as async with remote fetch**
+- [x] **Step 1: Rewrite `shouldForceUpdate` as async with remote fetch**
 
 Replace the entire `shouldForceUpdate` function. Keep `parseVersion` and `isVersionLessThan` unchanged.
 
@@ -66,13 +66,13 @@ export async function shouldForceUpdate(): Promise<boolean> {
 }
 ```
 
-- [ ] **Step 2: Verify the file compiles**
+- [x] **Step 2: Verify the file compiles**
 
 Run: `cd apps/mobile && npx tsc --noEmit lib/version.ts 2>&1 || echo 'Check errors above'`
 
 Expected: No errors (or only unrelated ambient type warnings).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/mobile/lib/version.ts
@@ -86,7 +86,7 @@ git commit -m "feat(mobile): fetch min version from API instead of build-time en
 **Files:**
 - Modify: `apps/mobile/app/index.tsx`
 
-- [ ] **Step 1: Rewrite Index to call async `shouldForceUpdate`**
+- [x] **Step 1: Rewrite Index to call async `shouldForceUpdate`**
 
 ```typescript
 import { shouldForceUpdate } from "@/lib/version";
@@ -125,13 +125,13 @@ export default function Index() {
 }
 ```
 
-- [ ] **Step 2: Verify the file compiles**
+- [x] **Step 2: Verify the file compiles**
 
 Run: `cd apps/mobile && npx tsc --noEmit app/index.tsx 2>&1 || echo 'Check errors above'`
 
 Expected: No errors.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/mobile/app/index.tsx
@@ -145,7 +145,7 @@ git commit -m "feat(mobile): use async version check on app startup"
 **Files:**
 - Modify: `apps/mobile/app/(system)/force-update.tsx`
 
-- [ ] **Step 1: Remove `EXPO_PUBLIC_MIN_APP_VERSION` reference, show only current version**
+- [x] **Step 1: Remove `EXPO_PUBLIC_MIN_APP_VERSION` reference, show only current version**
 
 ```typescript
 import Constants from "expo-constants";
@@ -229,7 +229,7 @@ Changes from original:
 - Removed `EXPO_PUBLIC_MIN_APP_VERSION` reading
 - Simplified version badge to show only "Versão atual: v{currentVersion}" instead of the arrow between versions
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add apps/mobile/app/\(system\)/force-update.tsx

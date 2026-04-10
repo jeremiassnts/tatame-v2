@@ -24,12 +24,16 @@ const envSchema = z.object({
   STRIPE_PUBLISHABLE_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   STRIPE_PRO_PRICE_ID: z.string().optional(),
+  ABACATEPAY_API_KEY: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
   MANAGER_EMAIL: z.string().optional(),
   MANAGER_CLERK_ID: z.string().optional(),
   BULL_BOARD_USER: z.string().optional(),
   BULL_BOARD_PASS: z.string().optional(),
   OTEL_COLLECTOR_URL: z.string().url().optional(),
+  ADMIN_EMAIL: z.string().email().optional(),
+  ADMIN_PASSWORD: z.string().optional(),
+  ADMIN_JWT_SECRET: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

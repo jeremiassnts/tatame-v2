@@ -59,11 +59,11 @@ export default function SubscriptionPlansScreen() {
       >
         <View style={{ gap: 20 }}>
           <View className="flex-row items-center gap-3" style={{ paddingTop: 8 }}>
-            <BackButton />
+            {currentPlanId && <BackButton />}
             <Text className="flex-1 text-center font-poppins-semibold text-base text-primary">
               Planos de assinatura
             </Text>
-            <View className="h-10 w-10" />
+            {currentPlanId && <View className="h-10 w-10" />}
           </View>
 
           <Text className="font-poppins text-sm" style={{ color: TEXT_SECONDARY }}>

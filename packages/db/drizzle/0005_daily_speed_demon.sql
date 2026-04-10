@@ -1,0 +1,1 @@
+ALTER TABLE "payments" ADD COLUMN "transferred_at" timestamp with time zone;

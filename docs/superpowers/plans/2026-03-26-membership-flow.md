@@ -1906,12 +1906,12 @@ pnpm --filter @tatame/mobile exec tsc --noEmit
 
 Expected: No errors (or only pre-existing warnings).
 
-- [ ] **Step 4: Test the flow manually**
+- [x] **Step 4: Test the flow manually**
 
 1. **As instructor/student:** Open app → should redirect to search academy → search → tap academy → view details → tap "Solicitar entrada" → should show waiting screen
 2. **As manager:** Open app → go to Members tab → should see member list → tap "Pendentes" filter → see pending requests → go to Pending screen → approve/reject → verify member list updates
 
-- [ ] **Step 5: Final commit if any fixes needed**
+- [x] **Step 5: Final commit if any fixes needed**
 
 ```bash
 git add -A
