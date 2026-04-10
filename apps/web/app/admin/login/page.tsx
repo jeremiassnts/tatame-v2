@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { useSignIn } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
+import { useClerk, useSignIn } from "@clerk/nextjs";
 import { Eye, EyeOff } from "lucide-react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function AdminLoginPage() {
   const { signIn } = useSignIn();
+  const { signOut } = useClerk();
   const router = useRouter();
 
   const [email, setEmail] = useState("");
@@ -26,8 +27,17 @@ export default function AdminLoginPage() {
     try {
       const createResult = await signIn.create({ identifier: email });
       if (createResult.error) {
-        setError("E-mail ou senha incorretos");
-        return;
+        if (createResult.error.code === "session_exists") {
+          await signOut();
+          const retryResult = await signIn.create({ identifier: email });
+          if (retryResult.error) {
+            setError("E-mail ou senha incorretos");
+            return;
+          }
+        } else {
+          setError("E-mail ou senha incorretos");
+          return;
+        }
       }
 
       const passwordResult = await signIn.password({ password });
