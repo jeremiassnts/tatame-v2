@@ -33,7 +33,7 @@ const features: { icon: LucideIcon; title: string; description: string }[] = [
     icon: CreditCard,
     title: "Pagamentos",
     description:
-      "Controle de mensalidades, confirmação de pagamentos e histórico financeiro completo.",
+      "Controle de mensalidades, recebimento de pagamentos no app (Pix e cartão) e histórico financeiro completo.",
   },
   {
     icon: Users,

@@ -23,6 +23,7 @@ const proPlan = {
     "Alunos ilimitados",
     "Agenda ilimitada",
     "Controle financeiro completo",
+    "Receba pagamentos dos alunos no app (Pix e cartão)",
     "Acesso ilimitado de instrutores"
   ],
   ctaLabel: "Assinar agora",
