@@ -15,7 +15,10 @@ import {
   vi,
 } from "vitest";
 import { setDbForTest } from "./lib/db.js";
-import { insertUserWithGlobalRole } from "./testing/integration-seed.js";
+import {
+  insertUserWithGlobalRole,
+  insertUserWithoutRole,
+} from "./testing/integration-seed.js";
 import { setupIntegrationTest } from "./testing/integration-setup.js";
 
 vi.mock("./lib/clerk.js", () => ({
@@ -30,6 +33,7 @@ vi.mock("./lib/clerk.js", () => ({
         imageUrl: "https://img.example.com/sync.jpg",
         username: null as string | null,
       })),
+      deleteUser: vi.fn(async () => ({})),
     },
   }),
 }));
@@ -131,5 +135,126 @@ describe("User sync integration", () => {
       activeRole: "student",
       activeAcademy: null,
     });
+  });
+
+  // ── PATCH /v1/users/me ──────────────────────────────────────────────
+
+  it("PATCH /v1/users/me returns 404 when user not synced", async () => {
+    const res = await request(app)
+      .patch("/v1/users/me")
+      .send({ name: "New Name" });
+
+    expect(res.status).toBe(404);
+  });
+
+  it("PATCH /v1/users/me updates name", async () => {
+    await request(app).post("/v1/users/me/sync").send({});
+
+    const res = await request(app)
+      .patch("/v1/users/me")
+      .send({ name: "Updated Name" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.name).toBe("Updated Name");
+    expect(res.body.clerkUserId).toBe(INTEGRATION_CLERK_USER_ID);
+  });
+
+  it("PATCH /v1/users/me updates phone and instagram", async () => {
+    await request(app).post("/v1/users/me/sync").send({});
+
+    const res = await request(app)
+      .patch("/v1/users/me")
+      .send({ phone: "+5511999999999", instagram: "testuser" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.phone).toBe("+5511999999999");
+    expect(res.body.instagram).toBe("testuser");
+  });
+
+  it("PATCH /v1/users/me updates birthDate", async () => {
+    await request(app).post("/v1/users/me/sync").send({});
+
+    const res = await request(app)
+      .patch("/v1/users/me")
+      .send({ birthDate: "1995-06-15" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.birthDate).toBe("1995-06-15");
+  });
+
+  it("PATCH /v1/users/me can set nullable fields to null", async () => {
+    await request(app).post("/v1/users/me/sync").send({});
+
+    // Set values first
+    await request(app)
+      .patch("/v1/users/me")
+      .send({ phone: "+5511999999999", instagram: "testuser" });
+
+    // Clear them
+    const res = await request(app)
+      .patch("/v1/users/me")
+      .send({ phone: null, instagram: null });
+
+    expect(res.status).toBe(200);
+    expect(res.body.phone).toBeNull();
+    expect(res.body.instagram).toBeNull();
+  });
+
+  it("PATCH /v1/users/me with invalid name returns 400", async () => {
+    await request(app).post("/v1/users/me/sync").send({});
+
+    const res = await request(app)
+      .patch("/v1/users/me")
+      .send({ name: "A" }); // min length is 2
+
+    expect(res.status).toBe(400);
+  });
+
+  it("PATCH /v1/users/me preserves activeRole in response", async () => {
+    await request(app)
+      .post("/v1/users/me/sync")
+      .send({ role: "student" });
+
+    const res = await request(app)
+      .patch("/v1/users/me")
+      .send({ name: "Still Student" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.activeRole).toBe("student");
+  });
+
+  // ── DELETE /v1/users/me ─────────────────────────────────────────────
+
+  it("DELETE /v1/users/me returns 404 when user not synced", async () => {
+    const res = await request(app).delete("/v1/users/me");
+
+    expect(res.status).toBe(404);
+  });
+
+  it("DELETE /v1/users/me soft-deletes user and returns 204", async () => {
+    await request(app).post("/v1/users/me/sync").send({});
+
+    const res = await request(app).delete("/v1/users/me");
+
+    expect(res.status).toBe(204);
+    expect(res.body).toEqual({});
+  });
+
+  it("DELETE /v1/users/me makes subsequent GET /v1/users/me return 404", async () => {
+    await request(app).post("/v1/users/me/sync").send({});
+    await request(app).delete("/v1/users/me");
+
+    const me = await request(app).get("/v1/users/me");
+    expect(me.status).toBe(404);
+  });
+
+  it("DELETE /v1/users/me is idempotent — second call returns 404", async () => {
+    await request(app).post("/v1/users/me/sync").send({});
+
+    const first = await request(app).delete("/v1/users/me");
+    expect(first.status).toBe(204);
+
+    const second = await request(app).delete("/v1/users/me");
+    expect(second.status).toBe(404);
   });
 });
