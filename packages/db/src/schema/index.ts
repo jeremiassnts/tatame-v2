@@ -307,6 +307,24 @@ export const payments = pgTable("payments", {
   transferredAt: timestamp("transferred_at", { withTimezone: true }),
 });
 
+export const pendingPixPayments = pgTable("pending_pix_payments", {
+  pixQrCodeId: text("pix_qr_code_id").primaryKey(),
+  subscriptionId: uuid("subscription_id")
+    .notNull()
+    .references(() => studentSubscriptions.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  academyId: uuid("academy_id")
+    .notNull()
+    .references(() => academies.id, { onDelete: "cascade" }),
+  referenceMonth: date("reference_month").notNull(),
+  amountCents: integer("amount_cents").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
 export const beltPromotions = pgTable(
   "belt_promotions",
   {

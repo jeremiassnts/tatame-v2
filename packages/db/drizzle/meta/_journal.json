@@ -43,6 +43,13 @@
       "when": 1775826492204,
       "tag": "0005_daily_speed_demon",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1775957216960,
+      "tag": "0006_aromatic_infant_terrible",
+      "breakpoints": true
     }
   ]
 }

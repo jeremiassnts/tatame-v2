@@ -218,6 +218,16 @@ export class PaymentService {
       referenceMonth,
     };
 
+    // Store metadata locally so the webhook can look it up by pixQrCodeId
+    await this.paymentRepo.createPendingPix({
+      pixQrCodeId: data.id,
+      subscriptionId: subscription.id,
+      userId: studentUserId,
+      academyId,
+      referenceMonth,
+      amountCents: plan.priceCents,
+    });
+
     return {
       pixQrCodeId: data.id,
       brCode: data.brCode,

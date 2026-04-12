@@ -3,40 +3,21 @@ import type { IUserRepository } from "../user/user.repository.js";
 import type { IAcademyRepository } from "../academy/academy.repository.js";
 import type { EmailService } from "../email/email.service.js";
 
-type BillingPaidEvent = {
+type AbacatePayWebhookEvent = {
   event: string;
   data: {
-    payment: {
+    pixQrCode?: {
+      id: string;
+      amount: number;
+      kind: string;
+      status: string;
+    };
+    payment?: {
       amount: number;
       fee: number;
       method: string;
     };
-    billing: {
-      id: string;
-      amount: number;
-      paidAmount: number;
-      status: string;
-      products: Array<{
-        externalId: string;
-        id: string;
-        quantity: number;
-      }>;
-      customer: {
-        id: string;
-        metadata: {
-          email: string;
-          name: string;
-        };
-      };
-    };
   };
-};
-
-type PaymentMetadata = {
-  subscriptionId: string;
-  userId: string;
-  academyId: string;
-  referenceMonth: string;
 };
 
 export class AbacatePayWebhookHandler {
@@ -47,45 +28,40 @@ export class AbacatePayWebhookHandler {
     private readonly emailService: EmailService | null,
   ) {}
 
-  async handleEvent(body: BillingPaidEvent): Promise<void> {
+  async handleEvent(body: AbacatePayWebhookEvent): Promise<void> {
     if (body.event !== "billing.paid") return;
 
-    const billing = body.data.billing;
-    const product = billing.products[0];
-    if (!product?.externalId) return;
+    const pixQrCodeId = body.data.pixQrCode?.id;
+    if (!pixQrCodeId) return;
 
-    let meta: PaymentMetadata;
-    try {
-      meta = JSON.parse(product.externalId);
-    } catch {
-      return;
-    }
+    // Look up metadata stored when the QR code was created
+    const pending = await this.paymentRepo.findPendingPixByQrCodeId(pixQrCodeId);
+    if (!pending) return;
 
-    if (!meta.subscriptionId || !meta.userId || !meta.academyId || !meta.referenceMonth) {
-      return;
-    }
-
-    // Idempotency: check if payment already exists for this billing
-    const existing = await this.paymentRepo.findByStripePaymentId(billing.id);
+    // Idempotency: check if payment already exists for this pixQrCodeId
+    const existing = await this.paymentRepo.findByStripePaymentId(pixQrCodeId);
     if (existing) return;
 
     const payment = await this.paymentRepo.create({
-      subscriptionId: meta.subscriptionId,
-      userId: meta.userId,
-      academyId: meta.academyId,
-      amountCents: billing.paidAmount ?? billing.amount,
+      subscriptionId: pending.subscriptionId,
+      userId: pending.userId,
+      academyId: pending.academyId,
+      amountCents: body.data.pixQrCode?.amount ?? pending.amountCents,
       method: "pix",
       confirmedBy: null,
-      stripePaymentId: billing.id,
-      referenceMonth: meta.referenceMonth,
+      stripePaymentId: pixQrCodeId,
+      referenceMonth: pending.referenceMonth,
       notes: null,
       paidAt: new Date(),
     });
 
+    // Clean up pending record
+    await this.paymentRepo.deletePendingPix(pixQrCodeId);
+
     if (!this.emailService) return;
 
-    const student = await this.userRepo.findById(meta.userId);
-    const academy = await this.academyRepo.findById(meta.academyId);
+    const student = await this.userRepo.findById(pending.userId);
+    const academy = await this.academyRepo.findById(pending.academyId);
     if (!student || !academy) return;
 
     await this.emailService.sendPaymentConfirmed(

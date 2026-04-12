@@ -1,5 +1,5 @@
 import { and, desc, eq, sum } from "drizzle-orm";
-import { payments, users, type Database } from "@tatame/db";
+import { payments, pendingPixPayments, users, type Database } from "@tatame/db";
 import type {
   IPaymentRepository,
   PaymentRow,
@@ -159,5 +159,37 @@ export class PostgresPaymentRepository implements IPaymentRepository {
         ),
       );
     return Number(row?.total ?? 0);
+  }
+
+  async createPendingPix(data: {
+    pixQrCodeId: string;
+    subscriptionId: string;
+    userId: string;
+    academyId: string;
+    referenceMonth: string;
+    amountCents: number;
+  }): Promise<void> {
+    await this.db.insert(pendingPixPayments).values(data).onConflictDoNothing();
+  }
+
+  async findPendingPixByQrCodeId(pixQrCodeId: string) {
+    const [row] = await this.db
+      .select({
+        subscriptionId: pendingPixPayments.subscriptionId,
+        userId: pendingPixPayments.userId,
+        academyId: pendingPixPayments.academyId,
+        referenceMonth: pendingPixPayments.referenceMonth,
+        amountCents: pendingPixPayments.amountCents,
+      })
+      .from(pendingPixPayments)
+      .where(eq(pendingPixPayments.pixQrCodeId, pixQrCodeId))
+      .limit(1);
+    return row;
+  }
+
+  async deletePendingPix(pixQrCodeId: string): Promise<void> {
+    await this.db
+      .delete(pendingPixPayments)
+      .where(eq(pendingPixPayments.pixQrCodeId, pixQrCodeId));
   }
 }
