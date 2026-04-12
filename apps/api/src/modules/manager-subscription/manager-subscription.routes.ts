@@ -393,7 +393,6 @@ managerSubscriptionRouter.post(
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
         customer: stripeCustomerId,
-        customer_email: userEmail,
         line_items: [{ price: env.STRIPE_PRO_PRICE_ID, quantity: 1 }],
         success_url: `tatame://${returnPath}?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: "tatame://plan-selection",
@@ -596,7 +595,6 @@ managerSubscriptionRouter.post(
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
         customer: stripeCustomerId,
-        customer_email: userEmail,
         line_items: [{ price: env.STRIPE_PRO_PRICE_ID, quantity: 1 }],
         success_url: "tatame://subscription-result?session_id={CHECKOUT_SESSION_ID}",
         cancel_url: "tatame://plan-selection",
