@@ -1,4 +1,6 @@
 import "./express-augment.js";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import cors from "cors";
 import express from "express";
 import helmet from "helmet";
@@ -31,6 +33,10 @@ export function createApp(): express.Express {
 
   // Trust proxy (Coolify/Traefik/Caddy sets X-Forwarded-For)
   app.set("trust proxy", 1);
+
+  // 0. Static assets (email logo, etc.)
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  app.use("/public", express.static(path.join(__dirname, "..", "public")));
 
   // 1. Security headers
   app.use(helmet());

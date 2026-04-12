@@ -13,9 +13,12 @@ import type { ReactNode } from "react";
 type LayoutProps = {
   preview: string;
   children: ReactNode;
+  baseUrl?: string;
 };
 
-export function Layout({ preview, children }: LayoutProps) {
+export function Layout({ preview, children, baseUrl }: LayoutProps) {
+  const base = baseUrl ?? process.env.API_PUBLIC_URL;
+  const logoUrl = base ? `${base}/public/logo.png` : "https://apptatame.com.br/logo.png";
   return (
     <Html lang="pt-BR">
       <Head />
@@ -24,7 +27,7 @@ export function Layout({ preview, children }: LayoutProps) {
         <Container style={container}>
           <Section style={header}>
             <Img
-              src="https://apptatame.com.br/logo.png"
+              src={logoUrl}
               width="120"
               height="40"
               alt="Tatame"
