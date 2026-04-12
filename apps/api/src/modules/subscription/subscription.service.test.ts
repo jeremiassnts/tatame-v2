@@ -163,6 +163,115 @@ describe("SubscriptionService", () => {
     expect(me.plan?.id).toBe(plan.id);
   });
 
+  it("createPlan happy path (manager creates plan)", async () => {
+    const managerId = randomUUID();
+    const academy = makeAcademy({ ownerId: managerId });
+    const planRepo = new InMemorySubscriptionPlanRepository([]);
+    const subRepo = new InMemoryStudentSubscriptionRepository(planRepo, []);
+    const svc = new SubscriptionService(
+      planRepo,
+      subRepo,
+      new InMemoryAcademyRepository([academy]),
+    );
+
+    const plan = await svc.createPlan(managerId, academy.id, {
+      name: "Monthly",
+      recurrenceMonths: 1,
+      priceCents: 10000,
+    });
+    expect(plan.name).toBe("Monthly");
+    expect(plan.recurrenceMonths).toBe(1);
+    expect(plan.priceCents).toBe(10000);
+    expect(plan.academyId).toBe(academy.id);
+    expect(plan.isActive).toBe(true);
+  });
+
+  it("createPlan 403 when non-owner", async () => {
+    const managerId = randomUUID();
+    const nonOwner = randomUUID();
+    const academy = makeAcademy({ ownerId: managerId });
+    const planRepo = new InMemorySubscriptionPlanRepository([]);
+    const subRepo = new InMemoryStudentSubscriptionRepository(planRepo, []);
+    const svc = new SubscriptionService(
+      planRepo,
+      subRepo,
+      new InMemoryAcademyRepository([academy]),
+    );
+
+    await expect(
+      svc.createPlan(nonOwner, academy.id, {
+        name: "Monthly",
+        recurrenceMonths: 1,
+        priceCents: 10000,
+      }),
+    ).rejects.toMatchObject({ statusCode: 403 });
+  });
+
+  it("updatePlan empty body 400", async () => {
+    const managerId = randomUUID();
+    const academy = makeAcademy({ ownerId: managerId });
+    const plan = makeSubscriptionPlan({ academyId: academy.id, isActive: true });
+    const planRepo = new InMemorySubscriptionPlanRepository([plan]);
+    const subRepo = new InMemoryStudentSubscriptionRepository(planRepo, []);
+    const svc = new SubscriptionService(
+      planRepo,
+      subRepo,
+      new InMemoryAcademyRepository([academy]),
+    );
+
+    await expect(
+      svc.updatePlan(managerId, academy.id, plan.id, {}),
+    ).rejects.toMatchObject({ statusCode: 400 });
+  });
+
+  it("updatePlan 404 when plan not found", async () => {
+    const managerId = randomUUID();
+    const academy = makeAcademy({ ownerId: managerId });
+    const planRepo = new InMemorySubscriptionPlanRepository([]);
+    const subRepo = new InMemoryStudentSubscriptionRepository(planRepo, []);
+    const svc = new SubscriptionService(
+      planRepo,
+      subRepo,
+      new InMemoryAcademyRepository([academy]),
+    );
+
+    await expect(
+      svc.updatePlan(managerId, academy.id, randomUUID(), { name: "X" }),
+    ).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  it("getMySubscription returns null subscription when no subscriptions exist", async () => {
+    const userId = randomUUID();
+    const academy = makeAcademy();
+    const planRepo = new InMemorySubscriptionPlanRepository([]);
+    const subRepo = new InMemoryStudentSubscriptionRepository(planRepo, []);
+    const svc = new SubscriptionService(
+      planRepo,
+      subRepo,
+      new InMemoryAcademyRepository([academy]),
+    );
+
+    const result = await svc.getMySubscription(userId, academy.id);
+    expect(result.subscription).toBeNull();
+    expect(result.plan).toBeNull();
+  });
+
+  it("selectPlan 404 when plan not found", async () => {
+    const userId = randomUUID();
+    const academy = makeAcademy();
+    const planRepo = new InMemorySubscriptionPlanRepository([]);
+    const subRepo = new InMemoryStudentSubscriptionRepository(planRepo, []);
+    const svc = new SubscriptionService(
+      planRepo,
+      subRepo,
+      new InMemoryAcademyRepository([academy]),
+    );
+
+    await expect(
+      svc.selectPlan(userId, academy.id, randomUUID()),
+    ).rejects.toMatchObject({ statusCode: 404 });
+  });
+
   it("deactivated plan still shows in manager's list with includeInactive", async () => {
     const managerId = randomUUID();
     const academy = makeAcademy({ ownerId: managerId });

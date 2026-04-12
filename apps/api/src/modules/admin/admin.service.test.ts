@@ -89,4 +89,61 @@ describe("AdminService", () => {
     const updated = await svc.confirmTransfer(["p1", "p2"]);
     expect(updated).toBe(2);
   });
+
+  it("getCheckins delegates to repo with 7 days", async () => {
+    const checkins = [
+      { date: "2026-04-11", count: 5 },
+      { date: "2026-04-12", count: 3 },
+    ];
+    const svc = new AdminService(
+      makeFakeRepo({ getDailyCheckins: async (days) => checkins.slice(0, days) }),
+    );
+    const result = await svc.getCheckins();
+    expect(result).toEqual(checkins);
+  });
+
+  it("listAcademies delegates to repo", async () => {
+    const academies = [
+      {
+        id: "a1",
+        name: "Academy 1",
+        ownerName: "Owner 1",
+        ownerEmail: "o1@test.com",
+        ownerPhone: null,
+        managerPlan: "pro" as const,
+        managerPlanStatus: "active" as const,
+        studentCount: 10,
+        pendingTransferCents: 5000,
+      },
+    ];
+    const svc = new AdminService(
+      makeFakeRepo({ listAcademies: async () => academies }),
+    );
+    const result = await svc.listAcademies();
+    expect(result).toHaveLength(1);
+    expect(result[0]!.name).toBe("Academy 1");
+  });
+
+  it("listAcademyPayments delegates to repo", async () => {
+    const payments = {
+      items: [
+        {
+          id: "p1",
+          userName: "User 1",
+          amountCents: 5000,
+          method: "pix" as const,
+          referenceMonth: "2026-04-01",
+          paidAt: new Date(),
+          transferredAt: null,
+        },
+      ],
+      total: 1,
+    };
+    const svc = new AdminService(
+      makeFakeRepo({ listAcademyPayments: async () => payments }),
+    );
+    const result = await svc.listAcademyPayments("a1", { limit: 10, offset: 0 });
+    expect(result.total).toBe(1);
+    expect(result.items[0]!.id).toBe("p1");
+  });
 });
