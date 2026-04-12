@@ -2,7 +2,7 @@
   "expo": {
     "name": "Tatame",
     "slug": "tatame",
-    "version": "2.0.3",
+    "version": "2.0.4",
     "orientation": "portrait",
     "scheme": "tatame",
     "userInterfaceStyle": "dark",
@@ -45,7 +45,12 @@
       ]
     },
     "plugins": [
-      ["expo-system-ui", { "backgroundColor": "#0C0C0C" }],
+      [
+        "expo-system-ui",
+        {
+          "backgroundColor": "#0C0C0C"
+        }
+      ],
       "expo-router",
       "expo-font",
       "@react-native-community/datetimepicker",
