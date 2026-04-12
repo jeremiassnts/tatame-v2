@@ -12,14 +12,15 @@ export default function ManagerLayout() {
   const { data: subscription, isPending, isError } = useManagerSubscription();
 
   const last = segments[segments.length - 1];
-  const isOnPlanSelection = last === "plan-selection";
+  const isOnGatedScreen =
+    last === "plan-selection" || last === "subscription-result";
 
   useEffect(() => {
     if (isPending) return;
-    if (!isOnPlanSelection && (isError || !subscription)) {
+    if (!isOnGatedScreen && (isError || !subscription)) {
       router.replace("/(app)/(manager)/plan-selection");
     }
-  }, [isPending, isError, subscription, router, isOnPlanSelection]);
+  }, [isPending, isError, subscription, router, isOnGatedScreen]);
 
   if (isPending) {
     return (
