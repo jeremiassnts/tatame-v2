@@ -39,12 +39,14 @@ export default function ManagerLayout() {
         sceneStyle: {
           backgroundColor: "#0C0C0C",
         },
-        tabBarStyle: {
-          backgroundColor: "#1A1A1A",
-          borderTopColor: "#2A2A2A",
-          borderTopWidth: 1,
-          height: 56 + Math.max(insets.bottom, 8),
-        },
+        tabBarStyle: gated
+          ? { display: "none" as const }
+          : {
+              backgroundColor: "#1A1A1A",
+              borderTopColor: "#2A2A2A",
+              borderTopWidth: 1,
+              height: 56 + Math.max(insets.bottom, 8),
+            },
         tabBarActiveTintColor: "#A078E8",
         tabBarInactiveTintColor: "#ABABAB",
         tabBarLabelStyle: {
@@ -57,7 +59,6 @@ export default function ManagerLayout() {
         name="(home)"
         options={{
           title: "Início",
-          href: gated ? null : undefined,
           tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
         }}
       />
