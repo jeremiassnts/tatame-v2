@@ -353,6 +353,9 @@ managerSubscriptionRouter.post(
       const academyId = req.appAuth!.activeAcademyId!;
       const userId = req.appAuth!.userId;
 
+      const user = await userRepo.findById(userId);
+      const userEmail = user?.email ?? undefined;
+
       let sub = await service.getSubscription(academyId);
 
       let stripeCustomerId = sub?.stripeCustomerId;
@@ -368,7 +371,7 @@ managerSubscriptionRouter.post(
 
       if (!stripeCustomerId) {
         const customer = await stripe.customers.create(
-          { metadata: { academyId, userId } },
+          { email: userEmail, metadata: { academyId, userId } },
         );
         stripeCustomerId = customer.id;
 
@@ -390,6 +393,7 @@ managerSubscriptionRouter.post(
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
         customer: stripeCustomerId,
+        customer_email: userEmail,
         line_items: [{ price: env.STRIPE_PRO_PRICE_ID, quantity: 1 }],
         success_url: `tatame://${returnPath}?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: "tatame://plan-selection",
@@ -558,6 +562,10 @@ managerSubscriptionRouter.post(
       const stripe = getStripe();
       const academyId = req.appAuth!.activeAcademyId!;
       const userId = req.appAuth!.userId;
+
+      const user = await userRepo.findById(userId);
+      const userEmail = user?.email ?? undefined;
+
       const sub = await service.getSubscription(academyId);
 
       if (!sub) {
@@ -579,7 +587,7 @@ managerSubscriptionRouter.post(
 
       if (!stripeCustomerId) {
         const customer = await stripe.customers.create(
-          { metadata: { academyId, userId } },
+          { email: userEmail, metadata: { academyId, userId } },
         );
         stripeCustomerId = customer.id;
         await subRepo.update(sub.id, { stripeCustomerId });
@@ -588,6 +596,7 @@ managerSubscriptionRouter.post(
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
         customer: stripeCustomerId,
+        customer_email: userEmail,
         line_items: [{ price: env.STRIPE_PRO_PRICE_ID, quantity: 1 }],
         success_url: "tatame://subscription-result?session_id={CHECKOUT_SESSION_ID}",
         cancel_url: "tatame://plan-selection",
