@@ -356,10 +356,19 @@ managerSubscriptionRouter.post(
       let sub = await service.getSubscription(academyId);
 
       let stripeCustomerId = sub?.stripeCustomerId;
+
+      // Validate existing customer exists in Stripe, create new one if not
+      if (stripeCustomerId) {
+        try {
+          await stripe.customers.retrieve(stripeCustomerId);
+        } catch {
+          stripeCustomerId = null;
+        }
+      }
+
       if (!stripeCustomerId) {
         const customer = await stripe.customers.create(
           { metadata: { academyId, userId } },
-          { idempotencyKey: `create-customer-${academyId}` },
         );
         stripeCustomerId = customer.id;
 
@@ -559,10 +568,18 @@ managerSubscriptionRouter.post(
       }
 
       let stripeCustomerId = sub.stripeCustomerId;
+
+      if (stripeCustomerId) {
+        try {
+          await stripe.customers.retrieve(stripeCustomerId);
+        } catch {
+          stripeCustomerId = null;
+        }
+      }
+
       if (!stripeCustomerId) {
         const customer = await stripe.customers.create(
           { metadata: { academyId, userId } },
-          { idempotencyKey: `create-customer-${academyId}` },
         );
         stripeCustomerId = customer.id;
         await subRepo.update(sub.id, { stripeCustomerId });
