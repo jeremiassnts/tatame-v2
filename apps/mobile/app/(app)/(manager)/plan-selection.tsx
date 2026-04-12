@@ -1,7 +1,6 @@
 import { PlanCard } from "@/components/PlanCard";
 import { MANAGER_PLANS } from "@/constants/manager-plans";
 import {
-  useManagerSubscription,
   useProCheckout,
   useSelectFreePlan,
 } from "@/lib/hooks/use-manager-subscription";
@@ -15,7 +14,6 @@ export default function PlanSelectionScreen() {
   const queryClient = useQueryClient();
   const selectFree = useSelectFreePlan();
   const proCheckout = useProCheckout();
-  const { data: currentSub } = useManagerSubscription();
 
   async function handleSelectFree() {
     try {
@@ -28,10 +26,7 @@ export default function PlanSelectionScreen() {
 
   async function handleSelectPro() {
     try {
-      const isChangingPlan = currentSub?.status === "active";
-      const returnPath = isChangingPlan ? "finances" : "subscription-result";
-
-      const { checkoutUrl } = await proCheckout.mutateAsync({ returnPath });
+      const { checkoutUrl } = await proCheckout.mutateAsync();
       await Linking.openURL(checkoutUrl);
     } catch {
       Alert.alert("Erro", "Não foi possível iniciar a assinatura Pro.");

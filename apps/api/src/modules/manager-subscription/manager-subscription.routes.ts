@@ -536,7 +536,7 @@ managerSubscriptionRouter.post(
 
       const session = await stripe.billingPortal.sessions.create({
         customer: sub.stripeCustomerId,
-        return_url: env.API_PUBLIC_URL ?? "tatame://finances",
+        return_url: env.API_PUBLIC_URL ?? "tatame://subscription-result",
       });
 
       res.json({ url: session.url });
