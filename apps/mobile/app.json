@@ -9,9 +9,9 @@
     "newArchEnabled": true,
     "icon": "./assets/images/icon.png",
     "splash": {
-      "image": "./assets/images/icon.png",
+      "image": "./assets/images/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#141414"
+      "backgroundColor": "#0C0C0C"
     },
     "ios": {
       "supportsTablet": true,
@@ -35,7 +35,7 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "monochromeImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#141414"
+        "backgroundColor": "#0C0C0C"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.anonymous.tatame",
@@ -45,6 +45,7 @@
       ]
     },
     "plugins": [
+      ["expo-system-ui", { "backgroundColor": "#0C0C0C" }],
       "expo-router",
       "expo-font",
       "@react-native-community/datetimepicker",
