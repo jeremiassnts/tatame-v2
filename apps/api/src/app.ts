@@ -29,6 +29,9 @@ export function createApp(): express.Express {
   const env = loadEnv();
   const app = express();
 
+  // Trust proxy (Coolify/Traefik/Caddy sets X-Forwarded-For)
+  app.set("trust proxy", 1);
+
   // 1. Security headers
   app.use(helmet());
 
