@@ -22,15 +22,7 @@ export default function ManagerLayout() {
     }
   }, [isPending, isError, subscription, router, isOnGatedScreen]);
 
-  if (isPending) {
-    return (
-      <View className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator color="#A078E8" />
-      </View>
-    );
-  }
-
-  const gated = isError || !subscription;
+  const gated = isPending || isError || !subscription;
 
   return (
     <Tabs
