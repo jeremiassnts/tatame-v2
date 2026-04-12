@@ -94,6 +94,12 @@ export default function ManagerLayout() {
           href: null,
         }}
       />
+      <Tabs.Screen
+        name="subscription-result"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }
