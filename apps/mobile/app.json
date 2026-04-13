@@ -2,19 +2,19 @@
   "expo": {
     "name": "Tatame",
     "slug": "tatame",
-    "version": "2.0.3",
+    "version": "2.0.4",
     "orientation": "portrait",
     "scheme": "tatame",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "icon": "./assets/images/icon.png",
     "splash": {
-      "image": "./assets/images/icon.png",
+      "image": "./assets/images/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#141414"
+      "backgroundColor": "#0C0C0C"
     },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.anonymous.tatame",
       "icon": "./assets/images/icon.png",
       "infoPlist": {
@@ -25,8 +25,7 @@
         "CFBundleAllowMixedLocalizations": true,
         "CFBundleLocalizations": [
           "pt-BR"
-        ],
-        "UIBackgroundModes": []
+        ]
       },
       "buildNumber": "1"
     },
@@ -35,16 +34,21 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "monochromeImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#141414"
+        "backgroundColor": "#0C0C0C"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.anonymous.tatame",
       "permissions": [
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.CAMERA"
       ]
     },
     "plugins": [
+      [
+        "expo-system-ui",
+        {
+          "backgroundColor": "#0C0C0C"
+        }
+      ],
       "expo-router",
       "expo-font",
       "@react-native-community/datetimepicker",

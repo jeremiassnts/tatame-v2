@@ -303,4 +303,232 @@ describe("GraduationService", () => {
       }),
     ).rejects.toMatchObject({ statusCode: 404 });
   });
+
+  it("listForUserInAcademy returns promotions", async () => {
+    const userId = randomUUID();
+    const academy = makeAcademy();
+    const promos = [
+      makeBeltPromotion({
+        userId,
+        academyId: academy.id,
+        isCurrent: false,
+        belt: "white",
+        stripes: 0,
+      }),
+      makeBeltPromotion({
+        userId,
+        academyId: academy.id,
+        isCurrent: true,
+        belt: "blue",
+        stripes: 0,
+      }),
+    ];
+    const svc = makeGraduationSvc(promos, [], academy);
+
+    const result = await svc.listForUserInAcademy(userId, academy.id);
+    expect(result).toHaveLength(2);
+    expect(result[0]!.promotedByName).toBe("Test User");
+  });
+
+  it("registerInitialBelt returns 403 when no active membership", async () => {
+    const userId = randomUUID();
+    const academy = makeAcademy();
+    const svc = makeGraduationSvc([], [], academy);
+
+    await expect(
+      svc.registerInitialBelt({
+        userId,
+        academyId: academy.id,
+        belt: Belt.White,
+        stripes: 0,
+        notes: null,
+        globalRole: "student",
+      }),
+    ).rejects.toMatchObject({ statusCode: 403 });
+  });
+
+  it("registerInitialBelt returns 403 when manager but not owner", async () => {
+    const managerId = randomUUID();
+    const academy = makeAcademy(); // ownerId differs from managerId
+    const mem = makeMembership({
+      userId: managerId,
+      academyId: academy.id,
+      role: "manager",
+      status: "active",
+      isActive: true,
+    });
+    const svc = makeGraduationSvc([], [mem], academy);
+
+    await expect(
+      svc.registerInitialBelt({
+        userId: managerId,
+        academyId: academy.id,
+        belt: Belt.White,
+        stripes: 0,
+        notes: null,
+        globalRole: "manager",
+      }),
+    ).rejects.toMatchObject({ statusCode: 403 });
+  });
+
+  it("promoteMember returns 400 for self-promotion", async () => {
+    const managerId = randomUUID();
+    const academy = makeAcademy({ ownerId: managerId });
+    const svc = makeGraduationSvc([], [], academy);
+
+    await expect(
+      svc.promoteMember({
+        actorUserId: managerId,
+        actorRole: "manager",
+        academyId: academy.id,
+        targetUserId: managerId,
+        belt: Belt.Blue,
+        stripes: 0,
+        notes: null,
+      }),
+    ).rejects.toMatchObject({ statusCode: 400 });
+  });
+
+  it("promoteMember returns 404 when target is not an active member", async () => {
+    const managerId = randomUUID();
+    const targetId = randomUUID();
+    const academy = makeAcademy({ ownerId: managerId });
+    const svc = makeGraduationSvc([], [], academy);
+
+    await expect(
+      svc.promoteMember({
+        actorUserId: managerId,
+        actorRole: "manager",
+        academyId: academy.id,
+        targetUserId: targetId,
+        belt: Belt.Blue,
+        stripes: 0,
+        notes: null,
+      }),
+    ).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  it("promoteMember returns 409 when target has no current belt", async () => {
+    const managerId = randomUUID();
+    const studentId = randomUUID();
+    const academy = makeAcademy({ ownerId: managerId });
+    const memStudent = makeMembership({
+      userId: studentId,
+      academyId: academy.id,
+      role: "student",
+      status: "active",
+      isActive: true,
+    });
+    const svc = makeGraduationSvc([], [memStudent], academy);
+
+    await expect(
+      svc.promoteMember({
+        actorUserId: managerId,
+        actorRole: "manager",
+        academyId: academy.id,
+        targetUserId: studentId,
+        belt: Belt.Blue,
+        stripes: 0,
+        notes: null,
+      }),
+    ).rejects.toMatchObject({ statusCode: 409 });
+  });
+
+  it("promoteMember returns 403 when actor is student", async () => {
+    const studentA = randomUUID();
+    const studentB = randomUUID();
+    const academy = makeAcademy();
+    const svc = makeGraduationSvc([], [], academy);
+
+    await expect(
+      svc.promoteMember({
+        actorUserId: studentA,
+        actorRole: "student",
+        academyId: academy.id,
+        targetUserId: studentB,
+        belt: Belt.Blue,
+        stripes: 0,
+        notes: null,
+      }),
+    ).rejects.toMatchObject({ statusCode: 403 });
+  });
+
+  it("assertStaffCanListMember allows instructor to list student", async () => {
+    const instructorId = randomUUID();
+    const studentId = randomUUID();
+    const academy = makeAcademy();
+    const memInstructor = makeMembership({
+      userId: instructorId,
+      academyId: academy.id,
+      role: "instructor",
+      status: "active",
+      isActive: true,
+    });
+    const memStudent = makeMembership({
+      userId: studentId,
+      academyId: academy.id,
+      role: "student",
+      status: "active",
+      isActive: true,
+    });
+    const svc = makeGraduationSvc([], [memInstructor, memStudent], academy);
+
+    await expect(
+      svc.assertStaffCanListMember(instructorId, "instructor", academy.id, studentId),
+    ).resolves.toBeUndefined();
+  });
+
+  it("assertStaffCanListMember rejects instructor viewing another instructor", async () => {
+    const instructorA = randomUUID();
+    const instructorB = randomUUID();
+    const academy = makeAcademy();
+    const memA = makeMembership({
+      userId: instructorA,
+      academyId: academy.id,
+      role: "instructor",
+      status: "active",
+      isActive: true,
+    });
+    const memB = makeMembership({
+      userId: instructorB,
+      academyId: academy.id,
+      role: "instructor",
+      status: "active",
+      isActive: true,
+    });
+    const svc = makeGraduationSvc([], [memA, memB], academy);
+
+    await expect(
+      svc.assertStaffCanListMember(instructorA, "instructor", academy.id, instructorB),
+    ).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  it("assertStaffCanListMember allows manager to list student and instructor", async () => {
+    const managerId = randomUUID();
+    const studentId = randomUUID();
+    const instructorId = randomUUID();
+    const academy = makeAcademy({ ownerId: managerId });
+    const memStudent = makeMembership({
+      userId: studentId,
+      academyId: academy.id,
+      role: "student",
+      status: "active",
+      isActive: true,
+    });
+    const memInstructor = makeMembership({
+      userId: instructorId,
+      academyId: academy.id,
+      role: "instructor",
+      status: "active",
+      isActive: true,
+    });
+    const svc = makeGraduationSvc([], [memStudent, memInstructor], academy);
+
+    await expect(
+      svc.assertStaffCanListMember(managerId, "manager", academy.id, studentId),
+    ).resolves.toBeUndefined();
+    await expect(
+      svc.assertStaffCanListMember(managerId, "manager", academy.id, instructorId),
+    ).resolves.toBeUndefined();
+  });
 });

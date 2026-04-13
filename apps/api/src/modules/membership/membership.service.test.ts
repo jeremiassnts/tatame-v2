@@ -180,4 +180,240 @@ describe("MembershipService", () => {
       svc.getMemberDetail(studentInA2.id, instructorId, "instructor"),
     ).rejects.toMatchObject({ statusCode: 403 });
   });
+
+  it("listPending returns pending memberships for manager", async () => {
+    const ownerId = randomUUID();
+    const academy = makeAcademy({ ownerId });
+    const pending = makeMembership({
+      academyId: academy.id,
+      status: "pending",
+      isActive: false,
+      role: "student",
+    });
+    const active = makeMembership({
+      academyId: academy.id,
+      status: "active",
+      isActive: true,
+      role: "student",
+    });
+    const { svc } = makeSvc([academy], [pending, active]);
+    const list = await svc.listPending(academy.id, ownerId);
+    expect(list).toHaveLength(1);
+    expect(list[0]!.status).toBe("pending");
+  });
+
+  it("reject changes pending membership to rejected", async () => {
+    const ownerId = randomUUID();
+    const academy = makeAcademy({ ownerId });
+    const pending = makeMembership({
+      academyId: academy.id,
+      status: "pending",
+      isActive: false,
+      role: "student",
+    });
+    const { svc } = makeSvc([academy], [pending]);
+    const updated = await svc.reject(pending.id, ownerId);
+    expect(updated.status).toBe("rejected");
+  });
+
+  it("reject returns 404 when membership not found", async () => {
+    const ownerId = randomUUID();
+    const academy = makeAcademy({ ownerId });
+    const { svc } = makeSvc([academy], []);
+    await expect(svc.reject(randomUUID(), ownerId)).rejects.toMatchObject({
+      statusCode: 404,
+    });
+  });
+
+  it("reject returns 409 when membership is not pending", async () => {
+    const ownerId = randomUUID();
+    const academy = makeAcademy({ ownerId });
+    const active = makeMembership({
+      academyId: academy.id,
+      status: "active",
+      isActive: true,
+      role: "student",
+    });
+    const { svc } = makeSvc([academy], [active]);
+    await expect(svc.reject(active.id, ownerId)).rejects.toMatchObject({
+      statusCode: 409,
+    });
+  });
+
+  it("block blocks an active membership", async () => {
+    const ownerId = randomUUID();
+    const academy = makeAcademy({ ownerId });
+    const active = makeMembership({
+      academyId: academy.id,
+      status: "active",
+      isActive: true,
+      role: "student",
+    });
+    const { svc } = makeSvc([academy], [active]);
+    const updated = await svc.block(active.id, ownerId);
+    expect(updated.status).toBe("blocked");
+  });
+
+  it("block blocks a pending membership", async () => {
+    const ownerId = randomUUID();
+    const academy = makeAcademy({ ownerId });
+    const pending = makeMembership({
+      academyId: academy.id,
+      status: "pending",
+      isActive: false,
+      role: "student",
+    });
+    const { svc } = makeSvc([academy], [pending]);
+    const updated = await svc.block(pending.id, ownerId);
+    expect(updated.status).toBe("blocked");
+  });
+
+  it("block returns 409 when membership is already blocked", async () => {
+    const ownerId = randomUUID();
+    const academy = makeAcademy({ ownerId });
+    const blocked = makeMembership({
+      academyId: academy.id,
+      status: "blocked",
+      isActive: false,
+      role: "student",
+    });
+    const { svc } = makeSvc([academy], [blocked]);
+    await expect(svc.block(blocked.id, ownerId)).rejects.toMatchObject({
+      statusCode: 409,
+    });
+  });
+
+  it("unblock deletes a blocked membership", async () => {
+    const ownerId = randomUUID();
+    const academy = makeAcademy({ ownerId });
+    const blocked = makeMembership({
+      academyId: academy.id,
+      status: "blocked",
+      isActive: false,
+      role: "student",
+    });
+    const memRows = [blocked];
+    const { svc } = makeSvc([academy], memRows);
+    await svc.unblock(blocked.id, ownerId);
+    expect(memRows).toHaveLength(0);
+  });
+
+  it("unblock deletes a rejected membership", async () => {
+    const ownerId = randomUUID();
+    const academy = makeAcademy({ ownerId });
+    const rejected = makeMembership({
+      academyId: academy.id,
+      status: "rejected",
+      isActive: false,
+      role: "student",
+    });
+    const memRows = [rejected];
+    const { svc } = makeSvc([academy], memRows);
+    await svc.unblock(rejected.id, ownerId);
+    expect(memRows).toHaveLength(0);
+  });
+
+  it("unblock returns 409 when membership is active", async () => {
+    const ownerId = randomUUID();
+    const academy = makeAcademy({ ownerId });
+    const active = makeMembership({
+      academyId: academy.id,
+      status: "active",
+      isActive: true,
+      role: "student",
+    });
+    const { svc } = makeSvc([academy], [active]);
+    await expect(svc.unblock(active.id, ownerId)).rejects.toMatchObject({
+      statusCode: 409,
+    });
+  });
+
+  it("leave allows non-owner to leave", async () => {
+    const ownerId = randomUUID();
+    const userId = randomUUID();
+    const academy = makeAcademy({ ownerId });
+    const active = makeMembership({
+      academyId: academy.id,
+      userId,
+      status: "active",
+      isActive: true,
+      role: "student",
+    });
+    const { svc } = makeSvc([academy], [active]);
+    const updated = await svc.leave(userId);
+    expect(updated.leftAt).toBeTruthy();
+  });
+
+  it("leave returns 404 when no active membership", async () => {
+    const userId = randomUUID();
+    const { svc } = makeSvc([], []);
+    await expect(svc.leave(userId)).rejects.toMatchObject({
+      statusCode: 404,
+    });
+  });
+
+  it("approve returns 404 when membership not found", async () => {
+    const ownerId = randomUUID();
+    const academy = makeAcademy({ ownerId });
+    const { svc } = makeSvc([academy], []);
+    await expect(svc.approve(randomUUID(), ownerId)).rejects.toMatchObject({
+      statusCode: 404,
+    });
+  });
+
+  it("approve returns 409 when membership is not pending", async () => {
+    const ownerId = randomUUID();
+    const academy = makeAcademy({ ownerId });
+    const active = makeMembership({
+      academyId: academy.id,
+      status: "active",
+      isActive: true,
+      role: "student",
+    });
+    const { svc } = makeSvc([academy], [active]);
+    await expect(svc.approve(active.id, ownerId)).rejects.toMatchObject({
+      statusCode: 409,
+    });
+  });
+
+  it("approve returns 409 when target user has active membership elsewhere", async () => {
+    const ownerId = randomUUID();
+    const academy = makeAcademy({ ownerId });
+    const otherAcademy = makeAcademy();
+    const studentId = randomUUID();
+    const pending = makeMembership({
+      academyId: academy.id,
+      userId: studentId,
+      status: "pending",
+      isActive: false,
+      role: "student",
+    });
+    const activeElsewhere = makeMembership({
+      academyId: otherAcademy.id,
+      userId: studentId,
+      status: "active",
+      isActive: true,
+      role: "student",
+    });
+    const { svc } = makeSvc([academy, otherAcademy], [pending, activeElsewhere]);
+    await expect(svc.approve(pending.id, ownerId)).rejects.toMatchObject({
+      statusCode: 409,
+    });
+  });
+
+  it("request returns 403 when user is blocked", async () => {
+    const userId = randomUUID();
+    const academy = makeAcademy();
+    const blocked = makeMembership({
+      academyId: academy.id,
+      userId,
+      status: "blocked",
+      isActive: false,
+      role: "student",
+    });
+    const { svc } = makeSvc([academy], [blocked]);
+    await expect(svc.request(userId, "student", academy.id)).rejects.toMatchObject({
+      statusCode: 403,
+    });
+  });
 });

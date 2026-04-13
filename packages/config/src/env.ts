@@ -34,6 +34,8 @@ const envSchema = z.object({
   ADMIN_EMAIL: z.string().email().optional(),
   ADMIN_PASSWORD: z.string().optional(),
   ADMIN_JWT_SECRET: z.string().optional(),
+  /** Comma-separated allowed CORS origins (e.g. "https://app.tatame.com,https://admin.tatame.com") */
+  CORS_ORIGINS: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

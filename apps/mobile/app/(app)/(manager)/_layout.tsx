@@ -12,24 +12,17 @@ export default function ManagerLayout() {
   const { data: subscription, isPending, isError } = useManagerSubscription();
 
   const last = segments[segments.length - 1];
-  const isOnPlanSelection = last === "plan-selection";
+  const isOnGatedScreen =
+    last === "plan-selection" || last === "subscription-result";
 
   useEffect(() => {
     if (isPending) return;
-    if (!isOnPlanSelection && (isError || !subscription)) {
+    if (!isOnGatedScreen && (isError || !subscription)) {
       router.replace("/(app)/(manager)/plan-selection");
     }
-  }, [isPending, isError, subscription, router, isOnPlanSelection]);
+  }, [isPending, isError, subscription, router, isOnGatedScreen]);
 
-  if (isPending) {
-    return (
-      <View className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator color="#A078E8" />
-      </View>
-    );
-  }
-
-  const gated = isError || !subscription;
+  const gated = isPending || isError || !subscription;
 
   return (
     <Tabs
@@ -38,12 +31,14 @@ export default function ManagerLayout() {
         sceneStyle: {
           backgroundColor: "#0C0C0C",
         },
-        tabBarStyle: {
-          backgroundColor: "#1A1A1A",
-          borderTopColor: "#2A2A2A",
-          borderTopWidth: 1,
-          height: 56 + Math.max(insets.bottom, 8),
-        },
+        tabBarStyle: gated
+          ? { display: "none" as const }
+          : {
+              backgroundColor: "#1A1A1A",
+              borderTopColor: "#2A2A2A",
+              borderTopWidth: 1,
+              height: 56 + Math.max(insets.bottom, 8),
+            },
         tabBarActiveTintColor: "#A078E8",
         tabBarInactiveTintColor: "#ABABAB",
         tabBarLabelStyle: {
@@ -56,7 +51,6 @@ export default function ManagerLayout() {
         name="(home)"
         options={{
           title: "Início",
-          href: gated ? null : undefined,
           tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
         }}
       />
@@ -90,6 +84,12 @@ export default function ManagerLayout() {
       />
       <Tabs.Screen
         name="plan-selection"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="subscription-result"
         options={{
           href: null,
         }}

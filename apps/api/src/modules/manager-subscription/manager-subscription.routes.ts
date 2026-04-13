@@ -337,6 +337,79 @@ managerSubscriptionRouter.post(
   },
 );
 
+managerSubscriptionRouter.post(
+  "/pro/checkout",
+  authorize(Role.Manager),
+  attachActiveAcademyContext,
+  requireActiveAcademy,
+  async (req, res, next) => {
+    try {
+      const env = loadEnv();
+      if (!env.STRIPE_SECRET_KEY || !env.STRIPE_PRO_PRICE_ID) {
+        throw new HttpError(503, "Stripe is not configured");
+      }
+
+      const stripe = getStripe();
+      const academyId = req.appAuth!.activeAcademyId!;
+      const userId = req.appAuth!.userId;
+
+      const user = await userRepo.findById(userId);
+      const userEmail = user?.email ?? undefined;
+
+      let sub = await service.getSubscription(academyId);
+
+      let stripeCustomerId = sub?.stripeCustomerId;
+
+      // Validate existing customer exists in Stripe, create new one if not
+      if (stripeCustomerId) {
+        try {
+          await stripe.customers.retrieve(stripeCustomerId);
+        } catch {
+          stripeCustomerId = null;
+        }
+      }
+
+      if (!stripeCustomerId) {
+        const customer = await stripe.customers.create(
+          { email: userEmail, metadata: { academyId, userId } },
+        );
+        stripeCustomerId = customer.id;
+
+        if (sub) {
+          await subRepo.update(sub.id, { stripeCustomerId });
+        } else {
+          sub = await subRepo.create({
+            academyId,
+            plan: "free",
+            status: "incomplete",
+            stripeCustomerId,
+          });
+        }
+      }
+
+      const returnPath =
+        typeof req.body?.returnPath === "string" ? req.body.returnPath : "subscription-result";
+
+      const session = await stripe.checkout.sessions.create({
+        mode: "subscription",
+        customer: stripeCustomerId,
+        line_items: [{ price: env.STRIPE_PRO_PRICE_ID, quantity: 1 }],
+        success_url: `tatame://${returnPath}?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: "tatame://plan-selection",
+        metadata: { academyId, userId },
+      });
+
+      if (!session.url) {
+        throw new HttpError(500, "Failed to create checkout session");
+      }
+
+      res.json({ checkoutUrl: session.url });
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
 managerSubscriptionRouter.get(
   "/me",
   authorize(Role.Manager),
@@ -463,7 +536,7 @@ managerSubscriptionRouter.post(
 
       const session = await stripe.billingPortal.sessions.create({
         customer: sub.stripeCustomerId,
-        return_url: env.API_PUBLIC_URL ?? "tatame://finances",
+        return_url: env.API_PUBLIC_URL ?? "tatame://subscription-result",
       });
 
       res.json({ url: session.url });
@@ -487,6 +560,11 @@ managerSubscriptionRouter.post(
 
       const stripe = getStripe();
       const academyId = req.appAuth!.activeAcademyId!;
+      const userId = req.appAuth!.userId;
+
+      const user = await userRepo.findById(userId);
+      const userEmail = user?.email ?? undefined;
+
       const sub = await service.getSubscription(academyId);
 
       if (!sub) {
@@ -497,27 +575,37 @@ managerSubscriptionRouter.post(
       }
 
       let stripeCustomerId = sub.stripeCustomerId;
+
+      if (stripeCustomerId) {
+        try {
+          await stripe.customers.retrieve(stripeCustomerId);
+        } catch {
+          stripeCustomerId = null;
+        }
+      }
+
       if (!stripeCustomerId) {
         const customer = await stripe.customers.create(
-          { metadata: { academyId, userId: req.appAuth!.userId } },
-          { idempotencyKey: `create-customer-${academyId}` },
+          { email: userEmail, metadata: { academyId, userId } },
         );
         stripeCustomerId = customer.id;
         await subRepo.update(sub.id, { stripeCustomerId });
       }
 
-      res.json({
-        intentType: "setup",
-        clientSecret: (
-          await stripe.setupIntents.create({
-            customer: stripeCustomerId,
-            payment_method_types: ["card"],
-            usage: "off_session",
-            metadata: { academyId, userId: req.appAuth!.userId },
-          })
-        ).client_secret,
-        customerId: stripeCustomerId,
+      const session = await stripe.checkout.sessions.create({
+        mode: "subscription",
+        customer: stripeCustomerId,
+        line_items: [{ price: env.STRIPE_PRO_PRICE_ID, quantity: 1 }],
+        success_url: "tatame://subscription-result?session_id={CHECKOUT_SESSION_ID}",
+        cancel_url: "tatame://plan-selection",
+        metadata: { academyId, userId },
       });
+
+      if (!session.url) {
+        throw new HttpError(500, "Failed to create checkout session");
+      }
+
+      res.json({ checkoutUrl: session.url });
     } catch (e) {
       next(e);
     }

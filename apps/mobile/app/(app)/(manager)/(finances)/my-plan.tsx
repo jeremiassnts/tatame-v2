@@ -5,7 +5,7 @@ import {
   useStripePortal,
 } from "@/lib/hooks/use-manager-subscription";
 import { useRouter } from "expo-router";
-import { Calendar, ChevronRight, CreditCard, Timer, XCircle } from "lucide-react-native";
+import { Calendar, ChevronRight, CreditCard, Settings, Timer, XCircle } from "lucide-react-native";
 import { Alert, Linking, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -170,6 +170,23 @@ export default function MyPlanScreen() {
           </View>
           <ChevronRight size={18} color={TEXT_SECONDARY} />
         </Pressable>
+
+        {isPro && (
+          <Pressable
+            onPress={handleOpenPortal}
+            disabled={portal.isPending}
+            className="flex-row items-center justify-between rounded-2xl border border-surface-border bg-surface"
+            style={{ padding: 16, opacity: portal.isPending ? 0.6 : 1 }}
+          >
+            <View className="flex-row items-center" style={{ gap: 10 }}>
+              <Settings size={18} color="#FFFFFF" />
+              <Text className="font-poppins-semibold text-sm text-primary">
+                Gerenciar cartão
+              </Text>
+            </View>
+            <ChevronRight size={18} color={TEXT_SECONDARY} />
+          </Pressable>
+        )}
 
         {isPro ? (
           <>

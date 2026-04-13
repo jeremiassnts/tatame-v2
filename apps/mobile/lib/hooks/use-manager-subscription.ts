@@ -133,3 +133,21 @@ export function useStripePortal() {
   });
 }
 
+export function useProCheckout() {
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: (input?: { returnPath?: string }) =>
+      api.post<{ checkoutUrl: string }>("/manager-subscriptions/pro/checkout", input),
+  });
+}
+
+export function useReactivateCheckout() {
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: () =>
+      api.post<{ checkoutUrl: string }>("/manager-subscriptions/reactivate"),
+  });
+}
+

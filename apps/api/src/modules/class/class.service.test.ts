@@ -236,6 +236,143 @@ describe("ClassService", () => {
     ).rejects.toMatchObject({ statusCode: 404 });
   });
 
+  it("student sees active class via getById", async () => {
+    const { svc, academyId, instructorId, classRows } = setup();
+    const studentId = randomUUID();
+    const cls = makeClass({
+      academyId,
+      instructorId,
+      isActive: true,
+    });
+    classRows.push(cls);
+    const result = await svc.getById(
+      ctx(studentId, "student", academyId),
+      cls.id,
+    );
+    expect(result.id).toBe(cls.id);
+  });
+
+  it("student gets 404 for inactive class via getById", async () => {
+    const { svc, academyId, instructorId, classRows } = setup();
+    const studentId = randomUUID();
+    const cls = makeClass({
+      academyId,
+      instructorId,
+      isActive: false,
+    });
+    classRows.push(cls);
+    await expect(
+      svc.getById(ctx(studentId, "student", academyId), cls.id),
+    ).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  it("instructor creates class for themselves", async () => {
+    const { svc, academyId, instructorId, classRows } = setup();
+    const created = await svc.create(
+      ctx(instructorId, "instructor", academyId),
+      {
+        instructorId,
+        name: "Self-taught",
+        dayOfWeek: 3,
+        startTime: "08:00",
+        endTime: "09:00",
+      },
+    );
+    expect(created.instructorId).toBe(instructorId);
+    expect(classRows).toHaveLength(1);
+  });
+
+  it("instructor cannot create class for another instructor", async () => {
+    const { svc, academyId, instructorId } = setup();
+    const otherInstructor = randomUUID();
+    await expect(
+      svc.create(ctx(instructorId, "instructor", academyId), {
+        instructorId: otherInstructor,
+        name: "Not mine",
+        dayOfWeek: 1,
+        startTime: "10:00",
+        endTime: "11:00",
+      }),
+    ).rejects.toMatchObject({ statusCode: 403 });
+  });
+
+  it("manager update works", async () => {
+    const { svc, academyId, managerId, instructorId, classRows } = setup();
+    const cls = makeClass({
+      academyId,
+      instructorId,
+      name: "Old Name",
+      isActive: true,
+    });
+    classRows.push(cls);
+    const updated = await svc.update(
+      ctx(managerId, "manager", academyId),
+      cls.id,
+      { name: "New Name" },
+    );
+    expect(updated.name).toBe("New Name");
+  });
+
+  it("instructor updates own class", async () => {
+    const { svc, academyId, instructorId, classRows } = setup();
+    const cls = makeClass({
+      academyId,
+      instructorId,
+      name: "My Class",
+      isActive: true,
+    });
+    classRows.push(cls);
+    const updated = await svc.update(
+      ctx(instructorId, "instructor", academyId),
+      cls.id,
+      { name: "Updated Class" },
+    );
+    expect(updated.name).toBe("Updated Class");
+  });
+
+  it("instructor cannot change isActive", async () => {
+    const { svc, academyId, instructorId, classRows } = setup();
+    const cls = makeClass({
+      academyId,
+      instructorId,
+      isActive: true,
+    });
+    classRows.push(cls);
+    await expect(
+      svc.update(ctx(instructorId, "instructor", academyId), cls.id, {
+        isActive: false,
+      }),
+    ).rejects.toMatchObject({ statusCode: 403 });
+  });
+
+  it("deactivate by manager", async () => {
+    const { svc, academyId, managerId, instructorId, classRows } = setup();
+    const cls = makeClass({
+      academyId,
+      instructorId,
+      isActive: true,
+    });
+    classRows.push(cls);
+    const deactivated = await svc.deactivate(
+      ctx(managerId, "manager", academyId),
+      cls.id,
+    );
+    expect(deactivated.isActive).toBe(false);
+  });
+
+  it("update with empty body returns 400", async () => {
+    const { svc, academyId, managerId, instructorId, classRows } = setup();
+    const cls = makeClass({
+      academyId,
+      instructorId,
+      isActive: true,
+    });
+    classRows.push(cls);
+    await expect(
+      svc.update(ctx(managerId, "manager", academyId), cls.id, {}),
+    ).rejects.toMatchObject({ statusCode: 400 });
+  });
+
   it("instructor cannot update another instructor class", async () => {
     const academyId = randomUUID();
     const managerId = randomUUID();

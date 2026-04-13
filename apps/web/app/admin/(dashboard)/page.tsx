@@ -98,8 +98,8 @@ export default function AdminDashboardPage() {
           value={dashboard.totalUsers.toLocaleString("pt-BR")}
         />
         <KpiCard
-          label="Receita Repassada"
-          value={formatBRL(dashboard.appRevenueCents)}
+          label="Receita Total"
+          value={formatBRL(dashboard.subscribers.pro * 4990)}
         />
         <KpiCard
           label="Total Movimentado"

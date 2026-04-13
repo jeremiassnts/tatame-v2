@@ -45,6 +45,7 @@ WORKDIR /app
 # Copy production bundle (dist + prod node_modules)
 COPY --from=build /app/deploy/dist ./dist
 COPY --from=build /app/deploy/node_modules ./node_modules
+COPY --from=build /app/apps/api/public ./public
 
 # Copy migration SQL files and meta
 COPY --from=build /app/packages/db/drizzle ./drizzle
