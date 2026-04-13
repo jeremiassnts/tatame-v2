@@ -27,9 +27,12 @@ export function isVersionLessThan(current: string, minimum: string): boolean {
 
 export async function shouldForceUpdate(): Promise<boolean> {
   try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 3000);
     const res = await fetch(`${API_BASE_URL}/version`, {
-      signal: AbortSignal.timeout(3000),
+      signal: controller.signal,
     });
+    clearTimeout(timer);
     if (!res.ok) return false;
 
     const data: { minMobileVersion?: string } = await res.json();
