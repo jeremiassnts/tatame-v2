@@ -9,14 +9,21 @@ import {
   Poppins_700Bold,
   useFonts,
 } from "@expo-google-fonts/poppins";
-import { StripeProvider } from "@stripe/stripe-react-native";
 import { Slot } from "expo-router";
+import Constants from "expo-constants";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
 import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+
+const isExpoGo = Constants.appOwnership === "expo";
+
+// StripeProvider uses native modules unavailable in Expo Go
+const StripeProvider = isExpoGo
+  ? ({ children }: { children: React.ReactNode }) => <>{children}</>
+  : require("@stripe/stripe-react-native").StripeProvider;
 
 SplashScreen.preventAutoHideAsync();
 SystemUI.setBackgroundColorAsync("#0C0C0C");
