@@ -38,6 +38,8 @@ export interface IAcademyRepository {
 
   existsByOwner(userId: string): Promise<boolean>;
 
+  findByOwnerId(ownerId: string): Promise<AcademyRow[]>;
+
   getStats(academyId: string, currentDayOfWeek: number): Promise<{
     activeMembers: number;
     pendingRequests: number;
