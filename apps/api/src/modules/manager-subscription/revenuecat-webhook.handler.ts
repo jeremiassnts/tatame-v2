@@ -106,12 +106,28 @@ export class RevenueCatWebhookHandler {
     }
   }
 
-  private async onCancellation(_payload: RevenueCatEvent): Promise<void> {
-    // Implemented in Task 10.
+  private async onCancellation(payload: RevenueCatEvent): Promise<void> {
+    const { event } = payload;
+    const ctx = await this.resolveAcademyForUser(event.app_user_id);
+    if (!ctx) return;
+
+    const existing = await this.subRepo.findByAcademyId(ctx.academy.id);
+    if (!existing) return;
+
+    await this.subRepo.update(existing.id, {
+      canceledAt: new Date(event.event_timestamp_ms),
+    });
   }
 
-  private async onUncancellation(_payload: RevenueCatEvent): Promise<void> {
-    // Implemented in Task 10.
+  private async onUncancellation(payload: RevenueCatEvent): Promise<void> {
+    const { event } = payload;
+    const ctx = await this.resolveAcademyForUser(event.app_user_id);
+    if (!ctx) return;
+
+    const existing = await this.subRepo.findByAcademyId(ctx.academy.id);
+    if (!existing) return;
+
+    await this.subRepo.update(existing.id, { canceledAt: null });
   }
 
   private async onExpiration(_payload: RevenueCatEvent): Promise<void> {

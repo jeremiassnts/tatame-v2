@@ -88,4 +88,60 @@ describe("RevenueCatWebhookHandler", () => {
       expect(emailService.sendProActivated).toHaveBeenCalledOnce();
     });
   });
+
+  describe("CANCELLATION", () => {
+    it("sets canceledAt while keeping status=active and plan=pro", async () => {
+      const { handler, subRepo, user, academy } = setup();
+      await handler.handleEvent(initialPurchaseEvent(user.id));
+
+      await handler.handleEvent({
+        event: {
+          type: "CANCELLATION",
+          id: randomUUID(),
+          app_user_id: user.id,
+          product_id: "tatame_pro_monthly",
+          original_transaction_id: "1000000000000000",
+          store: "APP_STORE",
+          event_timestamp_ms: Date.now(),
+          expiration_at_ms: Date.now() + 30 * 24 * 3600 * 1000,
+        },
+        api_version: "1.0",
+      });
+
+      const sub = await subRepo.findByAcademyId(academy.id);
+      expect(sub!.plan).toBe("pro");
+      expect(sub!.status).toBe("active");
+      expect(sub!.canceledAt).toBeInstanceOf(Date);
+    });
+  });
+
+  describe("UNCANCELLATION", () => {
+    it("clears canceledAt", async () => {
+      const { handler, subRepo, user, academy } = setup();
+      await handler.handleEvent(initialPurchaseEvent(user.id));
+      await handler.handleEvent({
+        event: {
+          type: "CANCELLATION",
+          id: randomUUID(),
+          app_user_id: user.id,
+          event_timestamp_ms: Date.now(),
+        },
+        api_version: "1.0",
+      });
+
+      await handler.handleEvent({
+        event: {
+          type: "UNCANCELLATION",
+          id: randomUUID(),
+          app_user_id: user.id,
+          event_timestamp_ms: Date.now(),
+        },
+        api_version: "1.0",
+      });
+
+      const sub = await subRepo.findByAcademyId(academy.id);
+      expect(sub!.canceledAt).toBeNull();
+      expect(sub!.status).toBe("active");
+    });
+  });
 });
