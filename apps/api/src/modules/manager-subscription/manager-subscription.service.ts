@@ -7,6 +7,7 @@ import type {
   IManagerSubscriptionRepository,
   ManagerSubscriptionRow,
 } from "./manager-subscription.repository.js";
+import type { RevenueCatClient } from "./revenuecat-client.js";
 
 const FREE_STUDENT_LIMIT = 50;
 const FREE_PLAN_LIMIT = 1;
@@ -19,6 +20,7 @@ export class ManagerSubscriptionService {
     private readonly memRepo: IMembershipRepository,
     private readonly classRepo: IClassRepository,
     private readonly planRepo: ISubscriptionPlanRepository,
+    private readonly revenuecat: RevenueCatClient | null = null,
   ) {}
 
   async selectFree(
@@ -50,9 +52,7 @@ export class ManagerSubscriptionService {
     }
 
     const isFree = sub.plan === "free";
-    const isBlocked =
-      (sub.status === "past_due" || sub.status === "canceled") &&
-      sub.stripeSubscriptionId !== null;
+    const isBlocked = sub.status === "past_due" || sub.status === "canceled";
 
     if (isBlocked) {
       const canDowngrade = await this.canDowngradeToFree(academyId);
@@ -148,15 +148,13 @@ export class ManagerSubscriptionService {
     }
     if (sub.status === "active" || sub.status === "incomplete") return;
 
-    if (sub.stripeSubscriptionId !== null) {
-      const canDowngrade = await this.canDowngradeToFree(academyId);
-      if (!canDowngrade) {
-        const msg =
-          sub.status === "past_due"
-            ? "Seu pagamento está atrasado. Atualize seus dados de pagamento para continuar usando o app."
-            : "Sua assinatura foi cancelada. Reative o plano Pro para continuar usando o app.";
-        throw new HttpError(403, msg);
-      }
+    const canDowngrade = await this.canDowngradeToFree(academyId);
+    if (!canDowngrade) {
+      const msg =
+        sub.status === "past_due"
+          ? "Seu pagamento está atrasado. Atualize seus dados de pagamento para continuar usando o app."
+          : "Sua assinatura foi cancelada. Reative o plano Pro para continuar usando o app.";
+      throw new HttpError(403, msg);
     }
   }
 
@@ -218,6 +216,54 @@ export class ManagerSubscriptionService {
     const academy = await this.acadRepo.findById(academyId);
     if (!academy) throw new HttpError(404, "Academy not found");
     if (academy.ownerId !== userId) throw new HttpError(403, "Forbidden");
+  }
+
+  async refreshFromRevenueCat(
+    appUserId: string,
+    academyId: string,
+  ): Promise<ManagerSubscriptionRow | undefined> {
+    if (!this.revenuecat) return this.subRepo.findByAcademyId(academyId);
+
+    const res = await this.revenuecat.getSubscriber(appUserId);
+    if (!res) return this.subRepo.findByAcademyId(academyId);
+
+    const entitlement = res.subscriber.entitlements["pro"];
+    const sub = entitlement
+      ? Object.entries(res.subscriber.subscriptions).find(
+          ([, s]) => s.expires_date === entitlement.expires_date,
+        )?.[1]
+      : undefined;
+
+    const now = Date.now();
+    const expiresMs = entitlement?.expires_date
+      ? Date.parse(entitlement.expires_date)
+      : null;
+    const isActive = expiresMs != null && expiresMs > now;
+    const hasBillingIssue = entitlement?.billing_issues_detected_at != null;
+    const unsubscribed = entitlement?.unsubscribe_detected_at != null;
+
+    const store =
+      sub?.store === "app_store"
+        ? "app_store"
+        : sub?.store === "play_store"
+          ? "play_store"
+          : null;
+
+    return this.subRepo.upsertByAcademy({
+      academyId,
+      plan: isActive ? "pro" : "free",
+      status: !isActive ? "canceled" : hasBillingIssue ? "past_due" : "active",
+      revenuecatAppUserId: appUserId,
+      productId: entitlement?.product_identifier ?? null,
+      originalTransactionId: null,
+      store,
+      currentPeriodEnd: expiresMs ? new Date(expiresMs) : null,
+      canceledAt: unsubscribed
+        ? entitlement?.unsubscribe_detected_at
+          ? new Date(entitlement.unsubscribe_detected_at)
+          : new Date()
+        : null,
+    });
   }
 }
 
