@@ -57,7 +57,8 @@
         {
           "merchantIdentifier": []
         }
-      ]
+      ],
+      "react-native-purchases"
     ],
     "extra": {
       "router": {},
