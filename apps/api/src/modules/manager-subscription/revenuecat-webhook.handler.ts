@@ -130,11 +130,47 @@ export class RevenueCatWebhookHandler {
     await this.subRepo.update(existing.id, { canceledAt: null });
   }
 
-  private async onExpiration(_payload: RevenueCatEvent): Promise<void> {
-    // Implemented in Task 11.
+  private async onExpiration(payload: RevenueCatEvent): Promise<void> {
+    const { event } = payload;
+    const ctx = await this.resolveAcademyForUser(event.app_user_id);
+    if (!ctx) return;
+
+    const existing = await this.subRepo.findByAcademyId(ctx.academy.id);
+    if (!existing) return;
+
+    const isRefund = event.type === "REFUND";
+
+    await this.subRepo.update(existing.id, {
+      plan: "free",
+      status: "canceled",
+      canceledAt: isRefund
+        ? new Date(event.event_timestamp_ms)
+        : (existing.canceledAt ?? new Date(event.event_timestamp_ms)),
+    });
+
+    if (!isRefund && this.emailService) {
+      await this.emailService.sendSubscriptionCanceled(
+        {
+          email: ctx.user.email,
+          managerName: ctx.user.name,
+          academyName: ctx.academy.name,
+          endsAt: existing.currentPeriodEnd
+            ? existing.currentPeriodEnd.toLocaleDateString("pt-BR")
+            : "imediatamente",
+        },
+        existing.originalTransactionId ?? existing.id,
+      );
+    }
   }
 
-  private async onBillingIssue(_payload: RevenueCatEvent): Promise<void> {
-    // Implemented in Task 11.
+  private async onBillingIssue(payload: RevenueCatEvent): Promise<void> {
+    const { event } = payload;
+    const ctx = await this.resolveAcademyForUser(event.app_user_id);
+    if (!ctx) return;
+
+    const existing = await this.subRepo.findByAcademyId(ctx.academy.id);
+    if (!existing) return;
+
+    await this.subRepo.update(existing.id, { status: "past_due" });
   }
 }
