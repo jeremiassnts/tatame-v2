@@ -6,8 +6,12 @@ import type { IUserRepository, UserRow } from "./user.repository.js";
 type UserRoleRow = InferSelectModel<typeof userRoles>;
 
 export class InMemoryUserRepository implements IUserRepository {
-  private readonly users: UserRow[] = [];
+  private readonly users: UserRow[];
   private readonly roles: UserRoleRow[] = [];
+
+  constructor(initialUsers: UserRow[] = []) {
+    this.users = [...initialUsers];
+  }
 
   /** For membership / other in-memory repos that need name + email by id. */
   getById(userId: string): UserRow | undefined {
