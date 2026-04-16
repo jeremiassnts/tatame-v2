@@ -14,7 +14,11 @@ import {
 } from "lucide-react-native";
 import { Alert, Linking, Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Purchases from "react-native-purchases";
+
+const isExpoGo = Constants.appOwnership === "expo";
+const Purchases = isExpoGo
+  ? null
+  : (require("react-native-purchases").default as typeof import("react-native-purchases").default);
 
 const TEXT_SECONDARY = "#ABABAB";
 const TEXT_MUTED = "#525252";
@@ -32,6 +36,10 @@ function formatDate(value: string): string {
 
 async function openManageSubscription() {
   if (Platform.OS === "ios") {
+    if (!Purchases) {
+      Alert.alert("Indisponível", "Compras indisponíveis no Expo Go.");
+      return;
+    }
     await Purchases.showManageSubscriptions();
     return;
   }

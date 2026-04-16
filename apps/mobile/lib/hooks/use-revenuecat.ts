@@ -1,11 +1,23 @@
+import Constants from "expo-constants";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import Purchases, { type PurchasesPackage } from "react-native-purchases";
+
+const isExpoGo = Constants.appOwnership === "expo";
+
+type PurchasesModule = typeof import("react-native-purchases").default;
+type PurchasesPackageType = import("react-native-purchases").PurchasesPackage;
+
+let Purchases: PurchasesModule | null = null;
+if (!isExpoGo) {
+  Purchases = require("react-native-purchases").default;
+}
 
 export function useMonthlyPackage() {
   return useQuery({
     queryKey: ["revenuecat", "offerings", "monthly"],
     staleTime: 5 * 60 * 1000,
+    enabled: !isExpoGo,
     queryFn: async () => {
+      if (!Purchases) return null;
       const offerings = await Purchases.getOfferings();
       return offerings.current?.monthly ?? null;
     },
@@ -38,7 +50,10 @@ export function usePurchaseSubscription() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (pkg: PurchasesPackage) => {
+    mutationFn: async (pkg: PurchasesPackageType) => {
+      if (!Purchases) {
+        throw new Error("Compras indisponíveis no Expo Go. Use um dev build.");
+      }
       return Purchases.purchasePackage(pkg);
     },
     onSuccess: () => {
@@ -52,7 +67,12 @@ export function useRestorePurchases() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async () => Purchases.restorePurchases(),
+    mutationFn: async () => {
+      if (!Purchases) {
+        throw new Error("Compras indisponíveis no Expo Go. Use um dev build.");
+      }
+      return Purchases.restorePurchases();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["manager-subscription"] });
       queryClient.invalidateQueries({ queryKey: ["manager-limits"] });
