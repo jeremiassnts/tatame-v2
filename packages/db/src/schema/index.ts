@@ -54,6 +54,11 @@ export const managerSubscriptionStatusEnum = pgEnum(
   ["active", "past_due", "canceled", "incomplete"],
 );
 
+export const managerSubscriptionStoreEnum = pgEnum(
+  "manager_subscription_store",
+  ["app_store", "play_store"],
+);
+
 export const pixKeyTypeEnum = pgEnum("pix_key_type", [
   "cpf",
   "email",
@@ -265,8 +270,10 @@ export const managerSubscriptions = pgTable("manager_subscriptions", {
     .unique(),
   plan: managerPlanEnum("plan").notNull(),
   status: managerSubscriptionStatusEnum("status").notNull(),
-  stripeCustomerId: text("stripe_customer_id"),
-  stripeSubscriptionId: text("stripe_subscription_id"),
+  revenuecatAppUserId: text("revenuecat_app_user_id").unique(),
+  productId: text("product_id"),
+  originalTransactionId: text("original_transaction_id"),
+  store: managerSubscriptionStoreEnum("store"),
   currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
   subscribedAt: timestamp("subscribed_at", { withTimezone: true })
     .defaultNow()
