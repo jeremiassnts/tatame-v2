@@ -1,19 +1,22 @@
 import { PlanCard } from "@/components/PlanCard";
 import { MANAGER_PLANS } from "@/constants/manager-plans";
+import { useSelectFreePlan } from "@/lib/hooks/use-manager-subscription";
 import {
-  useProCheckout,
-  useSelectFreePlan,
-} from "@/lib/hooks/use-manager-subscription";
-import { useQueryClient } from "@tanstack/react-query";
+  mapPurchaseError,
+  useMonthlyPackage,
+  usePurchaseSubscription,
+  useRestorePurchases,
+} from "@/lib/hooks/use-revenuecat";
 import { useRouter } from "expo-router";
-import { Alert, Linking, ScrollView, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function PlanSelectionScreen() {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const selectFree = useSelectFreePlan();
-  const proCheckout = useProCheckout();
+  const { data: monthlyPackage } = useMonthlyPackage();
+  const purchase = usePurchaseSubscription();
+  const restore = useRestorePurchases();
 
   async function handleSelectFree() {
     try {
@@ -25,15 +28,38 @@ export default function PlanSelectionScreen() {
   }
 
   async function handleSelectPro() {
+    if (!monthlyPackage) {
+      Alert.alert("Erro", "Plano indisponível no momento.");
+      return;
+    }
     try {
-      const { checkoutUrl } = await proCheckout.mutateAsync();
-      await Linking.openURL(checkoutUrl);
-    } catch {
-      Alert.alert("Erro", "Não foi possível iniciar a assinatura Pro.");
+      await purchase.mutateAsync(monthlyPackage);
+      router.push("/(app)/(manager)/subscription-result");
+    } catch (err) {
+      const message = mapPurchaseError(err);
+      if (message) Alert.alert("Erro", message);
     }
   }
 
-  const isLoading = selectFree.isPending || proCheckout.isPending;
+  async function handleRestore() {
+    try {
+      const info = await restore.mutateAsync();
+      const active = info.entitlements?.active?.["pro"];
+      if (active) {
+        router.replace("/(app)/(manager)/subscription-result");
+      } else {
+        Alert.alert(
+          "Nenhuma compra encontrada",
+          "Não encontramos uma assinatura ativa vinculada à sua conta.",
+        );
+      }
+    } catch {
+      Alert.alert("Erro", "Não foi possível restaurar compras.");
+    }
+  }
+
+  const isLoading =
+    selectFree.isPending || purchase.isPending || restore.isPending;
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
@@ -68,10 +94,21 @@ export default function PlanSelectionScreen() {
             badgeLabel={plan.badgeLabel}
             variant={plan.id === "pro" ? "accent" : "neutral"}
             disabled={isLoading}
-            loading={plan.id === "free" ? selectFree.isPending : proCheckout.isPending}
+            loading={plan.id === "free" ? selectFree.isPending : purchase.isPending}
             onPress={plan.id === "free" ? handleSelectFree : handleSelectPro}
           />
         ))}
+
+        <Pressable
+          onPress={handleRestore}
+          disabled={isLoading}
+          className="items-center rounded-xl bg-surface px-5 py-3"
+          style={{ opacity: isLoading ? 0.5 : 1 }}
+        >
+          <Text className="font-poppins-semibold text-sm" style={{ color: "#A078E8" }}>
+            Restaurar compras
+          </Text>
+        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
