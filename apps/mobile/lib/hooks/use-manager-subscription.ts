@@ -1,12 +1,15 @@
 import { useApi } from "@/lib/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-type ManagerSubscription = {
+export type ManagerSubscription = {
   id: string;
   academyId: string;
   plan: "free" | "pro";
   status: "active" | "past_due" | "canceled" | "incomplete";
-  stripeCustomerId: string | null;
+  revenuecatAppUserId: string | null;
+  productId: string | null;
+  originalTransactionId: string | null;
+  store: "app_store" | "play_store" | null;
   currentPeriodEnd: string | null;
   subscribedAt: string;
   canceledAt: string | null;
@@ -21,39 +24,6 @@ type ManagerLimits = {
   blocked: boolean;
 };
 
-type StartOrReactivateProResponse = {
-  intentType: "setup";
-  clientSecret: string;
-  customerId: string;
-};
-
-type CompleteProResponse =
-  | {
-    intentType: "payment";
-    clientSecret: string;
-    subscriptionId: string;
-  }
-  | {
-    intentType: "none";
-    subscriptionId: string;
-  };
-
-type StripePortalResponse = {
-  url: string;
-};
-
-type ManagerInvoiceItem = {
-  id: string;
-  amountCents: number;
-  currency: string;
-  status: string;
-  createdAt: string;
-  referenceMonth: string | null;
-  paymentMethodLast4: string | null;
-};
-
-type ManagerInvoicesResponse = { items: ManagerInvoiceItem[] };
-
 export function useManagerSubscription() {
   const api = useApi();
 
@@ -61,17 +31,6 @@ export function useManagerSubscription() {
     queryKey: ["manager-subscription"],
     queryFn: () => api.get<ManagerSubscription>("/manager-subscriptions/me"),
     retry: false,
-  });
-}
-
-export function useManagerInvoices(opts?: { enabled?: boolean }) {
-  const api = useApi();
-
-  return useQuery({
-    queryKey: ["manager-invoices"],
-    enabled: opts?.enabled ?? true,
-    queryFn: async () => api.get<ManagerInvoicesResponse>("/manager-subscriptions/invoices"),
-    select: (data) => data.items,
   });
 }
 
@@ -97,57 +56,3 @@ export function useSelectFreePlan() {
     },
   });
 }
-
-export function useStartProSubscription() {
-  const api = useApi();
-
-  return useMutation({
-    mutationFn: () =>
-      api.post<StartOrReactivateProResponse>("/manager-subscriptions/pro"),
-  });
-}
-
-export function useCompleteProSubscription() {
-  const api = useApi();
-
-  return useMutation({
-    mutationFn: (input: { setupIntentId: string }) =>
-      api.post<CompleteProResponse>("/manager-subscriptions/pro/complete", input),
-  });
-}
-
-export function useReactivateSubscription() {
-  const api = useApi();
-
-  return useMutation({
-    mutationFn: () =>
-      api.post<StartOrReactivateProResponse>("/manager-subscriptions/reactivate"),
-  });
-}
-
-export function useStripePortal() {
-  const api = useApi();
-
-  return useMutation({
-    mutationFn: () => api.post<StripePortalResponse>("/manager-subscriptions/portal"),
-  });
-}
-
-export function useProCheckout() {
-  const api = useApi();
-
-  return useMutation({
-    mutationFn: (input?: { returnPath?: string }) =>
-      api.post<{ checkoutUrl: string }>("/manager-subscriptions/pro/checkout", input),
-  });
-}
-
-export function useReactivateCheckout() {
-  const api = useApi();
-
-  return useMutation({
-    mutationFn: () =>
-      api.post<{ checkoutUrl: string }>("/manager-subscriptions/reactivate"),
-  });
-}
-
