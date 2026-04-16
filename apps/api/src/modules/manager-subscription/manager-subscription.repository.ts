@@ -5,25 +5,25 @@ export type ManagerSubscriptionRow = InferSelectModel<
   typeof managerSubscriptions
 >;
 
+export type ManagerSubscriptionStore = "app_store" | "play_store";
+
 export interface IManagerSubscriptionRepository {
   findByAcademyId(
     academyId: string,
   ): Promise<ManagerSubscriptionRow | undefined>;
 
-  findByStripeCustomerId(
-    stripeCustomerId: string,
-  ): Promise<ManagerSubscriptionRow | undefined>;
-
-  findByStripeSubscriptionId(
-    stripeSubscriptionId: string,
+  findByRevenueCatAppUserId(
+    appUserId: string,
   ): Promise<ManagerSubscriptionRow | undefined>;
 
   create(data: {
     academyId: string;
     plan: "free" | "pro";
     status: "active" | "past_due" | "canceled" | "incomplete";
-    stripeCustomerId?: string | null;
-    stripeSubscriptionId?: string | null;
+    revenuecatAppUserId?: string | null;
+    productId?: string | null;
+    originalTransactionId?: string | null;
+    store?: ManagerSubscriptionStore | null;
     currentPeriodEnd?: Date | null;
   }): Promise<ManagerSubscriptionRow>;
 
@@ -32,11 +32,26 @@ export interface IManagerSubscriptionRepository {
     data: Partial<{
       plan: "free" | "pro";
       status: "active" | "past_due" | "canceled" | "incomplete";
-      stripeCustomerId: string | null;
-      stripeSubscriptionId: string | null;
+      revenuecatAppUserId: string | null;
+      productId: string | null;
+      originalTransactionId: string | null;
+      store: ManagerSubscriptionStore | null;
       currentPeriodEnd: Date | null;
       canceledAt: Date | null;
+      subscribedAt: Date;
     }>,
   ): Promise<ManagerSubscriptionRow | undefined>;
-}
 
+  upsertByAcademy(data: {
+    academyId: string;
+    plan: "free" | "pro";
+    status: "active" | "past_due" | "canceled" | "incomplete";
+    revenuecatAppUserId?: string | null;
+    productId?: string | null;
+    originalTransactionId?: string | null;
+    store?: ManagerSubscriptionStore | null;
+    currentPeriodEnd?: Date | null;
+    canceledAt?: Date | null;
+    subscribedAt?: Date;
+  }): Promise<ManagerSubscriptionRow>;
+}
