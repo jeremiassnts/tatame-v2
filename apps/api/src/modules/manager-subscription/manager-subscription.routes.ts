@@ -1,7 +1,6 @@
 import { loadEnv } from "@tatame/config";
 import { Role } from "@tatame/types";
 import { Router } from "express";
-import Stripe from "stripe";
 import { getDb } from "../../lib/db.js";
 import { HttpError } from "../../lib/http-error.js";
 import { logger } from "../../lib/logger.js";
@@ -17,13 +16,15 @@ import { PostgresMembershipRepository } from "../membership/membership.repositor
 import { PostgresSubscriptionPlanRepository } from "../subscription/subscription.repository.postgres.js";
 import { PostgresManagerSubscriptionRepository } from "./manager-subscription.repository.postgres.js";
 import { ManagerSubscriptionService } from "./manager-subscription.service.js";
-import { mapStripeStatus } from "./stripe-status.js";
-import { StripeWebhookHandler } from "./stripe-webhook.handler.js";
+import { RevenueCatClient } from "./revenuecat-client.js";
+import { RevenueCatWebhookHandler } from "./revenuecat-webhook.handler.js";
 import { PostgresUserRepository } from "../user/user.repository.postgres.js";
 import { getEmailQueue } from "../email/email.queue.js";
 import { EmailService } from "../email/email.service.js";
 import { PostgresPaymentRepository } from "../payment/payment.repository.postgres.js";
 import { AbacatePayWebhookHandler } from "../payment/abacatepay-webhook.handler.js";
+import { StripeCheckoutWebhookHandler } from "../payment/stripe-checkout-webhook.handler.js";
+import type { RevenueCatEvent } from "./revenuecat-events.js";
 
 const db = getDb();
 const env = loadEnv();
@@ -40,85 +41,27 @@ const emailService = env.REDIS_URL
 
 const paymentRepo = new PostgresPaymentRepository(db);
 
+const revenuecat = env.REVENUECAT_SECRET_API_KEY
+  ? new RevenueCatClient(env.REVENUECAT_SECRET_API_KEY)
+  : null;
+
 const service = new ManagerSubscriptionService(
   subRepo,
   acadRepo,
   memRepo,
   classRepo,
   planRepo,
+  revenuecat,
 );
 
-const webhookHandler = new StripeWebhookHandler(
+const webhookHandler = new RevenueCatWebhookHandler(
   subRepo,
-  memRepo,
-  classRepo,
-  planRepo,
   userRepo,
   acadRepo,
   emailService,
-  paymentRepo,
 );
 
 export const managerSubscriptionRouter = Router();
-
-type ManagerInvoiceItem = {
-  id: string;
-  amountCents: number;
-  currency: string;
-  status: string;
-  createdAt: string;
-  referenceMonth: string | null;
-  paymentMethodLast4: string | null;
-};
-
-/** Subscription id on invoices (Stripe 2024+ uses `parent.subscription_details`). */
-function stripeInvoiceSubscriptionId(inv: Stripe.Invoice): string | null {
-  const raw = inv.parent?.subscription_details?.subscription;
-  if (typeof raw === "string") return raw;
-  if (raw && typeof raw === "object" && "id" in raw) return raw.id;
-  return null;
-}
-
-/**
- * Last 4 digits of the card used for a paid invoice.
- * Stripe allows at most 4 levels of expand on invoice list; we expand only through
- * `data.payments.data.payment` and load PI / charge in separate calls when needed.
- */
-async function cardLast4FromInvoice(
-  stripe: Stripe,
-  inv: Stripe.Invoice,
-): Promise<string | null> {
-  const paidEntry = inv.payments?.data?.find((p) => p.status === "paid");
-  if (!paidEntry) return null;
-  const pay = paidEntry.payment;
-
-  let pi: Stripe.PaymentIntent | string | null | undefined = pay.payment_intent;
-  if (typeof pi === "string") {
-    pi = await stripe.paymentIntents.retrieve(pi, {
-      expand: ["payment_method"],
-    });
-  }
-  if (pi && typeof pi === "object") {
-    const pm =
-      typeof pi.payment_method === "object" ? pi.payment_method : null;
-    const fromPi = pm?.card?.last4;
-    if (typeof fromPi === "string") return fromPi;
-  }
-
-  let ch: Stripe.Charge | string | null | undefined = pay.charge;
-  if (typeof ch === "string") {
-    ch = await stripe.charges.retrieve(ch);
-  }
-  if (ch && typeof ch === "object") {
-    const card = ch.payment_method_details?.card;
-    const last4 =
-      card && typeof card === "object" && "last4" in card
-        ? (card as { last4?: string }).last4
-        : undefined;
-    if (typeof last4 === "string") return last4;
-  }
-  return null;
-}
 
 managerSubscriptionRouter.post(
   "/free",
@@ -132,278 +75,6 @@ managerSubscriptionRouter.post(
         req.appAuth!.activeAcademyId!,
       );
       res.status(201).json(result);
-    } catch (e) {
-      next(e);
-    }
-  },
-);
-
-managerSubscriptionRouter.post(
-  "/pro",
-  authorize(Role.Manager),
-  attachActiveAcademyContext,
-  requireActiveAcademy,
-  async (req, res, next) => {
-    try {
-      const env = loadEnv();
-      if (!env.STRIPE_SECRET_KEY || !env.STRIPE_PRO_PRICE_ID) {
-        throw new HttpError(503, "Stripe is not configured");
-      }
-
-      const stripe = getStripe();
-      const academyId = req.appAuth!.activeAcademyId!;
-      const userId = req.appAuth!.userId;
-
-      let sub = await service.getSubscription(academyId);
-
-      let stripeCustomerId = sub?.stripeCustomerId;
-      if (!stripeCustomerId) {
-        const customer = await stripe.customers.create(
-          { metadata: { academyId, userId } },
-          { idempotencyKey: `create-customer-${academyId}` },
-        );
-        stripeCustomerId = customer.id;
-
-        if (sub) {
-          await subRepo.update(sub.id, { stripeCustomerId });
-        } else {
-          sub = await subRepo.create({
-            academyId,
-            plan: "free",
-            status: "incomplete",
-            stripeCustomerId,
-          });
-        }
-      }
-
-      res.json({
-        intentType: "setup",
-        clientSecret: (
-          await stripe.setupIntents.create({
-            customer: stripeCustomerId,
-            payment_method_types: ["card"],
-            usage: "off_session",
-            metadata: { academyId, userId },
-          })
-        ).client_secret,
-        customerId: stripeCustomerId,
-      });
-    } catch (e) {
-      next(e);
-    }
-  },
-);
-
-managerSubscriptionRouter.post(
-  "/pro/complete",
-  authorize(Role.Manager),
-  attachActiveAcademyContext,
-  requireActiveAcademy,
-  async (req, res, next) => {
-    try {
-      const env = loadEnv();
-      if (!env.STRIPE_SECRET_KEY || !env.STRIPE_PRO_PRICE_ID) {
-        throw new HttpError(503, "Stripe is not configured");
-      }
-
-      const setupIntentId = (req.body as { setupIntentId?: unknown })
-        ?.setupIntentId;
-      if (typeof setupIntentId !== "string" || setupIntentId.length < 5) {
-        throw new HttpError(400, "Missing setupIntentId");
-      }
-
-      const stripe = getStripe();
-      const academyId = req.appAuth!.activeAcademyId!;
-      const userId = req.appAuth!.userId;
-
-      const sub = await service.getSubscription(academyId);
-      if (!sub?.stripeCustomerId) {
-        throw new HttpError(400, "No Stripe customer found");
-      }
-
-      const si = await stripe.setupIntents.retrieve(setupIntentId, {
-        expand: ["payment_method"],
-      });
-      if (typeof si.customer !== "string" || si.customer !== sub.stripeCustomerId) {
-        throw new HttpError(403, "SetupIntent does not belong to this customer");
-      }
-
-      const paymentMethodId =
-        typeof si.payment_method === "string"
-          ? si.payment_method
-          : si.payment_method?.id;
-      if (!paymentMethodId) {
-        throw new HttpError(400, "SetupIntent missing payment method");
-      }
-
-      const stripeSub = await stripe.subscriptions.create(
-        {
-          customer: sub.stripeCustomerId,
-          items: [{ price: env.STRIPE_PRO_PRICE_ID }],
-          collection_method: "charge_automatically",
-          payment_behavior: "default_incomplete",
-          default_payment_method: paymentMethodId,
-          payment_settings: {
-            payment_method_types: ["card"],
-            save_default_payment_method: "on_subscription",
-          },
-          expand: ["latest_invoice.payment_intent"],
-          metadata: { academyId, userId },
-        },
-        { idempotencyKey: `create-pro-sub-${academyId}-${setupIntentId}` },
-      );
-
-      const latestInvoiceId =
-        typeof stripeSub.latest_invoice === "string"
-          ? stripeSub.latest_invoice
-          : stripeSub.latest_invoice?.id;
-      if (!latestInvoiceId) {
-        throw new HttpError(500, "Stripe subscription missing latest invoice");
-      }
-
-      type InvoiceWithPaymentIntent = Stripe.Invoice & {
-        payment_intent?: string | Stripe.PaymentIntent | null;
-      };
-
-      const invoice = (await stripe.invoices.retrieve(latestInvoiceId, {
-        expand: ["payment_intent"],
-      })) as InvoiceWithPaymentIntent;
-
-      // Some Stripe accounts/scenarios may create the invoice without payment_intent.
-      // In that case, attempt to pay the invoice explicitly to force PI creation.
-      const maybeInvoiceWithPI = invoice.payment_intent
-        ? invoice
-        : ((await stripe.invoices.pay(latestInvoiceId, {
-          payment_method: paymentMethodId,
-          expand: ["payment_intent"],
-        })) as InvoiceWithPaymentIntent);
-
-      const paymentIntentIdOrObj = maybeInvoiceWithPI.payment_intent;
-      if (!paymentIntentIdOrObj && maybeInvoiceWithPI.status === "paid") {
-        const freshSub = await stripe.subscriptions.retrieve(
-          stripeSub.id,
-        );
-        await subRepo.update(sub.id, {
-          stripeSubscriptionId: stripeSub.id,
-          plan: "pro",
-          status: mapStripeStatus(freshSub.status),
-          currentPeriodEnd: freshSub.items?.data?.[0]?.current_period_end
-            ? new Date(freshSub.items.data[0].current_period_end * 1000)
-            : null,
-        });
-
-        res.json({
-          intentType: "none",
-          subscriptionId: stripeSub.id,
-        });
-        return;
-      }
-
-      const paymentIntent =
-        typeof paymentIntentIdOrObj === "string"
-          ? await stripe.paymentIntents.retrieve(paymentIntentIdOrObj)
-          : paymentIntentIdOrObj;
-
-      if (!paymentIntent?.client_secret) {
-        logger.warn({
-          stripeSubscriptionId: stripeSub.id,
-          latestInvoiceId,
-          invoiceStatus: maybeInvoiceWithPI.status,
-          collectionMethod: maybeInvoiceWithPI.collection_method,
-          billingReason: maybeInvoiceWithPI.billing_reason,
-          amountDue: maybeInvoiceWithPI.amount_due,
-          currency: maybeInvoiceWithPI.currency,
-        }, "[manager-subscriptions/pro/complete] missing payment intent");
-        throw new HttpError(500, "Stripe payment intent missing client secret");
-      }
-
-      await subRepo.update(sub.id, {
-        stripeSubscriptionId: stripeSub.id,
-        plan: "pro",
-        status: "incomplete",
-        currentPeriodEnd: stripeSub.items?.data?.[0]?.current_period_end
-          ? new Date(stripeSub.items.data[0].current_period_end * 1000)
-          : null,
-      });
-
-      res.json({
-        intentType: "payment",
-        clientSecret: paymentIntent.client_secret,
-        subscriptionId: stripeSub.id,
-      });
-    } catch (e) {
-      next(e);
-    }
-  },
-);
-
-managerSubscriptionRouter.post(
-  "/pro/checkout",
-  authorize(Role.Manager),
-  attachActiveAcademyContext,
-  requireActiveAcademy,
-  async (req, res, next) => {
-    try {
-      const env = loadEnv();
-      if (!env.STRIPE_SECRET_KEY || !env.STRIPE_PRO_PRICE_ID) {
-        throw new HttpError(503, "Stripe is not configured");
-      }
-
-      const stripe = getStripe();
-      const academyId = req.appAuth!.activeAcademyId!;
-      const userId = req.appAuth!.userId;
-
-      const user = await userRepo.findById(userId);
-      const userEmail = user?.email ?? undefined;
-
-      let sub = await service.getSubscription(academyId);
-
-      let stripeCustomerId = sub?.stripeCustomerId;
-
-      // Validate existing customer exists in Stripe, create new one if not
-      if (stripeCustomerId) {
-        try {
-          await stripe.customers.retrieve(stripeCustomerId);
-        } catch {
-          stripeCustomerId = null;
-        }
-      }
-
-      if (!stripeCustomerId) {
-        const customer = await stripe.customers.create(
-          { email: userEmail, metadata: { academyId, userId } },
-        );
-        stripeCustomerId = customer.id;
-
-        if (sub) {
-          await subRepo.update(sub.id, { stripeCustomerId });
-        } else {
-          sub = await subRepo.create({
-            academyId,
-            plan: "free",
-            status: "incomplete",
-            stripeCustomerId,
-          });
-        }
-      }
-
-      const returnPath =
-        typeof req.body?.returnPath === "string" ? req.body.returnPath : "subscription-result";
-
-      const session = await stripe.checkout.sessions.create({
-        mode: "subscription",
-        customer: stripeCustomerId,
-        line_items: [{ price: env.STRIPE_PRO_PRICE_ID, quantity: 1 }],
-        success_url: `tatame://${returnPath}?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: "tatame://plan-selection",
-        metadata: { academyId, userId },
-      });
-
-      if (!session.url) {
-        throw new HttpError(500, "Failed to create checkout session");
-      }
-
-      res.json({ checkoutUrl: session.url });
     } catch (e) {
       next(e);
     }
@@ -444,168 +115,22 @@ managerSubscriptionRouter.get(
   },
 );
 
-managerSubscriptionRouter.get(
-  "/invoices",
+managerSubscriptionRouter.post(
+  "/refresh",
   authorize(Role.Manager),
   attachActiveAcademyContext,
   requireActiveAcademy,
   async (req, res, next) => {
     try {
-      const env = loadEnv();
-      if (!env.STRIPE_SECRET_KEY) {
-        throw new HttpError(503, "Stripe is not configured");
-      }
-
-      const stripe = getStripe();
-      const academyId = req.appAuth!.activeAcademyId!;
-
-      const sub = await service.getSubscription(academyId);
-      if (!sub?.stripeCustomerId) {
-        res.json({ items: [] satisfies ManagerInvoiceItem[] });
+      const sub = await service.refreshFromRevenueCat(
+        req.appAuth!.userId,
+        req.appAuth!.activeAcademyId!,
+      );
+      if (!sub) {
+        res.status(404).json({ error: "No subscription found" });
         return;
       }
-
-      const dbSubscriptionId = sub.stripeSubscriptionId;
-
-      /**
-       * List by customer only. Passing `subscription` in the list call returns nothing if
-       * `stripe_subscription_id` in our DB is stale vs the active subscription in Stripe.
-       */
-      // Max 4 expand levels on list (Stripe rejects deeper paths, e.g. ...payment_intent.payment_method).
-      const invoices = await stripe.invoices.list({
-        customer: sub.stripeCustomerId,
-        limit: 24,
-        expand: ["data.payments.data.payment"],
-      });
-
-      let paidRows = invoices.data.filter(
-        (inv) => inv.status === "paid" && (inv.amount_paid ?? 0) > 0,
-      );
-
-      if (dbSubscriptionId) {
-        const forSub = paidRows.filter(
-          (inv) => stripeInvoiceSubscriptionId(inv) === dbSubscriptionId,
-        );
-        paidRows = forSub.length > 0 ? forSub : paidRows;
-      }
-
-      const items: ManagerInvoiceItem[] = [];
-      for (const inv of paidRows.slice(0, 12)) {
-        const last4 = await cardLast4FromInvoice(stripe, inv);
-
-        const created = new Date(inv.created * 1000);
-        const ref =
-          inv.lines?.data?.[0]?.period?.start != null
-            ? new Date(inv.lines.data[0].period.start * 1000)
-            : created;
-        const referenceMonth = `${ref.getUTCFullYear()}-${String(
-          ref.getUTCMonth() + 1,
-        ).padStart(2, "0")}-01`;
-
-        items.push({
-          id: inv.id,
-          amountCents: inv.amount_paid ?? inv.amount_due ?? 0,
-          currency: inv.currency ?? "brl",
-          status: inv.status ?? "unknown",
-          createdAt: created.toISOString(),
-          referenceMonth,
-          paymentMethodLast4: last4,
-        });
-      }
-
-      res.json({ items });
-    } catch (e) {
-      next(e);
-    }
-  },
-);
-
-managerSubscriptionRouter.post(
-  "/portal",
-  authorize(Role.Manager),
-  attachActiveAcademyContext,
-  requireActiveAcademy,
-  async (req, res, next) => {
-    try {
-      const env = loadEnv();
-      const stripe = getStripe();
-      const sub = await service.getSubscription(req.appAuth!.activeAcademyId!);
-      if (!sub?.stripeCustomerId) {
-        throw new HttpError(400, "No Stripe customer found");
-      }
-
-      const session = await stripe.billingPortal.sessions.create({
-        customer: sub.stripeCustomerId,
-        return_url: env.API_PUBLIC_URL ?? "tatame://subscription-result",
-      });
-
-      res.json({ url: session.url });
-    } catch (e) {
-      next(e);
-    }
-  },
-);
-
-managerSubscriptionRouter.post(
-  "/reactivate",
-  authorize(Role.Manager),
-  attachActiveAcademyContext,
-  requireActiveAcademy,
-  async (req, res, next) => {
-    try {
-      const env = loadEnv();
-      if (!env.STRIPE_SECRET_KEY || !env.STRIPE_PRO_PRICE_ID) {
-        throw new HttpError(503, "Stripe is not configured");
-      }
-
-      const stripe = getStripe();
-      const academyId = req.appAuth!.activeAcademyId!;
-      const userId = req.appAuth!.userId;
-
-      const user = await userRepo.findById(userId);
-      const userEmail = user?.email ?? undefined;
-
-      const sub = await service.getSubscription(academyId);
-
-      if (!sub) {
-        throw new HttpError(404, "No subscription found");
-      }
-      if (sub.status === "active") {
-        throw new HttpError(409, "Subscription is already active");
-      }
-
-      let stripeCustomerId = sub.stripeCustomerId;
-
-      if (stripeCustomerId) {
-        try {
-          await stripe.customers.retrieve(stripeCustomerId);
-        } catch {
-          stripeCustomerId = null;
-        }
-      }
-
-      if (!stripeCustomerId) {
-        const customer = await stripe.customers.create(
-          { email: userEmail, metadata: { academyId, userId } },
-        );
-        stripeCustomerId = customer.id;
-        await subRepo.update(sub.id, { stripeCustomerId });
-      }
-
-      const session = await stripe.checkout.sessions.create({
-        mode: "subscription",
-        customer: stripeCustomerId,
-        line_items: [{ price: env.STRIPE_PRO_PRICE_ID, quantity: 1 }],
-        success_url: "tatame://subscription-result?session_id={CHECKOUT_SESSION_ID}",
-        cancel_url: "tatame://plan-selection",
-        metadata: { academyId, userId },
-      });
-
-      if (!session.url) {
-        throw new HttpError(500, "Failed to create checkout session");
-      }
-
-      res.json({ checkoutUrl: session.url });
+      res.json(sub);
     } catch (e) {
       next(e);
     }
@@ -615,33 +140,29 @@ managerSubscriptionRouter.post(
 export function createWebhookRouter() {
   const webhookRouter = Router();
 
-  webhookRouter.post("/stripe", async (req, res, next) => {
+  webhookRouter.post("/revenuecat", async (req, res, next) => {
     try {
       const env = loadEnv();
-      if (!env.STRIPE_WEBHOOK_SECRET) {
-        throw new HttpError(503, "Stripe webhook secret not configured");
+      if (!env.REVENUECAT_WEBHOOK_SECRET) {
+        throw new HttpError(503, "RevenueCat webhook secret not configured");
       }
 
-      const stripe = getStripe();
-      const sig = req.headers["stripe-signature"];
-      if (!sig) {
-        res.status(400).json({ error: "Missing stripe-signature header" });
+      const auth = req.headers["authorization"];
+      if (auth !== env.REVENUECAT_WEBHOOK_SECRET) {
+        res.status(401).json({ error: "unauthorized" });
         return;
       }
 
-      const event = stripe.webhooks.constructEvent(
-        (req as any).rawBody,
-        sig,
-        env.STRIPE_WEBHOOK_SECRET,
-      );
+      const payload = req.body as RevenueCatEvent;
+      if (!payload?.event?.type || !payload.event.app_user_id) {
+        res.status(400).json({ error: "invalid payload" });
+        return;
+      }
 
-      await webhookHandler.handleEvent(event);
+      await webhookHandler.handleEvent(payload);
       res.json({ received: true });
     } catch (e) {
-      if (e instanceof Error && e.message.includes("signature")) {
-        res.status(400).json({ error: "Invalid webhook signature" });
-        return;
-      }
+      logger.error({ err: e }, "[revenuecat webhook] handler error");
       next(e);
     }
   });
@@ -662,6 +183,40 @@ export function createWebhookRouter() {
     }
   });
 
+  const stripeCheckoutHandler = new StripeCheckoutWebhookHandler(
+    paymentRepo,
+    userRepo,
+    acadRepo,
+    emailService,
+  );
+
+  webhookRouter.post("/stripe", async (req, res, next) => {
+    try {
+      const env = loadEnv();
+      if (!env.STRIPE_WEBHOOK_SECRET) {
+        throw new HttpError(503, "Stripe webhook secret not configured");
+      }
+      const stripe = getStripe();
+      const sig = req.headers["stripe-signature"];
+      if (!sig) {
+        res.status(400).json({ error: "Missing stripe-signature header" });
+        return;
+      }
+      const event = stripe.webhooks.constructEvent(
+        (req as any).rawBody,
+        sig,
+        env.STRIPE_WEBHOOK_SECRET,
+      );
+      await stripeCheckoutHandler.handleEvent(event);
+      res.json({ received: true });
+    } catch (e) {
+      if (e instanceof Error && e.message.includes("signature")) {
+        res.status(400).json({ error: "Invalid webhook signature" });
+        return;
+      }
+      next(e);
+    }
+  });
+
   return webhookRouter;
 }
-
