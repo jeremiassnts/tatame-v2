@@ -45,7 +45,7 @@ export async function identifyRevenueCatUser(userId: string): Promise<void> {
 }
 
 export async function resetRevenueCatUser(): Promise<void> {
-  if (!initialized || !Purchases) return;
+  if (!initialized || !Purchases || !currentUserId) return;
   await Purchases.logOut();
   currentUserId = null;
 }

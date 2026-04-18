@@ -92,13 +92,13 @@ export default function MyPlanScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-background py-4" edges={["top", "bottom"]}>
       <ScrollView
         className="flex-1"
         contentContainerStyle={{
           paddingHorizontal: 24,
           paddingTop: 8,
-          paddingBottom: 40,
+          paddingBottom: 10,
           gap: 20,
         }}
         showsVerticalScrollIndicator={false}
