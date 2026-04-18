@@ -122,8 +122,13 @@ managerSubscriptionRouter.post(
   requireActiveAcademy,
   async (req, res, next) => {
     try {
+      const user = await userRepo.findById(req.appAuth!.userId);
+      if (!user) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
       const sub = await service.refreshFromRevenueCat(
-        req.appAuth!.userId,
+        user.clerkUserId,
         req.appAuth!.activeAcademyId!,
       );
       if (!sub) {

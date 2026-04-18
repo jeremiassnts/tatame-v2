@@ -54,7 +54,7 @@ export class RevenueCatWebhookHandler {
   }
 
   private async resolveAcademyForUser(appUserId: string) {
-    const user = await this.userRepo.findById(appUserId);
+    const user = await this.userRepo.findByClerkId(appUserId);
     if (!user) {
       logger.warn({ appUserId }, "[revenuecat] user not found for app_user_id");
       return null;
