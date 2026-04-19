@@ -80,6 +80,10 @@ export class InMemoryAcademyRepository implements IAcademyRepository {
     return this.rows.some((a) => a.ownerId === userId);
   }
 
+  async findByOwnerId(ownerId: string): Promise<AcademyRow[]> {
+    return this.rows.filter((r) => r.ownerId === ownerId);
+  }
+
   async getStats(
     _academyId: string,
     _currentDayOfWeek: number,

@@ -1,17 +1,29 @@
 import { BackButton } from "@/components/BackButton";
-import {
-  useManagerInvoices,
-  useManagerSubscription,
-  useStripePortal,
-} from "@/lib/hooks/use-manager-subscription";
+import { useManagerSubscription } from "@/lib/hooks/use-manager-subscription";
+import { useRestorePurchases } from "@/lib/hooks/use-revenuecat";
+import Constants from "expo-constants";
 import { useRouter } from "expo-router";
-import { Calendar, ChevronRight, CreditCard, Settings, Timer, XCircle } from "lucide-react-native";
-import { Alert, Linking, Pressable, ScrollView, Text, View } from "react-native";
+import {
+  AlertTriangle,
+  Calendar,
+  ChevronRight,
+  CreditCard,
+  RotateCcw,
+  Settings,
+  Timer,
+} from "lucide-react-native";
+import { Alert, Linking, Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+const isExpoGo = Constants.appOwnership === "expo";
+const Purchases = isExpoGo
+  ? null
+  : (require("react-native-purchases").default as typeof import("react-native-purchases").default);
 
 const TEXT_SECONDARY = "#ABABAB";
 const TEXT_MUTED = "#525252";
 const DIVIDER = "#2A2A2A";
+const ANDROID_SKU = "tatame_pro_monthly";
 
 function formatDate(value: string): string {
   const d = new Date(value);
@@ -22,63 +34,71 @@ function formatDate(value: string): string {
   });
 }
 
-function formatCurrency(cents: number): string {
-  return `R$ ${(cents / 100).toFixed(0)}`;
-}
-
-function formatMonthLabel(referenceMonth: string): string {
-  const d = new Date(referenceMonth + "T00:00:00");
-  const label = d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
-  return label.charAt(0).toUpperCase() + label.slice(1);
+async function openManageSubscription() {
+  if (Platform.OS === "ios") {
+    if (!Purchases) {
+      Alert.alert("Indisponível", "Compras indisponíveis no Expo Go.");
+      return;
+    }
+    await Purchases.showManageSubscriptions();
+    return;
+  }
+  const pkg = Constants.expoConfig?.android?.package ?? "";
+  await Linking.openURL(
+    `https://play.google.com/store/account/subscriptions?sku=${ANDROID_SKU}&package=${pkg}`,
+  );
 }
 
 export default function MyPlanScreen() {
   const router = useRouter();
   const { data: sub } = useManagerSubscription();
-  const { data: invoices } = useManagerInvoices({ enabled: sub?.plan === "pro" });
-  const portal = useStripePortal();
+  const restore = useRestorePurchases();
 
   const isPro = sub?.plan === "pro";
-  const isCanceled = sub?.status === "canceled";
+  const isPastDue = sub?.status === "past_due";
   const isScheduledForCancel =
-    sub?.status === "active" &&
-    !!sub?.canceledAt &&
-    new Date(sub.canceledAt).getTime() > Date.now();
-  const cancelDisabled = isCanceled || isScheduledForCancel;
+    sub?.status === "active" && !!sub?.canceledAt;
+
   const planPrice = isPro ? "R$ 49" : "R$ 0";
   const planName = isPro ? "Pro" : "Gratuito";
   const statusLabel =
     sub?.status === "active"
       ? "ATIVO"
-      : sub?.status === "incomplete"
-        ? "PENDENTE"
-        : sub?.status === "past_due"
-          ? "ATRASADO"
-          : sub?.status === "canceled"
-            ? "CANCELADO"
-            : "ATIVO";
-
-  async function handleOpenPortal() {
-    try {
-      const { url } = await portal.mutateAsync();
-      await Linking.openURL(url);
-    } catch {
-      Alert.alert("Erro", "Não foi possível abrir o portal de pagamento.");
-    }
-  }
+      : sub?.status === "past_due"
+        ? "ATRASADO"
+        : sub?.status === "canceled"
+          ? "CANCELADO"
+          : "ATIVO";
 
   function handleChangePlan() {
     router.push("/(app)/(manager)/plan-selection");
   }
 
+  async function handleManage() {
+    try {
+      await openManageSubscription();
+    } catch {
+      Alert.alert("Erro", "Não foi possível abrir o gerenciador de assinaturas.");
+    }
+  }
+
+  async function handleRestore() {
+    try {
+      await restore.mutateAsync();
+      Alert.alert("Pronto", "Compras restauradas.");
+    } catch {
+      Alert.alert("Erro", "Não foi possível restaurar compras.");
+    }
+  }
+
   return (
-    <SafeAreaView className="flex-1 bg-background pt-4" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-background py-4" edges={["top", "bottom"]}>
       <ScrollView
         className="flex-1"
         contentContainerStyle={{
           paddingHorizontal: 24,
           paddingTop: 8,
-          paddingBottom: 40,
+          paddingBottom: 10,
           gap: 20,
         }}
         showsVerticalScrollIndicator={false}
@@ -157,6 +177,59 @@ export default function MyPlanScreen() {
           </View>
         </View>
 
+        {isPro && isPastDue ? (
+          <View
+            className="rounded-2xl"
+            style={{
+              backgroundColor: "rgba(255,69,58,0.12)",
+              borderColor: "#FF453A",
+              borderWidth: 1,
+              padding: 16,
+              gap: 8,
+            }}
+          >
+            <View className="flex-row items-center" style={{ gap: 8 }}>
+              <AlertTriangle size={16} color="#FF453A" />
+              <Text className="font-poppins-semibold text-sm" style={{ color: "#FF453A" }}>
+                Problema no pagamento
+              </Text>
+            </View>
+            <Text className="font-poppins text-[13px]" style={{ color: TEXT_SECONDARY }}>
+              Atualize sua forma de pagamento para manter o acesso ao plano Pro.
+            </Text>
+            <Pressable
+              onPress={handleManage}
+              className="items-center rounded-xl bg-accent"
+              style={{ paddingVertical: 10, marginTop: 4 }}
+            >
+              <Text className="font-poppins-semibold text-sm text-white">
+                Atualizar pagamento
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {isPro && isScheduledForCancel && sub?.canceledAt ? (
+          <View
+            className="rounded-2xl"
+            style={{
+              backgroundColor: "rgba(255,204,0,0.10)",
+              borderColor: "#FFCC00",
+              borderWidth: 1,
+              padding: 16,
+              gap: 6,
+            }}
+          >
+            <Text className="font-poppins-semibold text-sm" style={{ color: "#FFCC00" }}>
+              Assinatura com cancelamento agendado
+            </Text>
+            <Text className="font-poppins text-[13px]" style={{ color: TEXT_SECONDARY }}>
+              Sua assinatura será encerrada em{" "}
+              {sub.currentPeriodEnd ? formatDate(sub.currentPeriodEnd) : formatDate(sub.canceledAt)}.
+            </Text>
+          </View>
+        ) : null}
+
         <Pressable
           onPress={handleChangePlan}
           className="flex-row items-center justify-between rounded-2xl border border-surface-border bg-surface"
@@ -173,105 +246,35 @@ export default function MyPlanScreen() {
 
         {isPro && (
           <Pressable
-            onPress={handleOpenPortal}
-            disabled={portal.isPending}
+            onPress={handleManage}
             className="flex-row items-center justify-between rounded-2xl border border-surface-border bg-surface"
-            style={{ padding: 16, opacity: portal.isPending ? 0.6 : 1 }}
+            style={{ padding: 16 }}
           >
             <View className="flex-row items-center" style={{ gap: 10 }}>
               <Settings size={18} color="#FFFFFF" />
               <Text className="font-poppins-semibold text-sm text-primary">
-                Gerenciar cartão
+                Gerenciar assinatura
               </Text>
             </View>
             <ChevronRight size={18} color={TEXT_SECONDARY} />
           </Pressable>
         )}
 
-        {isPro ? (
-          <>
-            <Text className="font-poppins-semibold text-sm" style={{ color: TEXT_SECONDARY }}>
-              Histórico de pagamentos
+        <Pressable
+          onPress={handleRestore}
+          disabled={restore.isPending}
+          className="flex-row items-center justify-between rounded-2xl border border-surface-border bg-surface"
+          style={{ padding: 16, opacity: restore.isPending ? 0.6 : 1 }}
+        >
+          <View className="flex-row items-center" style={{ gap: 10 }}>
+            <RotateCcw size={18} color="#FFFFFF" />
+            <Text className="font-poppins-semibold text-sm text-primary">
+              Restaurar compras
             </Text>
-
-            <View style={{ gap: 8 }}>
-              {(invoices ?? []).map((inv) => {
-                const month =
-                  inv.referenceMonth ? formatMonthLabel(inv.referenceMonth) : "";
-                const last4 = inv.paymentMethodLast4
-                  ? `···· ${inv.paymentMethodLast4}`
-                  : "····";
-
-                return (
-                  <View
-                    key={inv.id}
-                    className="rounded-xl border border-surface-border bg-surface"
-                    style={{ paddingVertical: 12, paddingHorizontal: 14, gap: 4 }}
-                  >
-                    <View className="flex-row items-center justify-between">
-                      <Text className="font-poppins-semibold text-sm text-primary">
-                        Plano Pro — {month}
-                      </Text>
-                      <Text className="font-poppins-semibold text-sm" style={{ color: "#32D74B" }}>
-                        {formatCurrency(inv.amountCents)}
-                      </Text>
-                    </View>
-                    <Text className="font-poppins text-[11px]" style={{ color: TEXT_SECONDARY }}>
-                      {formatDate(inv.createdAt)} · Cartão {last4}
-                    </Text>
-                  </View>
-                );
-              })}
-
-              {(invoices ?? []).length === 0 ? (
-                <View
-                  className="rounded-xl border border-surface-border bg-surface"
-                  style={{ paddingVertical: 12, paddingHorizontal: 14 }}
-                >
-                  <Text className="font-poppins text-[11px]" style={{ color: TEXT_SECONDARY }}>
-                    Nenhum pagamento encontrado ainda.
-                  </Text>
-                </View>
-              ) : null}
-            </View>
-          </>
-        ) : null}
-
-        {isPro && (
-          <Pressable
-            onPress={cancelDisabled ? undefined : handleOpenPortal}
-            disabled={cancelDisabled}
-            className="flex-row items-center justify-between rounded-2xl border border-surface-border bg-surface"
-            style={{
-              padding: 16,
-              opacity: cancelDisabled ? 0.6 : 1,
-            }}
-          >
-            <View className="flex-row items-center" style={{ gap: 10 }}>
-              <XCircle size={18} color="#FF453A" />
-              <Text
-                className="font-poppins-semibold text-sm"
-                style={{ color: "#FF453A" }}
-              >
-                Cancelar assinatura
-              </Text>
-            </View>
-            <ChevronRight size={18} color={TEXT_SECONDARY} />
-          </Pressable>
-        )}
-
-        {isPro && isCanceled ? (
-          <Text className="font-poppins text-xs" style={{ color: "#FF453A" }}>
-            Sua assinatura foi cancelada.
-          </Text>
-        ) : isPro && isScheduledForCancel && sub?.canceledAt ? (
-          <Text className="font-poppins text-xs" style={{ color: TEXT_SECONDARY }}>
-            Seu cancelamento já foi agendado e o plano ficará ativo até{" "}
-            {formatDate(sub.canceledAt)}.
-          </Text>
-        ) : null}
+          </View>
+          <ChevronRight size={18} color={TEXT_SECONDARY} />
+        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
 }
-

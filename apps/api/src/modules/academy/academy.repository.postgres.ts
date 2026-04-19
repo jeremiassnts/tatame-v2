@@ -83,6 +83,13 @@ export class PostgresAcademyRepository implements IAcademyRepository {
     return !!row;
   }
 
+  async findByOwnerId(ownerId: string): Promise<AcademyRow[]> {
+    return this.db
+      .select()
+      .from(academies)
+      .where(eq(academies.ownerId, ownerId));
+  }
+
   async getStats(academyId: string, currentDayOfWeek: number) {
     const [[membersRow], [pendingRow], [classesRow], [plansRow]] =
       await Promise.all([

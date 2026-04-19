@@ -1,9 +1,11 @@
+import { useApi } from "@/lib/api";
 import {
   useManagerSubscription,
+  type ManagerSubscription,
 } from "@/lib/hooks/use-manager-subscription";
 import { useQueryClient } from "@tanstack/react-query";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { CheckCircle, RefreshCw, XCircle } from "lucide-react-native";
+import { useRouter } from "expo-router";
+import { CheckCircle, RefreshCw } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -14,16 +16,12 @@ const MAX_POLL_TIME = 30000;
 export default function SubscriptionResultScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { session_id, status } = useLocalSearchParams<{
-    session_id?: string;
-    status?: string;
-  }>();
+  const api = useApi();
 
   const { data: sub, refetch } = useManagerSubscription();
-  const [state, setState] = useState<"polling" | "success" | "timeout" | "cancelled">(
-    status === "cancel" ? "cancelled" : "polling",
-  );
+  const [state, setState] = useState<"polling" | "success" | "timeout">("polling");
   const startTime = useRef(Date.now());
+  const refreshedOnce = useRef(false);
 
   const checkSubscription = useCallback(async () => {
     const { data } = await refetch();
@@ -32,14 +30,33 @@ export default function SubscriptionResultScreen() {
       await queryClient.invalidateQueries({ queryKey: ["manager-subscription"] });
       await queryClient.invalidateQueries({ queryKey: ["manager-limits"] });
       await queryClient.invalidateQueries({ queryKey: ["user/me"] });
-    } else if (Date.now() - startTime.current > MAX_POLL_TIME) {
+      return;
+    }
+
+    if (Date.now() - startTime.current > MAX_POLL_TIME) {
+      if (!refreshedOnce.current) {
+        refreshedOnce.current = true;
+        try {
+          await api.post<ManagerSubscription>("/manager-subscriptions/refresh");
+          const refreshed = await refetch();
+          if (
+            refreshed.data?.plan === "pro" &&
+            refreshed.data?.status === "active"
+          ) {
+            setState("success");
+            await queryClient.invalidateQueries({ queryKey: ["manager-subscription"] });
+            await queryClient.invalidateQueries({ queryKey: ["manager-limits"] });
+            await queryClient.invalidateQueries({ queryKey: ["user/me"] });
+            return;
+          }
+        } catch {}
+      }
       setState("timeout");
     }
-  }, [refetch, queryClient]);
+  }, [refetch, queryClient, api]);
 
   useEffect(() => {
     if (state !== "polling") return;
-
     checkSubscription();
     const interval = setInterval(checkSubscription, POLL_INTERVAL);
     return () => clearInterval(interval);
@@ -111,26 +128,6 @@ export default function SubscriptionResultScreen() {
           >
             <Text className="font-poppins-semibold text-sm text-white">
               Ir para o início
-            </Text>
-          </Pressable>
-        </View>
-      )}
-
-      {state === "cancelled" && (
-        <View className="items-center" style={{ gap: 16 }}>
-          <XCircle size={56} color="#FF453A" />
-          <Text className="font-poppins-bold text-xl text-primary">
-            Pagamento cancelado
-          </Text>
-          <Text className="font-poppins text-sm" style={{ color: "#ABABAB" }}>
-            Nenhuma cobrança foi realizada.
-          </Text>
-          <Pressable
-            onPress={() => router.back()}
-            className="mt-4 rounded-xl bg-surface px-6 py-3"
-          >
-            <Text className="font-poppins-semibold text-sm text-primary">
-              Voltar
             </Text>
           </Pressable>
         </View>

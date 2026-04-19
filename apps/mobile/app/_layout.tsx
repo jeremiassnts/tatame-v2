@@ -1,7 +1,12 @@
 import "../global.css";
 
 import { tokenCache } from "@/lib/clerk-token-cache";
-import { ClerkLoaded, ClerkProvider } from "@clerk/clerk-expo";
+import {
+  identifyRevenueCatUser,
+  initRevenueCat,
+  resetRevenueCatUser,
+} from "@/lib/revenuecat";
+import { ClerkLoaded, ClerkProvider, useAuth } from "@clerk/clerk-expo";
 import {
   Poppins_400Regular,
   Poppins_500Medium,
@@ -29,6 +34,25 @@ SplashScreen.preventAutoHideAsync();
 SystemUI.setBackgroundColorAsync("#0C0C0C");
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 const stripePublishableKey = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!;
+
+function RevenueCatBridge() {
+  const { userId, isSignedIn, isLoaded } = useAuth();
+
+  useEffect(() => {
+    initRevenueCat();
+  }, []);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (isSignedIn && userId) {
+      identifyRevenueCatUser(userId).catch(() => {});
+    } else {
+      resetRevenueCatUser().catch(() => {});
+    }
+  }, [isLoaded, isSignedIn, userId]);
+
+  return null;
+}
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -58,6 +82,7 @@ export default function RootLayout() {
         <SafeAreaProvider>
           <StripeProvider publishableKey={stripePublishableKey}>
             <StatusBar style="light" />
+            <RevenueCatBridge />
             <Slot />
           </StripeProvider>
         </SafeAreaProvider>

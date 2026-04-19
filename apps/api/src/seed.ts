@@ -105,8 +105,9 @@ async function seed() {
     academyId,
     plan: "pro",
     status: "active",
-    stripeCustomerId: `cus_seed_${faker.string.alphanumeric(14)}`,
-    stripeSubscriptionId: `sub_seed_${faker.string.alphanumeric(14)}`,
+    revenuecatAppUserId: `seed_user_${faker.string.alphanumeric(14)}`,
+    productId: "tatame_pro_monthly",
+    store: "app_store",
     currentPeriodEnd: addMonths(now, 1),
     subscribedAt: new Date("2024-07-01"),
   });

@@ -55,7 +55,7 @@ describe("ManagerSubscriptionService", () => {
       const result = await svc.selectFree(ownerId, academy.id);
       expect(result.plan).toBe("free");
       expect(result.status).toBe("active");
-      expect(result.stripeCustomerId).toBeNull();
+      expect(result.revenuecatAppUserId).toBeNull();
     });
 
     it("rejects if academy already has subscription", async () => {
@@ -170,7 +170,7 @@ describe("ManagerSubscriptionService", () => {
         academyId: academy.id,
         plan: "pro",
         status: "canceled",
-        stripeSubscriptionId: "sub_test_123",
+        revenuecatAppUserId: "user_test_123",
       });
       const students = Array.from({ length: 51 }, () =>
         makeMembership({

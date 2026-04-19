@@ -3,6 +3,7 @@ import { managerSubscriptions, type Database } from "@tatame/db";
 import type {
   IManagerSubscriptionRepository,
   ManagerSubscriptionRow,
+  ManagerSubscriptionStore,
 } from "./manager-subscription.repository.js";
 
 export class PostgresManagerSubscriptionRepository
@@ -21,24 +22,13 @@ export class PostgresManagerSubscriptionRepository
     return row;
   }
 
-  async findByStripeCustomerId(
-    stripeCustomerId: string,
+  async findByRevenueCatAppUserId(
+    appUserId: string,
   ): Promise<ManagerSubscriptionRow | undefined> {
     const [row] = await this.db
       .select()
       .from(managerSubscriptions)
-      .where(eq(managerSubscriptions.stripeCustomerId, stripeCustomerId))
-      .limit(1);
-    return row;
-  }
-
-  async findByStripeSubscriptionId(
-    stripeSubscriptionId: string,
-  ): Promise<ManagerSubscriptionRow | undefined> {
-    const [row] = await this.db
-      .select()
-      .from(managerSubscriptions)
-      .where(eq(managerSubscriptions.stripeSubscriptionId, stripeSubscriptionId))
+      .where(eq(managerSubscriptions.revenuecatAppUserId, appUserId))
       .limit(1);
     return row;
   }
@@ -47,8 +37,10 @@ export class PostgresManagerSubscriptionRepository
     academyId: string;
     plan: "free" | "pro";
     status: "active" | "past_due" | "canceled" | "incomplete";
-    stripeCustomerId?: string | null;
-    stripeSubscriptionId?: string | null;
+    revenuecatAppUserId?: string | null;
+    productId?: string | null;
+    originalTransactionId?: string | null;
+    store?: ManagerSubscriptionStore | null;
     currentPeriodEnd?: Date | null;
   }): Promise<ManagerSubscriptionRow> {
     const rows = await this.db
@@ -57,8 +49,10 @@ export class PostgresManagerSubscriptionRepository
         academyId: data.academyId,
         plan: data.plan,
         status: data.status,
-        stripeCustomerId: data.stripeCustomerId ?? null,
-        stripeSubscriptionId: data.stripeSubscriptionId ?? null,
+        revenuecatAppUserId: data.revenuecatAppUserId ?? null,
+        productId: data.productId ?? null,
+        originalTransactionId: data.originalTransactionId ?? null,
+        store: data.store ?? null,
         currentPeriodEnd: data.currentPeriodEnd ?? null,
       })
       .returning();
@@ -74,10 +68,13 @@ export class PostgresManagerSubscriptionRepository
     data: Partial<{
       plan: "free" | "pro";
       status: "active" | "past_due" | "canceled" | "incomplete";
-      stripeCustomerId: string | null;
-      stripeSubscriptionId: string | null;
+      revenuecatAppUserId: string | null;
+      productId: string | null;
+      originalTransactionId: string | null;
+      store: ManagerSubscriptionStore | null;
       currentPeriodEnd: Date | null;
       canceledAt: Date | null;
+      subscribedAt: Date;
     }>,
   ): Promise<ManagerSubscriptionRow | undefined> {
     const rows = await this.db
@@ -87,5 +84,53 @@ export class PostgresManagerSubscriptionRepository
       .returning();
     return rows[0];
   }
-}
 
+  async upsertByAcademy(data: {
+    academyId: string;
+    plan: "free" | "pro";
+    status: "active" | "past_due" | "canceled" | "incomplete";
+    revenuecatAppUserId?: string | null;
+    productId?: string | null;
+    originalTransactionId?: string | null;
+    store?: ManagerSubscriptionStore | null;
+    currentPeriodEnd?: Date | null;
+    canceledAt?: Date | null;
+    subscribedAt?: Date;
+  }): Promise<ManagerSubscriptionRow> {
+    const rows = await this.db
+      .insert(managerSubscriptions)
+      .values({
+        academyId: data.academyId,
+        plan: data.plan,
+        status: data.status,
+        revenuecatAppUserId: data.revenuecatAppUserId ?? null,
+        productId: data.productId ?? null,
+        originalTransactionId: data.originalTransactionId ?? null,
+        store: data.store ?? null,
+        currentPeriodEnd: data.currentPeriodEnd ?? null,
+        canceledAt: data.canceledAt ?? null,
+        ...(data.subscribedAt ? { subscribedAt: data.subscribedAt } : {}),
+      })
+      .onConflictDoUpdate({
+        target: managerSubscriptions.academyId,
+        set: {
+          plan: data.plan,
+          status: data.status,
+          revenuecatAppUserId: data.revenuecatAppUserId ?? null,
+          productId: data.productId ?? null,
+          originalTransactionId: data.originalTransactionId ?? null,
+          store: data.store ?? null,
+          currentPeriodEnd: data.currentPeriodEnd ?? null,
+          canceledAt: data.canceledAt ?? null,
+          ...(data.subscribedAt ? { subscribedAt: data.subscribedAt } : {}),
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    const row = rows[0];
+    if (!row) {
+      throw new Error("Failed to upsert manager subscription");
+    }
+    return row;
+  }
+}
