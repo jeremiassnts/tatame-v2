@@ -29,7 +29,7 @@ export default function SubscriptionResultScreen() {
       setState("success");
       await queryClient.invalidateQueries({ queryKey: ["manager-subscription"] });
       await queryClient.invalidateQueries({ queryKey: ["manager-limits"] });
-      await queryClient.invalidateQueries({ queryKey: ["user/me"] });
+      await queryClient.invalidateQueries({ queryKey: ["user", "me"] });
       return;
     }
 
@@ -46,7 +46,7 @@ export default function SubscriptionResultScreen() {
             setState("success");
             await queryClient.invalidateQueries({ queryKey: ["manager-subscription"] });
             await queryClient.invalidateQueries({ queryKey: ["manager-limits"] });
-            await queryClient.invalidateQueries({ queryKey: ["user/me"] });
+            await queryClient.invalidateQueries({ queryKey: ["user", "me"] });
             return;
           }
         } catch {}

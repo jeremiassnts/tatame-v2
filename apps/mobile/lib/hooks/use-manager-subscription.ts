@@ -52,7 +52,7 @@ export function useSelectFreePlan() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["manager-subscription"] });
       queryClient.invalidateQueries({ queryKey: ["manager-limits"] });
-      queryClient.invalidateQueries({ queryKey: ["user/me"] });
+      queryClient.invalidateQueries({ queryKey: ["user", "me"] });
     },
   });
 }
