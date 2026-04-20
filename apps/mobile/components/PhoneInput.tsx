@@ -46,7 +46,7 @@ export function PhoneInput({
           }}
           onBlur={onBlur}
           autoCorrect={false}
-          className="flex-1 font-poppins text-[15px] text-primary"
+          style={{ flex: 1, fontFamily: "Poppins_400Regular", fontSize: 15, color: "#FFFFFF" }}
         />
       </View>
       {error ? (
