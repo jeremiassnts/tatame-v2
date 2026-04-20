@@ -1,5 +1,6 @@
 import { DatePickerField } from "@/components/DatePickerField";
 import { FormInput } from "@/components/FormInput";
+import { PhoneInput } from "@/components/PhoneInput";
 import { GradientButton } from "@/components/GradientButton";
 import { ImagePickerField } from "@/components/ImagePickerField";
 import { useCreateAcademy } from "@/lib/hooks/use-academy";
@@ -146,13 +147,11 @@ export default function CreateAcademyScreen() {
                 control={control}
                 name="contactPhone"
                 render={({ field: { onChange, onBlur, value } }) => (
-                  <FormInput
+                  <PhoneInput
                     label="Telefone de contato"
-                    placeholder="(11) 99999-9999"
-                    value={value ?? ""}
-                    onChangeText={(t) => onChange(t || null)}
+                    value={value}
+                    onChangePhone={(digits) => onChange(digits || null)}
                     onBlur={onBlur}
-                    keyboardType="phone-pad"
                     error={errors.contactPhone?.message}
                   />
                 )}
