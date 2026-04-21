@@ -130,10 +130,8 @@ export default function ProfileScreen() {
       const asset = result.assets[0];
       const mimeType = asset.mimeType ?? "image/jpeg";
       const dataUri = `data:${mimeType};base64,${asset.base64}`;
-      const response = await fetch(dataUri);
-      const blob = await response.blob();
 
-      await clerkUser.setProfileImage({ file: blob });
+      await clerkUser.setProfileImage({ file: dataUri });
 
       const token = await getToken();
       if (token) {
