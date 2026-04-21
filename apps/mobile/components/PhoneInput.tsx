@@ -5,7 +5,7 @@ import type { LucideIcon } from "lucide-react-native";
 type PhoneInputProps = {
   label: string;
   /** Raw digits (unmasked), e.g. "11999999999" */
-  value: string | null;
+  value: string | null | undefined;
   /** Called with digits only */
   onChangePhone: (digits: string) => void;
   onBlur?: () => void;
