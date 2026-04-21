@@ -120,6 +120,7 @@ export default function ProfileScreen() {
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
+      base64: true,
     });
 
     if (result.canceled || !result.assets[0]) return;
@@ -127,7 +128,9 @@ export default function ProfileScreen() {
     setUploadingPhoto(true);
     try {
       const asset = result.assets[0];
-      const response = await fetch(asset.uri);
+      const mimeType = asset.mimeType ?? "image/jpeg";
+      const dataUri = `data:${mimeType};base64,${asset.base64}`;
+      const response = await fetch(dataUri);
       const blob = await response.blob();
 
       await clerkUser.setProfileImage({ file: blob });
