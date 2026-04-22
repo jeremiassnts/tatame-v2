@@ -1,11 +1,13 @@
 import { HttpError } from "../../lib/http-error.js";
 import type { IAcademyRepository } from "../academy/academy.repository.js";
+import type { NotificationDispatcher } from "../notification/notification-dispatcher.js";
 import type { IMembershipRepository } from "./membership.repository.js";
 
 export class MembershipService {
   constructor(
     private readonly membershipRepo: IMembershipRepository,
     private readonly academyRepo: IAcademyRepository,
+    private readonly dispatcher?: NotificationDispatcher,
   ) {}
 
   async getActive(userId: string) {
@@ -125,7 +127,7 @@ export class MembershipService {
       );
     }
 
-    return this.membershipRepo.withTransaction(async (txRepo) => {
+    const result = await this.membershipRepo.withTransaction(async (txRepo) => {
       await txRepo.rejectAllPendingExcept(m.userId, membershipId);
       const updated = await txRepo.updateStatus(membershipId, {
         status: "active",
@@ -137,6 +139,18 @@ export class MembershipService {
       }
       return updated;
     });
+
+    // Fire-and-forget: notify managers about new member
+    if (this.dispatcher) {
+      const detail = await this.membershipRepo.findDetailById(membershipId);
+      this.dispatcher.notifyAcademyManagers(
+        "new_member",
+        m.academyId,
+        [detail?.userName ?? "Novo membro"],
+      );
+    }
+
+    return result;
   }
 
   async reject(membershipId: string, managerUserId: string) {

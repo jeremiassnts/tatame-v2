@@ -20,12 +20,32 @@ import { getEmailQueue } from "../email/email.queue.js";
 import { EmailService } from "../email/email.service.js";
 import { PostgresManagerSubscriptionRepository } from "../manager-subscription/manager-subscription.repository.postgres.js";
 import { ManagerSubscriptionService } from "../manager-subscription/manager-subscription.service.js";
+import { NotificationDispatcher } from "../notification/notification-dispatcher.js";
+import { getNotificationQueue } from "../notification/notification.queue.js";
+import { PostgresNotificationRepository } from "../notification/notification.repository.postgres.js";
+import { NotificationService } from "../notification/notification.service.js";
+import { PostgresPushTokenRepository } from "../push-token/push-token.repository.postgres.js";
 import { PostgresSubscriptionPlanRepository } from "../subscription/subscription.repository.postgres.js";
 import { PostgresUserRepository } from "../user/user.repository.postgres.js";
 import { PostgresMembershipRepository } from "./membership.repository.postgres.js";
 import { MembershipService } from "./membership.service.js";
 
 export const membershipRouter = Router();
+
+function buildDispatcher(db: ReturnType<typeof getDb>) {
+  const env = loadEnv();
+  const queue = env.REDIS_URL ? getNotificationQueue(env.REDIS_URL) : null;
+  const notificationService = new NotificationService(
+    new PostgresNotificationRepository(db),
+    new PostgresPushTokenRepository(db),
+    queue,
+  );
+  return new NotificationDispatcher(
+    notificationService,
+    new PostgresUserRepository(db),
+    new PostgresMembershipRepository(db),
+  );
+}
 
 const db = getDb();
 const env = loadEnv();
@@ -39,6 +59,7 @@ const emailService = env.REDIS_URL
 const membershipService = new MembershipService(
   membershipRepo,
   academyRepo,
+  buildDispatcher(db),
 );
 const managerSubService = new ManagerSubscriptionService(
   new PostgresManagerSubscriptionRepository(db),
