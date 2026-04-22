@@ -133,4 +133,18 @@ export class InMemoryUserRepository implements IUserRepository {
   async findActiveAcademyForManager(_userId: string): Promise<undefined> {
     return undefined;
   }
+
+  async findClerkIdByInternalId(userId: string): Promise<string | undefined> {
+    const user = this.users.find((u) => u.id === userId);
+    return user?.clerkUserId;
+  }
+
+  async findClerkIdsByInternalIds(userIds: string[]): Promise<Map<string, string>> {
+    const result = new Map<string, string>();
+    for (const id of userIds) {
+      const user = this.users.find((u) => u.id === id);
+      if (user) result.set(id, user.clerkUserId);
+    }
+    return result;
+  }
 }

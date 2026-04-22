@@ -1,4 +1,4 @@
-import { and, eq, isNotNull, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import {
   academies,
   academyMemberships,
@@ -142,6 +142,24 @@ export class PostgresUserRepository implements IUserRepository {
       startedAt: data.startedAt,
       endedAt: data.endedAt,
     });
+  }
+
+  async findClerkIdByInternalId(userId: string): Promise<string | undefined> {
+    const [row] = await this.db
+      .select({ clerkUserId: users.clerkUserId })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+    return row?.clerkUserId;
+  }
+
+  async findClerkIdsByInternalIds(userIds: string[]): Promise<Map<string, string>> {
+    if (userIds.length === 0) return new Map();
+    const rows = await this.db
+      .select({ id: users.id, clerkUserId: users.clerkUserId })
+      .from(users)
+      .where(inArray(users.id, userIds));
+    return new Map(rows.map((r) => [r.id, r.clerkUserId]));
   }
 
   async findActiveAcademyForManager(userId: string): Promise<{
