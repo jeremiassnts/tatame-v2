@@ -1,3 +1,4 @@
+import { loadEnv } from "@tatame/config";
 import { Router } from "express";
 import { Role } from "@tatame/types";
 import type {
@@ -19,16 +20,38 @@ import { authorize } from "../../middleware/authorize.js";
 import { validateBody } from "../../middleware/validate.js";
 import { PostgresAcademyRepository } from "../academy/academy.repository.postgres.js";
 import { PostgresMembershipRepository } from "../membership/membership.repository.postgres.js";
+import { NotificationDispatcher } from "../notification/notification-dispatcher.js";
+import { getNotificationQueue } from "../notification/notification.queue.js";
+import { PostgresNotificationRepository } from "../notification/notification.repository.postgres.js";
+import { NotificationService } from "../notification/notification.service.js";
+import { PostgresPushTokenRepository } from "../push-token/push-token.repository.postgres.js";
+import { PostgresUserRepository } from "../user/user.repository.postgres.js";
 import { PostgresGraduationRepository } from "./graduation.repository.postgres.js";
 import { GraduationService } from "./graduation.service.js";
 
 export const graduationRouter = Router();
+
+function buildDispatcher(db: ReturnType<typeof getDb>) {
+  const env = loadEnv();
+  const queue = env.REDIS_URL ? getNotificationQueue(env.REDIS_URL) : null;
+  const notificationService = new NotificationService(
+    new PostgresNotificationRepository(db),
+    new PostgresPushTokenRepository(db),
+    queue,
+  );
+  return new NotificationDispatcher(
+    notificationService,
+    new PostgresUserRepository(db),
+    new PostgresMembershipRepository(db),
+  );
+}
 
 const db = getDb();
 const graduationService = new GraduationService(
   new PostgresGraduationRepository(db),
   new PostgresMembershipRepository(db),
   new PostgresAcademyRepository(db),
+  buildDispatcher(db),
 );
 
 function formatPromotion(row: {
