@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 import type { IAcademyRepository } from "../academy/academy.repository.js";
 import type { EmailService } from "../email/email.service.js";
+import type { NotificationDispatcher } from "../notification/notification-dispatcher.js";
 import type { IUserRepository } from "../user/user.repository.js";
 import type { IPaymentRepository } from "./payment.repository.js";
 
@@ -10,6 +11,7 @@ export class StripeCheckoutWebhookHandler {
     private readonly userRepo: IUserRepository,
     private readonly academyRepo: IAcademyRepository,
     private readonly emailService: EmailService | null,
+    private readonly dispatcher?: NotificationDispatcher,
   ) {}
 
   async handleEvent(event: Stripe.Event): Promise<void> {
@@ -56,6 +58,22 @@ export class StripeCheckoutWebhookHandler {
       notes: null,
       paidAt: new Date(),
     });
+
+    // Push notifications
+    if (this.dispatcher) {
+      const student = await this.userRepo.findById(meta.userId);
+      this.dispatcher.notifyUsers(
+        "payment_confirmed",
+        [meta.userId],
+        ["assinatura"],
+        { academyId: meta.academyId },
+      );
+      this.dispatcher.notifyAcademyManagers(
+        "student_payment_received",
+        meta.academyId,
+        [student?.name ?? "Aluno", "assinatura"],
+      );
+    }
 
     if (!this.emailService) return;
 

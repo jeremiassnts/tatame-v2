@@ -25,6 +25,11 @@ import { PostgresPaymentRepository } from "../payment/payment.repository.postgre
 import { AbacatePayWebhookHandler } from "../payment/abacatepay-webhook.handler.js";
 import { StripeCheckoutWebhookHandler } from "../payment/stripe-checkout-webhook.handler.js";
 import type { RevenueCatEvent } from "./revenuecat-events.js";
+import { PostgresNotificationRepository } from "../notification/notification.repository.postgres.js";
+import { PostgresPushTokenRepository } from "../push-token/push-token.repository.postgres.js";
+import { getNotificationQueue } from "../notification/notification.queue.js";
+import { NotificationService } from "../notification/notification.service.js";
+import { NotificationDispatcher } from "../notification/notification-dispatcher.js";
 
 const db = getDb();
 const env = loadEnv();
@@ -38,6 +43,17 @@ const userRepo = new PostgresUserRepository(db);
 const emailService = env.REDIS_URL
   ? new EmailService(getEmailQueue(env.REDIS_URL))
   : null;
+
+const notifQueue = env.REDIS_URL ? getNotificationQueue(env.REDIS_URL) : null;
+const webhookDispatcher = new NotificationDispatcher(
+  new NotificationService(
+    new PostgresNotificationRepository(db),
+    new PostgresPushTokenRepository(db),
+    notifQueue,
+  ),
+  userRepo,
+  memRepo,
+);
 
 const paymentRepo = new PostgresPaymentRepository(db);
 
@@ -177,6 +193,7 @@ export function createWebhookRouter() {
     userRepo,
     acadRepo,
     emailService,
+    webhookDispatcher,
   );
 
   webhookRouter.post("/abacatepay", async (req, res, next) => {
@@ -193,6 +210,7 @@ export function createWebhookRouter() {
     userRepo,
     acadRepo,
     emailService,
+    webhookDispatcher,
   );
 
   webhookRouter.post("/stripe", async (req, res, next) => {

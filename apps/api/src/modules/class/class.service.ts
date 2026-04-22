@@ -94,6 +94,18 @@ export class ClassService {
       capacity: body.capacity ?? null,
       isActive: true,
     });
+
+    if (this.dispatcher) {
+      const dayNames = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+      const dayName = dayNames[body.dayOfWeek] ?? "";
+      const timeFormatted = startTime.slice(0, 5);
+      this.dispatcher.notifyAcademyStudents(
+        "class_created",
+        ctx.activeAcademyId,
+        [body.name, dayName, timeFormatted],
+      );
+    }
+
     return created;
   }
 

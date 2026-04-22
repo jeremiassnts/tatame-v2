@@ -48,7 +48,7 @@ export class MembershipService {
       throw new HttpError(409, "You already have a pending request for this academy");
     }
 
-    return this.membershipRepo.create({
+    const result = await this.membershipRepo.create({
       academyId,
       userId,
       role,
@@ -57,6 +57,18 @@ export class MembershipService {
       joinedAt: null,
       leftAt: null,
     });
+
+    // Notify managers about the new request
+    if (this.dispatcher) {
+      const detail = await this.membershipRepo.findDetailById(result.id);
+      this.dispatcher.notifyAcademyManagers(
+        "membership_request",
+        academyId,
+        [detail?.userName ?? "Novo membro", role],
+      );
+    }
+
+    return result;
   }
 
   async listMembers(
@@ -140,13 +152,21 @@ export class MembershipService {
       return updated;
     });
 
-    // Fire-and-forget: notify managers about new member
     if (this.dispatcher) {
+      // Notify managers about new member
       const detail = await this.membershipRepo.findDetailById(membershipId);
       this.dispatcher.notifyAcademyManagers(
         "new_member",
         m.academyId,
         [detail?.userName ?? "Novo membro"],
+      );
+
+      // Notify the member they were approved
+      const academy = await this.academyRepo.findById(m.academyId);
+      this.dispatcher.notifyUsers(
+        "membership_approved",
+        [m.userId],
+        [academy?.name ?? "academia"],
       );
     }
 
@@ -171,6 +191,17 @@ export class MembershipService {
     if (!updated) {
       throw new HttpError(500, "Failed to reject membership");
     }
+
+    // Notify the member they were rejected
+    if (this.dispatcher) {
+      const academy = await this.academyRepo.findById(m.academyId);
+      this.dispatcher.notifyUsers(
+        "membership_rejected",
+        [m.userId],
+        [academy?.name ?? "academia"],
+      );
+    }
+
     return updated;
   }
 

@@ -52,6 +52,7 @@ export class PaymentService {
     });
 
     if (this.dispatcher) {
+      // Notify student
       this.dispatcher.notifyUsers(
         "payment_confirmed",
         [result.userId],

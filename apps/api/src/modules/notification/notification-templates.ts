@@ -38,6 +38,31 @@ export const notificationTemplates: Record<string, NotificationTemplate> = {
     body: (studentName: string, className: string) =>
       `${studentName} fez check-in na aula "${className}" com assinatura vencida ou pagamento pendente.`,
   },
+  student_payment_received: {
+    title: "Pagamento de aluno recebido",
+    body: (studentName: string, planName: string) =>
+      `${studentName} pagou o plano "${planName}".`,
+  },
+  class_created: {
+    title: "Nova aula disponível",
+    body: (className: string, dayName: string, time: string) =>
+      `A aula "${className}" foi adicionada ao horário: ${dayName} às ${time}.`,
+  },
+  membership_request: {
+    title: "Novo pedido de entrada",
+    body: (memberName: string, role: string) =>
+      `${memberName} solicitou entrada como ${role === "instructor" ? "instrutor" : "aluno"}.`,
+  },
+  membership_approved: {
+    title: "Aprovado na academia!",
+    body: (academyName: string) =>
+      `Seu pedido para entrar na ${academyName} foi aprovado. Bem-vindo!`,
+  },
+  membership_rejected: {
+    title: "Pedido recusado",
+    body: (academyName: string) =>
+      `Seu pedido para entrar na ${academyName} foi recusado.`,
+  },
   weekly_summary: {
     title: "Resumo semanal",
     body: (count: string) =>
@@ -65,6 +90,11 @@ export function categoryForTemplateKey(key: string): Category {
     belt_promotion: "belt_promotion",
     new_member: "new_member",
     checkin_anomaly: "checkin_anomaly",
+    student_payment_received: "payment",
+    class_created: "class_change",
+    membership_request: "new_member",
+    membership_approved: "new_member",
+    membership_rejected: "new_member",
     weekly_summary: "weekly_summary",
     inactivity_nudge: "inactivity",
     milestone: "milestone",
