@@ -38,6 +38,19 @@ export const notificationTemplates: Record<string, NotificationTemplate> = {
     body: (studentName: string, className: string) =>
       `${studentName} fez check-in na aula "${className}" com assinatura vencida ou pagamento pendente.`,
   },
+  weekly_summary: {
+    title: "Resumo semanal",
+    body: (count: string) =>
+      `Você treinou ${Number(count) === 1 ? "1 vez" : `${count} vezes`} esta semana — ótimo trabalho!`,
+  },
+  inactivity_nudge: {
+    title: "Sentimos sua falta!",
+    body: () => "Não te vemos há 2 semanas — volte a treinar!",
+  },
+  milestone: {
+    title: "Marco alcançado! 🥋",
+    body: (count: string) => `Você completou ${count} aulas! Parabéns pela dedicação!`,
+  },
 };
 
 export function getTemplate(key: string): NotificationTemplate | undefined {
@@ -52,6 +65,9 @@ export function categoryForTemplateKey(key: string): Category {
     belt_promotion: "belt_promotion",
     new_member: "new_member",
     checkin_anomaly: "checkin_anomaly",
+    weekly_summary: "weekly_summary",
+    inactivity_nudge: "inactivity",
+    milestone: "milestone",
   };
   return map[key] ?? "announcement";
 }
