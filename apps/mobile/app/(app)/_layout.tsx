@@ -1,9 +1,12 @@
 import { AcademyProvider, useUpdateAcademyContext } from "@/lib/academy-context";
 import { useCurrentUser } from "@/lib/hooks/use-user";
 import { queryClient } from "@/lib/query-client";
+import { useApi } from "@/lib/api";
+import { registerForPushNotificationsAsync, getDeviceId } from "@/lib/notifications";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import { useEffect } from "react";
+import { Platform } from "react-native";
 
 /** Keeps AcademyContext in sync with the user query. */
 function AcademySyncer() {
@@ -32,11 +35,43 @@ function AcademySyncer() {
   return null;
 }
 
+function PushTokenRegistrar() {
+  const api = useApi();
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function register() {
+      try {
+        const token = await registerForPushNotificationsAsync();
+        if (!token || !mounted) return;
+
+        await api.post("/push-tokens", {
+          token,
+          platform: Platform.OS as "ios" | "android",
+          deviceId: getDeviceId(),
+        });
+      } catch {
+        // Silent failure — push registration is not critical
+      }
+    }
+
+    register();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  return null;
+}
+
 export default function AppLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <AcademyProvider>
         <AcademySyncer />
+        <PushTokenRegistrar />
         <Stack screenOptions={{ headerShown: false }} />
       </AcademyProvider>
     </QueryClientProvider>
