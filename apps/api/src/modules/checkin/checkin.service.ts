@@ -5,6 +5,7 @@ import { withCheckinLock } from "../../lib/lock.js";
 import { requireRedisForCheckin } from "../../lib/redis.js";
 import type { ClassRow, IClassRepository } from "../class/class.repository.js";
 import type { IMembershipRepository } from "../membership/membership.repository.js";
+import type { NotificationDispatcher } from "../notification/notification-dispatcher.js";
 import type { IPaymentRepository } from "../payment/payment.repository.js";
 import type { IStudentSubscriptionRepository } from "../subscription/subscription.repository.js";
 import {
@@ -129,6 +130,7 @@ export class CheckinService {
     private readonly studentSubRepo: IStudentSubscriptionRepository,
     private readonly paymentRepo: IPaymentRepository,
     private readonly checkinRepo: ICheckinRepository,
+    private readonly dispatcher?: NotificationDispatcher,
   ) { }
 
   async checkIn(opts: {
@@ -208,6 +210,16 @@ export class CheckinService {
           date: opts.sessionDate,
           weekReference,
         });
+
+        if (this.dispatcher && (warnings.subscriptionGrace || warnings.paymentOverdue)) {
+          const detail = await this.membershipRepo.findDetailById(membership.id);
+          this.dispatcher.notifyAcademyManagers(
+            "checkin_anomaly",
+            opts.academyId,
+            [detail?.userName ?? "Aluno", classRow.name],
+          );
+        }
+
         return { checkin, warnings };
       } catch (e) {
         if (isPostgresUniqueViolation(e)) {
