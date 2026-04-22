@@ -3,6 +3,7 @@ import type { Role } from "@tatame/types";
 import { HttpError } from "../../lib/http-error.js";
 import type { IAcademyRepository } from "../academy/academy.repository.js";
 import type { IMembershipRepository } from "../membership/membership.repository.js";
+import type { NotificationDispatcher } from "../notification/notification-dispatcher.js";
 import type { IClassRepository } from "./class.repository.js";
 
 export type ClassAuthContext = {
@@ -34,6 +35,7 @@ export class ClassService {
     private readonly classRepo: IClassRepository,
     private readonly membershipRepo: IMembershipRepository,
     private readonly academyRepo: IAcademyRepository,
+    private readonly dispatcher?: NotificationDispatcher,
   ) {}
 
   async list(
@@ -139,16 +141,34 @@ export class ClassService {
     if (!updated) {
       throw new HttpError(404, "Class not found");
     }
+
+    if (this.dispatcher && (body.startTime !== undefined || body.endTime !== undefined || body.dayOfWeek !== undefined)) {
+      this.dispatcher.notifyAcademyStudents(
+        "class_updated",
+        ctx.activeAcademyId,
+        [updated.name],
+      );
+    }
+
     return updated;
   }
 
   async deactivate(ctx: ClassAuthContext, classId: string) {
-    await this.loadForMutation(ctx, classId);
+    const existing = await this.loadForMutation(ctx, classId);
 
     const updated = await this.classRepo.update(classId, { isActive: false });
     if (!updated) {
       throw new HttpError(404, "Class not found");
     }
+
+    if (this.dispatcher) {
+      this.dispatcher.notifyAcademyStudents(
+        "class_deactivated",
+        ctx.activeAcademyId,
+        [existing.name],
+      );
+    }
+
     return updated;
   }
 

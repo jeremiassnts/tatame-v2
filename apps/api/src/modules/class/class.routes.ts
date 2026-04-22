@@ -1,3 +1,4 @@
+import { loadEnv } from "@tatame/config";
 import { Router, type Request } from "express";
 import { eq, and } from "drizzle-orm";
 import { users, checkins } from "@tatame/db";
@@ -20,19 +21,41 @@ import { validateBody } from "../../middleware/validate.js";
 import { PostgresAcademyRepository } from "../academy/academy.repository.postgres.js";
 import { PostgresManagerSubscriptionRepository } from "../manager-subscription/manager-subscription.repository.postgres.js";
 import { ManagerSubscriptionService } from "../manager-subscription/manager-subscription.service.js";
-import { PostgresSubscriptionPlanRepository } from "../subscription/subscription.repository.postgres.js";
 import { PostgresMembershipRepository } from "../membership/membership.repository.postgres.js";
+import { NotificationDispatcher } from "../notification/notification-dispatcher.js";
+import { getNotificationQueue } from "../notification/notification.queue.js";
+import { PostgresNotificationRepository } from "../notification/notification.repository.postgres.js";
+import { NotificationService } from "../notification/notification.service.js";
+import { PostgresPushTokenRepository } from "../push-token/push-token.repository.postgres.js";
+import { PostgresSubscriptionPlanRepository } from "../subscription/subscription.repository.postgres.js";
+import { PostgresUserRepository } from "../user/user.repository.postgres.js";
 import { PostgresClassRepository } from "./class.repository.postgres.js";
 import { ClassService } from "./class.service.js";
 import type { ClassRow } from "./class.repository.js";
 
 export const classRouter = Router();
 
+function buildDispatcher(db: ReturnType<typeof getDb>) {
+  const env = loadEnv();
+  const queue = env.REDIS_URL ? getNotificationQueue(env.REDIS_URL) : null;
+  const notificationService = new NotificationService(
+    new PostgresNotificationRepository(db),
+    new PostgresPushTokenRepository(db),
+    queue,
+  );
+  return new NotificationDispatcher(
+    notificationService,
+    new PostgresUserRepository(db),
+    new PostgresMembershipRepository(db),
+  );
+}
+
 const db = getDb();
 const classService = new ClassService(
   new PostgresClassRepository(db),
   new PostgresMembershipRepository(db),
   new PostgresAcademyRepository(db),
+  buildDispatcher(db),
 );
 const managerSubService = new ManagerSubscriptionService(
   new PostgresManagerSubscriptionRepository(db),
