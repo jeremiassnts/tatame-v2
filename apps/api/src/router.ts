@@ -15,6 +15,7 @@ import { membershipRouter } from "./modules/membership/membership.routes.js";
 import { managerSubscriptionRouter } from "./modules/manager-subscription/manager-subscription.routes.js";
 import { paymentRouter } from "./modules/payment/payment.routes.js";
 import { subscriptionRouter } from "./modules/subscription/subscription.routes.js";
+import { pushTokenRouter } from "./modules/push-token/push-token.routes.js";
 import { uploadRouter } from "./modules/upload/upload.routes.js";
 import { userRouter } from "./modules/user/user.routes.js";
 
@@ -77,5 +78,6 @@ apiRouter.use("/subscriptions", subscriptionRouter);
 apiRouter.use("/payments", paymentRouter);
 apiRouter.use("/finances", financeRouter);
 apiRouter.use("/users", userRouter);
+apiRouter.use("/push-tokens", pushTokenRouter);
 apiRouter.use("/uploads", uploadRouter);
 apiRouter.use("/admin", adminRouter);
