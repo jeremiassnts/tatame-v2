@@ -417,6 +417,26 @@ export const pushTokens = pgTable(
   }),
 );
 
+export const engagementMilestones = pgTable(
+  "engagement_milestones",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    milestone: integer("milestone").notNull(),
+    notifiedAt: timestamp("notified_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (t) => ({
+    userMilestoneUnique: uniqueIndex("engagement_milestones_user_milestone_unique").on(
+      t.userId,
+      t.milestone,
+    ),
+  }),
+);
+
 export const notifications = pgTable(
   "notifications",
   {
