@@ -20,4 +20,17 @@ export interface INotificationRepository {
     status: NotificationRow["status"],
     sentAt?: Date,
   ): Promise<void>;
+
+  listByRecipient(
+    recipientId: string,
+    opts: { cursor?: string; limit: number },
+  ): Promise<{ items: NotificationRow[]; nextCursor: string | null }>;
+
+  countUnread(recipientId: string): Promise<number>;
+
+  markAsRead(id: string, recipientId: string): Promise<boolean>;
+
+  markAllAsRead(recipientId: string): Promise<number>;
+
+  deleteById(id: string, recipientId: string): Promise<boolean>;
 }

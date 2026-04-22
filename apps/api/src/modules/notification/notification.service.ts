@@ -1,5 +1,6 @@
 import type { Queue } from "bullmq";
 import { logger } from "../../lib/logger.js";
+import { HttpError } from "../../lib/http-error.js";
 import type { INotificationRepository, NotificationRow } from "./notification.repository.js";
 import type { IPushTokenRepository } from "../push-token/push-token.repository.js";
 import type { NotificationJobData } from "./notification.queue.js";
@@ -57,5 +58,27 @@ export class NotificationService {
     }
 
     return rows;
+  }
+
+  async listForUser(recipientId: string, cursor?: string, limit = 20) {
+    return this.notificationRepo.listByRecipient(recipientId, { cursor, limit });
+  }
+
+  async getUnreadCount(recipientId: string) {
+    return this.notificationRepo.countUnread(recipientId);
+  }
+
+  async markAsRead(id: string, recipientId: string) {
+    const updated = await this.notificationRepo.markAsRead(id, recipientId);
+    if (!updated) throw new HttpError(404, "Notification not found");
+  }
+
+  async markAllAsRead(recipientId: string) {
+    return this.notificationRepo.markAllAsRead(recipientId);
+  }
+
+  async deleteNotification(id: string, recipientId: string) {
+    const deleted = await this.notificationRepo.deleteById(id, recipientId);
+    if (!deleted) throw new HttpError(404, "Notification not found");
   }
 }
