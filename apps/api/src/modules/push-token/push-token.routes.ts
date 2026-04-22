@@ -63,7 +63,12 @@ pushTokenRouter.delete(
         return;
       }
 
-      await pushTokenService.unregister(clerkId, req.params.deviceId);
+      const { deviceId } = req.params;
+      if (!deviceId) {
+        res.status(400).json({ error: "deviceId is required" });
+        return;
+      }
+      await pushTokenService.unregister(clerkId, deviceId);
       res.status(204).end();
     } catch (e) {
       next(e);
