@@ -7,7 +7,9 @@ import {
   checkins,
   classes,
   managerSubscriptions,
+  notifications,
   payments,
+  pushTokens,
   studentSubscriptions,
   subscriptionPlans,
   userRoles,
@@ -29,6 +31,8 @@ export type BeltPromotionRow = InferSelectModel<typeof beltPromotions>;
 export type ManagerSubscriptionRow = InferSelectModel<
   typeof managerSubscriptions
 >;
+export type PushTokenRow = InferSelectModel<typeof pushTokens>;
+export type NotificationRow = InferSelectModel<typeof notifications>;
 
 function rid(): string {
   return faker.string.uuid();
@@ -276,6 +280,43 @@ export function makeBeltPromotion(
       faker.helpers.maybe(() => faker.lorem.sentence(), {
         probability: 0.2,
       }) ?? null,
+    ...overrides,
+  };
+}
+
+export function makePushToken(
+  overrides: Partial<PushTokenRow> = {},
+): PushTokenRow {
+  const t = faker.date.recent({ days: 14 });
+  return {
+    id: rid(),
+    userId: `clerk_${faker.string.alphanumeric({ length: 16 })}`,
+    token: `ExponentPushToken[${faker.string.alphanumeric({ length: 22 })}]`,
+    platform: faker.helpers.arrayElement(["ios", "android"] as const),
+    deviceId: faker.string.uuid(),
+    createdAt: t,
+    updatedAt: t,
+    ...overrides,
+  };
+}
+
+export function makeNotification(
+  overrides: Partial<NotificationRow> = {},
+): NotificationRow {
+  const t = faker.date.recent({ days: 14 });
+  return {
+    id: rid(),
+    recipientId: `clerk_${faker.string.alphanumeric({ length: 16 })}`,
+    title: faker.lorem.sentence({ min: 3, max: 6 }),
+    body: faker.lorem.sentence(),
+    category: "payment",
+    data: null,
+    readAt: null,
+    sentAt: null,
+    status: "pending",
+    academyId: null,
+    createdAt: t,
+    updatedAt: t,
     ...overrides,
   };
 }
