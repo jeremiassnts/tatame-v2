@@ -1,4 +1,4 @@
-import { and, count, eq, isNull, lt, or, sql } from "drizzle-orm";
+import { and, count, eq, gte, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import { notifications, type Database } from "@tatame/db";
 import type {
   INotificationRepository,
@@ -153,5 +153,24 @@ export class PostgresNotificationRepository implements INotificationRepository {
       )
       .returning({ id: notifications.id });
     return result.length > 0;
+  }
+
+  async countTodayByRecipientAndCategories(
+    recipientId: string,
+    categories: NotificationRow["category"][],
+  ): Promise<number> {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const [row] = await this.db
+      .select({ c: count() })
+      .from(notifications)
+      .where(
+        and(
+          eq(notifications.recipientId, recipientId),
+          inArray(notifications.category, categories),
+          gte(notifications.createdAt, todayStart),
+        ),
+      );
+    return Number(row?.c ?? 0);
   }
 }

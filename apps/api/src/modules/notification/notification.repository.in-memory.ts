@@ -131,4 +131,18 @@ export class InMemoryNotificationRepository implements INotificationRepository {
     this.rows.splice(index, 1);
     return true;
   }
+
+  async countTodayByRecipientAndCategories(
+    recipientId: string,
+    categories: NotificationRow["category"][],
+  ): Promise<number> {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    return this.rows.filter(
+      (r) =>
+        r.recipientId === recipientId &&
+        categories.includes(r.category) &&
+        r.createdAt >= todayStart,
+    ).length;
+  }
 }

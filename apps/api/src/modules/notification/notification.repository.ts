@@ -33,4 +33,9 @@ export interface INotificationRepository {
   markAllAsRead(recipientId: string): Promise<number>;
 
   deleteById(id: string, recipientId: string): Promise<boolean>;
+
+  countTodayByRecipientAndCategories(
+    recipientId: string,
+    categories: NotificationRow["category"][],
+  ): Promise<number>;
 }
