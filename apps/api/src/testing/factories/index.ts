@@ -6,6 +6,7 @@ import {
   beltPromotions,
   checkins,
   classes,
+  engagementMilestones,
   managerSubscriptions,
   notifications,
   payments,
@@ -33,6 +34,7 @@ export type ManagerSubscriptionRow = InferSelectModel<
 >;
 export type PushTokenRow = InferSelectModel<typeof pushTokens>;
 export type NotificationRow = InferSelectModel<typeof notifications>;
+export type EngagementMilestoneRow = InferSelectModel<typeof engagementMilestones>;
 
 function rid(): string {
   return faker.string.uuid();
@@ -317,6 +319,18 @@ export function makeNotification(
     academyId: null,
     createdAt: t,
     updatedAt: t,
+    ...overrides,
+  };
+}
+
+export function makeEngagementMilestone(
+  overrides: Partial<EngagementMilestoneRow> = {},
+): EngagementMilestoneRow {
+  return {
+    id: rid(),
+    userId: rid(),
+    milestone: faker.helpers.arrayElement([50, 100, 200, 500, 1000]),
+    notifiedAt: faker.date.recent({ days: 14 }),
     ...overrides,
   };
 }
