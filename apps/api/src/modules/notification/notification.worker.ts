@@ -1,4 +1,4 @@
-import { Expo, type ExpoPushTicket } from "expo-server-sdk";
+import { Expo } from "expo-server-sdk";
 import { Worker, type Job } from "bullmq";
 import { logger } from "../../lib/logger.js";
 import { getDb } from "../../lib/db.js";
@@ -42,7 +42,11 @@ async function processNotificationJob(job: Job<NotificationJobData>): Promise<vo
   }
 
   // ticket.status === "error"
-  const errorTicket = ticket as ExpoPushTicket & { details?: { error?: string } };
+  const errorTicket = ticket as {
+    status: "error";
+    message: string;
+    details?: { error?: string };
+  };
   logger.error(
     { notificationId, error: errorTicket.message, details: errorTicket.details },
     "[push] Expo push error",
