@@ -103,4 +103,7 @@ export interface IMembershipRepository {
   findActiveOrPendingByUser(userId: string): Promise<ActiveOrPendingMembershipRow | null>;
 
   withTransaction<T>(fn: (txRepo: IMembershipRepository) => Promise<T>): Promise<T>;
+
+  findManagerClerkIdsByAcademy(academyId: string): Promise<string[]>;
+  findActiveStudentClerkIdsByAcademy(academyId: string): Promise<string[]>;
 }
