@@ -64,3 +64,38 @@ export const DayOfWeek = {
   Saturday: 6,
 } as const;
 export type DayOfWeek = (typeof DayOfWeek)[keyof typeof DayOfWeek];
+
+export const NotificationCategory = {
+  ClassChange: "class_change",
+  Payment: "payment",
+  BeltPromotion: "belt_promotion",
+  Announcement: "announcement",
+  Marketplace: "marketplace",
+  Tournament: "tournament",
+  NewMember: "new_member",
+  SubscriptionAlert: "subscription_alert",
+  CheckinAnomaly: "checkin_anomaly",
+  Streak: "streak",
+  Inactivity: "inactivity",
+  Milestone: "milestone",
+  WeeklySummary: "weekly_summary",
+  Wrapped: "wrapped",
+} as const;
+export type NotificationCategory =
+  (typeof NotificationCategory)[keyof typeof NotificationCategory];
+
+export const NotificationStatus = {
+  Pending: "pending",
+  Queued: "queued",
+  Sent: "sent",
+  Failed: "failed",
+} as const;
+export type NotificationStatus =
+  (typeof NotificationStatus)[keyof typeof NotificationStatus];
+
+export const PushTokenPlatform = {
+  Ios: "ios",
+  Android: "android",
+} as const;
+export type PushTokenPlatform =
+  (typeof PushTokenPlatform)[keyof typeof PushTokenPlatform];
