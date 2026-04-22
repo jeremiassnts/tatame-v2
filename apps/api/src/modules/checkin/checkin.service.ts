@@ -6,6 +6,7 @@ import { requireRedisForCheckin } from "../../lib/redis.js";
 import type { ClassRow, IClassRepository } from "../class/class.repository.js";
 import type { IMembershipRepository } from "../membership/membership.repository.js";
 import type { NotificationDispatcher } from "../notification/notification-dispatcher.js";
+import type { EngagementService } from "../engagement/engagement.service.js";
 import type { IPaymentRepository } from "../payment/payment.repository.js";
 import type { IStudentSubscriptionRepository } from "../subscription/subscription.repository.js";
 import {
@@ -131,6 +132,7 @@ export class CheckinService {
     private readonly paymentRepo: IPaymentRepository,
     private readonly checkinRepo: ICheckinRepository,
     private readonly dispatcher?: NotificationDispatcher,
+    private readonly engagementService?: EngagementService,
   ) { }
 
   async checkIn(opts: {
@@ -218,6 +220,10 @@ export class CheckinService {
             opts.academyId,
             [detail?.userName ?? "Aluno", classRow.name],
           );
+        }
+
+        if (this.engagementService) {
+          this.engagementService.checkMilestone(opts.userId);
         }
 
         return { checkin, warnings };

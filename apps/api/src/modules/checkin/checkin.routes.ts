@@ -24,6 +24,8 @@ import { PostgresUserRepository } from "../user/user.repository.postgres.js";
 import type { CheckinRow } from "./checkin.repository.js";
 import { PostgresCheckinRepository } from "./checkin.repository.postgres.js";
 import { CheckinService } from "./checkin.service.js";
+import { PostgresMilestoneRepository } from "../engagement/milestone.repository.postgres.js";
+import { EngagementService } from "../engagement/engagement.service.js";
 
 export const checkinRouter = Router();
 
@@ -42,6 +44,19 @@ function buildDispatcher(db: ReturnType<typeof getDb>) {
   );
 }
 
+function buildEngagementService(db: ReturnType<typeof getDb>) {
+  const env = loadEnv();
+  const queue = env.REDIS_URL ? getNotificationQueue(env.REDIS_URL) : null;
+  const notificationService = new NotificationService(
+    new PostgresNotificationRepository(db), new PostgresPushTokenRepository(db), queue,
+  );
+  return new EngagementService(
+    notificationService, new PostgresNotificationRepository(db),
+    new PostgresCheckinRepository(db), new PostgresUserRepository(db),
+    new PostgresMembershipRepository(db), new PostgresMilestoneRepository(db),
+  );
+}
+
 const db = getDb();
 const checkinService = new CheckinService(
   new PostgresMembershipRepository(db),
@@ -50,6 +65,7 @@ const checkinService = new CheckinService(
   new PostgresPaymentRepository(db),
   new PostgresCheckinRepository(db),
   buildDispatcher(db),
+  buildEngagementService(db),
 );
 
 function formatCheckinRow(row: CheckinRow) {

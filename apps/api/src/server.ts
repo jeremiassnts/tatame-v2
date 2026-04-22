@@ -16,6 +16,8 @@ import {
   startNotificationWorker,
   closeNotificationWorker,
 } from "./modules/notification/notification.worker.js";
+import { closeEngagementQueue, getEngagementQueue, registerEngagementJobs } from "./modules/engagement/engagement.queue.js";
+import { startEngagementWorker, closeEngagementWorker } from "./modules/engagement/engagement.worker.js";
 import { createBullBoard } from "@bull-board/api";
 import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
 import { ExpressAdapter } from "@bull-board/express";
@@ -36,6 +38,9 @@ if (env.REDIS_URL) {
   logger.info("[email] Worker started");
   startNotificationWorker(env.REDIS_URL);
   logger.info("[push] Notification worker started");
+  startEngagementWorker(env.REDIS_URL);
+  await registerEngagementJobs(env.REDIS_URL);
+  logger.info("[engagement] Worker started, cron jobs registered");
 
   const serverAdapter = new ExpressAdapter();
   serverAdapter.setBasePath("/admin/queues");
@@ -43,6 +48,7 @@ if (env.REDIS_URL) {
     queues: [
       new BullMQAdapter(getEmailQueue(env.REDIS_URL)),
       new BullMQAdapter(getNotificationQueue(env.REDIS_URL)),
+      new BullMQAdapter(getEngagementQueue(env.REDIS_URL)),
     ],
     serverAdapter,
   });
@@ -72,6 +78,8 @@ async function shutdown() {
   await closeEmailQueue();
   await closeNotificationWorker();
   await closeNotificationQueue();
+  await closeEngagementWorker();
+  await closeEngagementQueue();
   process.exit(0);
 }
 
