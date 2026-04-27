@@ -51,6 +51,9 @@ export class StripeSubscriptionWebhookHandler {
       case "invoice.payment_failed":
         await this.onPaymentFailed(event.data.object as Stripe.Invoice);
         break;
+      case "invoice.upcoming":
+        await this.onInvoiceUpcoming(event.data.object as Stripe.Invoice);
+        break;
       default:
         logger.info(
           { type: event.type },
@@ -198,6 +201,42 @@ export class StripeSubscriptionWebhookHandler {
     logger.info(
       { subscriptionId: existing.id },
       "[stripe-sub-webhook] subscription canceled",
+    );
+  }
+
+  private async onInvoiceUpcoming(invoice: Stripe.Invoice): Promise<void> {
+    const subId = getInvoiceSubscriptionId(invoice);
+    if (!subId) return;
+
+    const existing = await this.subRepo.findByStripeSubscriptionId(subId);
+    if (!existing) return;
+
+    // Only notify if subscription is trialing (first charge coming)
+    if (existing.status !== "trialing") return;
+
+    if (!this.emailService) return;
+
+    const academy = await this.acadRepo.findById(existing.academyId);
+    if (!academy) return;
+
+    const trialEndsAt = existing.trialEndsAt
+      ? existing.trialEndsAt.toLocaleDateString("pt-BR")
+      : new Date().toLocaleDateString("pt-BR");
+
+    await this.emailService.sendTrialEnding(
+      {
+        managerName: academy.name,
+        academyName: academy.name,
+        trialEndsAt,
+        portalUrl: process.env.MANAGER_PORTAL_URL ?? "https://tatame.app/conta",
+        email: academy.contactEmail ?? "",
+      },
+      subId,
+    );
+
+    logger.info(
+      { subscriptionId: existing.id },
+      "[stripe-sub-webhook] trial ending email sent",
     );
   }
 
