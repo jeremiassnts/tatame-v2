@@ -51,12 +51,7 @@ export const managerPlanEnum = pgEnum("manager_plan", ["free", "pro"]);
 
 export const managerSubscriptionStatusEnum = pgEnum(
   "manager_subscription_status",
-  ["active", "past_due", "canceled", "incomplete"],
-);
-
-export const managerSubscriptionStoreEnum = pgEnum(
-  "manager_subscription_store",
-  ["app_store", "play_store"],
+  ["active", "past_due", "canceled", "incomplete", "trialing"],
 );
 
 export const pixKeyTypeEnum = pgEnum("pix_key_type", [
@@ -83,6 +78,8 @@ export const users = pgTable("users", {
     .notNull()
     .$onUpdate(() => new Date()),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  pendingStripeCustomerId: text("pending_stripe_customer_id"),
+  pendingStripeSubscriptionId: text("pending_stripe_subscription_id"),
 });
 
 export const userRoles = pgTable(
@@ -270,11 +267,11 @@ export const managerSubscriptions = pgTable("manager_subscriptions", {
     .unique(),
   plan: managerPlanEnum("plan").notNull(),
   status: managerSubscriptionStatusEnum("status").notNull(),
-  revenuecatAppUserId: text("revenuecat_app_user_id").unique(),
-  productId: text("product_id"),
-  originalTransactionId: text("original_transaction_id"),
-  store: managerSubscriptionStoreEnum("store"),
+  stripeCustomerId: text("stripe_customer_id").unique(),
+  stripeSubscriptionId: text("stripe_subscription_id").unique(),
+  stripePriceId: text("stripe_price_id"),
   currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+  trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
   subscribedAt: timestamp("subscribed_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
