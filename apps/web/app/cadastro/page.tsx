@@ -316,7 +316,7 @@ function AuthenticatedView({
         {
           method: "POST",
           body: JSON.stringify({
-            successUrl: `${window.location.origin}/assinatura/confirmada`,
+            successUrl: `${window.location.origin}/assinatura-confirmada`,
             cancelUrl: `${window.location.origin}/cadastro`,
           }),
         },
