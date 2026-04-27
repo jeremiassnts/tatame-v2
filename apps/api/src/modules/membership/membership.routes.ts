@@ -15,12 +15,8 @@ import { attachActiveAcademyContext } from "../../middleware/academy-context.js"
 import { authorize } from "../../middleware/authorize.js";
 import { validateBody } from "../../middleware/validate.js";
 import { PostgresAcademyRepository } from "../academy/academy.repository.postgres.js";
-import { PostgresClassRepository } from "../class/class.repository.postgres.js";
 import { getEmailQueue } from "../email/email.queue.js";
 import { EmailService } from "../email/email.service.js";
-import { PostgresManagerSubscriptionRepository } from "../manager-subscription/manager-subscription.repository.postgres.js";
-import { ManagerSubscriptionService } from "../manager-subscription/manager-subscription.service.js";
-import { PostgresSubscriptionPlanRepository } from "../subscription/subscription.repository.postgres.js";
 import { PostgresUserRepository } from "../user/user.repository.postgres.js";
 import { PostgresMembershipRepository } from "./membership.repository.postgres.js";
 import { MembershipService } from "./membership.service.js";
@@ -39,13 +35,6 @@ const emailService = env.REDIS_URL
 const membershipService = new MembershipService(
   membershipRepo,
   academyRepo,
-);
-const managerSubService = new ManagerSubscriptionService(
-  new PostgresManagerSubscriptionRepository(db),
-  new PostgresAcademyRepository(db),
-  membershipRepo,
-  new PostgresClassRepository(db),
-  new PostgresSubscriptionPlanRepository(db),
 );
 
 membershipRouter.get(
@@ -153,15 +142,6 @@ membershipRouter.patch(
       const params = membershipIdParamSchema.safeParse(req.params);
       if (!params.success) {
         throw new HttpError(400, "Invalid membership id");
-      }
-
-      const pending = await membershipRepo.findById(params.data.membershipId);
-      if (pending && req.appAuth?.role === "manager") {
-        if (pending.role === "instructor") {
-          await managerSubService.canApproveInstructor(req.appAuth.activeAcademyId!);
-        } else if (pending.role === "student") {
-          await managerSubService.canApproveStudent(req.appAuth.activeAcademyId!);
-        }
       }
 
       const updated = await membershipService.approve(

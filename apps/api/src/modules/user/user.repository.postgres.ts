@@ -161,6 +161,17 @@ export class PostgresUserRepository implements IUserRepository {
       .where(and(eq(users.id, id), isNull(users.deletedAt)));
   }
 
+  async clearPendingStripe(id: string): Promise<void> {
+    await this.db
+      .update(users)
+      .set({
+        pendingStripeCustomerId: null,
+        pendingStripeSubscriptionId: null,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(users.id, id), isNull(users.deletedAt)));
+  }
+
   async findActiveAcademyForManager(userId: string): Promise<{
     id: string;
     name: string;

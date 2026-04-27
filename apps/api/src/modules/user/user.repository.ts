@@ -64,4 +64,6 @@ export interface IUserRepository {
       pendingStripeSubscriptionId: string | null;
     },
   ): Promise<void>;
+
+  clearPendingStripe(id: string): Promise<void>;
 }

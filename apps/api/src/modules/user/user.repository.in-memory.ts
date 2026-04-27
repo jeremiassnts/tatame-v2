@@ -150,4 +150,13 @@ export class InMemoryUserRepository implements IUserRepository {
       user.updatedAt = new Date();
     }
   }
+
+  async clearPendingStripe(id: string): Promise<void> {
+    const user = this.users.find((u) => u.id === id && !u.deletedAt);
+    if (user) {
+      user.pendingStripeCustomerId = null;
+      user.pendingStripeSubscriptionId = null;
+      user.updatedAt = new Date();
+    }
+  }
 }
