@@ -65,7 +65,7 @@ managerSubscriptionRouter.post(
   authorize(Role.Manager),
   async (req, res, next) => {
     try {
-      if (!env.STRIPE_MANAGER_PRICE_ID) {
+      if (!env.STRIPE_PRO_PRICE_ID) {
         throw new HttpError(503, "Stripe price not configured");
       }
 
@@ -85,7 +85,7 @@ managerSubscriptionRouter.post(
       const url = await getService().createCheckoutSession(
         user.clerkUserId,
         user.email,
-        env.STRIPE_MANAGER_PRICE_ID,
+        env.STRIPE_PRO_PRICE_ID,
         successUrl,
         cancelUrl,
       );
@@ -157,41 +157,6 @@ managerSubscriptionRouter.post(
 export function createWebhookRouter() {
   const webhookRouter = Router();
 
-  // Stripe manager subscription webhooks
-  const stripeSubHandler = new StripeSubscriptionWebhookHandler(
-    subRepo,
-    acadRepo,
-    userRepo,
-    emailService,
-  );
-
-  webhookRouter.post("/stripe-subscription", async (req, res, next) => {
-    try {
-      if (!env.STRIPE_MANAGER_WEBHOOK_SECRET) {
-        throw new HttpError(503, "Stripe manager webhook secret not configured");
-      }
-      const sig = req.headers["stripe-signature"];
-      if (!sig) {
-        res.status(400).json({ error: "Missing stripe-signature header" });
-        return;
-      }
-      const stripeInstance = getStripe();
-      const event = stripeInstance.webhooks.constructEvent(
-        (req as any).rawBody,
-        sig,
-        env.STRIPE_MANAGER_WEBHOOK_SECRET,
-      );
-      await stripeSubHandler.handleEvent(event);
-      res.json({ received: true });
-    } catch (e) {
-      if (e instanceof Error && e.message.includes("signature")) {
-        res.status(400).json({ error: "Invalid webhook signature" });
-        return;
-      }
-      next(e);
-    }
-  });
-
   // AbacatePay student payments
   const abacatePayHandler = new AbacatePayWebhookHandler(
     paymentRepo,
@@ -209,11 +174,18 @@ export function createWebhookRouter() {
     }
   });
 
-  // Stripe checkout student payments
+  // Stripe webhooks (student payments + manager subscriptions)
   const stripeCheckoutHandler = new StripeCheckoutWebhookHandler(
     paymentRepo,
     userRepo,
     acadRepo,
+    emailService,
+  );
+
+  const stripeSubHandler = new StripeSubscriptionWebhookHandler(
+    subRepo,
+    acadRepo,
+    userRepo,
     emailService,
   );
 
@@ -234,6 +206,7 @@ export function createWebhookRouter() {
         env.STRIPE_WEBHOOK_SECRET,
       );
       await stripeCheckoutHandler.handleEvent(event);
+      await stripeSubHandler.handleEvent(event);
       res.json({ received: true });
     } catch (e) {
       if (e instanceof Error && e.message.includes("signature")) {

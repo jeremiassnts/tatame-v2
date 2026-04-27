@@ -24,9 +24,7 @@ const envSchema = z.object({
   STRIPE_PUBLISHABLE_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   /** Stripe Price ID for the manager Pro subscription */
-  STRIPE_MANAGER_PRICE_ID: z.string().optional(),
-  /** Stripe webhook secret specifically for manager subscription events */
-  STRIPE_MANAGER_WEBHOOK_SECRET: z.string().optional(),
+  STRIPE_PRO_PRICE_ID: z.string().optional(),
   /** Base URL for the manager web portal (e.g., https://tatame.app/conta) */
   MANAGER_PORTAL_URL: z.string().url().optional(),
   ABACATEPAY_API_KEY: z.string().optional(),
