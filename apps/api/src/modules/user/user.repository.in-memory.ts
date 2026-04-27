@@ -135,4 +135,19 @@ export class InMemoryUserRepository implements IUserRepository {
   async findActiveAcademyForManager(_userId: string): Promise<undefined> {
     return undefined;
   }
+
+  async updatePendingStripe(
+    id: string,
+    data: {
+      pendingStripeCustomerId: string | null;
+      pendingStripeSubscriptionId: string | null;
+    },
+  ): Promise<void> {
+    const user = this.users.find((u) => u.id === id && !u.deletedAt);
+    if (user) {
+      user.pendingStripeCustomerId = data.pendingStripeCustomerId;
+      user.pendingStripeSubscriptionId = data.pendingStripeSubscriptionId;
+      user.updatedAt = new Date();
+    }
+  }
 }

@@ -56,4 +56,12 @@ export interface IUserRepository {
     name: string;
     logoUrl: string | null;
   } | undefined>;
+
+  updatePendingStripe(
+    id: string,
+    data: {
+      pendingStripeCustomerId: string | null;
+      pendingStripeSubscriptionId: string | null;
+    },
+  ): Promise<void>;
 }

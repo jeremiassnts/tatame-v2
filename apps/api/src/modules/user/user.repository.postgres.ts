@@ -144,6 +144,23 @@ export class PostgresUserRepository implements IUserRepository {
     });
   }
 
+  async updatePendingStripe(
+    id: string,
+    data: {
+      pendingStripeCustomerId: string | null;
+      pendingStripeSubscriptionId: string | null;
+    },
+  ): Promise<void> {
+    await this.db
+      .update(users)
+      .set({
+        pendingStripeCustomerId: data.pendingStripeCustomerId,
+        pendingStripeSubscriptionId: data.pendingStripeSubscriptionId,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(users.id, id), isNull(users.deletedAt)));
+  }
+
   async findActiveAcademyForManager(userId: string): Promise<{
     id: string;
     name: string;
