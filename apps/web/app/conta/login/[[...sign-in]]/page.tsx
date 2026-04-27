@@ -1,13 +1,14 @@
 "use client";
 
-import { useSignIn } from "@clerk/nextjs";
+import { useSignIn, useClerk } from "@clerk/nextjs";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
-  const { signIn, setActive, isLoaded } = useSignIn();
+  const { signIn } = useSignIn();
+  const { setActive } = useClerk();
   const router = useRouter();
 
   const [email, setEmail] = useState("");
@@ -16,23 +17,15 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  if (!isLoaded) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      </div>
-    );
-  }
-
   // --- OAuth handler ---
   async function handleOAuth(strategy: "oauth_google" | "oauth_apple") {
     if (!signIn) return;
     setError("");
     try {
-      await signIn.authenticateWithRedirect({
+      await signIn.sso({
         strategy,
         redirectUrl: "/conta",
-        redirectUrlComplete: "/conta",
+        redirectCallbackUrl: "/conta",
       });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro ao autenticar");
@@ -47,13 +40,13 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const result = await signIn.create({
+      await signIn.create({
         identifier: email,
         password,
       });
 
-      if (result.status === "complete") {
-        await setActive({ session: result.createdSessionId });
+      if (signIn.status === "complete") {
+        await setActive({ session: signIn.createdSessionId });
         router.push("/conta");
       } else {
         setError("Autenticação incompleta. Tente novamente.");

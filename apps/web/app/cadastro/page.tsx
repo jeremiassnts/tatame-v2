@@ -9,7 +9,7 @@ import { Eye, EyeOff, CheckCircle, ArrowRight } from "lucide-react";
 type Stage = "form" | "verify" | "authenticated";
 
 export default function CadastroPage() {
-  const { signUp, isLoaded: signUpLoaded } = useSignUp();
+  const { signUp } = useSignUp();
   const { user, isLoaded: userLoaded } = useUser();
   const { getToken } = useAuth();
 
@@ -28,7 +28,7 @@ export default function CadastroPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const isLoaded = signUpLoaded && userLoaded;
+  const isLoaded = userLoaded;
 
   // If already authenticated, show the checkout state
   if (isLoaded && user) {
@@ -40,10 +40,10 @@ export default function CadastroPage() {
     if (!signUp) return;
     setError("");
     try {
-      await signUp.authenticateWithRedirect({
+      await signUp.sso({
         strategy,
         redirectUrl: "/cadastro",
-        redirectUrlComplete: "/cadastro",
+        redirectCallbackUrl: "/cadastro",
       });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro ao autenticar");
@@ -65,7 +65,7 @@ export default function CadastroPage() {
         password,
       });
 
-      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+      await signUp.verifications.sendEmailCode();
       setStage("verify");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro ao criar conta");
@@ -82,11 +82,9 @@ export default function CadastroPage() {
     setLoading(true);
 
     try {
-      const result = await signUp.attemptEmailAddressVerification({
-        code: verificationCode,
-      });
+      await signUp.verifications.verifyEmailCode({ code: verificationCode });
 
-      if (result.status === "complete") {
+      if (signUp.status === "complete") {
         // Clerk will update the session; page will re-render with user present
         window.location.reload();
       } else {
