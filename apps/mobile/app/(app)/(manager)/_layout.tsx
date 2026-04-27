@@ -1,28 +1,57 @@
 import { useManagerSubscription } from "@/lib/hooks/use-manager-subscription";
-import { Tabs, useRouter, useSegments } from "expo-router";
+import { Tabs } from "expo-router";
+import Constants from "expo-constants";
 import { Calendar, CreditCard, Home, Users } from "lucide-react-native";
-import { useEffect } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, Linking, Pressable, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const PORTAL_URL =
+  Constants.expoConfig?.extra?.managerPortalUrl ?? "https://tatame.app/conta";
+
+function BlockedScreen() {
+  return (
+    <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
+      <View className="flex-1 items-center justify-center px-6" style={{ gap: 16 }}>
+        <Text className="font-poppins-bold text-xl text-primary text-center">
+          Assinatura inativa
+        </Text>
+        <Text className="font-poppins text-sm text-muted text-center">
+          Sua assinatura precisa estar ativa para acessar o painel de gestor.
+          Gerencie sua conta pelo portal web.
+        </Text>
+        <Pressable
+          onPress={() => Linking.openURL(PORTAL_URL)}
+          className="items-center rounded-xl bg-accent"
+          style={{ paddingVertical: 14, paddingHorizontal: 24, marginTop: 8 }}
+        >
+          <Text className="font-poppins-semibold text-sm text-white">
+            Gerenciar minha conta
+          </Text>
+        </Pressable>
+      </View>
+    </SafeAreaView>
+  );
+}
 
 export default function ManagerLayout() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
-  const segments = useSegments();
-  const { data: subscription, isPending, isError } = useManagerSubscription();
+  const { data: subscription, isPending } = useManagerSubscription();
 
-  const last = segments[segments.length - 1];
-  const isOnGatedScreen =
-    last === "plan-selection" || last === "subscription-result";
+  if (isPending) {
+    return (
+      <View className="flex-1 items-center justify-center bg-background">
+        <ActivityIndicator color="#A078E8" />
+      </View>
+    );
+  }
 
-  useEffect(() => {
-    if (isPending) return;
-    if (!isOnGatedScreen && (isError || !subscription)) {
-      router.replace("/(app)/(manager)/plan-selection");
-    }
-  }, [isPending, isError, subscription, router, isOnGatedScreen]);
+  const isActive =
+    subscription?.status === "active" || subscription?.status === "trialing";
 
-  const gated = isPending || isError || !subscription;
+  if (!isActive) {
+    return <BlockedScreen />;
+  }
 
   return (
     <Tabs
@@ -31,14 +60,12 @@ export default function ManagerLayout() {
         sceneStyle: {
           backgroundColor: "#0C0C0C",
         },
-        tabBarStyle: gated
-          ? { display: "none" as const }
-          : {
-              backgroundColor: "#1A1A1A",
-              borderTopColor: "#2A2A2A",
-              borderTopWidth: 1,
-              height: 56 + Math.max(insets.bottom, 8),
-            },
+        tabBarStyle: {
+          backgroundColor: "#1A1A1A",
+          borderTopColor: "#2A2A2A",
+          borderTopWidth: 1,
+          height: 56 + Math.max(insets.bottom, 8),
+        },
         tabBarActiveTintColor: "#A078E8",
         tabBarInactiveTintColor: "#ABABAB",
         tabBarLabelStyle: {
@@ -50,7 +77,7 @@ export default function ManagerLayout() {
       <Tabs.Screen
         name="(home)"
         options={{
-          title: "Início",
+          title: "Inicio",
           tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
         }}
       />
@@ -58,7 +85,6 @@ export default function ManagerLayout() {
         name="(members)"
         options={{
           title: "Membros",
-          href: gated ? null : "/(app)/(manager)/(members)",
           tabBarIcon: ({ color, size }) => <Users size={size} color={color} />,
         }}
       />
@@ -66,7 +92,6 @@ export default function ManagerLayout() {
         name="(classes)"
         options={{
           title: "Aulas",
-          href: gated ? null : "/(app)/(manager)/(classes)",
           tabBarIcon: ({ color, size }) => (
             <Calendar size={size} color={color} />
           ),
@@ -75,23 +100,10 @@ export default function ManagerLayout() {
       <Tabs.Screen
         name="(finances)"
         options={{
-          title: "Finanças",
-          href: gated ? null : "/(app)/(manager)/(finances)",
+          title: "Financas",
           tabBarIcon: ({ color, size }) => (
             <CreditCard size={size} color={color} />
           ),
-        }}
-      />
-      <Tabs.Screen
-        name="plan-selection"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="subscription-result"
-        options={{
-          href: null,
         }}
       />
     </Tabs>
