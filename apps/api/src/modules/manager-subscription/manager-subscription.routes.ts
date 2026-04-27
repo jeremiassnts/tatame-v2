@@ -41,8 +41,11 @@ const emailService = env.REDIS_URL
 
 const paymentRepo = new PostgresPaymentRepository(db);
 
-const revenuecat = env.REVENUECAT_SECRET_API_KEY
-  ? new RevenueCatClient(env.REVENUECAT_SECRET_API_KEY)
+// TODO(Task 6): remove RevenueCat — this file will be replaced
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const revenuecat = (env as any).REVENUECAT_SECRET_API_KEY
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ? new RevenueCatClient((env as any).REVENUECAT_SECRET_API_KEY)
   : null;
 
 const service = new ManagerSubscriptionService(
@@ -148,12 +151,15 @@ export function createWebhookRouter() {
   webhookRouter.post("/revenuecat", async (req, res, next) => {
     try {
       const env = loadEnv();
-      if (!env.REVENUECAT_WEBHOOK_SECRET) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const envAny = env as any;
+      if (!envAny.REVENUECAT_WEBHOOK_SECRET) {
         throw new HttpError(503, "RevenueCat webhook secret not configured");
       }
 
       const auth = req.headers["authorization"];
-      if (auth !== env.REVENUECAT_WEBHOOK_SECRET) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      if (auth !== envAny.REVENUECAT_WEBHOOK_SECRET) {
         res.status(401).json({ error: "unauthorized" });
         return;
       }

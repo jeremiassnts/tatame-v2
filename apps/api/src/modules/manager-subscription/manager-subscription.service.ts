@@ -249,7 +249,9 @@ export class ManagerSubscriptionService {
           ? "play_store"
           : null;
 
-    return this.subRepo.upsertByAcademy({
+    // TODO(Task 5): replace RevenueCat upsert with Stripe fields
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (this.subRepo as any).upsertByAcademy({
       academyId,
       plan: isActive ? "pro" : "free",
       status: !isActive ? "canceled" : hasBillingIssue ? "past_due" : "active",

@@ -3,7 +3,6 @@ import { managerSubscriptions, type Database } from "@tatame/db";
 import type {
   IManagerSubscriptionRepository,
   ManagerSubscriptionRow,
-  ManagerSubscriptionStore,
 } from "./manager-subscription.repository.js";
 
 export class PostgresManagerSubscriptionRepository
@@ -22,13 +21,24 @@ export class PostgresManagerSubscriptionRepository
     return row;
   }
 
-  async findByRevenueCatAppUserId(
-    appUserId: string,
+  async findByStripeCustomerId(
+    stripeCustomerId: string,
   ): Promise<ManagerSubscriptionRow | undefined> {
     const [row] = await this.db
       .select()
       .from(managerSubscriptions)
-      .where(eq(managerSubscriptions.revenuecatAppUserId, appUserId))
+      .where(eq(managerSubscriptions.stripeCustomerId, stripeCustomerId))
+      .limit(1);
+    return row;
+  }
+
+  async findByStripeSubscriptionId(
+    stripeSubscriptionId: string,
+  ): Promise<ManagerSubscriptionRow | undefined> {
+    const [row] = await this.db
+      .select()
+      .from(managerSubscriptions)
+      .where(eq(managerSubscriptions.stripeSubscriptionId, stripeSubscriptionId))
       .limit(1);
     return row;
   }
@@ -36,12 +46,12 @@ export class PostgresManagerSubscriptionRepository
   async create(data: {
     academyId: string;
     plan: "free" | "pro";
-    status: "active" | "past_due" | "canceled" | "incomplete";
-    revenuecatAppUserId?: string | null;
-    productId?: string | null;
-    originalTransactionId?: string | null;
-    store?: ManagerSubscriptionStore | null;
+    status: "active" | "trialing" | "past_due" | "canceled" | "incomplete";
+    stripeCustomerId?: string | null;
+    stripeSubscriptionId?: string | null;
+    stripePriceId?: string | null;
     currentPeriodEnd?: Date | null;
+    trialEndsAt?: Date | null;
   }): Promise<ManagerSubscriptionRow> {
     const rows = await this.db
       .insert(managerSubscriptions)
@@ -49,17 +59,15 @@ export class PostgresManagerSubscriptionRepository
         academyId: data.academyId,
         plan: data.plan,
         status: data.status,
-        revenuecatAppUserId: data.revenuecatAppUserId ?? null,
-        productId: data.productId ?? null,
-        originalTransactionId: data.originalTransactionId ?? null,
-        store: data.store ?? null,
+        stripeCustomerId: data.stripeCustomerId ?? null,
+        stripeSubscriptionId: data.stripeSubscriptionId ?? null,
+        stripePriceId: data.stripePriceId ?? null,
         currentPeriodEnd: data.currentPeriodEnd ?? null,
+        trialEndsAt: data.trialEndsAt ?? null,
       })
       .returning();
     const row = rows[0];
-    if (!row) {
-      throw new Error("Failed to create manager subscription");
-    }
+    if (!row) throw new Error("Failed to create manager subscription");
     return row;
   }
 
@@ -67,12 +75,12 @@ export class PostgresManagerSubscriptionRepository
     id: string,
     data: Partial<{
       plan: "free" | "pro";
-      status: "active" | "past_due" | "canceled" | "incomplete";
-      revenuecatAppUserId: string | null;
-      productId: string | null;
-      originalTransactionId: string | null;
-      store: ManagerSubscriptionStore | null;
+      status: "active" | "trialing" | "past_due" | "canceled" | "incomplete";
+      stripeCustomerId: string | null;
+      stripeSubscriptionId: string | null;
+      stripePriceId: string | null;
       currentPeriodEnd: Date | null;
+      trialEndsAt: Date | null;
       canceledAt: Date | null;
       subscribedAt: Date;
     }>,
@@ -88,12 +96,12 @@ export class PostgresManagerSubscriptionRepository
   async upsertByAcademy(data: {
     academyId: string;
     plan: "free" | "pro";
-    status: "active" | "past_due" | "canceled" | "incomplete";
-    revenuecatAppUserId?: string | null;
-    productId?: string | null;
-    originalTransactionId?: string | null;
-    store?: ManagerSubscriptionStore | null;
+    status: "active" | "trialing" | "past_due" | "canceled" | "incomplete";
+    stripeCustomerId?: string | null;
+    stripeSubscriptionId?: string | null;
+    stripePriceId?: string | null;
     currentPeriodEnd?: Date | null;
+    trialEndsAt?: Date | null;
     canceledAt?: Date | null;
     subscribedAt?: Date;
   }): Promise<ManagerSubscriptionRow> {
@@ -103,11 +111,11 @@ export class PostgresManagerSubscriptionRepository
         academyId: data.academyId,
         plan: data.plan,
         status: data.status,
-        revenuecatAppUserId: data.revenuecatAppUserId ?? null,
-        productId: data.productId ?? null,
-        originalTransactionId: data.originalTransactionId ?? null,
-        store: data.store ?? null,
+        stripeCustomerId: data.stripeCustomerId ?? null,
+        stripeSubscriptionId: data.stripeSubscriptionId ?? null,
+        stripePriceId: data.stripePriceId ?? null,
         currentPeriodEnd: data.currentPeriodEnd ?? null,
+        trialEndsAt: data.trialEndsAt ?? null,
         canceledAt: data.canceledAt ?? null,
         ...(data.subscribedAt ? { subscribedAt: data.subscribedAt } : {}),
       })
@@ -116,11 +124,11 @@ export class PostgresManagerSubscriptionRepository
         set: {
           plan: data.plan,
           status: data.status,
-          revenuecatAppUserId: data.revenuecatAppUserId ?? null,
-          productId: data.productId ?? null,
-          originalTransactionId: data.originalTransactionId ?? null,
-          store: data.store ?? null,
+          stripeCustomerId: data.stripeCustomerId ?? null,
+          stripeSubscriptionId: data.stripeSubscriptionId ?? null,
+          stripePriceId: data.stripePriceId ?? null,
           currentPeriodEnd: data.currentPeriodEnd ?? null,
+          trialEndsAt: data.trialEndsAt ?? null,
           canceledAt: data.canceledAt ?? null,
           ...(data.subscribedAt ? { subscribedAt: data.subscribedAt } : {}),
           updatedAt: new Date(),
@@ -128,9 +136,7 @@ export class PostgresManagerSubscriptionRepository
       })
       .returning();
     const row = rows[0];
-    if (!row) {
-      throw new Error("Failed to upsert manager subscription");
-    }
+    if (!row) throw new Error("Failed to upsert manager subscription");
     return row;
   }
 }

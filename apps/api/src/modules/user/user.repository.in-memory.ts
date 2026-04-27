@@ -45,6 +45,8 @@ export class InMemoryUserRepository implements IUserRepository {
       createdAt: t,
       updatedAt: t,
       deletedAt: null,
+      pendingStripeCustomerId: null,
+      pendingStripeSubscriptionId: null,
     });
   }
 
