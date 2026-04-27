@@ -79,6 +79,19 @@
 | `constants/manager-plans.ts` | Delete | No longer needed |
 | `package.json` | Modify | Remove `react-native-purchases` dependency |
 
+### User module (pending Stripe data)
+
+| File | Action | Responsibility |
+|------|--------|---------------|
+| `apps/api/src/modules/user/user.repository.ts` | Modify | Add `updatePendingStripe` and `clearPendingStripe` methods |
+| `apps/api/src/modules/user/user.repository.postgres.ts` | Modify | Implement new methods |
+
+### Academy module (link subscription on creation)
+
+| File | Action | Responsibility |
+|------|--------|---------------|
+| `apps/api/src/modules/academy/academy.routes.ts` | Modify | After academy creation, check for pending Stripe subscription and link it |
+
 ### Other modules that call limit methods
 
 | File | Action | Responsibility |
@@ -92,7 +105,8 @@
 ## Task 1: Database Schema Migration
 
 **Files:**
-- Modify: `packages/db/src/schema/index.ts:265-289`
+- Modify: `packages/db/src/schema/index.ts:265-289` (managerSubscriptions table)
+- Modify: `packages/db/src/schema/index.ts:69-86` (users table — add pending Stripe columns)
 - Modify: `packages/types/src/index.ts`
 - Create: `packages/db/drizzle/0008_manager_subscription_stripe.sql`
 
@@ -121,7 +135,15 @@ export const managerSubscriptionStatusEnum = pgEnum(
 
 2. Delete `managerSubscriptionStoreEnum` entirely.
 
-3. Replace the `managerSubscriptions` table definition:
+3. Add pending Stripe columns to the `users` table (these hold Stripe data between web signup and academy creation in the app):
+
+```typescript
+// Add these columns to the users table definition:
+pendingStripeCustomerId: text("pending_stripe_customer_id"),
+pendingStripeSubscriptionId: text("pending_stripe_subscription_id"),
+```
+
+4. Replace the `managerSubscriptions` table definition:
 
 ```typescript
 export const managerSubscriptions = pgTable("manager_subscriptions", {
@@ -173,6 +195,10 @@ ALTER TABLE "manager_subscriptions" DROP COLUMN IF EXISTS "store";
 
 -- Drop store enum (no longer needed)
 DROP TYPE IF EXISTS "manager_subscription_store";
+
+-- Add pending Stripe columns to users table
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "pending_stripe_customer_id" text;
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "pending_stripe_subscription_id" text;
 ```
 
 - [ ] **Step 4: Generate Drizzle migration metadata**
@@ -474,6 +500,10 @@ git commit -m "feat(api): rewrite manager subscription repository for Stripe"
 **Files:**
 - Create: `apps/api/src/modules/manager-subscription/stripe-subscription-webhook.handler.ts`
 
+This handler deals with two scenarios:
+1. **User already has an academy** → update `managerSubscriptions` directly
+2. **User just signed up on web, no academy yet** → store Stripe data as pending on user record
+
 - [ ] **Step 1: Write the webhook handler**
 
 Create `apps/api/src/modules/manager-subscription/stripe-subscription-webhook.handler.ts`:
@@ -483,12 +513,14 @@ import type Stripe from "stripe";
 import { logger } from "../../lib/logger.js";
 import type { IManagerSubscriptionRepository } from "./manager-subscription.repository.js";
 import type { IAcademyRepository } from "../academy/academy.repository.js";
+import type { IUserRepository } from "../user/user.repository.js";
 import type { EmailService } from "../email/email.service.js";
 
 export class StripeSubscriptionWebhookHandler {
   constructor(
     private readonly subRepo: IManagerSubscriptionRepository,
     private readonly acadRepo: IAcademyRepository,
+    private readonly userRepo: IUserRepository,
     private readonly emailService: EmailService | null,
   ) {}
 
@@ -537,38 +569,79 @@ export class StripeSubscriptionWebhookHandler {
   private async onSubscriptionChange(sub: Stripe.Subscription): Promise<void> {
     const stripeCustomerId =
       typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+    const clerkUserId = sub.metadata?.clerkUserId;
 
+    // Case 1: Subscription already linked to an academy
     const existing =
       await this.subRepo.findByStripeSubscriptionId(sub.id) ??
       await this.subRepo.findByStripeCustomerId(stripeCustomerId);
 
-    if (!existing) {
-      logger.warn(
-        { stripeSubscriptionId: sub.id, stripeCustomerId },
-        "[stripe-sub-webhook] no matching subscription record found",
+    if (existing) {
+      const status = this.mapStatus(sub.status);
+      await this.subRepo.update(existing.id, {
+        plan: "pro",
+        status,
+        stripeSubscriptionId: sub.id,
+        stripeCustomerId,
+        stripePriceId: sub.items.data[0]?.price.id ?? null,
+        currentPeriodEnd: new Date(sub.current_period_end * 1000),
+        trialEndsAt: sub.trial_end ? new Date(sub.trial_end * 1000) : null,
+        canceledAt: sub.cancel_at ? new Date(sub.cancel_at * 1000) : null,
+      });
+      logger.info(
+        { subscriptionId: existing.id, status },
+        "[stripe-sub-webhook] subscription updated",
       );
       return;
     }
 
-    const status = this.mapStatus(sub.status);
-    const canceledAt = sub.cancel_at ? new Date(sub.cancel_at * 1000) : null;
-    const currentPeriodEnd = new Date(sub.current_period_end * 1000);
-    const trialEndsAt = sub.trial_end ? new Date(sub.trial_end * 1000) : null;
+    // Case 2: No academy yet — store as pending on user record
+    if (!clerkUserId) {
+      logger.warn(
+        { stripeSubscriptionId: sub.id },
+        "[stripe-sub-webhook] no academy and no clerkUserId in metadata",
+      );
+      return;
+    }
 
-    await this.subRepo.update(existing.id, {
-      plan: "pro",
-      status,
-      stripeSubscriptionId: sub.id,
-      stripeCustomerId,
-      stripePriceId: sub.items.data[0]?.price.id ?? null,
-      currentPeriodEnd,
-      trialEndsAt,
-      canceledAt,
+    const user = await this.userRepo.findByClerkId(clerkUserId);
+    if (!user) {
+      logger.warn(
+        { clerkUserId },
+        "[stripe-sub-webhook] user not found for clerkUserId",
+      );
+      return;
+    }
+
+    // Check if user already has an academy (race condition: academy created between checkout and webhook)
+    const academy = await this.acadRepo.findByOwnerId(user.id);
+    if (academy) {
+      // Link subscription to academy now
+      await this.subRepo.upsertByAcademy({
+        academyId: academy.id,
+        plan: "pro",
+        status: this.mapStatus(sub.status),
+        stripeCustomerId,
+        stripeSubscriptionId: sub.id,
+        stripePriceId: sub.items.data[0]?.price.id ?? null,
+        currentPeriodEnd: new Date(sub.current_period_end * 1000),
+        trialEndsAt: sub.trial_end ? new Date(sub.trial_end * 1000) : null,
+      });
+      logger.info(
+        { academyId: academy.id },
+        "[stripe-sub-webhook] subscription linked to existing academy",
+      );
+      return;
+    }
+
+    // No academy yet — store pending Stripe data on user
+    await this.userRepo.updatePendingStripe(user.id, {
+      pendingStripeCustomerId: stripeCustomerId,
+      pendingStripeSubscriptionId: sub.id,
     });
-
     logger.info(
-      { subscriptionId: existing.id, status, stripeSubscriptionId: sub.id },
-      "[stripe-sub-webhook] subscription updated",
+      { userId: user.id },
+      "[stripe-sub-webhook] stored pending Stripe data on user (no academy yet)",
     );
   }
 
@@ -679,17 +752,11 @@ export class ManagerSubscriptionService {
   async createCheckoutSession(
     clerkUserId: string,
     email: string,
-    academyId: string,
     priceId: string,
     successUrl: string,
     cancelUrl: string,
   ): Promise<string> {
     if (!this.stripe) throw new HttpError(503, "Stripe not configured");
-
-    const existing = await this.subRepo.findByAcademyId(academyId);
-    if (existing && (existing.status === "active" || existing.status === "trialing")) {
-      throw new HttpError(409, "Academy already has an active subscription");
-    }
 
     const session = await this.stripe.checkout.sessions.create({
       mode: "subscription",
@@ -698,9 +765,9 @@ export class ManagerSubscriptionService {
       line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: {
         trial_period_days: 30,
-        metadata: { clerkUserId, academyId },
+        metadata: { clerkUserId },
       },
-      metadata: { clerkUserId, academyId },
+      metadata: { clerkUserId },
       success_url: successUrl,
       cancel_url: cancelUrl,
     });
@@ -708,36 +775,51 @@ export class ManagerSubscriptionService {
     return session.url!;
   }
 
-  async handleCheckoutCompleted(session: Stripe.Checkout.Session): Promise<void> {
+  /**
+   * Called when a manager creates an academy in the app.
+   * Checks if the user has pending Stripe subscription data and links it.
+   */
+  async linkPendingSubscription(
+    userId: string,
+    academyId: string,
+    userRepo: { findById(id: string): Promise<any>; clearPendingStripe(id: string): Promise<void> },
+  ): Promise<void> {
     if (!this.stripe) return;
 
-    const academyId = session.metadata?.academyId;
-    if (!academyId) return;
+    const user = await userRepo.findById(userId);
+    if (!user?.pendingStripeCustomerId || !user?.pendingStripeSubscriptionId) return;
 
-    const subscriptionId =
-      typeof session.subscription === "string"
-        ? session.subscription
-        : session.subscription?.id;
-    if (!subscriptionId) return;
-
-    const stripeSub = await this.stripe.subscriptions.retrieve(subscriptionId);
-    const stripeCustomerId =
-      typeof stripeSub.customer === "string"
-        ? stripeSub.customer
-        : stripeSub.customer.id;
+    const stripeSub = await this.stripe.subscriptions.retrieve(
+      user.pendingStripeSubscriptionId,
+    );
 
     await this.subRepo.upsertByAcademy({
       academyId,
       plan: "pro",
-      status: stripeSub.status === "trialing" ? "trialing" : "active",
-      stripeCustomerId,
-      stripeSubscriptionId: subscriptionId,
+      status: this.mapStripeStatus(stripeSub.status),
+      stripeCustomerId: user.pendingStripeCustomerId,
+      stripeSubscriptionId: user.pendingStripeSubscriptionId,
       stripePriceId: stripeSub.items.data[0]?.price.id ?? null,
       currentPeriodEnd: new Date(stripeSub.current_period_end * 1000),
       trialEndsAt: stripeSub.trial_end
         ? new Date(stripeSub.trial_end * 1000)
         : null,
     });
+
+    await userRepo.clearPendingStripe(userId);
+  }
+
+  private mapStripeStatus(
+    status: string,
+  ): "active" | "trialing" | "past_due" | "canceled" | "incomplete" {
+    switch (status) {
+      case "active": return "active";
+      case "trialing": return "trialing";
+      case "past_due": return "past_due";
+      case "canceled":
+      case "unpaid": return "canceled";
+      default: return "incomplete";
+    }
   }
 
   async cancelSubscription(academyId: string): Promise<void> {
@@ -906,11 +988,11 @@ managerSubscriptionRouter.get(
 );
 
 // POST /manager-subscriptions/checkout — create Stripe Checkout session
+// NOTE: This route does NOT require an academy. The manager may not have one yet
+// (they create account + pay on web, then create academy in the app).
 managerSubscriptionRouter.post(
   "/checkout",
   authorize(Role.Manager),
-  attachActiveAcademyContext,
-  requireActiveAcademy,
   async (req, res, next) => {
     try {
       const env = loadEnv();
@@ -933,7 +1015,6 @@ managerSubscriptionRouter.post(
       const url = await service.createCheckoutSession(
         user.clerkUserId,
         user.email,
-        req.appAuth!.activeAcademyId!,
         env.STRIPE_MANAGER_PRICE_ID,
         successUrl,
         cancelUrl,
@@ -1005,6 +1086,7 @@ managerSubscriptionRouter.post(
 const stripeSubWebhookHandler = new StripeSubscriptionWebhookHandler(
   subRepo,
   acadRepo,
+  userRepo,
   emailService,
 );
 
@@ -1116,7 +1198,24 @@ In `apps/api/src/modules/class/class.routes.ts` around line 125, remove the `can
 
 Also remove the `managerSubService` import/instantiation from those files if it's no longer used for anything else.
 
-- [ ] **Step 3: Delete RevenueCat files**
+- [ ] **Step 3: Link pending subscription on academy creation**
+
+In `apps/api/src/modules/academy/academy.routes.ts`, find the POST route that creates an academy. After the academy is created successfully, add a call to link any pending Stripe subscription:
+
+```typescript
+// After academy creation:
+await managerSubService.linkPendingSubscription(
+  req.appAuth!.userId,
+  newAcademy.id,
+  userRepo,
+);
+```
+
+This ensures that when a manager who signed up on the web creates their academy in the app, the Stripe subscription is automatically linked.
+
+Also add `updatePendingStripe(id, data)` and `clearPendingStripe(id)` methods to the user repository interface and Postgres implementation.
+
+- [ ] **Step 4: Delete RevenueCat files**
 
 ```bash
 rm apps/api/src/modules/manager-subscription/revenuecat-client.ts
@@ -1124,11 +1223,11 @@ rm apps/api/src/modules/manager-subscription/revenuecat-events.ts
 rm apps/api/src/modules/manager-subscription/revenuecat-webhook.handler.ts
 ```
 
-- [ ] **Step 4: Register new webhook path in `app.ts`**
+- [ ] **Step 5: Register new webhook path in `app.ts`**
 
 Check `apps/api/src/app.ts` for the raw body middleware. Make sure the path `/v1/webhooks/stripe-subscription` is included in the raw body handling condition (alongside the existing `/v1/webhooks/stripe`). Look for where `rawBody` is set and add the new path.
 
-- [ ] **Step 5: Verify build**
+- [ ] **Step 6: Verify build**
 
 ```bash
 cd /Volumes/ExternalDisk1/repos/tatame-v2 && npx turbo build --filter=api
@@ -1136,7 +1235,7 @@ cd /Volumes/ExternalDisk1/repos/tatame-v2 && npx turbo build --filter=api
 
 Expected: Build succeeds with no errors.
 
-- [ ] **Step 6: Run all API tests**
+- [ ] **Step 7: Run all API tests**
 
 ```bash
 cd /Volumes/ExternalDisk1/repos/tatame-v2 && npx vitest run apps/api/
@@ -1144,10 +1243,10 @@ cd /Volumes/ExternalDisk1/repos/tatame-v2 && npx vitest run apps/api/
 
 Expected: All tests pass.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
-git add -A apps/api/src/modules/manager-subscription/ apps/api/src/modules/membership/membership.routes.ts apps/api/src/modules/subscription/subscription.routes.ts apps/api/src/modules/class/class.routes.ts apps/api/src/app.ts
+git add -A apps/api/src/modules/manager-subscription/ apps/api/src/modules/membership/membership.routes.ts apps/api/src/modules/subscription/subscription.routes.ts apps/api/src/modules/class/class.routes.ts apps/api/src/modules/academy/ apps/api/src/modules/user/ apps/api/src/app.ts
 git commit -m "feat(api): rewrite manager subscription routes for Stripe, remove RevenueCat"
 ```
 
@@ -1296,6 +1395,7 @@ Create `apps/web/app/cadastro/page.tsx`. This is a client component with two sta
 **Authenticated state:**
 - Shows `✓ Logado como {email}` with green checkmark
 - "Ir para pagamento" button → calls API `POST /v1/manager-subscriptions/checkout` with `successUrl` and `cancelUrl`, redirects to Stripe Checkout URL
+- The checkout route does NOT require an academy — it uses `clerkUserId` from the auth token
 
 **Post-Stripe return:**
 - Detects `?checkout=session_id` query param
@@ -1305,16 +1405,7 @@ Create `apps/web/app/cadastro/page.tsx`. This is a client component with two sta
 
 Use `@clerk/nextjs` hooks: `useSignUp`, `useUser`, `useAuth`. Follow the existing dark theme from the Pencil design (W-PUB-05: node `iAfIR`).
 
-**Important implementation note:** The manager needs an academy before they can create a Stripe checkout. Since the academy is created in the mobile app AFTER signup, the checkout flow on the web needs to handle this. Two options:
-
-1. Create the academy record during web signup (before checkout) — simplest
-2. Create the Stripe subscription first and link it to the academy later when it's created in the app
-
-Option 2 is simpler for the web flow: store `stripeCustomerId` and `stripeSubscriptionId` on the user record or in session metadata, and when the manager creates their academy in the app, link the subscription. However, the current schema ties subscriptions to academies.
-
-**Recommended approach:** During web signup, after Clerk account creation, call `POST /v1/academies` to create a minimal academy record (just the name from signup), then create the checkout session with that academyId. The manager will complete academy details in the app later. This requires adding a new API route or modifying the existing academy creation to accept partial data from web.
-
-Alternatively, store the Stripe customer/subscription in the user's Clerk metadata and create the `managerSubscriptions` record when the academy is created in the app (via webhook). Discuss with the user which approach they prefer.
+**Subscription linking:** The Stripe subscription data is stored as pending on the user record via webhook. When the manager creates their academy in the app, the API automatically links the subscription to the new academy (see Task 6 step 3).
 
 - [ ] **Step 2: Commit**
 

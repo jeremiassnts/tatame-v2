@@ -27,9 +27,10 @@ Landing Page → /cadastro (create account) → Stripe Checkout → /assinatura-
 3. Signup page has two states:
    - **Unauthenticated:** Shows social login (Google/Apple), email/password fields, name fields, and "Criar conta e assinar" button
    - **Authenticated:** After social login redirect returns, the auth section collapses to show `✓ Logado como joao@email.com`, button changes to "Ir para pagamento"
-4. Via email: fills fields → "Criar conta e assinar" → creates Clerk account → Stripe Checkout
+4. Via email: fills fields → "Criar conta e assinar" → creates Clerk account → Stripe Checkout (uses `clerkUserId` in metadata, no academy needed)
 5. Via social: clicks Google/Apple → provider redirect → returns → authenticated state → "Ir para pagamento" → Stripe Checkout
-6. Stripe Checkout redirects back to `/cadastro?checkout=session_id`
+6. Stripe webhook stores Stripe data as pending on user record (no academy yet)
+7. Stripe Checkout redirects back to `/cadastro?checkout=session_id`
 7. Button shows loading while API confirms payment via webhook
 8. Success → redirect to `/assinatura-confirmada` (W-PUB-06)
 9. Failure → error message on screen ("Pagamento nao foi concluido. Tente novamente.")
@@ -38,9 +39,10 @@ Landing Page → /cadastro (create account) → Stripe Checkout → /assinatura-
 ### Manager Login in App
 
 1. Manager opens app → logs in with same Clerk credentials
-2. API checks Stripe subscription status
-3. Active/trialing → normal flow (create academy → home)
-4. Inactive/canceled/past_due → blocked screen with message to visit web portal and button that opens browser
+2. If no academy yet → create academy flow. On academy creation, API checks for pending Stripe subscription data on user and automatically links it to the new academy.
+3. API checks Stripe subscription status
+4. Active/trialing → normal flow (home)
+5. Inactive/canceled/past_due → blocked screen with message to visit web portal and button that opens browser
 
 ### Manager Web Portal
 
@@ -159,6 +161,24 @@ Landing Page → /cadastro (create account) → Stripe Checkout → /assinatura-
 | Stripe webhook handler | Handle subscription lifecycle events |
 | Manager subscription API routes | Endpoints for web portal (get status, cancel, etc.) |
 
+### Subscription Linking Strategy
+
+The manager creates their account and pays on the web BEFORE creating an academy in the app. To handle this timing:
+
+1. **Checkout:** Stripe Checkout session uses `clerkUserId` in metadata (not `academyId`)
+2. **Webhook:** On payment confirmation, Stripe data (`stripeCustomerId`, `stripeSubscriptionId`) is stored on the `users` table as pending subscription data
+3. **Academy creation:** When the manager creates their academy in the app, the API checks if the user has pending Stripe subscription data and creates the `managerSubscriptions` record linked to the new academy
+4. **Subsequent operations:** Once linked, all subscription management goes through `managerSubscriptions` as before
+
+### Database — `users` Table (new columns)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `pendingStripeCustomerId` | string (nullable) | Stripe customer ID before academy creation |
+| `pendingStripeSubscriptionId` | string (nullable) | Stripe subscription ID before academy creation |
+
+These columns are cleared once the subscription is linked to an academy.
+
 ### Database — `managerSubscriptions` Table
 
 Replace RevenueCat fields with:
@@ -176,10 +196,9 @@ Replace RevenueCat fields with:
 
 | Event | Action |
 |-------|--------|
-| `customer.subscription.created` | Create/update manager subscription record |
-| `customer.subscription.updated` | Update status, period dates |
+| `customer.subscription.created` | Store Stripe data on user (pending) |
+| `customer.subscription.updated` | Update status, period dates on managerSubscriptions (if linked) |
 | `customer.subscription.deleted` | Mark as canceled |
-| `invoice.payment_succeeded` | Update payment history |
 | `invoice.payment_failed` | Update status to past_due |
 
 ### Env Vars
