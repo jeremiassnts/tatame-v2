@@ -20,6 +20,7 @@ import { NotificationService } from "../notification/notification.service.js";
 import { AbacatePayWebhookHandler } from "../payment/abacatepay-webhook.handler.js";
 import { PostgresPaymentRepository } from "../payment/payment.repository.postgres.js";
 import { StripeCheckoutWebhookHandler } from "../payment/stripe-checkout-webhook.handler.js";
+import { PostgresMembershipRepository } from "../membership/membership.repository.postgres.js";
 import { PostgresPushTokenRepository } from "../push-token/push-token.repository.postgres.js";
 import { PostgresUserRepository } from "../user/user.repository.postgres.js";
 import { UserService } from "../user/user.service.js";
@@ -47,7 +48,7 @@ const webhookDispatcher = new NotificationDispatcher(
     notifQueue,
   ),
   userRepo,
-  memRepo,
+  new PostgresMembershipRepository(db),
 );
 
 const paymentRepo = new PostgresPaymentRepository(db);
