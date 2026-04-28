@@ -103,6 +103,24 @@ export default function ManagerDashboardLayout({
           <p><span className="font-semibold text-text-primary">2.</span> Faça login com a conta que você criou</p>
           <p><span className="font-semibold text-text-primary">3.</span> Cadastre sua academia e comece a usar</p>
         </div>
+        <div className="flex gap-3">
+          <a
+            href="https://ios.apptatame.com.br"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="cursor-pointer rounded-xl border border-border bg-surface px-5 py-2.5 text-sm font-medium text-text-primary hover:bg-white/5 transition-colors"
+          >
+            App Store
+          </a>
+          <a
+            href="https://android.apptatame.com.br"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="cursor-pointer rounded-xl border border-border bg-surface px-5 py-2.5 text-sm font-medium text-text-primary hover:bg-white/5 transition-colors"
+          >
+            Google Play
+          </a>
+        </div>
         <SignOutButton redirectUrl="/">
           <button className="cursor-pointer text-sm text-text-muted hover:text-text-secondary transition-colors">
             Sair
