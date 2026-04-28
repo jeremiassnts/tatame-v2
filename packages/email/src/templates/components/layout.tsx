@@ -27,8 +27,8 @@ export function Layout({ preview, children, baseUrl }: LayoutProps) {
           <Section style={header}>
             <Img
               src={logoUrl}
-              width="120"
-              height="40"
+              width="48"
+              height="48"
               alt="Tatame"
             />
           </Section>
