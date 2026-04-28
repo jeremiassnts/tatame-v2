@@ -57,6 +57,8 @@ export const userMeResponseSchema = z.object({
   activeAcademy: activeAcademySchema.nullable(),
   /** Non-null for instructors/students with a pending or active membership. */
   activeMembership: activeMembershipSchema.nullable(),
+  /** True when user has paid via Stripe but hasn't created an academy yet. */
+  hasPendingSubscription: z.boolean().optional(),
 });
 
 export type UserMeResponse = z.infer<typeof userMeResponseSchema>;

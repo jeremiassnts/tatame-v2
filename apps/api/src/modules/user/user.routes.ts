@@ -42,6 +42,7 @@ function buildMeResponse(
     birthDate: row.birthDate ?? null,
     activeRole,
     activeAcademy,
+    hasPendingSubscription: !!(row as any).pendingStripeCustomerId,
     activeMembership,
   });
 }

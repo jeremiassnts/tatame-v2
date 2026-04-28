@@ -22,15 +22,26 @@ export default function ManagerDashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { getToken } = useAuth();
   const [userStatus, setUserStatus] = useState<
-    "loading" | "ok" | "no-account"
+    "loading" | "ok" | "no-account" | "pending-academy"
   >("loading");
 
   useEffect(() => {
     async function checkUser() {
       try {
         const token = await getToken();
-        await managerFetch("/manager-subscriptions/me", token);
-        setUserStatus("ok");
+        const me = await managerFetch<{
+          activeRole: string | null;
+          activeAcademy: { id: string } | null;
+          hasPendingSubscription?: boolean;
+        }>("/users/me", token);
+
+        if (me.activeAcademy) {
+          setUserStatus("ok");
+        } else if (me.hasPendingSubscription) {
+          setUserStatus("pending-academy");
+        } else {
+          setUserStatus("no-account");
+        }
       } catch {
         setUserStatus("no-account");
       }
@@ -63,6 +74,35 @@ export default function ManagerDashboardLayout({
         >
           Completar cadastro
         </a>
+        <SignOutButton redirectUrl="/">
+          <button className="cursor-pointer text-sm text-text-muted hover:text-text-secondary transition-colors">
+            Sair
+          </button>
+        </SignOutButton>
+      </div>
+    );
+  }
+
+  if (userStatus === "pending-academy") {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center gap-6 bg-background px-6 text-center">
+        <Image src="/icon.png" alt="Tatame" width={48} height={48} />
+        <div className="flex items-center gap-2 rounded-full bg-green-500/10 px-4 py-1.5">
+          <div className="h-2 w-2 rounded-full bg-green-400" />
+          <span className="text-sm font-medium text-green-400">Assinatura ativa</span>
+        </div>
+        <h1 className="font-[family-name:var(--font-sora)] text-xl font-bold text-text-primary">
+          Falta pouco!
+        </h1>
+        <p className="max-w-sm text-sm text-text-secondary">
+          Sua assinatura está confirmada. Agora baixe o app, faça login com a
+          mesma conta e cadastre sua academia para começar a usar.
+        </p>
+        <div className="flex flex-col gap-2 text-left text-sm text-text-secondary">
+          <p><span className="font-semibold text-text-primary">1.</span> Baixe o app na App Store ou Google Play</p>
+          <p><span className="font-semibold text-text-primary">2.</span> Faça login com a conta que você criou</p>
+          <p><span className="font-semibold text-text-primary">3.</span> Cadastre sua academia e comece a usar</p>
+        </div>
         <SignOutButton redirectUrl="/">
           <button className="cursor-pointer text-sm text-text-muted hover:text-text-secondary transition-colors">
             Sair
