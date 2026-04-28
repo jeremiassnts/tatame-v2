@@ -292,9 +292,9 @@ export default function FinancialDashboardPage() {
         const token = await getToken();
 
         const [summaryData, paymentsData] = await Promise.all([
-          managerFetch<FinancialSummary>("/v1/finances/summary", token),
+          managerFetch<FinancialSummary>("/finances/summary", token),
           managerFetch<PaymentsResponse>(
-            "/v1/payments?limit=10&page=1",
+            "/payments?limit=10&page=1",
             token,
           ),
         ]);

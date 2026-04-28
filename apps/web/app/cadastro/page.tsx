@@ -309,7 +309,7 @@ function AuthenticatedView({
     try {
       const token = await getToken();
       const { url } = await managerFetch<{ url: string }>(
-        "/v1/manager-subscriptions/checkout",
+        "/manager-subscriptions/checkout",
         token,
         {
           method: "POST",

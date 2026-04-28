@@ -3,9 +3,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DollarSign, CreditCard, Menu, X } from "lucide-react";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, useAuth } from "@clerk/nextjs";
+import { managerFetch } from "@/lib/manager-api";
 
 const navItems = [
   { label: "Financeiro", href: "/conta", icon: DollarSign },
@@ -19,6 +20,61 @@ export default function ManagerDashboardLayout({
 }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { getToken } = useAuth();
+  const [userStatus, setUserStatus] = useState<
+    "loading" | "ok" | "no-account"
+  >("loading");
+
+  useEffect(() => {
+    async function checkUser() {
+      try {
+        const token = await getToken();
+        await managerFetch("/manager-subscriptions/me", token);
+        setUserStatus("ok");
+      } catch {
+        setUserStatus("no-account");
+      }
+    }
+    checkUser();
+  }, [getToken]);
+
+  if (userStatus === "loading") {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (userStatus === "no-account") {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center gap-6 bg-background px-6 text-center">
+        <Image src="/icon.png" alt="Tatame" width={48} height={48} />
+        <h1 className="font-[family-name:var(--font-sora)] text-xl font-bold text-text-primary">
+          Cadastro incompleto
+        </h1>
+        <p className="max-w-sm text-sm text-text-secondary">
+          Para acessar o painel de gestão, você precisa concluir seu cadastro no
+          app Tatame. Baixe o app, faça login com a mesma conta e complete o
+          onboarding.
+        </p>
+        <div className="flex gap-4">
+          <a
+            href="#"
+            className="rounded-xl bg-surface px-5 py-2.5 text-sm font-medium text-text-primary border border-border hover:bg-white/5 transition-colors"
+          >
+            App Store
+          </a>
+          <a
+            href="#"
+            className="rounded-xl bg-surface px-5 py-2.5 text-sm font-medium text-text-primary border border-border hover:bg-white/5 transition-colors"
+          >
+            Google Play
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   function isActive(href: string) {
     if (href === "/conta") {

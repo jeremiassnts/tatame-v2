@@ -126,7 +126,7 @@ export default function AssinaturaPage() {
     try {
       const token = await getToken();
       const data = await managerFetch<Subscription>(
-        "/v1/manager-subscriptions/me",
+        "/manager-subscriptions/me",
         token,
       );
       setSubscription(data);
@@ -150,7 +150,7 @@ export default function AssinaturaPage() {
     try {
       const token = await getToken();
       const { url } = await managerFetch<BillingPortalResponse>(
-        "/v1/manager-subscriptions/billing-portal",
+        "/manager-subscriptions/billing-portal",
         token,
         {
           method: "POST",
@@ -172,7 +172,7 @@ export default function AssinaturaPage() {
     try {
       const token = await getToken();
       await managerFetch<CancelResponse>(
-        "/v1/manager-subscriptions/cancel",
+        "/manager-subscriptions/cancel",
         token,
         { method: "POST" },
       );
@@ -193,7 +193,7 @@ export default function AssinaturaPage() {
     try {
       const token = await getToken();
       await managerFetch<ReactivateResponse>(
-        "/v1/manager-subscriptions/reactivate",
+        "/manager-subscriptions/reactivate",
         token,
         { method: "POST" },
       );
