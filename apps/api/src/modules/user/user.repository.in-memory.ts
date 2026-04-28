@@ -1,6 +1,6 @@
-import { randomUUID } from "node:crypto";
-import type { InferSelectModel } from "drizzle-orm";
 import type { userRoles } from "@tatame/db";
+import type { InferSelectModel } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
 import type { IUserRepository, UserRow } from "./user.repository.js";
 
 type UserRoleRow = InferSelectModel<typeof userRoles>;
@@ -45,6 +45,8 @@ export class InMemoryUserRepository implements IUserRepository {
       createdAt: t,
       updatedAt: t,
       deletedAt: null,
+      pendingStripeCustomerId: null,
+      pendingStripeSubscriptionId: null,
     });
   }
 
@@ -146,5 +148,28 @@ export class InMemoryUserRepository implements IUserRepository {
       if (user) result.set(id, user.clerkUserId);
     }
     return result;
+  }
+  async updatePendingStripe(
+    id: string,
+    data: {
+      pendingStripeCustomerId: string | null;
+      pendingStripeSubscriptionId: string | null;
+    },
+  ): Promise<void> {
+    const user = this.users.find((u) => u.id === id && !u.deletedAt);
+    if (user) {
+      user.pendingStripeCustomerId = data.pendingStripeCustomerId;
+      user.pendingStripeSubscriptionId = data.pendingStripeSubscriptionId;
+      user.updatedAt = new Date();
+    }
+  }
+
+  async clearPendingStripe(id: string): Promise<void> {
+    const user = this.users.find((u) => u.id === id && !u.deletedAt);
+    if (user) {
+      user.pendingStripeCustomerId = null;
+      user.pendingStripeSubscriptionId = null;
+      user.updatedAt = new Date();
+    }
   }
 }

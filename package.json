@@ -17,6 +17,8 @@
     "web:dev": "pnpm --filter @tatame/web dev"
   },
   "devDependencies": {
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
     "turbo": "2.8.20",
     "typescript": "5.9.3"
   },

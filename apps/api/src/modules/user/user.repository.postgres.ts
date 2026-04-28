@@ -1,15 +1,15 @@
-import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import {
   academies,
   academyMemberships,
-  users,
   userRoles,
+  users,
   type Database,
 } from "@tatame/db";
+import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import type { IUserRepository, UserRow } from "./user.repository.js";
 
 export class PostgresUserRepository implements IUserRepository {
-  constructor(private readonly db: Database) {}
+  constructor(private readonly db: Database) { }
 
   async upsert(data: {
     clerkUserId: string;
@@ -160,6 +160,33 @@ export class PostgresUserRepository implements IUserRepository {
       .from(users)
       .where(inArray(users.id, userIds));
     return new Map(rows.map((r) => [r.id, r.clerkUserId]));
+  }
+  async updatePendingStripe(
+    id: string,
+    data: {
+      pendingStripeCustomerId: string | null;
+      pendingStripeSubscriptionId: string | null;
+    },
+  ): Promise<void> {
+    await this.db
+      .update(users)
+      .set({
+        pendingStripeCustomerId: data.pendingStripeCustomerId,
+        pendingStripeSubscriptionId: data.pendingStripeSubscriptionId,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(users.id, id), isNull(users.deletedAt)));
+  }
+
+  async clearPendingStripe(id: string): Promise<void> {
+    await this.db
+      .update(users)
+      .set({
+        pendingStripeCustomerId: null,
+        pendingStripeSubscriptionId: null,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(users.id, id), isNull(users.deletedAt)));
   }
 
   async findActiveAcademyForManager(userId: string): Promise<{

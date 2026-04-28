@@ -20,15 +20,27 @@ import {
 import { authorize } from "../../middleware/authorize.js";
 import { requireSession } from "../../middleware/require-session.js";
 import { validateBody } from "../../middleware/validate.js";
+import { PostgresManagerSubscriptionRepository } from "../manager-subscription/manager-subscription.repository.postgres.js";
+import { ManagerSubscriptionService } from "../manager-subscription/manager-subscription.service.js";
 import { PostgresMembershipRepository } from "../membership/membership.repository.postgres.js";
+import { PostgresUserRepository } from "../user/user.repository.postgres.js";
+import { getStripe } from "../../lib/stripe.js";
 import { PostgresAcademyRepository } from "./academy.repository.postgres.js";
 import { AcademyService } from "./academy.service.js";
 
 export const academyRouter = Router();
 
 const db = getDb();
+const academyRepo = new PostgresAcademyRepository(db);
+const userRepo = new PostgresUserRepository(db);
+const subRepo = new PostgresManagerSubscriptionRepository(db);
+
+function getManagerSubService() {
+  return new ManagerSubscriptionService(subRepo, academyRepo, getStripe());
+}
+
 const academyService = new AcademyService(
-  new PostgresAcademyRepository(db),
+  academyRepo,
   (txDb) => new PostgresMembershipRepository(txDb),
 );
 
@@ -90,6 +102,10 @@ academyRouter.post(
       const body = req.validatedBody as CreateAcademyBody;
       const userId = req.appAuth!.userId;
       const created = await academyService.createWithManagerMembership(userId, body);
+
+      // Link any pending Stripe subscription to the new academy
+      await getManagerSubService().linkPendingSubscription(userId, created.id, userRepo);
+
       res.status(201).json(created);
     } catch (e) {
       next(e);

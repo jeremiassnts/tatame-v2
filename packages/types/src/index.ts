@@ -46,6 +46,7 @@ export type ManagerPlan = (typeof ManagerPlan)[keyof typeof ManagerPlan];
 
 export const ManagerSubscriptionStatus = {
   Active: "active",
+  Trialing: "trialing",
   PastDue: "past_due",
   Canceled: "canceled",
   Incomplete: "incomplete",

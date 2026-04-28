@@ -1,6 +1,6 @@
 {
-  "id": "a18508fe-31a3-4818-9c22-d1d5fbd3f41b",
-  "prevId": "a8c72fdd-c981-4a5b-b188-ad8428ce0636",
+  "id": "a7b880f9-5ffa-4e05-8c16-4d3da649afc6",
+  "prevId": "d7390c28-23ee-4584-8dcf-070c44ced29b",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -90,15 +90,15 @@
         "academies_owner_id_users_id_fk": {
           "name": "academies_owner_id_users_id_fk",
           "tableFrom": "academies",
-          "tableTo": "users",
           "columnsFrom": [
             "owner_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         }
       },
       "compositePrimaryKeys": {},
@@ -189,38 +189,38 @@
             }
           ],
           "isUnique": true,
-          "where": "\"academy_memberships\".\"is_active\" = true",
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "where": "\"academy_memberships\".\"is_active\" = true",
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "academy_memberships_academy_id_academies_id_fk": {
           "name": "academy_memberships_academy_id_academies_id_fk",
           "tableFrom": "academy_memberships",
-          "tableTo": "academies",
           "columnsFrom": [
             "academy_id"
           ],
+          "tableTo": "academies",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "academy_memberships_user_id_users_id_fk": {
           "name": "academy_memberships_user_id_users_id_fk",
           "tableFrom": "academy_memberships",
-          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -303,51 +303,51 @@
             }
           ],
           "isUnique": true,
-          "where": "\"belt_promotions\".\"is_current\" = true",
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "where": "\"belt_promotions\".\"is_current\" = true",
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "belt_promotions_user_id_users_id_fk": {
           "name": "belt_promotions_user_id_users_id_fk",
           "tableFrom": "belt_promotions",
-          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "belt_promotions_academy_id_academies_id_fk": {
           "name": "belt_promotions_academy_id_academies_id_fk",
           "tableFrom": "belt_promotions",
-          "tableTo": "academies",
           "columnsFrom": [
             "academy_id"
           ],
+          "tableTo": "academies",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "belt_promotions_promoted_by_users_id_fk": {
           "name": "belt_promotions_promoted_by_users_id_fk",
           "tableFrom": "belt_promotions",
-          "tableTo": "users",
           "columnsFrom": [
             "promoted_by"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         }
       },
       "compositePrimaryKeys": {},
@@ -417,9 +417,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "checkins_class_id_date_idx": {
           "name": "checkins_class_id_date_idx",
@@ -438,9 +438,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "checkins_user_class_date_unique": {
           "name": "checkins_user_class_date_unique",
@@ -465,37 +465,37 @@
             }
           ],
           "isUnique": true,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "checkins_class_id_classes_id_fk": {
           "name": "checkins_class_id_classes_id_fk",
           "tableFrom": "checkins",
-          "tableTo": "classes",
           "columnsFrom": [
             "class_id"
           ],
+          "tableTo": "classes",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "checkins_user_id_users_id_fk": {
           "name": "checkins_user_id_users_id_fk",
           "tableFrom": "checkins",
-          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -603,37 +603,112 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "classes_academy_id_academies_id_fk": {
           "name": "classes_academy_id_academies_id_fk",
           "tableFrom": "classes",
-          "tableTo": "academies",
           "columnsFrom": [
             "academy_id"
           ],
+          "tableTo": "academies",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "classes_instructor_id_users_id_fk": {
           "name": "classes_instructor_id_users_id_fk",
           "tableFrom": "classes",
-          "tableTo": "users",
           "columnsFrom": [
             "instructor_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.engagement_milestones": {
+      "name": "engagement_milestones",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "milestone": {
+          "name": "milestone",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "notified_at": {
+          "name": "notified_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "engagement_milestones_user_milestone_unique": {
+          "name": "engagement_milestones_user_milestone_unique",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "milestone",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "engagement_milestones_user_id_users_id_fk": {
+          "name": "engagement_milestones_user_id_users_id_fk",
+          "tableFrom": "engagement_milestones",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "tableTo": "users",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -737,32 +812,32 @@
         "manager_subscriptions_academy_id_academies_id_fk": {
           "name": "manager_subscriptions_academy_id_academies_id_fk",
           "tableFrom": "manager_subscriptions",
-          "tableTo": "academies",
           "columnsFrom": [
             "academy_id"
           ],
+          "tableTo": "academies",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "manager_subscriptions_academy_id_unique": {
           "name": "manager_subscriptions_academy_id_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "academy_id"
-          ]
+          ],
+          "nullsNotDistinct": false
         },
         "manager_subscriptions_revenuecat_app_user_id_unique": {
           "name": "manager_subscriptions_revenuecat_app_user_id_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "revenuecat_app_user_id"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {},
@@ -870,9 +945,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "notifications_recipient_created_idx": {
           "name": "notifications_recipient_created_idx",
@@ -891,37 +966,37 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "notifications_recipient_id_users_clerk_user_id_fk": {
           "name": "notifications_recipient_id_users_clerk_user_id_fk",
           "tableFrom": "notifications",
-          "tableTo": "users",
           "columnsFrom": [
             "recipient_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "clerk_user_id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "notifications_academy_id_academies_id_fk": {
           "name": "notifications_academy_id_academies_id_fk",
           "tableFrom": "notifications",
-          "tableTo": "academies",
           "columnsFrom": [
             "academy_id"
           ],
+          "tableTo": "academies",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "set null"
         }
       },
       "compositePrimaryKeys": {},
@@ -1021,54 +1096,54 @@
         "payments_subscription_id_student_subscriptions_id_fk": {
           "name": "payments_subscription_id_student_subscriptions_id_fk",
           "tableFrom": "payments",
-          "tableTo": "student_subscriptions",
           "columnsFrom": [
             "subscription_id"
           ],
+          "tableTo": "student_subscriptions",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "payments_user_id_users_id_fk": {
           "name": "payments_user_id_users_id_fk",
           "tableFrom": "payments",
-          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "payments_academy_id_academies_id_fk": {
           "name": "payments_academy_id_academies_id_fk",
           "tableFrom": "payments",
-          "tableTo": "academies",
           "columnsFrom": [
             "academy_id"
           ],
+          "tableTo": "academies",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "payments_confirmed_by_users_id_fk": {
           "name": "payments_confirmed_by_users_id_fk",
           "tableFrom": "payments",
-          "tableTo": "users",
           "columnsFrom": [
             "confirmed_by"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "set null"
         }
       },
       "compositePrimaryKeys": {},
@@ -1130,41 +1205,41 @@
         "pending_pix_payments_subscription_id_student_subscriptions_id_fk": {
           "name": "pending_pix_payments_subscription_id_student_subscriptions_id_fk",
           "tableFrom": "pending_pix_payments",
-          "tableTo": "student_subscriptions",
           "columnsFrom": [
             "subscription_id"
           ],
+          "tableTo": "student_subscriptions",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "pending_pix_payments_user_id_users_id_fk": {
           "name": "pending_pix_payments_user_id_users_id_fk",
           "tableFrom": "pending_pix_payments",
-          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "pending_pix_payments_academy_id_academies_id_fk": {
           "name": "pending_pix_payments_academy_id_academies_id_fk",
           "tableFrom": "pending_pix_payments",
-          "tableTo": "academies",
           "columnsFrom": [
             "academy_id"
           ],
+          "tableTo": "academies",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -1242,9 +1317,9 @@
             }
           ],
           "isUnique": true,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "push_tokens_user_id_idx": {
           "name": "push_tokens_user_id_idx",
@@ -1257,24 +1332,24 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "push_tokens_user_id_users_clerk_user_id_fk": {
           "name": "push_tokens_user_id_users_clerk_user_id_fk",
           "tableFrom": "push_tokens",
-          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "clerk_user_id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -1345,28 +1420,28 @@
         "student_subscriptions_user_id_users_id_fk": {
           "name": "student_subscriptions_user_id_users_id_fk",
           "tableFrom": "student_subscriptions",
-          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "student_subscriptions_plan_id_subscription_plans_id_fk": {
           "name": "student_subscriptions_plan_id_subscription_plans_id_fk",
           "tableFrom": "student_subscriptions",
-          "tableTo": "subscription_plans",
           "columnsFrom": [
             "plan_id"
           ],
+          "tableTo": "subscription_plans",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         }
       },
       "compositePrimaryKeys": {},
@@ -1443,15 +1518,15 @@
         "subscription_plans_academy_id_academies_id_fk": {
           "name": "subscription_plans_academy_id_academies_id_fk",
           "tableFrom": "subscription_plans",
-          "tableTo": "academies",
           "columnsFrom": [
             "academy_id"
           ],
+          "tableTo": "academies",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -1516,25 +1591,25 @@
             }
           ],
           "isUnique": true,
-          "where": "\"user_roles\".\"is_active\" = true",
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "where": "\"user_roles\".\"is_active\" = true",
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "user_roles_user_id_users_id_fk": {
           "name": "user_roles_user_id_users_id_fk",
           "tableFrom": "user_roles",
-          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -1623,17 +1698,17 @@
       "uniqueConstraints": {
         "users_clerk_user_id_unique": {
           "name": "users_clerk_user_id_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "clerk_user_id"
-          ]
+          ],
+          "nullsNotDistinct": false
         },
         "users_email_unique": {
           "name": "users_email_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "email"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {},
@@ -1766,10 +1841,10 @@
     }
   },
   "schemas": {},
+  "views": {},
   "sequences": {},
   "roles": {},
   "policies": {},
-  "views": {},
   "_meta": {
     "columns": {},
     "schemas": {},

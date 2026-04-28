@@ -15,3 +15,4 @@ export { PaymentConfirmed, type PaymentConfirmedProps } from "./templates/paymen
 export { MemberApproved, type MemberApprovedProps } from "./templates/member-approved.js";
 export { ManagerNewMember, type ManagerNewMemberProps } from "./templates/manager-new-member.js";
 export { StudentPaymentReceived, type StudentPaymentReceivedProps } from "./templates/student-payment-received.js";
+export { TrialEnding, type TrialEndingProps } from "./templates/trial-ending.js";

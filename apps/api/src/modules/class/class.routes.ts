@@ -1,7 +1,5 @@
 import { loadEnv } from "@tatame/config";
-import { Router, type Request } from "express";
-import { eq, and } from "drizzle-orm";
-import { users, checkins } from "@tatame/db";
+import { checkins, users } from "@tatame/db";
 import { Role } from "@tatame/types";
 import type { CreateClassBody, UpdateClassBody } from "@tatame/validators";
 import {
@@ -10,6 +8,8 @@ import {
   listClassesQuerySchema,
   updateClassBodySchema,
 } from "@tatame/validators";
+import { and, eq } from "drizzle-orm";
+import { Router, type Request } from "express";
 import { getDb } from "../../lib/db.js";
 import { HttpError } from "../../lib/http-error.js";
 import {
@@ -19,19 +19,16 @@ import {
 import { authorize } from "../../middleware/authorize.js";
 import { validateBody } from "../../middleware/validate.js";
 import { PostgresAcademyRepository } from "../academy/academy.repository.postgres.js";
-import { PostgresManagerSubscriptionRepository } from "../manager-subscription/manager-subscription.repository.postgres.js";
-import { ManagerSubscriptionService } from "../manager-subscription/manager-subscription.service.js";
 import { PostgresMembershipRepository } from "../membership/membership.repository.postgres.js";
 import { NotificationDispatcher } from "../notification/notification-dispatcher.js";
 import { getNotificationQueue } from "../notification/notification.queue.js";
 import { PostgresNotificationRepository } from "../notification/notification.repository.postgres.js";
 import { NotificationService } from "../notification/notification.service.js";
 import { PostgresPushTokenRepository } from "../push-token/push-token.repository.postgres.js";
-import { PostgresSubscriptionPlanRepository } from "../subscription/subscription.repository.postgres.js";
 import { PostgresUserRepository } from "../user/user.repository.postgres.js";
+import type { ClassRow } from "./class.repository.js";
 import { PostgresClassRepository } from "./class.repository.postgres.js";
 import { ClassService } from "./class.service.js";
-import type { ClassRow } from "./class.repository.js";
 
 export const classRouter = Router();
 
@@ -56,13 +53,6 @@ const classService = new ClassService(
   new PostgresMembershipRepository(db),
   new PostgresAcademyRepository(db),
   buildDispatcher(db),
-);
-const managerSubService = new ManagerSubscriptionService(
-  new PostgresManagerSubscriptionRepository(db),
-  new PostgresAcademyRepository(db),
-  new PostgresMembershipRepository(db),
-  new PostgresClassRepository(db),
-  new PostgresSubscriptionPlanRepository(db),
 );
 
 function classCtx(req: Request) {
@@ -143,13 +133,6 @@ classRouter.post(
   async (req, res, next) => {
     try {
       const body = req.validatedBody as CreateClassBody;
-
-      if (req.appAuth?.role === "manager") {
-        await managerSubService.canCreateClass(
-          req.appAuth.activeAcademyId!,
-          body.dayOfWeek,
-        );
-      }
 
       const created = await classService.create(classCtx(req), body);
       res.status(201).json(created);

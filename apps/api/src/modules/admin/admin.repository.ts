@@ -5,7 +5,7 @@ export type AcademySummaryRow = {
   ownerEmail: string;
   ownerPhone: string | null;
   managerPlan: "free" | "pro" | null;
-  managerPlanStatus: "active" | "past_due" | "canceled" | "incomplete" | null;
+  managerPlanStatus: "active" | "trialing" | "past_due" | "canceled" | "incomplete" | null;
   studentCount: number;
   pendingTransferCents: number;
 };
@@ -17,7 +17,7 @@ export type AcademyDetailRow = {
   ownerEmail: string;
   ownerPhone: string | null;
   managerPlan: "free" | "pro" | null;
-  managerPlanStatus: "active" | "past_due" | "canceled" | "incomplete" | null;
+  managerPlanStatus: "active" | "trialing" | "past_due" | "canceled" | "incomplete" | null;
 };
 
 export type AdminPaymentRow = {

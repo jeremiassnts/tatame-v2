@@ -2,7 +2,6 @@ import { randomUUID } from "node:crypto";
 import type {
   IManagerSubscriptionRepository,
   ManagerSubscriptionRow,
-  ManagerSubscriptionStore,
 } from "./manager-subscription.repository.js";
 
 export class InMemoryManagerSubscriptionRepository
@@ -16,21 +15,29 @@ export class InMemoryManagerSubscriptionRepository
     return this.rows.find((r) => r.academyId === academyId);
   }
 
-  async findByRevenueCatAppUserId(
-    appUserId: string,
+  async findByStripeCustomerId(
+    stripeCustomerId: string,
   ): Promise<ManagerSubscriptionRow | undefined> {
-    return this.rows.find((r) => r.revenuecatAppUserId === appUserId);
+    return this.rows.find((r) => r.stripeCustomerId === stripeCustomerId);
+  }
+
+  async findByStripeSubscriptionId(
+    stripeSubscriptionId: string,
+  ): Promise<ManagerSubscriptionRow | undefined> {
+    return this.rows.find(
+      (r) => r.stripeSubscriptionId === stripeSubscriptionId,
+    );
   }
 
   async create(data: {
     academyId: string;
     plan: "free" | "pro";
-    status: "active" | "past_due" | "canceled" | "incomplete";
-    revenuecatAppUserId?: string | null;
-    productId?: string | null;
-    originalTransactionId?: string | null;
-    store?: ManagerSubscriptionStore | null;
+    status: "active" | "trialing" | "past_due" | "canceled" | "incomplete";
+    stripeCustomerId?: string | null;
+    stripeSubscriptionId?: string | null;
+    stripePriceId?: string | null;
     currentPeriodEnd?: Date | null;
+    trialEndsAt?: Date | null;
   }): Promise<ManagerSubscriptionRow> {
     const t = new Date();
     const row: ManagerSubscriptionRow = {
@@ -38,11 +45,11 @@ export class InMemoryManagerSubscriptionRepository
       academyId: data.academyId,
       plan: data.plan,
       status: data.status,
-      revenuecatAppUserId: data.revenuecatAppUserId ?? null,
-      productId: data.productId ?? null,
-      originalTransactionId: data.originalTransactionId ?? null,
-      store: data.store ?? null,
+      stripeCustomerId: data.stripeCustomerId ?? null,
+      stripeSubscriptionId: data.stripeSubscriptionId ?? null,
+      stripePriceId: data.stripePriceId ?? null,
       currentPeriodEnd: data.currentPeriodEnd ?? null,
+      trialEndsAt: data.trialEndsAt ?? null,
       subscribedAt: t,
       canceledAt: null,
       createdAt: t,
@@ -56,12 +63,12 @@ export class InMemoryManagerSubscriptionRepository
     id: string,
     data: Partial<{
       plan: "free" | "pro";
-      status: "active" | "past_due" | "canceled" | "incomplete";
-      revenuecatAppUserId: string | null;
-      productId: string | null;
-      originalTransactionId: string | null;
-      store: ManagerSubscriptionStore | null;
+      status: "active" | "trialing" | "past_due" | "canceled" | "incomplete";
+      stripeCustomerId: string | null;
+      stripeSubscriptionId: string | null;
+      stripePriceId: string | null;
       currentPeriodEnd: Date | null;
+      trialEndsAt: Date | null;
       canceledAt: Date | null;
       subscribedAt: Date;
     }>,
@@ -70,14 +77,14 @@ export class InMemoryManagerSubscriptionRepository
     if (!row) return undefined;
     if (data.plan !== undefined) row.plan = data.plan;
     if (data.status !== undefined) row.status = data.status;
-    if (data.revenuecatAppUserId !== undefined)
-      row.revenuecatAppUserId = data.revenuecatAppUserId;
-    if (data.productId !== undefined) row.productId = data.productId;
-    if (data.originalTransactionId !== undefined)
-      row.originalTransactionId = data.originalTransactionId;
-    if (data.store !== undefined) row.store = data.store;
+    if (data.stripeCustomerId !== undefined)
+      row.stripeCustomerId = data.stripeCustomerId;
+    if (data.stripeSubscriptionId !== undefined)
+      row.stripeSubscriptionId = data.stripeSubscriptionId;
+    if (data.stripePriceId !== undefined) row.stripePriceId = data.stripePriceId;
     if (data.currentPeriodEnd !== undefined)
       row.currentPeriodEnd = data.currentPeriodEnd;
+    if (data.trialEndsAt !== undefined) row.trialEndsAt = data.trialEndsAt;
     if (data.canceledAt !== undefined) row.canceledAt = data.canceledAt;
     if (data.subscribedAt !== undefined) row.subscribedAt = data.subscribedAt;
     row.updatedAt = new Date();
@@ -87,12 +94,12 @@ export class InMemoryManagerSubscriptionRepository
   async upsertByAcademy(data: {
     academyId: string;
     plan: "free" | "pro";
-    status: "active" | "past_due" | "canceled" | "incomplete";
-    revenuecatAppUserId?: string | null;
-    productId?: string | null;
-    originalTransactionId?: string | null;
-    store?: ManagerSubscriptionStore | null;
+    status: "active" | "trialing" | "past_due" | "canceled" | "incomplete";
+    stripeCustomerId?: string | null;
+    stripeSubscriptionId?: string | null;
+    stripePriceId?: string | null;
     currentPeriodEnd?: Date | null;
+    trialEndsAt?: Date | null;
     canceledAt?: Date | null;
     subscribedAt?: Date;
   }): Promise<ManagerSubscriptionRow> {
@@ -101,11 +108,11 @@ export class InMemoryManagerSubscriptionRepository
       const updated = await this.update(existing.id, {
         plan: data.plan,
         status: data.status,
-        revenuecatAppUserId: data.revenuecatAppUserId ?? null,
-        productId: data.productId ?? null,
-        originalTransactionId: data.originalTransactionId ?? null,
-        store: data.store ?? null,
+        stripeCustomerId: data.stripeCustomerId ?? null,
+        stripeSubscriptionId: data.stripeSubscriptionId ?? null,
+        stripePriceId: data.stripePriceId ?? null,
         currentPeriodEnd: data.currentPeriodEnd ?? null,
+        trialEndsAt: data.trialEndsAt ?? null,
         canceledAt: data.canceledAt ?? null,
         ...(data.subscribedAt ? { subscribedAt: data.subscribedAt } : {}),
       });
@@ -115,11 +122,11 @@ export class InMemoryManagerSubscriptionRepository
       academyId: data.academyId,
       plan: data.plan,
       status: data.status,
-      revenuecatAppUserId: data.revenuecatAppUserId,
-      productId: data.productId,
-      originalTransactionId: data.originalTransactionId,
-      store: data.store,
+      stripeCustomerId: data.stripeCustomerId,
+      stripeSubscriptionId: data.stripeSubscriptionId,
+      stripePriceId: data.stripePriceId,
       currentPeriodEnd: data.currentPeriodEnd,
+      trialEndsAt: data.trialEndsAt,
     });
   }
 }

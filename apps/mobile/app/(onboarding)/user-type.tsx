@@ -11,7 +11,7 @@ const ROLES = [
   {
     key: "manager",
     label: "Gestor",
-    description: "Crie e gerencie sua academia, alunos e instrutores",
+    description: "Gerencie sua academia, turmas e alunos",
     Icon: Building2,
   },
   {

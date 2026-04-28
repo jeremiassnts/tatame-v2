@@ -1,27 +1,18 @@
 import { useApi } from "@/lib/api";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 export type ManagerSubscription = {
   id: string;
   academyId: string;
   plan: "free" | "pro";
-  status: "active" | "past_due" | "canceled" | "incomplete";
-  revenuecatAppUserId: string | null;
-  productId: string | null;
-  originalTransactionId: string | null;
-  store: "app_store" | "play_store" | null;
+  status: "active" | "trialing" | "past_due" | "canceled" | "incomplete";
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
+  stripePriceId: string | null;
   currentPeriodEnd: string | null;
+  trialEndsAt: string | null;
   subscribedAt: string;
   canceledAt: string | null;
-};
-
-type ManagerLimits = {
-  plan: "free" | "pro";
-  students: { used: number; limit: number | null };
-  plans: { used: number; limit: number | null };
-  schedulesPerDay: { maxUsed: number; limit: number | null };
-  instructors: { allowed: boolean };
-  blocked: boolean;
 };
 
 export function useManagerSubscription() {

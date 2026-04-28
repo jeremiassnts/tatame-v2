@@ -101,13 +101,12 @@ async function seed() {
   // Manager subscription (pro)
   const now = new Date();
   await db.insert(managerSubscriptions).values({
-    id: rid(),
     academyId,
     plan: "pro",
     status: "active",
-    revenuecatAppUserId: `seed_user_${faker.string.alphanumeric(14)}`,
-    productId: "tatame_pro_monthly",
-    store: "app_store",
+    stripeCustomerId: null,
+    stripeSubscriptionId: null,
+    stripePriceId: null,
     currentPeriodEnd: addMonths(now, 1),
     subscribedAt: new Date("2024-07-01"),
   });

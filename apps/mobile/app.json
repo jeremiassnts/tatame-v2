@@ -62,6 +62,7 @@
     ],
     "extra": {
       "router": {},
+      "managerPortalUrl": "https://apptatame.com.br/conta",
       "eas": {
         "projectId": "521fca59-6f7d-4701-bdde-b061eed2c7c2"
       }
