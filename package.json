@@ -17,6 +17,8 @@
     "web:dev": "pnpm --filter @tatame/web dev"
   },
   "devDependencies": {
+    "react": "19.1.5",
+    "react-dom": "19.1.5",
     "turbo": "2.8.20",
     "typescript": "5.9.3"
   },
@@ -25,8 +27,8 @@
       "expo-modules-core@3.0.29": "patches/expo-modules-core@3.0.29.patch"
     },
     "overrides": {
-      "react": "19.1.0",
-      "react-dom": "19.1.0"
+      "react": "19.1.5",
+      "react-dom": "19.1.5"
     }
   }
 }
