@@ -54,24 +54,15 @@ export default function ManagerDashboardLayout({
           Cadastro incompleto
         </h1>
         <p className="max-w-sm text-sm text-text-secondary">
-          Para acessar o painel de gestão, você precisa concluir seu cadastro no
-          app Tatame. Baixe o app, faça login com a mesma conta e complete o
-          onboarding.
+          Para acessar o painel de gestão, você precisa completar seu cadastro
+          primeiro.
         </p>
-        <div className="flex gap-4">
-          <a
-            href="#"
-            className="rounded-xl bg-surface px-5 py-2.5 text-sm font-medium text-text-primary border border-border hover:bg-white/5 transition-colors"
-          >
-            App Store
-          </a>
-          <a
-            href="#"
-            className="rounded-xl bg-surface px-5 py-2.5 text-sm font-medium text-text-primary border border-border hover:bg-white/5 transition-colors"
-          >
-            Google Play
-          </a>
-        </div>
+        <a
+          href="/cadastro"
+          className="rounded-xl bg-gradient-to-b from-primary to-primary-dark px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+        >
+          Completar cadastro
+        </a>
       </div>
     );
   }
