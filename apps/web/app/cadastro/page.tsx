@@ -38,13 +38,17 @@ export default function CadastroPage() {
 
   // --- OAuth handlers ---
   async function handleOAuth(strategy: "oauth_google" | "oauth_apple") {
+    if (!signUp) return;
     setError("");
     try {
-      await clerk.authenticateWithRedirect({
+      const { error } = await signUp.sso({
         strategy,
-        redirectUrl: "/sso-callback",
-        redirectUrlComplete: "/cadastro",
+        redirectCallbackUrl: "/sso-callback",
+        redirectUrl: "/cadastro",
       });
+      if (error) {
+        setError(error.message ?? "Erro ao autenticar");
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro ao autenticar");
     }
@@ -179,6 +183,9 @@ export default function CadastroPage() {
             Cadastrar com Apple
           </button>
         </div>
+
+        {/* Clerk bot protection captcha */}
+        <div id="clerk-captcha" />
 
         {/* Divider */}
         <div className="flex w-full items-center gap-3">

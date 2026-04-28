@@ -18,16 +18,18 @@ export default function LoginPage() {
   const [error, setError] = useState("");
 
   // --- OAuth handler ---
-  const clerk = useClerk();
-
   async function handleOAuth(strategy: "oauth_google" | "oauth_apple") {
+    if (!signIn) return;
     setError("");
     try {
-      await clerk.authenticateWithRedirect({
+      const { error } = await signIn.sso({
         strategy,
-        redirectUrl: "/sso-callback",
-        redirectUrlComplete: "/conta",
+        redirectCallbackUrl: "/sso-callback",
+        redirectUrl: "/conta",
       });
+      if (error) {
+        setError(error.message ?? "Erro ao autenticar");
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro ao autenticar");
     }
