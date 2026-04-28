@@ -3,12 +3,18 @@ import { SocialButtons } from "@/components/SocialButtons";
 import { useStartSSO } from "@/lib/hooks/use-start-sso";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import { Image, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function AuthWelcomeScreen() {
   const router = useRouter();
   const { handleSSO } = useStartSSO();
+  const [userType, setUserType] = useState<string | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem("userType").then(setUserType);
+  }, []);
 
   const handleChangeUserType = async () => {
     await AsyncStorage.removeItem("userType");
@@ -47,12 +53,14 @@ export default function AuthWelcomeScreen() {
           <Text className="font-poppins-semibold text-base text-white">Entrar</Text>
         </Pressable>
 
-        <Pressable
-          onPress={() => router.push("/(auth)/sign-up")}
-          className="h-14 items-center justify-center rounded-xl border border-[#3A3A3A] bg-surface"
-        >
-          <Text className="font-poppins-semibold text-base text-primary">Criar conta</Text>
-        </Pressable>
+        {userType !== "manager" && (
+          <Pressable
+            onPress={() => router.push("/(auth)/sign-up")}
+            className="h-14 items-center justify-center rounded-xl border border-[#3A3A3A] bg-surface"
+          >
+            <Text className="font-poppins-semibold text-base text-primary">Criar conta</Text>
+          </Pressable>
+        )}
 
         <Divider text="ou continue com" />
 
