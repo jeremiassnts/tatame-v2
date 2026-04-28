@@ -38,15 +38,24 @@ export class StripeSubscriptionWebhookHandler {
   async handleEvent(event: Stripe.Event): Promise<void> {
     switch (event.type) {
       case "customer.subscription.created":
+        await this.onSubscriptionChange(
+          event.data.object as Stripe.Subscription,
+          true,
+        );
+        break;
       case "customer.subscription.updated":
         await this.onSubscriptionChange(
           event.data.object as Stripe.Subscription,
+          false,
         );
         break;
       case "customer.subscription.deleted":
         await this.onSubscriptionDeleted(
           event.data.object as Stripe.Subscription,
         );
+        break;
+      case "invoice.paid":
+        await this.onInvoicePaid(event.data.object as Stripe.Invoice);
         break;
       case "invoice.payment_failed":
         await this.onPaymentFailed(event.data.object as Stripe.Invoice);
@@ -83,7 +92,7 @@ export class StripeSubscriptionWebhookHandler {
     }
   }
 
-  private async onSubscriptionChange(sub: Stripe.Subscription): Promise<void> {
+  private async onSubscriptionChange(sub: Stripe.Subscription, isNew: boolean): Promise<void> {
     const stripeCustomerId =
       typeof sub.customer === "string" ? sub.customer : sub.customer.id;
     const clerkUserId = sub.metadata?.clerkUserId;
@@ -150,6 +159,17 @@ export class StripeSubscriptionWebhookHandler {
         { academyId: academy.id },
         "[stripe-sub-webhook] subscription linked to existing academy",
       );
+
+      if (isNew && this.emailService) {
+        await this.emailService.sendProActivated(
+          {
+            managerName: user.name,
+            academyName: academy.name,
+            email: user.email,
+          },
+          sub.id,
+        );
+      }
       return;
     }
 
@@ -162,6 +182,22 @@ export class StripeSubscriptionWebhookHandler {
       { userId: user.id },
       "[stripe-sub-webhook] stored pending Stripe data on user (no academy yet)",
     );
+
+    // Send welcome email on new subscription
+    if (isNew && this.emailService) {
+      await this.emailService.sendProActivated(
+        {
+          managerName: user.name,
+          academyName: user.name,
+          email: user.email,
+        },
+        sub.id,
+      );
+      logger.info(
+        { userId: user.id },
+        "[stripe-sub-webhook] pro-activated email sent",
+      );
+    }
   }
 
   private async onSubscriptionDeleted(
@@ -201,6 +237,39 @@ export class StripeSubscriptionWebhookHandler {
     logger.info(
       { subscriptionId: existing.id },
       "[stripe-sub-webhook] subscription canceled",
+    );
+  }
+
+  private async onInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
+    const subId = getInvoiceSubscriptionId(invoice);
+    if (!subId) return;
+
+    const existing = await this.subRepo.findByStripeSubscriptionId(subId);
+    if (!existing) return;
+
+    // Skip trial invoices with $0
+    const amount = invoice.amount_paid ?? 0;
+    if (amount === 0) return;
+
+    if (!this.emailService) return;
+
+    const academy = await this.acadRepo.findById(existing.academyId);
+    if (!academy) return;
+
+    await this.emailService.sendInvoicePaid(
+      {
+        managerName: academy.name,
+        academyName: academy.name,
+        amountCents: amount,
+        invoiceUrl: invoice.hosted_invoice_url ?? undefined,
+        email: academy.contactEmail ?? "",
+      },
+      invoice.id,
+    );
+
+    logger.info(
+      { subscriptionId: existing.id, invoiceId: invoice.id },
+      "[stripe-sub-webhook] invoice paid email sent",
     );
   }
 
