@@ -83,7 +83,7 @@ export default function AssinaturaConfirmadaPage() {
           </p>
           <div className="flex flex-col gap-3 sm:flex-row">
             <Link
-              href="#"
+              href="https://ios.apptatame.com.br"
               className="flex h-[52px] items-center gap-3 rounded-xl border border-border bg-background px-5 transition-colors hover:border-border-light hover:bg-surface"
             >
               <svg
@@ -109,7 +109,7 @@ export default function AssinaturaConfirmadaPage() {
               </div>
             </Link>
             <Link
-              href="#"
+              href="https://android.apptatame.com.br"
               className="flex h-[52px] items-center gap-3 rounded-xl border border-border bg-background px-5 transition-colors hover:border-border-light hover:bg-surface"
             >
               <svg

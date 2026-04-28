@@ -39,7 +39,7 @@ export function Pricing() {
           <div className="w-full max-w-[480px]">
             <div className="flex flex-col gap-8 rounded-[20px] bg-background p-8 border-2 border-primary md:p-10">
               {/* Trial badge */}
-              <span className="w-fit rounded-full bg-gradient-to-b from-primary to-primary-dark px-3 py-1 text-[10px] font-bold uppercase tracking-[1.5px] text-white">
+              <span className="w-fit rounded-full bg-gradient-to-b from-primary to-primary-dark px-3 py-1 text-[16px] font-bold uppercase tracking-[1.5px] text-white">
                 30 DIAS GRÁTIS
               </span>
 

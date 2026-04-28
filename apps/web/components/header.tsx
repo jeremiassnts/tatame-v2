@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 
@@ -39,15 +39,6 @@ export function Header() {
           </a>
         </nav>
 
-        {/* Desktop CTA */}
-        <a
-          href="/#download"
-          className="hidden items-center gap-2 rounded-[10px] bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 md:flex"
-        >
-          Baixar App
-          <Download className="h-4 w-4" />
-        </a>
-
         {/* Mobile hamburger */}
         <button
           onClick={() => setMenuOpen(!menuOpen)}
@@ -79,14 +70,6 @@ export function Header() {
               className="text-[15px] font-medium text-text-secondary"
             >
               Preços
-            </a>
-            <a
-              href="/#download"
-              onClick={() => setMenuOpen(false)}
-              className="flex items-center justify-center gap-2 rounded-[10px] bg-primary px-6 py-3 text-sm font-semibold text-white"
-            >
-              Baixar App
-              <Download className="h-4 w-4" />
             </a>
           </nav>
         </div>
