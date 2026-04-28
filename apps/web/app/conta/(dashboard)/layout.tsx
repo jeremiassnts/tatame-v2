@@ -64,7 +64,7 @@ export default function ManagerDashboardLayout({
           Completar cadastro
         </a>
         <SignOutButton redirectUrl="/">
-          <button className="text-sm text-text-muted hover:text-text-secondary transition-colors">
+          <button className="cursor-pointer text-sm text-text-muted hover:text-text-secondary transition-colors">
             Sair
           </button>
         </SignOutButton>

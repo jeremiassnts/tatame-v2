@@ -143,7 +143,7 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => handleOAuth("oauth_google")}
-            className="flex h-[52px] w-full items-center justify-center gap-3 rounded-xl border border-border bg-background text-sm font-semibold text-white transition-colors hover:border-border-light hover:bg-surface"
+            className="cursor-pointer flex h-[52px] w-full items-center justify-center gap-3 rounded-xl border border-border bg-background text-sm font-semibold text-white transition-colors hover:border-border-light hover:bg-surface"
           >
             <GoogleIcon />
             Entrar com Google
@@ -151,7 +151,7 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => handleOAuth("oauth_apple")}
-            className="flex h-[52px] w-full items-center justify-center gap-3 rounded-xl border border-border bg-background text-sm font-semibold text-white transition-colors hover:border-border-light hover:bg-surface"
+            className="cursor-pointer flex h-[52px] w-full items-center justify-center gap-3 rounded-xl border border-border bg-background text-sm font-semibold text-white transition-colors hover:border-border-light hover:bg-surface"
           >
             <AppleIcon />
             Entrar com Apple
