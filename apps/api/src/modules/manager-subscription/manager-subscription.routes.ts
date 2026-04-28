@@ -16,6 +16,7 @@ import { PostgresManagerSubscriptionRepository } from "./manager-subscription.re
 import { ManagerSubscriptionService } from "./manager-subscription.service.js";
 import { StripeSubscriptionWebhookHandler } from "./stripe-subscription-webhook.handler.js";
 import { PostgresUserRepository } from "../user/user.repository.postgres.js";
+import { UserService } from "../user/user.service.js";
 import { getEmailQueue } from "../email/email.queue.js";
 import { EmailService } from "../email/email.service.js";
 import { PostgresPaymentRepository } from "../payment/payment.repository.postgres.js";
@@ -27,6 +28,8 @@ const env = loadEnv();
 const subRepo = new PostgresManagerSubscriptionRepository(db);
 const acadRepo = new PostgresAcademyRepository(db);
 const userRepo = new PostgresUserRepository(db);
+
+const userService = new UserService(userRepo);
 
 const emailService = env.REDIS_URL
   ? new EmailService(getEmailQueue(env.REDIS_URL))
@@ -86,19 +89,28 @@ managerSubscriptionRouter.post(
         throw new HttpError(400, "successUrl and cancelUrl are required");
       }
 
-      // Try to find existing user; if not provisioned, get email from Clerk
-      const user = await userRepo.findByClerkId(clerkUserId);
-      let email: string;
-      if (user) {
-        email = user.email;
-      } else {
+      // Provision user if not yet in our DB (web signup flow)
+      let user = await userRepo.findByClerkId(clerkUserId);
+      if (!user) {
         const { clerkClient } = await import("@clerk/express");
         const clerkUser = await clerkClient.users.getUser(clerkUserId);
-        email = clerkUser.emailAddresses[0]?.emailAddress ?? "";
+        const email = clerkUser.emailAddresses[0]?.emailAddress ?? "";
         if (!email) {
           throw new HttpError(400, "No email found for user");
         }
+        const name = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") || email;
+        await userService.upsertFromClerk({
+          clerkUserId,
+          email,
+          name,
+          profileImageUrl: clerkUser.imageUrl ?? null,
+        });
+        user = await userRepo.findByClerkId(clerkUserId);
+        if (!user) throw new HttpError(500, "Failed to provision user");
+        // Assign manager role
+        await userService.assignInitialRole(user.id, Role.Manager);
       }
+      const email = user.email;
 
       const url = await getService().createCheckoutSession(
         clerkUserId,
