@@ -34,10 +34,17 @@ export class ManagerSubscriptionService {
   ): Promise<string> {
     if (!this.stripe) throw new HttpError(503, "Stripe not configured");
 
+    // Create or reuse Stripe customer (required for Accounts V2)
+    const existing = await this.stripe.customers.list({ email, limit: 1 });
+    const customer = existing.data[0] ?? await this.stripe.customers.create({
+      email,
+      metadata: { clerkUserId },
+    });
+
     const session = await this.stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],
-      customer_email: email,
+      customer: customer.id,
       line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: {
         trial_period_days: 30,
