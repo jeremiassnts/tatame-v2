@@ -1,7 +1,7 @@
 "use client";
 
 import { managerFetch } from "@/lib/manager-api";
-import { useAuth, useClerk, useSignUp, useUser } from "@clerk/nextjs";
+import { useAuth, useClerk, useSignIn, useSignUp, useUser } from "@clerk/nextjs";
 import { ArrowRight, CheckCircle, Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
@@ -10,6 +10,7 @@ type Stage = "form" | "verify" | "authenticated";
 
 export default function CadastroPage() {
   const { signUp } = useSignUp();
+  const { signIn } = useSignIn();
   const { user, isLoaded: userLoaded } = useUser();
   const { getToken } = useAuth();
   const clerk = useClerk();
@@ -38,10 +39,11 @@ export default function CadastroPage() {
 
   // --- OAuth handlers ---
   async function handleOAuth(strategy: "oauth_google" | "oauth_apple") {
-    if (!signUp) return;
+    if (!signIn) return;
     setError("");
     try {
-      const { error } = await signUp.sso({
+      // Use signIn.sso for OAuth — Clerk handles sign-up automatically if account doesn't exist
+      const { error } = await signIn.sso({
         strategy,
         redirectCallbackUrl: "/sso-callback",
         redirectUrl: "/cadastro",

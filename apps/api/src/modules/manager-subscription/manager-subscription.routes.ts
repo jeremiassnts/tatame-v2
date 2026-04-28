@@ -10,6 +10,7 @@ import {
   requireActiveAcademy,
 } from "../../middleware/academy-context.js";
 import { authorize } from "../../middleware/authorize.js";
+import { requireSession } from "../../middleware/require-session.js";
 import { PostgresAcademyRepository } from "../academy/academy.repository.postgres.js";
 import { PostgresManagerSubscriptionRepository } from "./manager-subscription.repository.postgres.js";
 import { ManagerSubscriptionService } from "./manager-subscription.service.js";
@@ -60,18 +61,21 @@ managerSubscriptionRouter.get(
 );
 
 // POST /manager-subscriptions/checkout — create Stripe Checkout session
+// Uses requireSession (not authorize) because the user may not be provisioned yet
+// (they just created a Clerk account on the web and haven't done onboarding)
 managerSubscriptionRouter.post(
   "/checkout",
-  authorize(Role.Manager),
+  requireSession,
   async (req, res, next) => {
     try {
       if (!env.STRIPE_PRO_PRICE_ID) {
         throw new HttpError(503, "Stripe price not configured");
       }
 
-      const user = await userRepo.findById(req.appAuth!.userId);
-      if (!user) {
-        throw new HttpError(404, "User not found");
+      const { getAuth } = await import("@clerk/express");
+      const { userId: clerkUserId } = getAuth(req);
+      if (!clerkUserId) {
+        throw new HttpError(401, "Unauthorized");
       }
 
       const { successUrl, cancelUrl } = req.body as {
@@ -82,9 +86,23 @@ managerSubscriptionRouter.post(
         throw new HttpError(400, "successUrl and cancelUrl are required");
       }
 
+      // Try to find existing user; if not provisioned, get email from Clerk
+      const user = await userRepo.findByClerkId(clerkUserId);
+      let email: string;
+      if (user) {
+        email = user.email;
+      } else {
+        const { clerkClient } = await import("@clerk/express");
+        const clerkUser = await clerkClient.users.getUser(clerkUserId);
+        email = clerkUser.emailAddresses[0]?.emailAddress ?? "";
+        if (!email) {
+          throw new HttpError(400, "No email found for user");
+        }
+      }
+
       const url = await getService().createCheckoutSession(
-        user.clerkUserId,
-        user.email,
+        clerkUserId,
+        email,
         env.STRIPE_PRO_PRICE_ID,
         successUrl,
         cancelUrl,
