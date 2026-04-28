@@ -76,6 +76,9 @@ export class ManagerSubscriptionService {
       user.pendingStripeSubscriptionId,
     );
 
+    const currentPeriodEnd = (stripeSub as any).current_period_end;
+    const trialEnd = stripeSub.trial_end;
+
     await this.subRepo.upsertByAcademy({
       academyId,
       plan: "pro",
@@ -83,10 +86,8 @@ export class ManagerSubscriptionService {
       stripeCustomerId: user.pendingStripeCustomerId,
       stripeSubscriptionId: user.pendingStripeSubscriptionId,
       stripePriceId: stripeSub.items.data[0]?.price.id ?? null,
-      currentPeriodEnd: new Date((stripeSub as any).current_period_end * 1000),
-      trialEndsAt: stripeSub.trial_end
-        ? new Date(stripeSub.trial_end * 1000)
-        : null,
+      currentPeriodEnd: currentPeriodEnd ? new Date(currentPeriodEnd * 1000) : null,
+      trialEndsAt: trialEnd ? new Date(trialEnd * 1000) : null,
     });
 
     await userRepo.clearPendingStripe(userId);
