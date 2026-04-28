@@ -17,8 +17,7 @@ type LayoutProps = {
 };
 
 export function Layout({ preview, children, baseUrl }: LayoutProps) {
-  const base = baseUrl ?? process.env.API_PUBLIC_URL;
-  const logoUrl = base ? `${base}/public/icon.png` : "https://apptatame.com.br/icon.png";
+  const logoUrl = baseUrl ?? "https://apptatame.com.br/icon.png";
   return (
     <Html lang="pt-BR">
       <Head />
