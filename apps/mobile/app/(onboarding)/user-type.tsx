@@ -31,7 +31,7 @@ const ROLES = [
 type UserType = (typeof ROLES)[number]["key"];
 
 export default function UserTypeScreen() {
-  const [selected, setSelected] = useState<UserType>("instructor");
+  const [selected, setSelected] = useState<UserType>("manager");
   const router = useRouter();
 
   const handleContinue = async () => {
