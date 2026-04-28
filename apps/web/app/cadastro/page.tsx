@@ -1,7 +1,7 @@
 "use client";
 
 import { managerFetch } from "@/lib/manager-api";
-import { useAuth, useClerk, useSignIn, useSignUp, useUser } from "@clerk/nextjs";
+import { SignOutButton, useAuth, useClerk, useSignIn, useSignUp, useUser } from "@clerk/nextjs";
 import { ArrowRight, CheckCircle, Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
@@ -368,6 +368,12 @@ function AuthenticatedView({
             {loading ? "Redirecionando..." : "Ir para pagamento"}
             {!loading && <ArrowRight className="h-5 w-5" />}
           </button>
+
+          <SignOutButton redirectUrl="/cadastro">
+            <button className="text-sm text-text-muted hover:text-text-secondary transition-colors">
+              Sair
+            </button>
+          </SignOutButton>
         </div>
       </div>
     </div>

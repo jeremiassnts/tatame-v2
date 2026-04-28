@@ -5,7 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DollarSign, CreditCard, Menu, X } from "lucide-react";
-import { UserButton, useAuth } from "@clerk/nextjs";
+import { SignOutButton, UserButton, useAuth } from "@clerk/nextjs";
 import { managerFetch } from "@/lib/manager-api";
 
 const navItems = [
@@ -63,6 +63,11 @@ export default function ManagerDashboardLayout({
         >
           Completar cadastro
         </a>
+        <SignOutButton redirectUrl="/">
+          <button className="text-sm text-text-muted hover:text-text-secondary transition-colors">
+            Sair
+          </button>
+        </SignOutButton>
       </div>
     );
   }
