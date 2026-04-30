@@ -13,9 +13,6 @@ Notifications.setNotificationHandler({
 });
 
 export async function registerForPushNotificationsAsync(): Promise<string | null> {
-  if (!Constants.isDevice) {
-    return null;
-  }
 
   if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync("default", {
