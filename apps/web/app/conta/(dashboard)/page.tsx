@@ -8,14 +8,11 @@ import { managerFetch } from "@/lib/manager-api";
 // --- Types ---
 
 interface FinancialSummary {
-  activeStudents: number;
-  monthlyRevenue: number;
-  monthlyCheckins: number;
-  defaultRate: number;
-  revenueByPlan: { planName: string; revenue: number }[];
-  received: number;
-  pending: number;
-  overdue: number;
+  revenueCurrentMonth: number;
+  revenuePreviousMonth: number;
+  pendingPaymentsCount: number;
+  pendingPaymentsTotal: number;
+  activeSubscriptionsCount: number;
 }
 
 interface Payment {
@@ -338,23 +335,23 @@ export default function FinancialDashboardPage() {
         ) : summary ? (
           <>
             <KpiCard
-              label="Alunos Ativos"
-              value={summary.activeStudents.toString()}
+              label="Membros Ativos"
+              value={summary.activeSubscriptionsCount.toString()}
               icon={Users}
             />
             <KpiCard
               label="Receita Mensal"
-              value={formatCurrency(summary.monthlyRevenue)}
+              value={formatCurrency(summary.revenueCurrentMonth)}
               icon={DollarSign}
             />
             <KpiCard
-              label="Check-ins do Mês"
-              value={summary.monthlyCheckins.toString()}
+              label="Pagamentos Pendentes"
+              value={summary.pendingPaymentsCount.toString()}
               icon={Calendar}
             />
             <KpiCard
-              label="Inadimplência"
-              value={`${summary.defaultRate.toFixed(1)}%`}
+              label="Total Pendente"
+              value={formatCurrency(summary.pendingPaymentsTotal)}
               icon={AlertTriangle}
             />
           </>
@@ -370,11 +367,10 @@ export default function FinancialDashboardPage() {
           </>
         ) : summary ? (
           <>
-            <RevenueByPlan items={summary.revenueByPlan ?? []} />
             <MonthSummary
-              received={summary.received}
-              pending={summary.pending}
-              overdue={summary.overdue}
+              received={summary.revenueCurrentMonth}
+              pending={summary.pendingPaymentsTotal}
+              overdue={0}
             />
           </>
         ) : null}
