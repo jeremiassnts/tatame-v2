@@ -1,6 +1,7 @@
 import { Avatar } from "@/components/Avatar";
 import { ClassCard } from "@/components/ClassCard";
 import { GraduationCard } from "@/components/GraduationCard";
+import { NotificationBell } from "@/components/NotificationBell";
 import { useAcademyContext } from "@/lib/academy-context";
 import { useApi } from "@/lib/api";
 import { useAcademy, useAcademyStats } from "@/lib/hooks/use-academy";
@@ -123,16 +124,18 @@ export default function ManagerDashboard() {
                 {managerFirst || "Gestor"}
               </Text>
             </View>
-            <Pressable
-              onPress={() => router.push("/(app)/profile")}
-              className="flex-row items-center gap-2"
-            >
-              <Avatar
-                variant="user"
-                imageUrl={me?.profileImageUrl}
-                fallbackLetter={avatarLetter}
-              />
-            </Pressable>
+            <View className="flex-row items-center gap-3">
+              <NotificationBell />
+              <Pressable
+                onPress={() => router.push("/(app)/profile")}
+              >
+                <Avatar
+                  variant="user"
+                  imageUrl={me?.profileImageUrl}
+                  fallbackLetter={avatarLetter}
+                />
+              </Pressable>
+            </View>
           </View>
 
           {academy && !academy.pixKey && (

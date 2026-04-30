@@ -9,6 +9,7 @@ import {
   renderEmail,
   StudentPaymentReceived,
   SubscriptionCanceled,
+  TrialEnding,
 } from "@tatame/email";
 import { Worker, type Job } from "bullmq";
 import { createElement } from "react";
@@ -28,6 +29,7 @@ const subjectMap: Record<EmailJobName, (data: Record<string, unknown>) => string
   "member-approved": (d) => `Aprovado na ${d.academyName}!`,
   "manager-new-member": () => "Novo membro aprovado",
   "student-payment-received": () => "Pagamento de aluno recebido",
+  "trial-ending": () => "Seu período de teste termina em breve",
 };
 
 type TemplateComponent = (props: Record<string, unknown>) => React.ReactElement;
@@ -42,6 +44,7 @@ const templateMap: Record<EmailJobName, TemplateComponent> = {
   "member-approved": MemberApproved as unknown as TemplateComponent,
   "manager-new-member": ManagerNewMember as unknown as TemplateComponent,
   "student-payment-received": StudentPaymentReceived as unknown as TemplateComponent,
+  "trial-ending": TrialEnding as unknown as TemplateComponent,
 };
 
 async function processEmailJob(job: Job): Promise<void> {

@@ -19,6 +19,7 @@ import {
 import { useState } from "react";
 import {
   ActivityIndicator,
+  Linking,
   Modal,
   Pressable,
   RefreshControl,
@@ -27,10 +28,12 @@ import {
   TextInput,
   View,
 } from "react-native";
+import Constants from "expo-constants";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const TEXT_SECONDARY = "#ABABAB";
 const TEXT_MUTED = "#525252";
+const PORTAL_URL = Constants.expoConfig?.extra?.managerPortalUrl ?? "https://tatame.app/conta";
 
 const PIX_TYPE_LABELS: Record<string, string> = {
   cpf: "CPF",
@@ -175,7 +178,8 @@ export default function FinancialDashboard() {
           </Pressable>
         </View>
 
-        <View
+        <Pressable
+          onPress={() => router.push("/(app)/(manager)/(members)")}
           className="flex-row items-center justify-between rounded-2xl border border-surface-border bg-surface"
           style={{ padding: 14 }}
         >
@@ -197,64 +201,20 @@ export default function FinancialDashboard() {
           >
             <Users size={20} color="#A078E8" />
           </View>
-        </View>
+        </Pressable>
 
         <Pressable
-          onPress={() => router.push("/(app)/(manager)/(finances)/my-plan")}
+          onPress={() => Linking.openURL(PORTAL_URL)}
           className="flex-row items-center justify-between rounded-2xl border border-surface-border bg-surface"
           style={{ padding: 14 }}
         >
           <View style={{ gap: 4 }}>
-            <View className="flex-row items-center" style={{ gap: 8 }}>
-              <Text className="font-poppins text-xs" style={{ color: TEXT_SECONDARY }}>
-                Plano atual
-              </Text>
-              <View
-                className="rounded-full"
-                style={{
-                  paddingHorizontal: 8,
-                  paddingVertical: 2,
-                  backgroundColor:
-                    subscription?.status === "canceled"
-                      ? "#FF453A"
-                      : subscription?.plan === "pro"
-                        ? "#A078E8"
-                        : "#32D74B",
-                }}
-              >
-                <Text className="font-poppins-bold text-[9px] text-white">
-                  {subscription?.status === "canceled"
-                    ? "CANCELADO"
-                    : subscription?.plan === "pro"
-                      ? "PRO"
-                      : "FREE"}
-                </Text>
-              </View>
-            </View>
-            <Text className="font-poppins-bold text-lg text-primary">
-              {subscription?.plan === "pro" ? "R$ 49" : "R$ 0"}
-              <Text
-                className="font-poppins text-sm"
-                style={{ color: TEXT_SECONDARY }}
-              >
-                {" "}/mês
-              </Text>
+            <Text className="font-poppins-semibold text-sm text-white">
+              Gerenciar minha conta
             </Text>
-            {subscription?.status === "canceled" ? (
-              <Text
-                className="font-poppins text-[11px]"
-                style={{ color: "#FF453A" }}
-              >
-                Assinatura cancelada
-              </Text>
-            ) : subscription?.currentPeriodEnd ? (
-              <Text
-                className="font-poppins text-[11px]"
-                style={{ color: TEXT_SECONDARY }}
-              >
-                Próxima cobrança: {formatDate(subscription.currentPeriodEnd)}
-              </Text>
-            ) : null}
+            <Text className="font-poppins text-[11px]" style={{ color: TEXT_SECONDARY }}>
+              Assinatura, pagamento e dados
+            </Text>
           </View>
           <View
             className="items-center justify-center rounded-lg"

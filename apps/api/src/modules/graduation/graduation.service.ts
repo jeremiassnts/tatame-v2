@@ -3,6 +3,7 @@ import { BELT_ORDER, MAX_STRIPES_BY_BELT } from "@tatame/config";
 import { HttpError } from "../../lib/http-error.js";
 import type { IAcademyRepository } from "../academy/academy.repository.js";
 import type { IMembershipRepository } from "../membership/membership.repository.js";
+import type { NotificationDispatcher } from "../notification/notification-dispatcher.js";
 import type { BeltPromotionRow, IGraduationRepository } from "./graduation.repository.js";
 
 function beltIndex(belt: Belt): number {
@@ -44,6 +45,7 @@ export class GraduationService {
     private readonly graduationRepo: IGraduationRepository,
     private readonly membershipRepo: IMembershipRepository,
     private readonly academyRepo: IAcademyRepository,
+    private readonly dispatcher?: NotificationDispatcher,
   ) {}
 
   async listForUserInAcademy(userId: string, academyId: string) {
@@ -212,7 +214,7 @@ export class GraduationService {
       { belt: opts.belt, stripes: opts.stripes },
     );
 
-    return this.graduationRepo.replaceCurrentPromotion({
+    const result = await this.graduationRepo.replaceCurrentPromotion({
       userId: opts.targetUserId,
       academyId: opts.academyId,
       promotedBy: opts.actorUserId,
@@ -220,6 +222,20 @@ export class GraduationService {
       stripes: opts.stripes,
       notes: opts.notes,
     });
+
+    if (this.dispatcher) {
+      const beltNames: Record<string, string> = {
+        white: "branca", blue: "azul", purple: "roxa", brown: "marrom", black: "preta",
+      };
+      this.dispatcher.notifyUsers(
+        "belt_promotion",
+        [opts.targetUserId],
+        [beltNames[opts.belt] ?? opts.belt, String(opts.stripes)],
+        { academyId: opts.academyId },
+      );
+    }
+
+    return result;
   }
 
   private async assertActorCanPromoteInAcademy(

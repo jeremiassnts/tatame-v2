@@ -12,11 +12,14 @@
     "db:generate": "pnpm --filter @tatame/db generate",
     "db:migrate": "pnpm --filter @tatame/db migrate",
     "db:studio": "pnpm --filter @tatame/db studio",
+    "db:seed": "pnpm --filter @tatame/api seed",
     "api:dev": "pnpm --filter @tatame/api dev",
     "mobile:dev": "pnpm --filter @tatame/mobile dev",
     "web:dev": "pnpm --filter @tatame/web dev"
   },
   "devDependencies": {
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
     "turbo": "2.8.20",
     "typescript": "5.9.3"
   },

@@ -121,7 +121,15 @@ export default function StudentClassDetail() {
     ) {
       return;
     }
-    checkinMutation.mutate({ classId, date: sessionDate });
+    checkinMutation.mutate(
+      { classId, date: sessionDate },
+      {
+        onError: (err) => {
+          const msg = err instanceof Error ? err.message : "Erro ao fazer check-in";
+          Alert.alert("Check-in não realizado", msg);
+        },
+      },
+    );
   };
 
   return (

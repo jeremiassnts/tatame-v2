@@ -62,4 +62,20 @@ export class InMemoryCheckinRepository implements ICheckinRepository {
   ): Promise<CheckinHistoryItem[]> {
     return [];
   }
+
+  async countTotalByUser(userId: string): Promise<number> {
+    return this.rows.filter((r) => r.userId === userId).length;
+  }
+
+  async getWeeklyCheckinSummaries(weekReference: string): Promise<{ userId: string; count: number }[]> {
+    const counts = new Map<string, number>();
+    for (const r of this.rows.filter((r) => r.weekReference === weekReference)) {
+      counts.set(r.userId, (counts.get(r.userId) ?? 0) + 1);
+    }
+    return Array.from(counts.entries()).map(([userId, count]) => ({ userId, count }));
+  }
+
+  async findInactiveUserIds(_beforeDate: string): Promise<string[]> {
+    return [];
+  }
 }

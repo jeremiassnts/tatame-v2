@@ -26,4 +26,8 @@ export interface ICheckinRepository {
     userId: string,
     opts: { cursor?: string; limit: number },
   ): Promise<CheckinHistoryItem[]>;
+
+  countTotalByUser(userId: string): Promise<number>;
+  getWeeklyCheckinSummaries(weekReference: string): Promise<{ userId: string; count: number }[]>;
+  findInactiveUserIds(beforeDate: string): Promise<string[]>;
 }

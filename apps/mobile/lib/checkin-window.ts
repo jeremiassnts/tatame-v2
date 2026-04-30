@@ -12,6 +12,9 @@ function parseTimeParts(time: string): { h: number; m: number; s: number } {
   };
 }
 
+/** BRT offset in hours (UTC-3, fixed since Brazil abolished DST in 2019) */
+const BRT_OFFSET_HOURS = 3;
+
 function sessionBoundsUtc(
   sessionDate: string,
   startTime: string,
@@ -23,8 +26,8 @@ function sessionBoundsUtc(
   const d = segs[2] ?? 1;
   const sh = parseTimeParts(startTime);
   const eh = parseTimeParts(endTime);
-  const start = new Date(Date.UTC(y, mo - 1, d, sh.h, sh.m, sh.s));
-  let end = new Date(Date.UTC(y, mo - 1, d, eh.h, eh.m, eh.s));
+  const start = new Date(Date.UTC(y, mo - 1, d, sh.h + BRT_OFFSET_HOURS, sh.m, sh.s));
+  let end = new Date(Date.UTC(y, mo - 1, d, eh.h + BRT_OFFSET_HOURS, eh.m, eh.s));
   if (end.getTime() <= start.getTime()) {
     end = new Date(end.getTime() + 24 * 60 * 60 * 1000);
   }

@@ -4,6 +4,7 @@ import {
   date,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   smallint,
@@ -51,12 +52,7 @@ export const managerPlanEnum = pgEnum("manager_plan", ["free", "pro"]);
 
 export const managerSubscriptionStatusEnum = pgEnum(
   "manager_subscription_status",
-  ["active", "past_due", "canceled", "incomplete"],
-);
-
-export const managerSubscriptionStoreEnum = pgEnum(
-  "manager_subscription_store",
-  ["app_store", "play_store"],
+  ["active", "past_due", "canceled", "incomplete", "trialing"],
 );
 
 export const pixKeyTypeEnum = pgEnum("pix_key_type", [
@@ -64,6 +60,35 @@ export const pixKeyTypeEnum = pgEnum("pix_key_type", [
   "email",
   "phone",
   "random",
+]);
+
+export const pushTokenPlatformEnum = pgEnum("push_token_platform", [
+  "ios",
+  "android",
+]);
+
+export const notificationCategoryEnum = pgEnum("notification_category", [
+  "class_change",
+  "payment",
+  "belt_promotion",
+  "announcement",
+  "marketplace",
+  "tournament",
+  "new_member",
+  "subscription_alert",
+  "checkin_anomaly",
+  "streak",
+  "inactivity",
+  "milestone",
+  "weekly_summary",
+  "wrapped",
+]);
+
+export const notificationStatusEnum = pgEnum("notification_status", [
+  "pending",
+  "queued",
+  "sent",
+  "failed",
 ]);
 
 export const users = pgTable("users", {
@@ -83,6 +108,8 @@ export const users = pgTable("users", {
     .notNull()
     .$onUpdate(() => new Date()),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  pendingStripeCustomerId: text("pending_stripe_customer_id"),
+  pendingStripeSubscriptionId: text("pending_stripe_subscription_id"),
 });
 
 export const userRoles = pgTable(
@@ -270,11 +297,11 @@ export const managerSubscriptions = pgTable("manager_subscriptions", {
     .unique(),
   plan: managerPlanEnum("plan").notNull(),
   status: managerSubscriptionStatusEnum("status").notNull(),
-  revenuecatAppUserId: text("revenuecat_app_user_id").unique(),
-  productId: text("product_id"),
-  originalTransactionId: text("original_transaction_id"),
-  store: managerSubscriptionStoreEnum("store"),
+  stripeCustomerId: text("stripe_customer_id").unique(),
+  stripeSubscriptionId: text("stripe_subscription_id").unique(),
+  stripePriceId: text("stripe_price_id"),
   currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+  trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
   subscribedAt: timestamp("subscribed_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -357,5 +384,89 @@ export const beltPromotions = pgTable(
     oneCurrentPerUser: uniqueIndex("belt_promotions_one_current_per_user")
       .on(t.userId)
       .where(sql`${t.isCurrent} = true`),
+  }),
+);
+
+export const pushTokens = pgTable(
+  "push_tokens",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.clerkUserId, { onDelete: "cascade" }),
+    token: text("token").notNull(),
+    platform: pushTokenPlatformEnum("platform").notNull(),
+    deviceId: text("device_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => ({
+    userDeviceUnique: uniqueIndex("push_tokens_user_device_unique").on(
+      t.userId,
+      t.deviceId,
+    ),
+    userIdx: index("push_tokens_user_id_idx").on(t.userId),
+  }),
+);
+
+export const engagementMilestones = pgTable(
+  "engagement_milestones",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    milestone: integer("milestone").notNull(),
+    notifiedAt: timestamp("notified_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (t) => ({
+    userMilestoneUnique: uniqueIndex("engagement_milestones_user_milestone_unique").on(
+      t.userId,
+      t.milestone,
+    ),
+  }),
+);
+
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    recipientId: text("recipient_id")
+      .notNull()
+      .references(() => users.clerkUserId, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    category: notificationCategoryEnum("category").notNull(),
+    data: jsonb("data"),
+    readAt: timestamp("read_at", { withTimezone: true }),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    status: notificationStatusEnum("status").notNull().default("pending"),
+    academyId: uuid("academy_id").references(() => academies.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => ({
+    recipientReadIdx: index("notifications_recipient_read_idx").on(
+      t.recipientId,
+      t.readAt,
+    ),
+    recipientCreatedIdx: index("notifications_recipient_created_idx").on(
+      t.recipientId,
+      t.createdAt,
+    ),
   }),
 );

@@ -1,5 +1,4 @@
-import type { ReactNode } from "react";
-import { createContext, useContext } from "react";
+import { createContext, useContext, useState, type ReactNode } from "react";
 
 type AcademyContextValue = {
   academyId: string;
@@ -7,23 +6,24 @@ type AcademyContextValue = {
   academyLogoUrl: string | null;
 };
 
-type updateAcademyContextProps = {
-  academyId: string;
-  academyName: string;
-  academyLogoUrl: string | null;
-}
-
-const AcademyContext = createContext<AcademyContextValue | null>(null);
-
-export function AcademyProvider({
-  value,
-  children,
-}: {
+type AcademyContextType = {
   value: AcademyContextValue;
-  children: ReactNode;
-}) {
+  update: (next: AcademyContextValue) => void;
+};
+
+const AcademyContext = createContext<AcademyContextType | null>(null);
+
+export function AcademyProvider({ children }: { children: ReactNode }) {
+  const [value, setValue] = useState<AcademyContextValue>({
+    academyId: "",
+    academyName: "",
+    academyLogoUrl: null,
+  });
+
   return (
-    <AcademyContext.Provider value={value}>{children}</AcademyContext.Provider>
+    <AcademyContext.Provider value={{ value, update: setValue }}>
+      {children}
+    </AcademyContext.Provider>
   );
 }
 
@@ -32,18 +32,13 @@ export function useAcademyContext(): AcademyContextValue {
   if (!ctx) {
     throw new Error("useAcademyContext must be used within AcademyProvider");
   }
-  return ctx;
+  return ctx.value;
 }
 
-
-export function useUpdateAcademyContext(): (props: updateAcademyContextProps) => void {
+export function useUpdateAcademyContext(): (next: AcademyContextValue) => void {
   const ctx = useContext(AcademyContext);
   if (!ctx) {
     throw new Error("useUpdateAcademyContext must be used within AcademyProvider");
   }
-  return (props: updateAcademyContextProps) => {
-    ctx.academyId = props.academyId;
-    ctx.academyName = props.academyName;
-    ctx.academyLogoUrl = props.academyLogoUrl;
-  };
+  return ctx.update;
 }

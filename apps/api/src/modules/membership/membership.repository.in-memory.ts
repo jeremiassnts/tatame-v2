@@ -218,6 +218,14 @@ export class InMemoryMembershipRepository implements IMembershipRepository {
     if (i >= 0) this.rows.splice(i, 1);
   }
 
+  async findManagerClerkIdsByAcademy(_academyId: string): Promise<string[]> {
+    return [];
+  }
+
+  async findActiveStudentClerkIdsByAcademy(_academyId: string): Promise<string[]> {
+    return [];
+  }
+
   async withTransaction<T>(
     fn: (txRepo: IMembershipRepository) => Promise<T>,
   ): Promise<T> {

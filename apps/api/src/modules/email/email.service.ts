@@ -52,6 +52,17 @@ export class EmailService {
     );
   }
 
+  async sendTrialEnding(
+    data: EmailJobMap["trial-ending"],
+    stripeSubscriptionId: string,
+  ) {
+    await this.enqueue(
+      "trial-ending",
+      data,
+      `trial-ending-${stripeSubscriptionId}`,
+    );
+  }
+
   async sendPlanEnrolled(
     data: EmailJobMap["plan-enrolled"],
     studentSubscriptionId: string,

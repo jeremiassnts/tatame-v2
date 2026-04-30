@@ -1,4 +1,4 @@
-import { and, count, desc, eq, lt } from "drizzle-orm";
+import { and, count, desc, eq, lt, sql } from "drizzle-orm";
 import { checkins, classes, type Database } from "@tatame/db";
 import type {
   CheckinHistoryItem,
@@ -85,5 +85,34 @@ export class PostgresCheckinRepository implements ICheckinRepository {
       date: r.date.slice(0, 10),
       startTime: r.startTime,
     }));
+  }
+
+  async countTotalByUser(userId: string): Promise<number> {
+    const [row] = await this.db
+      .select({ c: count() })
+      .from(checkins)
+      .where(eq(checkins.userId, userId));
+    return Number(row?.c ?? 0);
+  }
+
+  async getWeeklyCheckinSummaries(weekReference: string): Promise<{ userId: string; count: number }[]> {
+    const rows = await this.db
+      .select({
+        userId: checkins.userId,
+        count: count(),
+      })
+      .from(checkins)
+      .where(eq(checkins.weekReference, weekReference))
+      .groupBy(checkins.userId);
+    return rows.map((r) => ({ userId: r.userId, count: Number(r.count) }));
+  }
+
+  async findInactiveUserIds(beforeDate: string): Promise<string[]> {
+    const rows = await this.db
+      .select({ userId: checkins.userId })
+      .from(checkins)
+      .groupBy(checkins.userId)
+      .having(sql`max(${checkins.date}) < ${beforeDate}`);
+    return rows.map((r) => r.userId);
   }
 }

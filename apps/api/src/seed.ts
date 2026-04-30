@@ -8,7 +8,7 @@ import { faker } from "@faker-js/faker/locale/pt_BR";
 import { loadEnv } from "@tatame/config";
 import {
   academies,
-  academyMemberships, beltPromotions, checkins, classes, createDb, managerSubscriptions, payments, studentSubscriptions, subscriptionPlans, userRoles, users
+  academyMemberships, beltPromotions, checkins, classes, createDb, managerSubscriptions, notifications, payments, studentSubscriptions, subscriptionPlans, userRoles, users
 } from "@tatame/db";
 
 const env = loadEnv();
@@ -101,13 +101,12 @@ async function seed() {
   // Manager subscription (pro)
   const now = new Date();
   await db.insert(managerSubscriptions).values({
-    id: rid(),
     academyId,
     plan: "pro",
     status: "active",
-    revenuecatAppUserId: `seed_user_${faker.string.alphanumeric(14)}`,
-    productId: "tatame_pro_monthly",
-    store: "app_store",
+    stripeCustomerId: null,
+    stripeSubscriptionId: null,
+    stripePriceId: null,
     currentPeriodEnd: addMonths(now, 1),
     subscribedAt: new Date("2024-07-01"),
   });
@@ -464,6 +463,109 @@ async function seed() {
     isActive: false,
   });
   console.log(`  Pending membership: Marcos Oliveira`);
+
+  // ── Notifications ─────────────────────────────────────────────────────
+  const notificationSamples: {
+    recipientClerkId: string;
+    title: string;
+    body: string;
+    category: "class_change" | "payment" | "belt_promotion" | "announcement" | "new_member" | "subscription_alert" | "checkin_anomaly" | "streak" | "inactivity" | "milestone" | "weekly_summary";
+    readAt?: Date | null;
+    daysAgo: number;
+  }[] = [
+    // Manager notifications
+    {
+      recipientClerkId: managerClerkId,
+      title: "Novo membro pendente",
+      body: "Marcos Oliveira solicitou entrada na academia. Aprove ou rejeite o pedido.",
+      category: "new_member",
+      daysAgo: 0,
+    },
+    {
+      recipientClerkId: managerClerkId,
+      title: "Pagamento em atraso",
+      body: "3 alunos estão com pagamento pendente para o mês atual.",
+      category: "payment",
+      daysAgo: 1,
+    },
+    {
+      recipientClerkId: managerClerkId,
+      title: "Assinatura Pro ativa",
+      body: "Sua assinatura Pro foi ativada com sucesso! Aproveite todos os recursos.",
+      category: "subscription_alert",
+      readAt: new Date(Date.now() - 5 * 86_400_000),
+      daysAgo: 5,
+    },
+    {
+      recipientClerkId: managerClerkId,
+      title: "Resumo semanal",
+      body: "Sua academia teve 156 check-ins e 3 novos alunos esta semana. Confira os detalhes.",
+      category: "weekly_summary",
+      readAt: new Date(Date.now() - 7 * 86_400_000),
+      daysAgo: 7,
+    },
+    {
+      recipientClerkId: managerClerkId,
+      title: "Anomalia de check-in",
+      body: "João Pedro tentou fazer check-in fora do horário permitido na aula de Fundamentos.",
+      category: "checkin_anomaly",
+      daysAgo: 2,
+    },
+    {
+      recipientClerkId: managerClerkId,
+      title: "Aula alterada",
+      body: "A aula de No-Gi de sexta-feira foi movida para 20:00.",
+      category: "class_change",
+      readAt: new Date(Date.now() - 3 * 86_400_000),
+      daysAgo: 3,
+    },
+    {
+      recipientClerkId: managerClerkId,
+      title: "Marco atingido! 🎉",
+      body: "Sua academia atingiu 80 membros ativos. Parabéns pelo crescimento!",
+      category: "milestone",
+      daysAgo: 4,
+    },
+    {
+      recipientClerkId: managerClerkId,
+      title: "Aluno inativo",
+      body: "Lucas Ferreira não treina há 14 dias. Considere entrar em contato.",
+      category: "inactivity",
+      daysAgo: 1,
+    },
+    {
+      recipientClerkId: managerClerkId,
+      title: "Faixa azul! 🥋",
+      body: "Maria Silva foi promovida para faixa azul por Carlos Eduardo.",
+      category: "belt_promotion",
+      daysAgo: 6,
+    },
+    {
+      recipientClerkId: managerClerkId,
+      title: "Anúncio da federação",
+      body: "Campeonato Estadual de Jiu-Jitsu: inscrições abertas até 15 de maio.",
+      category: "announcement",
+      readAt: new Date(Date.now() - 10 * 86_400_000),
+      daysAgo: 10,
+    },
+  ];
+
+  for (const n of notificationSamples) {
+    const createdAt = new Date(Date.now() - n.daysAgo * 86_400_000);
+    await db.insert(notifications).values({
+      id: rid(),
+      recipientId: n.recipientClerkId,
+      title: n.title,
+      body: n.body,
+      category: n.category,
+      academyId,
+      status: "sent",
+      sentAt: createdAt,
+      readAt: n.readAt ?? null,
+      createdAt,
+    });
+  }
+  console.log(`  Notifications: ${notificationSamples.length} for manager`);
 
   console.log("\nSeed complete!");
   process.exit(0);

@@ -258,7 +258,7 @@ describe("CheckinService", () => {
         classId: classRow.id,
         sessionDate: SESSION_DATE,
       }),
-    ).rejects.toMatchObject({ statusCode: 409, message: "Class is full" });
+    ).rejects.toMatchObject({ statusCode: 409, message: "Aula lotada — não há mais vagas para esta sessão" });
   });
 
   // ─── Weekly limit ──────────────────────────────────────────────
@@ -306,7 +306,7 @@ describe("CheckinService", () => {
       }),
     ).rejects.toMatchObject({
       statusCode: 409,
-      message: "Weekly check-in limit reached",
+      message: "Limite semanal de check-ins atingido",
     });
   });
 
@@ -397,7 +397,7 @@ describe("CheckinService", () => {
       }),
     ).rejects.toMatchObject({
       statusCode: 403,
-      message: "No subscription for this academy",
+      message: "Você não possui um plano ativo nesta academia",
     });
   });
 
@@ -685,7 +685,7 @@ describe("CheckinService", () => {
       }),
     ).rejects.toMatchObject({
       statusCode: 403,
-      message: "Only students can check in",
+      message: "Apenas alunos podem fazer check-in",
     });
   });
 
@@ -704,7 +704,7 @@ describe("CheckinService", () => {
       }),
     ).rejects.toMatchObject({
       statusCode: 403,
-      message: "Only students can check in",
+      message: "Apenas alunos podem fazer check-in",
     });
   });
 
@@ -729,7 +729,7 @@ describe("CheckinService", () => {
       }),
     ).rejects.toMatchObject({
       statusCode: 403,
-      message: "No active academy membership",
+      message: "Você não possui matrícula ativa nesta academia",
     });
   });
 
@@ -761,7 +761,7 @@ describe("CheckinService", () => {
       }),
     ).rejects.toMatchObject({
       statusCode: 404,
-      message: "Class not found",
+      message: "Aula não encontrada",
     });
   });
 
@@ -780,7 +780,7 @@ describe("CheckinService", () => {
       }),
     ).rejects.toMatchObject({
       statusCode: 404,
-      message: "Class not found",
+      message: "Aula não encontrada",
     });
   });
 
@@ -845,7 +845,7 @@ describe("CheckinService", () => {
       }),
     ).rejects.toMatchObject({
       statusCode: 400,
-      message: /Check-in is only allowed/,
+      message: /check-in abre 12 horas/,
     });
   });
 
@@ -865,8 +865,8 @@ describe("CheckinService", () => {
       }),
     });
 
-    // After class ended
-    vi.setSystemTime(new Date("2026-03-18T19:00:01.000Z"));
+    // After class ended (18:00-19:00 BRT = 21:00-22:00 UTC, so 22:00:01 UTC is after)
+    vi.setSystemTime(new Date("2026-03-18T22:00:01.000Z"));
 
     await expect(
       svc.checkIn({
@@ -878,7 +878,7 @@ describe("CheckinService", () => {
       }),
     ).rejects.toMatchObject({
       statusCode: 400,
-      message: /Check-in is only allowed/,
+      message: /check-in abre 12 horas/,
     });
   });
 
@@ -898,7 +898,8 @@ describe("CheckinService", () => {
       }),
     });
 
-    vi.setSystemTime(new Date("2026-03-18T06:00:00.000Z"));
+    // 12h before 18:00 BRT = 12h before 21:00 UTC = 09:00 UTC
+    vi.setSystemTime(new Date("2026-03-18T09:00:00.000Z"));
 
     const { checkin } = await svc.checkIn({
       userId,
@@ -920,14 +921,14 @@ describe("CheckinService", () => {
       academyId,
       dayOfWeek: 3, // Wednesday
       startTime: "23:00:00",
-      endTime: "01:00:00", // crosses midnight
+      endTime: "01:00:00", // crosses midnight BRT = 02:00-04:00 UTC
       capacity: 10,
       isActive: true,
     });
     const { svc } = buildService({ academyId, userId, classRow });
 
-    // 12h before 23:00 = 11:00 on Wednesday
-    vi.setSystemTime(new Date("2026-03-18T11:00:00.000Z"));
+    // 12h before 23:00 BRT = 12h before 02:00 UTC (next day) = 14:00 UTC Wednesday
+    vi.setSystemTime(new Date("2026-03-18T14:00:00.000Z"));
 
     const { checkin } = await svc.checkIn({
       userId,

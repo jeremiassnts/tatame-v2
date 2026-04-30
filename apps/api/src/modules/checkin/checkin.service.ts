@@ -5,6 +5,8 @@ import { withCheckinLock } from "../../lib/lock.js";
 import { requireRedisForCheckin } from "../../lib/redis.js";
 import type { ClassRow, IClassRepository } from "../class/class.repository.js";
 import type { IMembershipRepository } from "../membership/membership.repository.js";
+import type { NotificationDispatcher } from "../notification/notification-dispatcher.js";
+import type { EngagementService } from "../engagement/engagement.service.js";
 import type { IPaymentRepository } from "../payment/payment.repository.js";
 import type { IStudentSubscriptionRepository } from "../subscription/subscription.repository.js";
 import {
@@ -57,7 +59,14 @@ function parseTimeParts(time: string): { h: number; m: number; s: number } {
 }
 
 /**
+ * BRT offset in hours. Brazil abolished DST in 2019, so UTC-3 is fixed.
+ */
+const BRT_OFFSET_HOURS = 3;
+
+/**
  * Session bounds in UTC for `sessionDate` + class times.
+ * Class times are stored as wall-clock BRT (America/Sao_Paulo).
+ * We convert to UTC by adding the BRT offset (+3h).
  * When end is not after start on the same civil day, end is rolled to the next day (cross-midnight).
  */
 export function sessionBoundsUtc(
@@ -71,8 +80,8 @@ export function sessionBoundsUtc(
   const d = segs[2] ?? 1;
   const sh = parseTimeParts(startTime);
   const eh = parseTimeParts(endTime);
-  const start = new Date(Date.UTC(y, mo - 1, d, sh.h, sh.m, sh.s));
-  let end = new Date(Date.UTC(y, mo - 1, d, eh.h, eh.m, eh.s));
+  const start = new Date(Date.UTC(y, mo - 1, d, sh.h + BRT_OFFSET_HOURS, sh.m, sh.s));
+  let end = new Date(Date.UTC(y, mo - 1, d, eh.h + BRT_OFFSET_HOURS, eh.m, eh.s));
   if (end.getTime() <= start.getTime()) {
     end = new Date(end.getTime() + 24 * 60 * 60 * 1000);
   }
@@ -129,6 +138,8 @@ export class CheckinService {
     private readonly studentSubRepo: IStudentSubscriptionRepository,
     private readonly paymentRepo: IPaymentRepository,
     private readonly checkinRepo: ICheckinRepository,
+    private readonly dispatcher?: NotificationDispatcher,
+    private readonly engagementService?: EngagementService,
   ) { }
 
   async checkIn(opts: {
@@ -141,7 +152,7 @@ export class CheckinService {
     redis?: RedisClientType;
   }): Promise<CheckinSuccess> {
     if (opts.academyRole !== "student") {
-      throw new HttpError(403, "Only students can check in");
+      throw new HttpError(403, "Apenas alunos podem fazer check-in");
     }
 
     const membership = await this.membershipRepo.findActiveByUserAndAcademy(
@@ -149,17 +160,17 @@ export class CheckinService {
       opts.academyId,
     );
     if (!membership || membership.status !== "active") {
-      throw new HttpError(403, "No active academy membership");
+      throw new HttpError(403, "Você não possui matrícula ativa nesta academia");
     }
     if (membership.role !== "student") {
-      throw new HttpError(403, "Only students can check in");
+      throw new HttpError(403, "Apenas alunos podem fazer check-in");
     }
     const classRow = await this.classRepo.findById(
       opts.classId,
       opts.academyId,
     );
     if (!classRow?.isActive) {
-      throw new HttpError(404, "Class not found");
+      throw new HttpError(404, "Aula não encontrada");
     }
     if (utcDayOfWeek(opts.sessionDate) !== classRow.dayOfWeek) {
       throw new HttpError(
@@ -171,7 +182,7 @@ export class CheckinService {
     if (!isWithinCheckinWindow(now, opts.sessionDate, classRow)) {
       throw new HttpError(
         400,
-        "Check-in is only allowed from 12 hours before class start until class end",
+        "O check-in abre 12 horas antes do início da aula e encerra ao fim da aula",
       );
     }
     const { plan, warnings } = await this.resolveSubscriptionAndWarnings(
@@ -189,7 +200,7 @@ export class CheckinService {
         classRow.capacity !== null &&
         classCount >= classRow.capacity
       ) {
-        throw new HttpError(409, "Class is full");
+        throw new HttpError(409, "Aula lotada — não há mais vagas para esta sessão");
       }
       const userWeekCount = await this.checkinRepo.countByUserAndWeek(
         opts.userId,
@@ -199,7 +210,7 @@ export class CheckinService {
         plan.weeklyCheckinLimit !== null &&
         userWeekCount >= plan.weeklyCheckinLimit
       ) {
-        throw new HttpError(409, "Weekly check-in limit reached");
+        throw new HttpError(409, "Limite semanal de check-ins atingido");
       }
       try {
         const checkin = await this.checkinRepo.insert({
@@ -208,12 +219,26 @@ export class CheckinService {
           date: opts.sessionDate,
           weekReference,
         });
+
+        if (this.dispatcher && (warnings.subscriptionGrace || warnings.paymentOverdue)) {
+          const detail = await this.membershipRepo.findDetailById(membership.id);
+          this.dispatcher.notifyAcademyManagers(
+            "checkin_anomaly",
+            opts.academyId,
+            [detail?.userName ?? "Aluno", classRow.name],
+          );
+        }
+
+        if (this.engagementService) {
+          this.engagementService.checkMilestone(opts.userId);
+        }
+
         return { checkin, warnings };
       } catch (e) {
         if (isPostgresUniqueViolation(e)) {
           throw new HttpError(
             409,
-            "Already checked in for this class on this date",
+            "Você já fez check-in nesta aula hoje",
           );
         }
         throw e;
@@ -359,7 +384,7 @@ export class CheckinService {
 
     const candidate = rows.find((r) => r.subscription.status !== "cancelled");
     if (!candidate) {
-      throw new HttpError(403, "No subscription for this academy");
+      throw new HttpError(403, "Você não possui um plano ativo nesta academia");
     }
 
     const { subscription: sub, plan } = candidate;
@@ -373,7 +398,7 @@ export class CheckinService {
     if (today > graceEnd) {
       throw new HttpError(
         403,
-        "Subscription expired; check-in is no longer allowed (grace period ended)",
+        "Seu plano expirou e o período de carência acabou — renove para continuar treinando",
       );
     }
 

@@ -7,14 +7,9 @@ import { AnimateOnScroll } from "./animate-on-scroll";
 
 const faqItems = [
   {
-    question: "Como funciona o período gratuito?",
+    question: "Como funciona o período de teste?",
     answer:
-      "Você pode utilizar o plano gratuito por tempo indeterminado sem cadastro de cartão de crédito, porém as funcionalidades serão limitadas.",
-  },
-  {
-    question: "Quantos alunos posso cadastrar no plano gratuito?",
-    answer:
-      "Você pode cadastrar até 50 alunos no plano gratuito.",
+      "Você pode utilizar o plano Pro por 30 dias de forma gratuita, podendo cancelar a qualquer momento sem custos adicionais.",
   },
   {
     question: "O app funciona no celular?",

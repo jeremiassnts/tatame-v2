@@ -20,12 +20,33 @@ import { validateBody } from "../../middleware/validate.js";
 import { PostgresAcademyRepository } from "../academy/academy.repository.postgres.js";
 import { getEmailQueue } from "../email/email.queue.js";
 import { EmailService } from "../email/email.service.js";
+import { PostgresMembershipRepository } from "../membership/membership.repository.postgres.js";
+import { NotificationDispatcher } from "../notification/notification-dispatcher.js";
+import { getNotificationQueue } from "../notification/notification.queue.js";
+import { PostgresNotificationRepository } from "../notification/notification.repository.postgres.js";
+import { NotificationService } from "../notification/notification.service.js";
+import { PostgresPushTokenRepository } from "../push-token/push-token.repository.postgres.js";
 import { PostgresStudentSubscriptionRepository } from "../subscription/subscription.repository.postgres.js";
 import { PostgresUserRepository } from "../user/user.repository.postgres.js";
 import { PostgresPaymentRepository } from "./payment.repository.postgres.js";
 import { PaymentService } from "./payment.service.js";
 
 export const paymentRouter = Router();
+
+function buildDispatcher(db: ReturnType<typeof getDb>) {
+  const env = loadEnv();
+  const queue = env.REDIS_URL ? getNotificationQueue(env.REDIS_URL) : null;
+  const notificationService = new NotificationService(
+    new PostgresNotificationRepository(db),
+    new PostgresPushTokenRepository(db),
+    queue,
+  );
+  return new NotificationDispatcher(
+    notificationService,
+    new PostgresUserRepository(db),
+    new PostgresMembershipRepository(db),
+  );
+}
 
 const db = getDb();
 const env = loadEnv();
@@ -39,6 +60,7 @@ const paymentService = new PaymentService(
   new PostgresPaymentRepository(db),
   new PostgresStudentSubscriptionRepository(db),
   academyRepo,
+  buildDispatcher(db),
 );
 
 paymentRouter.post(

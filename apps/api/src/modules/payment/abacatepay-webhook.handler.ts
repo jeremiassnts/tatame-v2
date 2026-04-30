@@ -2,6 +2,7 @@ import type { IPaymentRepository } from "./payment.repository.js";
 import type { IUserRepository } from "../user/user.repository.js";
 import type { IAcademyRepository } from "../academy/academy.repository.js";
 import type { EmailService } from "../email/email.service.js";
+import type { NotificationDispatcher } from "../notification/notification-dispatcher.js";
 
 type AbacatePayWebhookEvent = {
   event: string;
@@ -26,6 +27,7 @@ export class AbacatePayWebhookHandler {
     private readonly userRepo: IUserRepository,
     private readonly academyRepo: IAcademyRepository,
     private readonly emailService: EmailService | null,
+    private readonly dispatcher?: NotificationDispatcher,
   ) {}
 
   async handleEvent(body: AbacatePayWebhookEvent): Promise<void> {
@@ -57,6 +59,22 @@ export class AbacatePayWebhookHandler {
 
     // Clean up pending record
     await this.paymentRepo.deletePendingPix(pixQrCodeId);
+
+    // Push notifications
+    if (this.dispatcher) {
+      const student = await this.userRepo.findById(pending.userId);
+      this.dispatcher.notifyUsers(
+        "payment_confirmed",
+        [pending.userId],
+        ["assinatura"],
+        { academyId: pending.academyId },
+      );
+      this.dispatcher.notifyAcademyManagers(
+        "student_payment_received",
+        pending.academyId,
+        [student?.name ?? "Aluno", "assinatura"],
+      );
+    }
 
     if (!this.emailService) return;
 

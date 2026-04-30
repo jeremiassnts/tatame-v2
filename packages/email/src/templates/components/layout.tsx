@@ -17,8 +17,7 @@ type LayoutProps = {
 };
 
 export function Layout({ preview, children, baseUrl }: LayoutProps) {
-  const base = baseUrl ?? process.env.API_PUBLIC_URL;
-  const logoUrl = base ? `${base}/public/icon.png` : "https://apptatame.com.br/icon.png";
+  const logoUrl = baseUrl ?? "https://apptatame.com.br/icon.png";
   return (
     <Html lang="pt-BR">
       <Head />
@@ -28,8 +27,8 @@ export function Layout({ preview, children, baseUrl }: LayoutProps) {
           <Section style={header}>
             <Img
               src={logoUrl}
-              width="120"
-              height="40"
+              width="48"
+              height="48"
               alt="Tatame"
             />
           </Section>

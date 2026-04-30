@@ -2,6 +2,7 @@ import type { ConfirmManualPaymentBody } from "@tatame/validators";
 import type Stripe from "stripe";
 import { HttpError } from "../../lib/http-error.js";
 import type { IAcademyRepository } from "../academy/academy.repository.js";
+import type { NotificationDispatcher } from "../notification/notification-dispatcher.js";
 import type { IStudentSubscriptionRepository } from "../subscription/subscription.repository.js";
 import type {
   IPaymentRepository,
@@ -14,6 +15,7 @@ export class PaymentService {
     private readonly paymentRepo: IPaymentRepository,
     private readonly studentSubRepo: IStudentSubscriptionRepository,
     private readonly academyRepo: IAcademyRepository,
+    private readonly dispatcher?: NotificationDispatcher,
   ) {}
 
   async confirmManual(
@@ -36,7 +38,7 @@ export class PaymentService {
       throw new HttpError(400, "Invalid paidAt");
     }
 
-    return this.paymentRepo.create({
+    const result = await this.paymentRepo.create({
       subscriptionId: sub.subscription.id,
       userId: sub.subscription.userId,
       academyId,
@@ -48,6 +50,18 @@ export class PaymentService {
       notes: body.notes ?? null,
       paidAt,
     });
+
+    if (this.dispatcher) {
+      // Notify student
+      this.dispatcher.notifyUsers(
+        "payment_confirmed",
+        [result.userId],
+        [sub.plan.name],
+        { academyId },
+      );
+    }
+
+    return result;
   }
 
   async listForManager(

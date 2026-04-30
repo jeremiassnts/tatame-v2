@@ -1,7 +1,9 @@
-import { useAuth } from "@clerk/clerk-expo";
+import { useAuth, useUser } from "@clerk/clerk-expo";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 import {
+  Camera,
   ChevronLeft,
   ChevronRight,
   Lock,
@@ -10,9 +12,10 @@ import {
   Trash2,
   UserCheck,
 } from "lucide-react-native";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
+  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -27,6 +30,7 @@ import { Avatar } from "@/components/Avatar";
 import { DatePickerField } from "@/components/DatePickerField";
 import { FormInput } from "@/components/FormInput";
 import { GradientButton } from "@/components/GradientButton";
+import { syncUser } from "@/lib/api";
 import { BELT_LABELS_SHORT, getBeltColor } from "@/lib/belts";
 import { useMyGraduation } from "@/lib/hooks/use-graduation";
 import {
@@ -51,7 +55,9 @@ type ProfileForm = {
 export default function ProfileScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { signOut } = useAuth();
+  const { signOut, getToken } = useAuth();
+  const { user: clerkUser } = useUser();
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const { data: user } = useCurrentUser();
   const { data: myGrad } = useMyGraduation();
@@ -106,6 +112,43 @@ export default function ProfileScreen() {
     );
   }, [deleteAccount]);
 
+  const handleChangePhoto = useCallback(async () => {
+    if (!clerkUser) return;
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+      base64: true,
+    });
+
+    if (result.canceled || !result.assets[0]) return;
+
+    setUploadingPhoto(true);
+    try {
+      const asset = result.assets[0];
+      const mimeType = asset.mimeType ?? "image/jpeg";
+      const dataUri = `data:${mimeType};base64,${asset.base64}`;
+
+      await clerkUser.setProfileImage({ file: dataUri });
+
+      const token = await getToken();
+      if (token) {
+        await syncUser(token);
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ["user", "me"] });
+    } catch (e) {
+      Alert.alert(
+        "Erro",
+        e instanceof Error ? e.message : "Não foi possível alterar a foto",
+      );
+    } finally {
+      setUploadingPhoto(false);
+    }
+  }, [clerkUser, getToken, queryClient]);
+
   if (!user) return null;
 
   const avatarLetter = (user.name?.charAt(0) || "?").toUpperCase();
@@ -139,15 +182,62 @@ export default function ProfileScreen() {
             </View>
 
             <View className="items-center" style={{ gap: 12 }}>
-              <Avatar
-                variant="user"
-                imageUrl={user.profileImageUrl}
-                fallbackLetter={avatarLetter}
-                size={80}
-              />
+              <Pressable onPress={handleChangePhoto} disabled={uploadingPhoto}>
+                <View>
+                  <Avatar
+                    variant="user"
+                    imageUrl={user.profileImageUrl}
+                    fallbackLetter={avatarLetter}
+                    size={80}
+                  />
+                  {uploadingPhoto ? (
+                    <View
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        width: 80,
+                        height: 80,
+                        borderRadius: 40,
+                        backgroundColor: "rgba(0,0,0,0.5)",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <ActivityIndicator color="#FFFFFF" />
+                    </View>
+                  ) : (
+                    <View
+                      style={{
+                        position: "absolute",
+                        bottom: 0,
+                        right: 0,
+                        width: 26,
+                        height: 26,
+                        borderRadius: 13,
+                        backgroundColor: "#A078E8",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderWidth: 2,
+                        borderColor: "#0C0C0C",
+                      }}
+                    >
+                      <Camera size={13} color="#FFFFFF" />
+                    </View>
+                  )}
+                </View>
+              </Pressable>
               <Text className="font-poppins-bold text-xl text-primary">
                 {user.name}
               </Text>
+              <Pressable onPress={handleChangePhoto} disabled={uploadingPhoto}>
+                <Text
+                  className="font-poppins-medium text-[13px]"
+                  style={{ color: "#A078E8" }}
+                >
+                  Alterar foto
+                </Text>
+              </Pressable>
               {roleLabel ? (
                 <View
                   className="rounded-full"

@@ -353,6 +353,36 @@ export class PostgresMembershipRepository implements IMembershipRepository {
       .where(eq(academyMemberships.id, membershipId));
   }
 
+  async findManagerClerkIdsByAcademy(academyId: string): Promise<string[]> {
+    const rows = await this.db
+      .select({ clerkUserId: users.clerkUserId })
+      .from(academyMemberships)
+      .innerJoin(users, eq(users.id, academyMemberships.userId))
+      .where(
+        and(
+          eq(academyMemberships.academyId, academyId),
+          eq(academyMemberships.role, "manager"),
+          eq(academyMemberships.isActive, true),
+        ),
+      );
+    return rows.map((r) => r.clerkUserId);
+  }
+
+  async findActiveStudentClerkIdsByAcademy(academyId: string): Promise<string[]> {
+    const rows = await this.db
+      .select({ clerkUserId: users.clerkUserId })
+      .from(academyMemberships)
+      .innerJoin(users, eq(users.id, academyMemberships.userId))
+      .where(
+        and(
+          eq(academyMemberships.academyId, academyId),
+          eq(academyMemberships.role, "student"),
+          eq(academyMemberships.isActive, true),
+        ),
+      );
+    return rows.map((r) => r.clerkUserId);
+  }
+
   async withTransaction<T>(
     fn: (txRepo: IMembershipRepository) => Promise<T>,
   ): Promise<T> {

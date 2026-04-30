@@ -1,12 +1,7 @@
 import "../global.css";
 
 import { tokenCache } from "@/lib/clerk-token-cache";
-import {
-  identifyRevenueCatUser,
-  initRevenueCat,
-  resetRevenueCatUser,
-} from "@/lib/revenuecat";
-import { ClerkLoaded, ClerkProvider, useAuth } from "@clerk/clerk-expo";
+import { ClerkLoaded, ClerkProvider } from "@clerk/clerk-expo";
 import {
   Poppins_400Regular,
   Poppins_500Medium,
@@ -14,6 +9,7 @@ import {
   Poppins_700Bold,
   useFonts,
 } from "@expo-google-fonts/poppins";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Slot } from "expo-router";
 import Constants from "expo-constants";
 import * as SplashScreen from "expo-splash-screen";
@@ -34,25 +30,7 @@ SplashScreen.preventAutoHideAsync();
 SystemUI.setBackgroundColorAsync("#0C0C0C");
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 const stripePublishableKey = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!;
-
-function RevenueCatBridge() {
-  const { userId, isSignedIn, isLoaded } = useAuth();
-
-  useEffect(() => {
-    initRevenueCat();
-  }, []);
-
-  useEffect(() => {
-    if (!isLoaded) return;
-    if (isSignedIn && userId) {
-      identifyRevenueCatUser(userId).catch(() => {});
-    } else {
-      resetRevenueCatUser().catch(() => {});
-    }
-  }, [isLoaded, isSignedIn, userId]);
-
-  return null;
-}
+const queryClient = new QueryClient();
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -77,16 +55,18 @@ export default function RootLayout() {
   }
 
   return (
-    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-      <ClerkLoaded>
-        <SafeAreaProvider>
-          <StripeProvider publishableKey={stripePublishableKey}>
-            <StatusBar style="light" />
-            <RevenueCatBridge />
-            <Slot />
-          </StripeProvider>
-        </SafeAreaProvider>
-      </ClerkLoaded>
-    </ClerkProvider>
+    <QueryClientProvider client={queryClient}>
+      <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+        <ClerkLoaded>
+          <SafeAreaProvider>
+            <StripeProvider publishableKey={stripePublishableKey}>
+              <StatusBar style="light" />
+
+              <Slot />
+            </StripeProvider>
+          </SafeAreaProvider>
+        </ClerkLoaded>
+      </ClerkProvider>
+    </QueryClientProvider>
   );
 }

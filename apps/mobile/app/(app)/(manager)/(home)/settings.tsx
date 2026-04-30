@@ -1,6 +1,7 @@
 import { BackButton } from "@/components/BackButton";
 import { DatePickerField } from "@/components/DatePickerField";
 import { FormInput } from "@/components/FormInput";
+import { PhoneInput } from "@/components/PhoneInput";
 import { ImagePickerField } from "@/components/ImagePickerField";
 import { useAcademyContext } from "@/lib/academy-context";
 import { useAcademy, useUpdateAcademy } from "@/lib/hooks/use-academy";
@@ -195,13 +196,11 @@ export default function AcademySettingsScreen() {
                   control={control}
                   name="contactPhone"
                   render={({ field: { onChange, onBlur, value } }) => (
-                    <FormInput
+                    <PhoneInput
                       label="Telefone"
-                      placeholder="(11) 99999-9999"
-                      value={value ?? ""}
-                      onChangeText={(t) => onChange(t || null)}
+                      value={value}
+                      onChangePhone={(digits) => onChange(digits || null)}
                       onBlur={onBlur}
-                      keyboardType="phone-pad"
                       leftIcon={Phone}
                       error={errors.contactPhone?.message}
                     />

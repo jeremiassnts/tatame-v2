@@ -29,10 +29,10 @@ export function Hero() {
 
           {/* CTA */}
           <a
-            href="#download"
+            href="#precos"
             className="flex items-center gap-2.5 rounded-xl bg-gradient-to-b from-primary to-primary-dark px-8 py-4 text-base font-semibold text-white transition-opacity hover:opacity-90"
           >
-            Começar gratuitamente
+            Assinar agora
             <ArrowRight className="h-5 w-5" />
           </a>
         </AnimateOnScroll>

@@ -1,5 +1,5 @@
-import type { InferSelectModel } from "drizzle-orm";
 import type { users } from "@tatame/db";
+import type { InferSelectModel } from "drizzle-orm";
 
 export type UserRow = InferSelectModel<typeof users>;
 
@@ -56,4 +56,16 @@ export interface IUserRepository {
     name: string;
     logoUrl: string | null;
   } | undefined>;
+
+  findClerkIdByInternalId(userId: string): Promise<string | undefined>;
+  findClerkIdsByInternalIds(userIds: string[]): Promise<Map<string, string>>;
+  updatePendingStripe(
+    id: string,
+    data: {
+      pendingStripeCustomerId: string | null;
+      pendingStripeSubscriptionId: string | null;
+    },
+  ): Promise<void>;
+
+  clearPendingStripe(id: string): Promise<void>;
 }

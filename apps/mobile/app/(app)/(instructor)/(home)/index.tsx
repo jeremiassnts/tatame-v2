@@ -6,6 +6,7 @@ import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { Avatar } from "@/components/Avatar";
 import { ClassCard } from "@/components/ClassCard";
 import { GraduationCard } from "@/components/GraduationCard";
+import { NotificationBell } from "@/components/NotificationBell";
 import { useApi } from "@/lib/api";
 import { useAcademyContext } from "@/lib/academy-context";
 import { useMyGraduation } from "@/lib/hooks/use-graduation";
@@ -147,13 +148,16 @@ export default function InstructorHome() {
                 {instructorFirst || "Instrutor"}
               </Text>
             </View>
-            <Pressable onPress={() => router.push("/(app)/profile")}>
-              <Avatar
-                variant="user"
-                imageUrl={me?.profileImageUrl}
-                fallbackLetter={avatarLetter}
-              />
-            </Pressable>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+              <NotificationBell />
+              <Pressable onPress={() => router.push("/(app)/profile")}>
+                <Avatar
+                  variant="user"
+                  imageUrl={me?.profileImageUrl}
+                  fallbackLetter={avatarLetter}
+                />
+              </Pressable>
+            </View>
           </View>
 
           <Pressable

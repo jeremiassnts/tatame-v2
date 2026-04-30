@@ -1,15 +1,15 @@
-import { and, eq, isNotNull, isNull } from "drizzle-orm";
 import {
   academies,
   academyMemberships,
-  users,
   userRoles,
+  users,
   type Database,
 } from "@tatame/db";
+import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import type { IUserRepository, UserRow } from "./user.repository.js";
 
 export class PostgresUserRepository implements IUserRepository {
-  constructor(private readonly db: Database) {}
+  constructor(private readonly db: Database) { }
 
   async upsert(data: {
     clerkUserId: string;
@@ -142,6 +142,51 @@ export class PostgresUserRepository implements IUserRepository {
       startedAt: data.startedAt,
       endedAt: data.endedAt,
     });
+  }
+
+  async findClerkIdByInternalId(userId: string): Promise<string | undefined> {
+    const [row] = await this.db
+      .select({ clerkUserId: users.clerkUserId })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+    return row?.clerkUserId;
+  }
+
+  async findClerkIdsByInternalIds(userIds: string[]): Promise<Map<string, string>> {
+    if (userIds.length === 0) return new Map();
+    const rows = await this.db
+      .select({ id: users.id, clerkUserId: users.clerkUserId })
+      .from(users)
+      .where(inArray(users.id, userIds));
+    return new Map(rows.map((r) => [r.id, r.clerkUserId]));
+  }
+  async updatePendingStripe(
+    id: string,
+    data: {
+      pendingStripeCustomerId: string | null;
+      pendingStripeSubscriptionId: string | null;
+    },
+  ): Promise<void> {
+    await this.db
+      .update(users)
+      .set({
+        pendingStripeCustomerId: data.pendingStripeCustomerId,
+        pendingStripeSubscriptionId: data.pendingStripeSubscriptionId,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(users.id, id), isNull(users.deletedAt)));
+  }
+
+  async clearPendingStripe(id: string): Promise<void> {
+    await this.db
+      .update(users)
+      .set({
+        pendingStripeCustomerId: null,
+        pendingStripeSubscriptionId: null,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(users.id, id), isNull(users.deletedAt)));
   }
 
   async findActiveAcademyForManager(userId: string): Promise<{

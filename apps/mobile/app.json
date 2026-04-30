@@ -2,7 +2,7 @@
   "expo": {
     "name": "Tatame",
     "slug": "tatame",
-    "version": "2.0.8",
+    "version": "2.1.0",
     "orientation": "portrait",
     "scheme": "tatame",
     "userInterfaceStyle": "dark",
@@ -57,10 +57,12 @@
         {
           "merchantIdentifier": []
         }
-      ]
+      ],
+      "expo-notifications"
     ],
     "extra": {
       "router": {},
+      "managerPortalUrl": "https://apptatame.com.br/conta",
       "eas": {
         "projectId": "521fca59-6f7d-4701-bdde-b061eed2c7c2"
       }
