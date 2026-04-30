@@ -81,7 +81,15 @@ export default function StudentHome() {
       );
       return;
     }
-    checkin.mutate({ classId, date: today });
+    checkin.mutate(
+      { classId, date: today },
+      {
+        onError: (err) => {
+          const msg = err instanceof Error ? err.message : "Erro ao fazer check-in";
+          Alert.alert("Check-in não realizado", msg);
+        },
+      },
+    );
   };
 
   return (
