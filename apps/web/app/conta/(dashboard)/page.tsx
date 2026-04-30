@@ -105,86 +105,6 @@ function KpiCard({
 
 // --- Bar Chart (div-based) ---
 
-function RevenueByPlan({
-  items,
-}: {
-  items: { planName: string; revenue: number }[];
-}) {
-  const max = Math.max(...items.map((i) => i.revenue), 1);
-
-  return (
-    <div className="flex flex-col gap-3 rounded-[14px] border border-border bg-surface p-5">
-      <h2 className="text-sm font-semibold text-text-primary">
-        Receita por Plano
-      </h2>
-      <div className="flex flex-col gap-3 pt-1">
-        {items.length === 0 ? (
-          <p className="text-sm text-text-muted">Nenhum dado disponível.</p>
-        ) : (
-          items.map((item) => {
-            const pct = Math.round((item.revenue / max) * 100);
-            return (
-              <div key={item.planName} className="flex flex-col gap-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-text-secondary">{item.planName}</span>
-                  <span className="font-medium text-text-primary">
-                    {formatCurrency(item.revenue)}
-                  </span>
-                </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-white/5">
-                  <div
-                    className="h-full rounded-full bg-primary transition-all duration-500"
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
-    </div>
-  );
-}
-
-// --- Month Summary ---
-
-function MonthSummary({
-  received,
-  pending,
-  overdue,
-}: {
-  received: number;
-  pending: number;
-  overdue: number;
-}) {
-  const rows = [
-    { label: "Recebido", value: received, color: "text-green-400" },
-    { label: "Pendente", value: pending, color: "text-yellow-400" },
-    { label: "Atrasado", value: overdue, color: "text-red-400" },
-  ];
-
-  return (
-    <div className="flex flex-col gap-3 rounded-[14px] border border-border bg-surface p-5">
-      <h2 className="text-sm font-semibold text-text-primary">
-        Resumo do Mês
-      </h2>
-      <div className="flex flex-col divide-y divide-border">
-        {rows.map(({ label, value, color }) => (
-          <div
-            key={label}
-            className="flex items-center justify-between py-3 first:pt-1 last:pb-1"
-          >
-            <span className="text-sm text-text-secondary">{label}</span>
-            <span className={`text-sm font-semibold ${color}`}>
-              {formatCurrency(value)}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // --- Transactions Table ---
 
 function TransactionsTable({ payments }: { payments: Payment[] }) {
@@ -338,24 +258,6 @@ export default function FinancialDashboardPage() {
               label="Total Pendente"
               value={formatCurrency(summary.pendingPaymentsTotal)}
               icon={AlertTriangle}
-            />
-          </>
-        ) : null}
-      </div>
-
-      {/* Charts + Summary */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {loading ? (
-          <>
-            <Skeleton className="h-[220px] rounded-[14px]" />
-            <Skeleton className="h-[220px] rounded-[14px]" />
-          </>
-        ) : summary ? (
-          <>
-            <MonthSummary
-              received={summary.revenueCurrentMonth}
-              pending={summary.pendingPaymentsTotal}
-              overdue={0}
             />
           </>
         ) : null}
