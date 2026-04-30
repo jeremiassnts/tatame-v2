@@ -2,7 +2,6 @@ import { BackButton } from "@/components/BackButton";
 import { NotificationCard } from "@/components/NotificationCard";
 import { NotificationDetailSheet } from "@/components/NotificationDetailSheet";
 import {
-  useMarkAllAsRead,
   useNotifications,
 } from "@/lib/hooks/use-notifications";
 import type { NotificationItem } from "@/lib/hooks/use-notifications";
@@ -61,8 +60,6 @@ export default function NotificationsScreen() {
     isRefetching,
   } = useNotifications();
 
-  const markAllAsRead = useMarkAllAsRead();
-
   const allItems = useMemo(() => {
     if (!data) return [];
     return data.pages.flatMap((page) => page.items);
@@ -85,44 +82,13 @@ export default function NotificationsScreen() {
     >
       {/* Header */}
       <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          paddingHorizontal: 24,
-          paddingTop: 8,
-          paddingBottom: 16,
-        }}
+        className="flex-row items-center px-6 pb-4 pt-2"
       >
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-          <BackButton />
-          <Text
-            style={{
-              fontFamily: "Sora_700Bold",
-              fontSize: 18,
-              color: "#FFFFFF",
-              letterSpacing: -0.3,
-            }}
-          >
-            Notificações
-          </Text>
-        </View>
-
-        <Pressable
-          onPress={() => markAllAsRead.mutate()}
-          disabled={markAllAsRead.isPending}
-        >
-          <Text
-            style={{
-              fontFamily: "Inter_500Medium",
-              fontSize: 13,
-              color: "#A078E8",
-              opacity: markAllAsRead.isPending ? 0.5 : 1,
-            }}
-          >
-            Marcar todas
-          </Text>
-        </Pressable>
+        <BackButton />
+        <Text className="flex-1 text-center font-poppins-bold text-lg text-primary">
+          Notificações
+        </Text>
+        <View className="h-10 w-10" />
       </View>
 
       {/* Filter chips */}
@@ -153,7 +119,7 @@ export default function NotificationsScreen() {
             >
               <Text
                 style={{
-                  fontFamily: isActive ? "Inter_600SemiBold" : "Inter_500Medium",
+                  fontFamily: isActive ? "Poppins_600SemiBold" : "Poppins_500Medium",
                   fontSize: 13,
                   color: isActive ? "#FFFFFF" : "#ABABAB",
                 }}
@@ -200,7 +166,7 @@ export default function NotificationsScreen() {
             >
               <Text
                 style={{
-                  fontFamily: "Inter_400Regular",
+                  fontFamily: "Poppins_400Regular",
                   fontSize: 14,
                   color: "#525252",
                 }}
