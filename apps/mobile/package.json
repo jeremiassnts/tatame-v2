@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "expo start",
     "build": "echo 'mobile: use EAS Build'",
-    "lint": "echo 'no lint configured'"
+    "lint": "echo 'no lint configured'",
+    "android": "expo run:android",
+    "ios": "expo run:ios"
   },
   "dependencies": {
     "@clerk/clerk-expo": "2.19.31",
