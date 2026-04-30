@@ -17,16 +17,15 @@ interface FinancialSummary {
 
 interface Payment {
   id: string;
-  studentName: string;
-  planName: string;
-  amount: number;
-  status: "paid" | "pending" | "overdue";
-  date: string;
+  userName: string;
+  amountCents: number;
+  method: string;
+  referenceMonth: string;
+  paidAt: string;
 }
 
 interface PaymentsResponse {
-  data: Payment[];
-  total: number;
+  items: Payment[];
 }
 
 // --- Helpers ---
@@ -45,18 +44,6 @@ function formatDate(iso: string): string {
     year: "numeric",
   }).format(new Date(iso));
 }
-
-const STATUS_LABEL: Record<Payment["status"], string> = {
-  paid: "Pago",
-  pending: "Pendente",
-  overdue: "Atrasado",
-};
-
-const STATUS_CLASS: Record<Payment["status"], string> = {
-  paid: "bg-green-500/15 text-green-400",
-  pending: "bg-yellow-500/15 text-yellow-400",
-  overdue: "bg-red-500/15 text-red-400",
-};
 
 // --- Skeleton ---
 
@@ -216,13 +203,13 @@ function TransactionsTable({ payments }: { payments: Payment[] }) {
                 Aluno
               </th>
               <th className="px-4 pb-3 text-xs font-medium text-text-muted">
-                Plano
-              </th>
-              <th className="px-4 pb-3 text-xs font-medium text-text-muted">
                 Valor
               </th>
               <th className="px-4 pb-3 text-xs font-medium text-text-muted">
-                Status
+                Método
+              </th>
+              <th className="px-4 pb-3 text-xs font-medium text-text-muted">
+                Referência
               </th>
               <th className="px-4 pb-3 text-xs font-medium text-text-muted">
                 Data
@@ -233,7 +220,7 @@ function TransactionsTable({ payments }: { payments: Payment[] }) {
             {payments.length === 0 ? (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="px-4 py-6 text-center text-text-muted"
                 >
                   Nenhuma transação encontrada.
@@ -246,21 +233,19 @@ function TransactionsTable({ payments }: { payments: Payment[] }) {
                   className="border-b border-border/50 last:border-0 hover:bg-white/[0.02]"
                 >
                   <td className="px-4 py-3 font-medium text-text-primary">
-                    {p.studentName}
+                    {p.userName}
                   </td>
-                  <td className="px-4 py-3 text-text-secondary">{p.planName}</td>
                   <td className="px-4 py-3 text-text-primary">
-                    {formatCurrency(p.amount)}
+                    {formatCurrency(p.amountCents)}
                   </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_CLASS[p.status]}`}
-                    >
-                      {STATUS_LABEL[p.status]}
-                    </span>
+                  <td className="px-4 py-3 text-text-secondary capitalize">
+                    {p.method === "manual" ? "Manual" : p.method === "stripe" ? "Cartão" : "PIX"}
                   </td>
                   <td className="px-4 py-3 text-text-secondary">
-                    {formatDate(p.date)}
+                    {p.referenceMonth?.slice(0, 7)}
+                  </td>
+                  <td className="px-4 py-3 text-text-secondary">
+                    {formatDate(p.paidAt)}
                   </td>
                 </tr>
               ))
@@ -291,13 +276,13 @@ export default function FinancialDashboardPage() {
         const [summaryData, paymentsData] = await Promise.all([
           managerFetch<FinancialSummary>("/finances/summary", token),
           managerFetch<PaymentsResponse>(
-            "/payments?limit=10&page=1",
+            "/payments?limit=10",
             token,
           ),
         ]);
 
         setSummary(summaryData);
-        setPayments(paymentsData.data ?? []);
+        setPayments(paymentsData.items ?? []);
       } catch (err: unknown) {
         setError(
           err instanceof Error ? err.message : "Erro ao carregar dados",
