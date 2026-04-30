@@ -51,11 +51,10 @@ export default defineConfig({
           name: "integration",
           include: ["src/**/*.integration.test.ts"],
           setupFiles: ["./vitest.setup.ts", "./vitest.integration.setup.ts"],
-          pool: "forks",
+          pool: "threads",
           poolOptions: {
-            forks: {
-              isolate: true,
-              singleFork: true,
+            threads: {
+              singleThread: true,
             },
           },
           retry: 2,
