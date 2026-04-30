@@ -22,7 +22,7 @@ export default function ManagerDashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { getToken } = useAuth();
   const [userStatus, setUserStatus] = useState<
-    "loading" | "ok" | "no-account" | "pending-academy"
+    "loading" | "ok" | "no-account" | "pending-academy" | "not-manager"
   >("loading");
 
   useEffect(() => {
@@ -35,7 +35,9 @@ export default function ManagerDashboardLayout({
           hasPendingSubscription?: boolean;
         }>("/users/me", token);
 
-        if (me.activeAcademy) {
+        if (me.activeRole && me.activeRole !== "manager") {
+          setUserStatus("not-manager");
+        } else if (me.activeAcademy) {
           setUserStatus("ok");
         } else if (me.hasPendingSubscription) {
           setUserStatus("pending-academy");
@@ -74,6 +76,26 @@ export default function ManagerDashboardLayout({
         >
           Completar cadastro
         </a>
+        <SignOutButton redirectUrl="/">
+          <button className="cursor-pointer text-sm text-text-muted hover:text-text-secondary transition-colors">
+            Sair
+          </button>
+        </SignOutButton>
+      </div>
+    );
+  }
+
+  if (userStatus === "not-manager") {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center gap-6 bg-background px-6 text-center">
+        <Image src="/icon.png" alt="Tatame" width={48} height={48} />
+        <h1 className="font-[family-name:var(--font-sora)] text-xl font-bold text-text-primary">
+          Área exclusiva para gestores
+        </h1>
+        <p className="max-w-sm text-sm text-text-secondary">
+          Este portal é destinado aos gestores de academia. Para acessar o
+          Tatame como aluno ou instrutor, utilize o aplicativo.
+        </p>
         <SignOutButton redirectUrl="/">
           <button className="cursor-pointer text-sm text-text-muted hover:text-text-secondary transition-colors">
             Sair
