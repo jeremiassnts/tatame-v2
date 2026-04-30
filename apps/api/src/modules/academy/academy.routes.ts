@@ -105,8 +105,14 @@ academyRouter.post(
       const userId = req.appAuth!.userId;
       const created = await academyService.createWithManagerMembership(userId, body);
 
-      // Link any pending Stripe subscription to the new academy
-      await getManagerSubService().linkPendingSubscription(userId, created.id, userRepo);
+      // Link any pending Stripe subscription to the new academy (non-blocking)
+      try {
+        await getManagerSubService().linkPendingSubscription(userId, created.id, userRepo);
+      } catch (err) {
+        // Log but don't fail academy creation if Stripe linking fails
+        const { logger } = await import("../../lib/logger.js");
+        logger.error({ err, userId, academyId: created.id }, "Failed to link pending subscription");
+      }
 
       res.status(201).json(created);
     } catch (e) {
