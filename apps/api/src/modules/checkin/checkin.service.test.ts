@@ -258,7 +258,7 @@ describe("CheckinService", () => {
         classId: classRow.id,
         sessionDate: SESSION_DATE,
       }),
-    ).rejects.toMatchObject({ statusCode: 409, message: "Class is full" });
+    ).rejects.toMatchObject({ statusCode: 409, message: "Aula lotada — não há mais vagas para esta sessão" });
   });
 
   // ─── Weekly limit ──────────────────────────────────────────────
@@ -306,7 +306,7 @@ describe("CheckinService", () => {
       }),
     ).rejects.toMatchObject({
       statusCode: 409,
-      message: "Weekly check-in limit reached",
+      message: "Limite semanal de check-ins atingido",
     });
   });
 
@@ -397,7 +397,7 @@ describe("CheckinService", () => {
       }),
     ).rejects.toMatchObject({
       statusCode: 403,
-      message: "No subscription for this academy",
+      message: "Você não possui um plano ativo nesta academia",
     });
   });
 
@@ -685,7 +685,7 @@ describe("CheckinService", () => {
       }),
     ).rejects.toMatchObject({
       statusCode: 403,
-      message: "Only students can check in",
+      message: "Apenas alunos podem fazer check-in",
     });
   });
 
@@ -704,7 +704,7 @@ describe("CheckinService", () => {
       }),
     ).rejects.toMatchObject({
       statusCode: 403,
-      message: "Only students can check in",
+      message: "Apenas alunos podem fazer check-in",
     });
   });
 
@@ -729,7 +729,7 @@ describe("CheckinService", () => {
       }),
     ).rejects.toMatchObject({
       statusCode: 403,
-      message: "No active academy membership",
+      message: "Você não possui matrícula ativa nesta academia",
     });
   });
 
@@ -761,7 +761,7 @@ describe("CheckinService", () => {
       }),
     ).rejects.toMatchObject({
       statusCode: 404,
-      message: "Class not found",
+      message: "Aula não encontrada",
     });
   });
 
@@ -780,7 +780,7 @@ describe("CheckinService", () => {
       }),
     ).rejects.toMatchObject({
       statusCode: 404,
-      message: "Class not found",
+      message: "Aula não encontrada",
     });
   });
 
@@ -845,7 +845,7 @@ describe("CheckinService", () => {
       }),
     ).rejects.toMatchObject({
       statusCode: 400,
-      message: /Check-in is only allowed/,
+      message: /check-in abre 12 horas/,
     });
   });
 
@@ -878,7 +878,7 @@ describe("CheckinService", () => {
       }),
     ).rejects.toMatchObject({
       statusCode: 400,
-      message: /Check-in is only allowed/,
+      message: /check-in abre 12 horas/,
     });
   });
 
