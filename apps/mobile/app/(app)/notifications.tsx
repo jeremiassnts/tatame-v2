@@ -79,7 +79,7 @@ export default function NotificationsScreen() {
     <SafeAreaView
       style={{ flex: 1, backgroundColor: "#0C0C0C" }}
       className="pt-4"
-      edges={["top"]}
+      edges={["top", "bottom"]}
     >
       {/* Header */}
       <View

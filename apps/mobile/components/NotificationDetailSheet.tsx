@@ -1,4 +1,10 @@
 import {
+  formatAbsoluteDate,
+  formatRelativeTime,
+} from "@/lib/format-relative-time";
+import type { NotificationItem } from "@/lib/hooks/use-notifications";
+import { useMarkAsRead } from "@/lib/hooks/use-notifications";
+import {
   AlertCircle,
   Award,
   BarChart3,
@@ -9,20 +15,14 @@ import {
   Megaphone,
   ShoppingBag,
   Swords,
-  Trophy,
   TriangleAlert,
+  Trophy,
   UserPlus,
   X,
 } from "lucide-react-native";
 import type React from "react";
 import { useEffect } from "react";
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
-import {
-  formatAbsoluteDate,
-  formatRelativeTime,
-} from "@/lib/format-relative-time";
-import { useMarkAsRead } from "@/lib/hooks/use-notifications";
-import type { NotificationItem } from "@/lib/hooks/use-notifications";
 
 type CategoryConfig = {
   icon: string;
@@ -250,7 +250,7 @@ export function NotificationDetailSheet({
           </ScrollView>
 
           {/* Bottom safe area padding */}
-          <View style={{ height: 32 }} />
+          <View style={{ height: 42 }} />
         </View>
       </View>
     </Modal>
