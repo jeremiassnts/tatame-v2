@@ -36,7 +36,9 @@ const userRepo = new PostgresUserRepository(db);
 const subRepo = new PostgresManagerSubscriptionRepository(db);
 
 function getManagerSubService() {
-  return new ManagerSubscriptionService(subRepo, academyRepo, getStripe());
+  let stripe = null;
+  try { stripe = getStripe(); } catch { /* Stripe not configured */ }
+  return new ManagerSubscriptionService(subRepo, academyRepo, stripe);
 }
 
 const academyService = new AcademyService(
