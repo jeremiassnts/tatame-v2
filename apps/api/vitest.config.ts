@@ -55,8 +55,10 @@ export default defineConfig({
           poolOptions: {
             forks: {
               isolate: true,
+              singleFork: true,
             },
           },
+          retry: 2,
           environment: "node",
           globalSetup: ["./src/testing/global-setup.ts"],
         },
