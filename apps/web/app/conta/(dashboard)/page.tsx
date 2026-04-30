@@ -31,11 +31,11 @@ interface PaymentsResponse {
 
 // --- Helpers ---
 
-function formatCurrency(value: number): string {
+function formatCurrency(cents: number): string {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
-  }).format(value);
+  }).format(cents / 100);
 }
 
 function formatDate(iso: string): string {
