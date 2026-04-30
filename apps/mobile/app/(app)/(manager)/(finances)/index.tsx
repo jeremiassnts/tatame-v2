@@ -178,7 +178,8 @@ export default function FinancialDashboard() {
           </Pressable>
         </View>
 
-        <View
+        <Pressable
+          onPress={() => router.push("/(app)/(manager)/(members)")}
           className="flex-row items-center justify-between rounded-2xl border border-surface-border bg-surface"
           style={{ padding: 14 }}
         >
@@ -200,7 +201,7 @@ export default function FinancialDashboard() {
           >
             <Users size={20} color="#A078E8" />
           </View>
-        </View>
+        </Pressable>
 
         <Pressable
           onPress={() => Linking.openURL(PORTAL_URL)}
