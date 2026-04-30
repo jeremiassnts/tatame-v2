@@ -11,26 +11,27 @@ export function NotificationBell() {
   return (
     <Pressable
       onPress={() => router.push("/notifications")}
-      style={{ position: "relative", padding: 4 }}
+      className="h-10 w-10 items-center justify-center rounded-xl border border-surface-border bg-surface"
     >
-      <Bell size={24} color="#FFFFFF" />
+      <Bell size={20} color="#FFFFFF" />
       {count > 0 && (
         <View
           style={{
             position: "absolute",
-            top: 0,
-            right: 0,
-            height: 16,
-            width: 16,
-            borderRadius: 8,
+            top: -4,
+            right: -4,
+            height: 18,
+            minWidth: 18,
+            borderRadius: 9,
             backgroundColor: "#A078E8",
             alignItems: "center",
             justifyContent: "center",
+            paddingHorizontal: 4,
           }}
         >
           <Text
             style={{
-              fontFamily: "Inter_700Bold",
+              fontFamily: "Poppins_700Bold",
               fontSize: 9,
               color: "#FFFFFF",
             }}
