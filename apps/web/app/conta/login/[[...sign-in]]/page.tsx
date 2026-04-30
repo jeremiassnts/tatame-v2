@@ -1,15 +1,23 @@
 "use client";
 
-import { useSignIn, useClerk } from "@clerk/nextjs";
+import { useSignIn, useClerk, useUser } from "@clerk/nextjs";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const { signIn } = useSignIn();
   const { setActive } = useClerk();
+  const { user, isLoaded } = useUser();
   const router = useRouter();
+
+  // Redirect to /conta if already signed in
+  useEffect(() => {
+    if (isLoaded && user) {
+      router.replace("/conta");
+    }
+  }, [isLoaded, user, router]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
