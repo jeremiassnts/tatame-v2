@@ -1,10 +1,10 @@
 import { BackButton } from "@/components/BackButton";
 import { NotificationCard } from "@/components/NotificationCard";
 import { NotificationDetailSheet } from "@/components/NotificationDetailSheet";
+import type { NotificationItem } from "@/lib/hooks/use-notifications";
 import {
   useNotifications,
 } from "@/lib/hooks/use-notifications";
-import type { NotificationItem } from "@/lib/hooks/use-notifications";
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -78,6 +78,7 @@ export default function NotificationsScreen() {
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor: "#0C0C0C" }}
+      className="pt-4"
       edges={["top"]}
     >
       {/* Header */}
