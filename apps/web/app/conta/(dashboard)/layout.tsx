@@ -4,8 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { DollarSign, CreditCard, Menu, X } from "lucide-react";
-import { SignOutButton, UserButton, useAuth } from "@clerk/nextjs";
+import { DollarSign, CreditCard, LogOut, Menu, X } from "lucide-react";
+import { SignOutButton, useAuth } from "@clerk/nextjs";
 import { managerFetch } from "@/lib/manager-api";
 
 const navItems = [
@@ -203,16 +203,14 @@ export default function ManagerDashboardLayout({
         ))}
       </nav>
 
-      {/* User */}
-      <div className="flex items-center gap-3 px-6 pt-4">
-        <UserButton
-          appearance={{
-            elements: {
-              avatarBox: "h-8 w-8",
-            },
-          }}
-        />
-        <span className="text-sm text-text-secondary">Minha conta</span>
+      {/* Logout */}
+      <div className="px-3 pt-4">
+        <SignOutButton redirectUrl="/">
+          <button className="flex h-[42px] w-full cursor-pointer items-center gap-2.5 rounded-[10px] px-3 text-sm font-medium text-text-secondary transition-colors hover:bg-white/5 hover:text-text-primary">
+            <LogOut className="h-5 w-5 shrink-0" />
+            Sair
+          </button>
+        </SignOutButton>
       </div>
     </aside>
   );
