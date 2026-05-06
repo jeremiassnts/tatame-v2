@@ -263,7 +263,7 @@ export default function FinancialDashboard() {
           ))}
         </View>
 
-        {academy?.pixKey ? (
+        {subscription?.plan === "pro" && (academy?.pixKey ? (
           <View className="rounded-2xl border border-surface-border bg-surface" style={{ padding: 14, gap: 12 }}>
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center" style={{ gap: 8 }}>
@@ -310,7 +310,7 @@ export default function FinancialDashboard() {
               <Text className="font-poppins-semibold text-sm text-white">Cadastrar chave PIX</Text>
             </Pressable>
           </View>
-        )}
+        ))}
 
         <Text className="font-poppins-semibold text-sm" style={{ color: TEXT_SECONDARY }}>
           Histórico de pagamentos
