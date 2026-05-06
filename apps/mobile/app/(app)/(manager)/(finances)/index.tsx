@@ -8,7 +8,7 @@ import { useRouter } from "expo-router";
 import {
   CreditCard,
   FileText,
-  Crown,
+  ExternalLink,
   KeyRound,
   Pencil,
   Plus,
@@ -213,7 +213,7 @@ export default function FinancialDashboard() {
               Gerenciar minha conta
             </Text>
             <Text className="font-poppins text-[11px]" style={{ color: TEXT_SECONDARY }}>
-              Assinatura, pagamento e dados
+              Dados da conta
             </Text>
           </View>
           <View
@@ -224,7 +224,7 @@ export default function FinancialDashboard() {
               backgroundColor: "#A078E820",
             }}
           >
-            <Crown size={20} color="#A078E8" />
+            <ExternalLink size={20} color="#A078E8" />
           </View>
         </Pressable>
 
