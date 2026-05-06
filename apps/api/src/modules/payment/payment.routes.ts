@@ -16,8 +16,10 @@ import {
   requireActiveAcademy,
 } from "../../middleware/academy-context.js";
 import { authorize } from "../../middleware/authorize.js";
+import { requireActivePlan } from "../../middleware/require-active-plan.js";
 import { validateBody } from "../../middleware/validate.js";
 import { PostgresAcademyRepository } from "../academy/academy.repository.postgres.js";
+import { PostgresManagerSubscriptionRepository } from "../manager-subscription/manager-subscription.repository.postgres.js";
 import { getEmailQueue } from "../email/email.queue.js";
 import { EmailService } from "../email/email.service.js";
 import { PostgresMembershipRepository } from "../membership/membership.repository.postgres.js";
@@ -56,11 +58,14 @@ const emailService = env.REDIS_URL
   ? new EmailService(getEmailQueue(env.REDIS_URL))
   : null;
 
+const managerSubRepo = new PostgresManagerSubscriptionRepository(db);
+
 const paymentService = new PaymentService(
   new PostgresPaymentRepository(db),
   new PostgresStudentSubscriptionRepository(db),
   academyRepo,
   buildDispatcher(db),
+  managerSubRepo,
 );
 
 paymentRouter.post(
@@ -68,6 +73,7 @@ paymentRouter.post(
   authorize(Role.Manager),
   attachActiveAcademyContext,
   requireActiveAcademy,
+  requireActivePlan,
   validateBody(confirmManualPaymentBodySchema),
   async (req, res, next) => {
     try {

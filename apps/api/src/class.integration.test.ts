@@ -5,7 +5,7 @@ import {
 import request from "supertest";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { setDbForTest } from "./lib/db.js";
-import { insertUserWithGlobalRole } from "./testing/integration-seed.js";
+import { insertFreeSubscription, insertUserWithGlobalRole } from "./testing/integration-seed.js";
 import { setupIntegrationTest } from "./testing/integration-setup.js";
 
 const CLERK_MANAGER = "user_integration_class_mgr";
@@ -46,6 +46,7 @@ describe("Class routes integration", () => {
       .send({ name: "Class Flow Dojo" });
     expect(ac.status).toBe(201);
     const academyId = ac.body.id as string;
+    await insertFreeSubscription(ctx.db, academyId);
 
     asClerkUser(CLERK_STUDENT);
     const reqJoin = await request(app)
@@ -91,6 +92,7 @@ describe("Class routes integration", () => {
       .send({ name: "Instructor Dojo" });
     expect(ac.status).toBe(201);
     const academyId = ac.body.id as string;
+    await insertFreeSubscription(ctx.db, academyId);
 
     asClerkUser(CLERK_INSTRUCTOR);
     const reqJoin = await request(app)
@@ -127,6 +129,7 @@ describe("Class routes integration", () => {
       .send({ name: "Update Dojo" });
     expect(ac.status).toBe(201);
     const academyId = ac.body.id as string;
+    await insertFreeSubscription(ctx.db, academyId);
 
     const dow = new Date().getUTCDay();
     const created = await request(app).post("/v1/classes").send({
@@ -160,6 +163,7 @@ describe("Class routes integration", () => {
       .send({ name: "Deactivate Dojo" });
     expect(ac.status).toBe(201);
     const academyId = ac.body.id as string;
+    await insertFreeSubscription(ctx.db, academyId);
 
     const dow = new Date().getUTCDay();
     const created = await request(app).post("/v1/classes").send({
@@ -194,6 +198,7 @@ describe("Class routes integration", () => {
       .send({ name: "GetById Dojo" });
     expect(ac.status).toBe(201);
     const academyId = ac.body.id as string;
+    await insertFreeSubscription(ctx.db, academyId);
 
     const dow = new Date().getUTCDay();
     const created = await request(app).post("/v1/classes").send({
@@ -235,6 +240,7 @@ describe("Class routes integration", () => {
       .send({ name: "Inactive Dojo" });
     expect(ac.status).toBe(201);
     const academyId = ac.body.id as string;
+    await insertFreeSubscription(ctx.db, academyId);
 
     const dow = new Date().getUTCDay();
     const created = await request(app).post("/v1/classes").send({

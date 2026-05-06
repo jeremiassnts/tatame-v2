@@ -17,6 +17,7 @@ import {
   requireActiveAcademy,
 } from "../../middleware/academy-context.js";
 import { authorize } from "../../middleware/authorize.js";
+import { requireActivePlan } from "../../middleware/require-active-plan.js";
 import { validateBody } from "../../middleware/validate.js";
 import { PostgresAcademyRepository } from "../academy/academy.repository.postgres.js";
 import { PostgresMembershipRepository } from "../membership/membership.repository.postgres.js";
@@ -25,6 +26,7 @@ import { getNotificationQueue } from "../notification/notification.queue.js";
 import { PostgresNotificationRepository } from "../notification/notification.repository.postgres.js";
 import { NotificationService } from "../notification/notification.service.js";
 import { PostgresPushTokenRepository } from "../push-token/push-token.repository.postgres.js";
+import { PostgresManagerSubscriptionRepository } from "../manager-subscription/manager-subscription.repository.postgres.js";
 import { PostgresUserRepository } from "../user/user.repository.postgres.js";
 import type { ClassRow } from "./class.repository.js";
 import { PostgresClassRepository } from "./class.repository.postgres.js";
@@ -48,11 +50,13 @@ function buildDispatcher(db: ReturnType<typeof getDb>) {
 }
 
 const db = getDb();
+const managerSubRepo = new PostgresManagerSubscriptionRepository(db);
 const classService = new ClassService(
   new PostgresClassRepository(db),
   new PostgresMembershipRepository(db),
   new PostgresAcademyRepository(db),
   buildDispatcher(db),
+  managerSubRepo,
 );
 
 function classCtx(req: Request) {
@@ -129,6 +133,7 @@ classRouter.post(
   authorize(Role.Manager, Role.Instructor),
   attachActiveAcademyContext,
   requireActiveAcademy,
+  requireActivePlan,
   validateBody(createClassBodySchema),
   async (req, res, next) => {
     try {
@@ -147,6 +152,7 @@ classRouter.patch(
   authorize(Role.Manager, Role.Instructor),
   attachActiveAcademyContext,
   requireActiveAcademy,
+  requireActivePlan,
   validateBody(updateClassBodySchema),
   async (req, res, next) => {
     try {
@@ -172,6 +178,7 @@ classRouter.delete(
   authorize(Role.Manager, Role.Instructor),
   attachActiveAcademyContext,
   requireActiveAcademy,
+  requireActivePlan,
   async (req, res, next) => {
     try {
       const params = classIdParamSchema.safeParse(req.params);

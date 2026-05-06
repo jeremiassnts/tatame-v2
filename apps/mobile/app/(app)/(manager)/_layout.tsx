@@ -1,7 +1,11 @@
-import { useManagerSubscription } from "@/lib/hooks/use-manager-subscription";
+import {
+  useManagerSubscription,
+  useSelectFreePlan,
+} from "@/lib/hooks/use-manager-subscription";
 import { Tabs } from "expo-router";
 import Constants from "expo-constants";
 import { Calendar, CreditCard, Home, Users } from "lucide-react-native";
+import { useEffect } from "react";
 import { ActivityIndicator, Linking, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -14,11 +18,10 @@ function BlockedScreen() {
     <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
       <View className="flex-1 items-center justify-center px-6" style={{ gap: 16 }}>
         <Text className="font-poppins-bold text-xl text-primary text-center">
-          Assinatura inativa
+          Acesso indisponível
         </Text>
         <Text className="font-poppins text-sm text-muted text-center">
-          Sua assinatura precisa estar ativa para acessar o painel de gestor.
-          Gerencie sua conta pelo portal web.
+          Sua conta não tem acesso ao painel de gestor no momento.
         </Text>
         <Pressable
           onPress={() => Linking.openURL(PORTAL_URL)}
@@ -26,7 +29,7 @@ function BlockedScreen() {
           style={{ paddingVertical: 14, paddingHorizontal: 24, marginTop: 8 }}
         >
           <Text className="font-poppins-semibold text-sm text-white">
-            Gerenciar minha conta
+            Acessar minha conta
           </Text>
         </Pressable>
       </View>
@@ -36,9 +39,18 @@ function BlockedScreen() {
 
 export default function ManagerLayout() {
   const insets = useSafeAreaInsets();
-  const { data: subscription, isPending } = useManagerSubscription();
+  const { data: subscription, isPending, error } = useManagerSubscription();
+  const selectFree = useSelectFreePlan();
 
-  if (isPending) {
+  // Auto-create free plan for managers with no subscription
+  const is404 = !isPending && !subscription && error !== null;
+  useEffect(() => {
+    if (is404 && !selectFree.isPending && !selectFree.isSuccess) {
+      selectFree.mutate();
+    }
+  }, [is404, selectFree.isPending, selectFree.isSuccess]);
+
+  if (isPending || (is404 && !selectFree.isSuccess)) {
     return (
       <View className="flex-1 items-center justify-center bg-background">
         <ActivityIndicator color="#A078E8" />
@@ -46,13 +58,13 @@ export default function ManagerLayout() {
     );
   }
 
-  const isActive =
-    subscription?.status === "active" || subscription?.status === "trialing";
-
-  if (!isActive) {
+  // Canceled or past_due Pro -> blocked
+  const status = subscription?.status;
+  if (status === "canceled" || status === "past_due") {
     return <BlockedScreen />;
   }
 
+  // Free active or Pro active/trialing -> show tabs
   return (
     <Tabs
       screenOptions={{
@@ -80,6 +92,9 @@ export default function ManagerLayout() {
           title: "Inicio",
           tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
         }}
+        listeners={({ navigation }) => ({
+          tabPress: () => navigation.navigate("(home)", { screen: "index" }),
+        })}
       />
       <Tabs.Screen
         name="(members)"
@@ -87,6 +102,9 @@ export default function ManagerLayout() {
           title: "Membros",
           tabBarIcon: ({ color, size }) => <Users size={size} color={color} />,
         }}
+        listeners={({ navigation }) => ({
+          tabPress: () => navigation.navigate("(members)", { screen: "index" }),
+        })}
       />
       <Tabs.Screen
         name="(classes)"
@@ -96,6 +114,9 @@ export default function ManagerLayout() {
             <Calendar size={size} color={color} />
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: () => navigation.navigate("(classes)", { screen: "index" }),
+        })}
       />
       <Tabs.Screen
         name="(finances)"
@@ -105,6 +126,9 @@ export default function ManagerLayout() {
             <CreditCard size={size} color={color} />
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: () => navigation.navigate("(finances)", { screen: "index" }),
+        })}
       />
     </Tabs>
   );

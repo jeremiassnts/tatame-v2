@@ -11,7 +11,10 @@ export function errorHandler(
   _next: NextFunction,
 ): void {
   if (err instanceof HttpError) {
-    res.status(err.statusCode).json({ error: err.message });
+    res.status(err.statusCode).json({
+      error: err.details?.code ?? err.message,
+      message: err.message,
+    });
     return;
   }
   if (err instanceof RedisUnavailableError) {

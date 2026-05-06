@@ -1,5 +1,5 @@
 import { useApi } from "@/lib/api";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export type ManagerSubscription = {
   id: string;
@@ -13,6 +13,15 @@ export type ManagerSubscription = {
   trialEndsAt: string | null;
   subscribedAt: string;
   canceledAt: string | null;
+};
+
+export type ManagerLimits = {
+  plan: "free" | "pro";
+  blocked: boolean;
+  students: { used: number; limit: number | null };
+  instructors: { used: number; limit: number | null };
+  plans: { used: number; limit: number | null };
+  schedulesPerDay: { maxUsed: number; limit: number | null };
 };
 
 export function useManagerSubscription() {
@@ -43,7 +52,6 @@ export function useSelectFreePlan() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["manager-subscription"] });
       queryClient.invalidateQueries({ queryKey: ["manager-limits"] });
-      queryClient.invalidateQueries({ queryKey: ["user", "me"] });
     },
   });
 }

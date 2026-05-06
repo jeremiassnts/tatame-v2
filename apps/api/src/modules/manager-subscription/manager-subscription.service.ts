@@ -1,16 +1,23 @@
 import type Stripe from "stripe";
 import { HttpError } from "../../lib/http-error.js";
 import type { IAcademyRepository } from "../academy/academy.repository.js";
+import type { IClassRepository } from "../class/class.repository.js";
+import type { IMembershipRepository } from "../membership/membership.repository.js";
+import type { ISubscriptionPlanRepository } from "../subscription/subscription.repository.js";
 import type {
   IManagerSubscriptionRepository,
   ManagerSubscriptionRow,
 } from "./manager-subscription.repository.js";
+import { FREE_PLAN_LIMITS } from "./plan-limits.js";
 
 export class ManagerSubscriptionService {
   constructor(
     private readonly subRepo: IManagerSubscriptionRepository,
     private readonly acadRepo: IAcademyRepository,
     private readonly stripe: Stripe | null = null,
+    private readonly membershipRepo?: IMembershipRepository,
+    private readonly planRepo?: ISubscriptionPlanRepository,
+    private readonly classRepo?: IClassRepository,
   ) {}
 
   async getSubscription(
@@ -138,6 +145,87 @@ export class ManagerSubscriptionService {
     await this.subRepo.update(sub.id, {
       canceledAt: null,
     });
+  }
+
+  async createFree(academyId: string): Promise<ManagerSubscriptionRow> {
+    const existing = await this.subRepo.findByAcademyId(academyId);
+    if (existing) {
+      throw new HttpError(409, "Uma conta já existe para esta academia.");
+    }
+
+    return this.subRepo.create({
+      academyId,
+      plan: "free",
+      status: "active",
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      stripePriceId: null,
+      currentPeriodEnd: null,
+      trialEndsAt: null,
+    });
+  }
+
+  async getLimits(academyId: string) {
+    const sub = await this.subRepo.findByAcademyId(academyId);
+    if (!sub) {
+      return {
+        plan: "free" as const,
+        blocked: false,
+        students: { used: 0, limit: FREE_PLAN_LIMITS.maxStudents },
+        instructors: { used: 0, limit: FREE_PLAN_LIMITS.maxInstructors },
+        plans: { used: 0, limit: FREE_PLAN_LIMITS.maxPlans },
+        schedulesPerDay: { maxUsed: 0, limit: FREE_PLAN_LIMITS.maxClassesPerDay },
+      };
+    }
+
+    const isFree = sub.plan === "free";
+    const isBlocked = sub.status === "canceled" || sub.status === "past_due";
+
+    const studentCount = this.membershipRepo
+      ? (await this.membershipRepo.findByAcademy(academyId, { role: "student", status: "active" })).length
+      : 0;
+
+    const instructorCount = this.membershipRepo
+      ? (await this.membershipRepo.findByAcademy(academyId, { role: "instructor", status: "active" })).length
+      : 0;
+
+    const planCount = this.planRepo
+      ? (await this.planRepo.findByAcademy(academyId, { includeInactive: false })).length
+      : 0;
+
+    let maxClassesOnAnyDay = 0;
+    if (this.classRepo) {
+      for (let day = 0; day < 7; day++) {
+        const classes = await this.classRepo.findByAcademyId(academyId, {
+          dayOfWeek: day,
+          includeInactive: false,
+        });
+        if (classes.length > maxClassesOnAnyDay) {
+          maxClassesOnAnyDay = classes.length;
+        }
+      }
+    }
+
+    return {
+      plan: sub.plan,
+      blocked: isBlocked,
+      students: {
+        used: studentCount,
+        limit: isFree ? FREE_PLAN_LIMITS.maxStudents : null,
+      },
+      instructors: {
+        used: instructorCount,
+        limit: isFree ? FREE_PLAN_LIMITS.maxInstructors : null,
+      },
+      plans: {
+        used: planCount,
+        limit: isFree ? FREE_PLAN_LIMITS.maxPlans : null,
+      },
+      schedulesPerDay: {
+        maxUsed: maxClassesOnAnyDay,
+        limit: isFree ? FREE_PLAN_LIMITS.maxClassesPerDay : null,
+      },
+    };
   }
 
   async createBillingPortalSession(

@@ -6,6 +6,7 @@ import { useAcademyContext } from "@/lib/academy-context";
 import { useApi } from "@/lib/api";
 import { useAcademy, useAcademyStats } from "@/lib/hooks/use-academy";
 import { useMyGraduation } from "@/lib/hooks/use-graduation";
+import { useManagerSubscription } from "@/lib/hooks/use-manager-subscription";
 import { useCurrentUser } from "@/lib/hooks/use-user";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
@@ -60,6 +61,7 @@ export default function ManagerDashboard() {
   const { data: me } = useCurrentUser();
   const { data: academy } = useAcademy(academyId);
   const { data: stats } = useAcademyStats(academyId);
+  const { data: managerSub } = useManagerSubscription();
   const { data: graduation } = useMyGraduation();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -138,7 +140,7 @@ export default function ManagerDashboard() {
             </View>
           </View>
 
-          {academy && !academy.pixKey && (
+          {managerSub?.plan === "pro" && academy && !academy.pixKey && (
             <Pressable
               onPress={() => router.push("/(app)/(manager)/(finances)")}
               className="flex-row items-center rounded-xl"

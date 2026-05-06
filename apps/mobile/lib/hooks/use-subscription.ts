@@ -26,6 +26,7 @@ export type MySubscriptionResponse = {
     createdAt: string;
     updatedAt: string;
   } | null;
+  academyPlan: "free" | "pro" | null;
 };
 
 export function useMySubscription() {

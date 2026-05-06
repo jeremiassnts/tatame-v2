@@ -2,6 +2,7 @@ import type { ConfirmManualPaymentBody } from "@tatame/validators";
 import type Stripe from "stripe";
 import { HttpError } from "../../lib/http-error.js";
 import type { IAcademyRepository } from "../academy/academy.repository.js";
+import type { IManagerSubscriptionRepository } from "../manager-subscription/manager-subscription.repository.js";
 import type { NotificationDispatcher } from "../notification/notification-dispatcher.js";
 import type { IStudentSubscriptionRepository } from "../subscription/subscription.repository.js";
 import type {
@@ -16,6 +17,7 @@ export class PaymentService {
     private readonly studentSubRepo: IStudentSubscriptionRepository,
     private readonly academyRepo: IAcademyRepository,
     private readonly dispatcher?: NotificationDispatcher,
+    private readonly managerSubRepo?: IManagerSubscriptionRepository,
   ) {}
 
   async confirmManual(
@@ -91,6 +93,16 @@ export class PaymentService {
     apiPublicUrl: string,
     opts?: { subscriptionId?: string },
   ): Promise<{ checkoutUrl: string }> {
+    // Plan limit enforcement — free plan cannot use auto payment
+    if (this.managerSubRepo) {
+      const managerSub = await this.managerSubRepo.findByAcademyId(academyId);
+      if (managerSub?.plan === "free") {
+        throw new HttpError(403, "Pagamentos automáticos não estão disponíveis para o plano atual", {
+          code: "PLAN_LIMIT_PAYMENTS",
+        });
+      }
+    }
+
     const subs = await this.studentSubRepo.listWithPlanByUserAndAcademy(
       studentUserId,
       academyId,
@@ -164,6 +176,16 @@ export class PaymentService {
     expiresAt: string;
     metadata: { subscriptionId: string; userId: string; academyId: string; referenceMonth: string };
   }> {
+    // Plan limit enforcement — free plan cannot use auto payment
+    if (this.managerSubRepo) {
+      const managerSub = await this.managerSubRepo.findByAcademyId(academyId);
+      if (managerSub?.plan === "free") {
+        throw new HttpError(403, "Pagamentos automáticos não estão disponíveis para o plano atual", {
+          code: "PLAN_LIMIT_PAYMENTS",
+        });
+      }
+    }
+
     const subs = await this.studentSubRepo.listWithPlanByUserAndAcademy(
       studentUserId,
       academyId,

@@ -5,6 +5,8 @@ import type {
 } from "@tatame/validators";
 import { HttpError } from "../../lib/http-error.js";
 import type { IAcademyRepository } from "../academy/academy.repository.js";
+import type { IManagerSubscriptionRepository } from "../manager-subscription/manager-subscription.repository.js";
+import { FREE_PLAN_LIMITS } from "../manager-subscription/plan-limits.js";
 import type {
   AcademySubscriptionItem,
   IStudentSubscriptionRepository,
@@ -36,6 +38,7 @@ export type SubscriptionMePayload = {
     effectiveStatus: "active" | "expired" | "cancelled";
   }) | null;
   plan: SubscriptionPlanRow | null;
+  academyPlan: "free" | "pro" | null;
 };
 
 export class SubscriptionService {
@@ -43,6 +46,7 @@ export class SubscriptionService {
     private readonly planRepo: ISubscriptionPlanRepository,
     private readonly studentSubRepo: IStudentSubscriptionRepository,
     private readonly academyRepo: IAcademyRepository,
+    private readonly managerSubRepo?: IManagerSubscriptionRepository,
   ) {}
 
   async listPlans(
@@ -68,6 +72,22 @@ export class SubscriptionService {
     body: CreateSubscriptionPlanBody,
   ): Promise<SubscriptionPlanRow> {
     await this.assertManagerOwnsAcademy(managerUserId, academyId);
+
+    // Plan limit enforcement
+    if (this.managerSubRepo) {
+      const sub = await this.managerSubRepo.findByAcademyId(academyId);
+      if (sub?.plan === "free") {
+        const plans = await this.planRepo.findByAcademy(academyId, {
+          includeInactive: false,
+        });
+        if (plans.length >= FREE_PLAN_LIMITS.maxPlans) {
+          throw new HttpError(403, "Limite de planos atingido para o plano atual", {
+            code: "PLAN_LIMIT_PLANS",
+          });
+        }
+      }
+    }
+
     return this.planRepo.create({
       academyId,
       name: body.name,
@@ -128,9 +148,15 @@ export class SubscriptionService {
       }
     }
 
+    let academyPlan: "free" | "pro" | null = null;
+    if (this.managerSubRepo) {
+      const managerSub = await this.managerSubRepo.findByAcademyId(academyId);
+      academyPlan = managerSub?.plan ?? null;
+    }
+
     const candidate = rows.find((r) => r.subscription.status !== "cancelled");
     if (!candidate) {
-      return { subscription: null, plan: null };
+      return { subscription: null, plan: null, academyPlan };
     }
 
     const { subscription: sub, plan } = candidate;
@@ -147,6 +173,7 @@ export class SubscriptionService {
         effectiveStatus,
       },
       plan,
+      academyPlan,
     };
   }
 

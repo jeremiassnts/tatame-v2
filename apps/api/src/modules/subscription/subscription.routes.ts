@@ -21,8 +21,10 @@ import {
   requireActiveAcademy,
 } from "../../middleware/academy-context.js";
 import { authorize } from "../../middleware/authorize.js";
+import { requireActivePlan } from "../../middleware/require-active-plan.js";
 import { validateBody } from "../../middleware/validate.js";
 import { PostgresAcademyRepository } from "../academy/academy.repository.postgres.js";
+import { PostgresManagerSubscriptionRepository } from "../manager-subscription/manager-subscription.repository.postgres.js";
 import {
   PostgresStudentSubscriptionRepository,
   PostgresSubscriptionPlanRepository,
@@ -43,10 +45,13 @@ const emailService = env.REDIS_URL
   ? new EmailService(getEmailQueue(env.REDIS_URL))
   : null;
 
+const managerSubRepo = new PostgresManagerSubscriptionRepository(db);
+
 const subscriptionService = new SubscriptionService(
   new PostgresSubscriptionPlanRepository(db),
   new PostgresStudentSubscriptionRepository(db),
   academyRepo,
+  managerSubRepo,
 );
 
 subscriptionRouter.get(
@@ -77,6 +82,7 @@ subscriptionRouter.post(
   authorize(Role.Manager),
   attachActiveAcademyContext,
   requireActiveAcademy,
+  requireActivePlan,
   validateBody(createSubscriptionPlanBodySchema),
   async (req, res, next) => {
     try {
@@ -117,6 +123,7 @@ subscriptionRouter.patch(
   authorize(Role.Manager),
   attachActiveAcademyContext,
   requireActiveAcademy,
+  requireActivePlan,
   validateBody(updateSubscriptionPlanBodySchema),
   async (req, res, next) => {
     try {

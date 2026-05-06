@@ -11,8 +11,12 @@ import { Router } from "express";
 import { z } from "zod";
 import { getDb } from "../../lib/db.js";
 import { HttpError } from "../../lib/http-error.js";
-import { attachActiveAcademyContext } from "../../middleware/academy-context.js";
+import {
+  attachActiveAcademyContext,
+  requireActiveAcademy,
+} from "../../middleware/academy-context.js";
 import { authorize } from "../../middleware/authorize.js";
+import { requireActivePlan } from "../../middleware/require-active-plan.js";
 import { validateBody } from "../../middleware/validate.js";
 import { PostgresAcademyRepository } from "../academy/academy.repository.postgres.js";
 import { getEmailQueue } from "../email/email.queue.js";
@@ -23,6 +27,7 @@ import { PostgresNotificationRepository } from "../notification/notification.rep
 import { NotificationService } from "../notification/notification.service.js";
 import { PostgresPushTokenRepository } from "../push-token/push-token.repository.postgres.js";
 import { PostgresUserRepository } from "../user/user.repository.postgres.js";
+import { PostgresManagerSubscriptionRepository } from "../manager-subscription/manager-subscription.repository.postgres.js";
 import { PostgresMembershipRepository } from "./membership.repository.postgres.js";
 import { MembershipService } from "./membership.service.js";
 
@@ -52,10 +57,13 @@ const emailService = env.REDIS_URL
   ? new EmailService(getEmailQueue(env.REDIS_URL))
   : null;
 
+const managerSubRepo = new PostgresManagerSubscriptionRepository(db);
+
 const membershipService = new MembershipService(
   membershipRepo,
   academyRepo,
   buildDispatcher(db),
+  managerSubRepo,
 );
 
 membershipRouter.get(
@@ -110,6 +118,8 @@ membershipRouter.get(
   "/pending",
   authorize(Role.Manager),
   attachActiveAcademyContext,
+  requireActiveAcademy,
+  requireActivePlan,
   async (req, res, next) => {
     try {
       const query = pendingQuerySchema.safeParse(req.query);
@@ -158,6 +168,8 @@ membershipRouter.patch(
   "/:membershipId/approve",
   authorize(Role.Manager),
   attachActiveAcademyContext,
+  requireActiveAcademy,
+  requireActivePlan,
   async (req, res, next) => {
     try {
       const params = membershipIdParamSchema.safeParse(req.params);
@@ -213,6 +225,8 @@ membershipRouter.patch(
   "/:membershipId/reject",
   authorize(Role.Manager),
   attachActiveAcademyContext,
+  requireActiveAcademy,
+  requireActivePlan,
   async (req, res, next) => {
     try {
       const params = membershipIdParamSchema.safeParse(req.params);
@@ -234,6 +248,8 @@ membershipRouter.patch(
   "/:membershipId/block",
   authorize(Role.Manager),
   attachActiveAcademyContext,
+  requireActiveAcademy,
+  requireActivePlan,
   async (req, res, next) => {
     try {
       const params = membershipIdParamSchema.safeParse(req.params);
@@ -255,6 +271,8 @@ membershipRouter.patch(
   "/:membershipId/unblock",
   authorize(Role.Manager),
   attachActiveAcademyContext,
+  requireActiveAcademy,
+  requireActivePlan,
   async (req, res, next) => {
     try {
       const params = membershipIdParamSchema.safeParse(req.params);

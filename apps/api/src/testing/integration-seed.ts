@@ -1,5 +1,5 @@
 import type { Database } from "@tatame/db";
-import { userRoles, users } from "@tatame/db/schema";
+import { managerSubscriptions, userRoles, users } from "@tatame/db/schema";
 import { makeUser, makeUserRole } from "./factories/index.js";
 
 export async function insertUserWithGlobalRole(
@@ -12,6 +12,17 @@ export async function insertUserWithGlobalRole(
   await db.insert(users).values(u);
   await db.insert(userRoles).values(ur);
   return u;
+}
+
+export async function insertFreeSubscription(
+  db: Database,
+  academyId: string,
+) {
+  await db.insert(managerSubscriptions).values({
+    academyId,
+    plan: "free",
+    status: "active",
+  });
 }
 
 export async function insertUserWithoutRole(db: Database, clerkUserId: string) {

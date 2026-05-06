@@ -11,6 +11,7 @@ import {
 import { authorize } from "../../middleware/authorize.js";
 import { requireSession } from "../../middleware/require-session.js";
 import { PostgresAcademyRepository } from "../academy/academy.repository.postgres.js";
+import { PostgresClassRepository } from "../class/class.repository.postgres.js";
 import { getEmailQueue } from "../email/email.queue.js";
 import { EmailService } from "../email/email.service.js";
 import { NotificationDispatcher } from "../notification/notification-dispatcher.js";
@@ -22,6 +23,7 @@ import { PostgresPaymentRepository } from "../payment/payment.repository.postgre
 import { StripeCheckoutWebhookHandler } from "../payment/stripe-checkout-webhook.handler.js";
 import { PostgresMembershipRepository } from "../membership/membership.repository.postgres.js";
 import { PostgresPushTokenRepository } from "../push-token/push-token.repository.postgres.js";
+import { PostgresSubscriptionPlanRepository } from "../subscription/subscription.repository.postgres.js";
 import { PostgresUserRepository } from "../user/user.repository.postgres.js";
 import { UserService } from "../user/user.service.js";
 import { PostgresManagerSubscriptionRepository } from "./manager-subscription.repository.postgres.js";
@@ -33,6 +35,10 @@ const env = loadEnv();
 const subRepo = new PostgresManagerSubscriptionRepository(db);
 const acadRepo = new PostgresAcademyRepository(db);
 const userRepo = new PostgresUserRepository(db);
+
+const membershipRepo = new PostgresMembershipRepository(db);
+const planRepo = new PostgresSubscriptionPlanRepository(db);
+const classRepo = new PostgresClassRepository(db);
 
 const userService = new UserService(userRepo);
 
@@ -54,7 +60,14 @@ const webhookDispatcher = new NotificationDispatcher(
 const paymentRepo = new PostgresPaymentRepository(db);
 
 function getService() {
-  return new ManagerSubscriptionService(subRepo, acadRepo, getStripe());
+  return new ManagerSubscriptionService(
+    subRepo,
+    acadRepo,
+    getStripe(),
+    membershipRepo,
+    planRepo,
+    classRepo,
+  );
 }
 
 export const managerSubscriptionRouter = Router();
@@ -73,6 +86,38 @@ managerSubscriptionRouter.get(
         return;
       }
       res.json(sub);
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+// GET /manager-subscriptions/limits — get plan limits and usage
+managerSubscriptionRouter.get(
+  "/limits",
+  authorize(Role.Manager),
+  attachActiveAcademyContext,
+  requireActiveAcademy,
+  async (req, res, next) => {
+    try {
+      const limits = await getService().getLimits(req.appAuth!.activeAcademyId!);
+      res.json(limits);
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+// POST /manager-subscriptions/free — create free plan for new managers
+managerSubscriptionRouter.post(
+  "/free",
+  authorize(Role.Manager),
+  attachActiveAcademyContext,
+  requireActiveAcademy,
+  async (req, res, next) => {
+    try {
+      const sub = await getService().createFree(req.appAuth!.activeAcademyId!);
+      res.status(201).json(sub);
     } catch (e) {
       next(e);
     }

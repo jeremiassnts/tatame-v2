@@ -53,14 +53,12 @@ export default function AuthWelcomeScreen() {
           <Text className="font-poppins-semibold text-base text-white">Entrar</Text>
         </Pressable>
 
-        {userType !== "manager" && (
-          <Pressable
-            onPress={() => router.push("/(auth)/sign-up")}
-            className="h-14 items-center justify-center rounded-xl border border-[#3A3A3A] bg-surface"
-          >
-            <Text className="font-poppins-semibold text-base text-primary">Criar conta</Text>
-          </Pressable>
-        )}
+        <Pressable
+          onPress={() => router.push("/(auth)/sign-up")}
+          className="h-14 items-center justify-center rounded-xl border border-[#3A3A3A] bg-surface"
+        >
+          <Text className="font-poppins-semibold text-base text-primary">Criar conta</Text>
+        </Pressable>
 
         <Divider text="ou continue com" />
 

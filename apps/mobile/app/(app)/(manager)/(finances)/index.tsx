@@ -8,7 +8,7 @@ import { useRouter } from "expo-router";
 import {
   CreditCard,
   FileText,
-  Crown,
+  ExternalLink,
   KeyRound,
   Pencil,
   Plus,
@@ -213,7 +213,7 @@ export default function FinancialDashboard() {
               Gerenciar minha conta
             </Text>
             <Text className="font-poppins text-[11px]" style={{ color: TEXT_SECONDARY }}>
-              Assinatura, pagamento e dados
+              Dados da conta
             </Text>
           </View>
           <View
@@ -224,7 +224,7 @@ export default function FinancialDashboard() {
               backgroundColor: "#A078E820",
             }}
           >
-            <Crown size={20} color="#A078E8" />
+            <ExternalLink size={20} color="#A078E8" />
           </View>
         </Pressable>
 
@@ -263,7 +263,7 @@ export default function FinancialDashboard() {
           ))}
         </View>
 
-        {academy?.pixKey ? (
+        {subscription?.plan === "pro" && (academy?.pixKey ? (
           <View className="rounded-2xl border border-surface-border bg-surface" style={{ padding: 14, gap: 12 }}>
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center" style={{ gap: 8 }}>
@@ -310,7 +310,7 @@ export default function FinancialDashboard() {
               <Text className="font-poppins-semibold text-sm text-white">Cadastrar chave PIX</Text>
             </Pressable>
           </View>
-        )}
+        ))}
 
         <Text className="font-poppins-semibold text-sm" style={{ color: TEXT_SECONDARY }}>
           Histórico de pagamentos

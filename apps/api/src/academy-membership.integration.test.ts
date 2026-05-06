@@ -5,7 +5,7 @@ import {
 import request from "supertest";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { setDbForTest } from "./lib/db.js";
-import { insertUserWithGlobalRole } from "./testing/integration-seed.js";
+import { insertFreeSubscription, insertUserWithGlobalRole } from "./testing/integration-seed.js";
 import { setupIntegrationTest } from "./testing/integration-setup.js";
 
 const CLERK_MANAGER = "user_integration_academy_mgr";
@@ -42,6 +42,7 @@ describe("Academy & membership integration", () => {
       .send({ name: "Integration Dojo" });
     expect(created.status).toBe(201);
     const academyId = created.body.id as string;
+    await insertFreeSubscription(ctx.db, academyId);
 
     const stats = await request(app).get(`/v1/academies/${academyId}/stats`);
     expect(stats.status).toBe(200);
@@ -89,6 +90,7 @@ describe("Academy & membership integration", () => {
       .send({ name: "Reject Dojo" });
     expect(created.status).toBe(201);
     const academyId = created.body.id as string;
+    await insertFreeSubscription(ctx.db, academyId);
 
     asClerkUser(CLERK_STUDENT);
     const reqJoin = await request(app)
@@ -115,6 +117,7 @@ describe("Academy & membership integration", () => {
       .send({ name: "Block Dojo" });
     expect(created.status).toBe(201);
     const academyId = created.body.id as string;
+    await insertFreeSubscription(ctx.db, academyId);
 
     asClerkUser(CLERK_STUDENT);
     const reqJoin = await request(app)
@@ -147,6 +150,7 @@ describe("Academy & membership integration", () => {
       .send({ name: "Unblock Dojo" });
     expect(created.status).toBe(201);
     const academyId = created.body.id as string;
+    await insertFreeSubscription(ctx.db, academyId);
 
     asClerkUser(CLERK_STUDENT);
     const reqJoin = await request(app)
@@ -175,6 +179,7 @@ describe("Academy & membership integration", () => {
       .send({ name: "Leave Dojo" });
     expect(created.status).toBe(201);
     const academyId = created.body.id as string;
+    await insertFreeSubscription(ctx.db, academyId);
 
     asClerkUser(CLERK_STUDENT);
     const reqJoin = await request(app)
@@ -202,6 +207,7 @@ describe("Academy & membership integration", () => {
       .send({ name: "Filter Dojo" });
     expect(created.status).toBe(201);
     const academyId = created.body.id as string;
+    await insertFreeSubscription(ctx.db, academyId);
 
     asClerkUser(CLERK_STUDENT);
     const req1 = await request(app)
@@ -244,6 +250,7 @@ describe("Academy & membership integration", () => {
       .send({ name: "Detail Dojo" });
     expect(created.status).toBe(201);
     const academyId = created.body.id as string;
+    await insertFreeSubscription(ctx.db, academyId);
 
     asClerkUser(CLERK_STUDENT);
     const reqJoin = await request(app)

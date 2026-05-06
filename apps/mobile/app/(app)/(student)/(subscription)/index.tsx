@@ -272,6 +272,15 @@ export default function MySubscriptionScreen() {
                       Pago
                     </Text>
                   </View>
+                ) : subResponse?.academyPlan === "free" ? (
+                  <View
+                    className="items-center justify-center rounded-xl"
+                    style={{ height: 48, backgroundColor: "#2A2A2A" }}
+                  >
+                    <Text className="font-poppins text-sm text-muted">
+                      Pagamento gerenciado pela academia
+                    </Text>
+                  </View>
                 ) : (
                   <View className="flex-row" style={{ gap: 10 }}>
                     <Pressable

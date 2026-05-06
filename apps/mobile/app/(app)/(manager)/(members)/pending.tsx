@@ -1,5 +1,7 @@
 import { PendingRequestCard } from "@/components/PendingRequestCard";
+import { PlanLimitModal, PLAN_LIMIT_MESSAGES } from "@/components/PlanLimitModal";
 import { useAcademyContext } from "@/lib/academy-context";
+import { ApiError } from "@/lib/api";
 import {
   useApproveMembership,
   usePendingRequests,
@@ -7,6 +9,7 @@ import {
 } from "@/lib/hooks/use-membership";
 import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
+import { useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -24,6 +27,10 @@ export default function PendingRequestsScreen() {
   const { data: pending, isPending } = usePendingRequests(academyId);
   const approveMutation = useApproveMembership();
   const rejectMutation = useRejectMembership();
+  const [limitModal, setLimitModal] = useState<{ visible: boolean; message: string }>({
+    visible: false,
+    message: "",
+  });
 
   const count = pending?.length ?? 0;
   const isMutating = approveMutation.isPending || rejectMutation.isPending;
@@ -63,7 +70,19 @@ export default function PendingRequestsScreen() {
                 name={item.userName}
                 role={item.role}
                 createdAt={toDateLabel(item.createdAt)}
-                onApprove={() => approveMutation.mutate(item.id)}
+                onApprove={() => {
+                  approveMutation.mutate(item.id, {
+                    onError: (error) => {
+                      if (error instanceof ApiError && error.status === 403) {
+                        const msg = PLAN_LIMIT_MESSAGES[error.message];
+                        if (msg) {
+                          setLimitModal({ visible: true, message: msg });
+                          return;
+                        }
+                      }
+                    },
+                  });
+                }}
                 onReject={() => rejectMutation.mutate(item.id)}
                 isLoading={isMutating}
               />
@@ -78,6 +97,11 @@ export default function PendingRequestsScreen() {
           />
         )}
       </View>
+      <PlanLimitModal
+        visible={limitModal.visible}
+        onClose={() => setLimitModal({ visible: false, message: "" })}
+        message={limitModal.message}
+      />
     </SafeAreaView>
   );
 }
