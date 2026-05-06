@@ -112,7 +112,7 @@ export default function ManagerLayout() {
       <Tabs.Screen
         name="(finances)"
         options={{
-          title: "Financas",
+          title: "Finanças",
           tabBarIcon: ({ color, size }) => (
             <CreditCard size={size} color={color} />
           ),
