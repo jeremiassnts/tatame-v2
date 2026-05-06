@@ -6,7 +6,7 @@ import {
 import request from "supertest";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { setDbForTest } from "./lib/db.js";
-import { insertUserWithGlobalRole } from "./testing/integration-seed.js";
+import { insertFreeSubscription, insertUserWithGlobalRole } from "./testing/integration-seed.js";
 import { setupIntegrationTest } from "./testing/integration-setup.js";
 
 const CLERK_MANAGER = "user_integration_grad_mgr";
@@ -46,6 +46,7 @@ describe("Graduation routes integration", () => {
       .send({ name: "Belt Dojo" });
     expect(ac.status).toBe(201);
     const academyId = ac.body.id as string;
+    await insertFreeSubscription(ctx.db, academyId);
 
     asClerkUser(CLERK_STUDENT);
     const reqJoin = await request(app)
