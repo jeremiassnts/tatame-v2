@@ -28,7 +28,7 @@ function normalizeTime(t: string): string {
 
 function assertEndAfterStart(start: string, end: string): void {
   if (normalizeTime(end) <= normalizeTime(start)) {
-    throw new HttpError(400, "O horario de termino deve ser depois do horario de inicio");
+    throw new HttpError(400, "O horário de término deve ser depois do horário de início");
   }
 }
 
