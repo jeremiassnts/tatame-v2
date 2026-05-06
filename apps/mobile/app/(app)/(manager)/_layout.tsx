@@ -92,6 +92,9 @@ export default function ManagerLayout() {
           title: "Inicio",
           tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
         }}
+        listeners={({ navigation }) => ({
+          tabPress: () => navigation.navigate("(home)", { screen: "index" }),
+        })}
       />
       <Tabs.Screen
         name="(members)"
@@ -99,6 +102,9 @@ export default function ManagerLayout() {
           title: "Membros",
           tabBarIcon: ({ color, size }) => <Users size={size} color={color} />,
         }}
+        listeners={({ navigation }) => ({
+          tabPress: () => navigation.navigate("(members)", { screen: "index" }),
+        })}
       />
       <Tabs.Screen
         name="(classes)"
@@ -108,6 +114,9 @@ export default function ManagerLayout() {
             <Calendar size={size} color={color} />
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: () => navigation.navigate("(classes)", { screen: "index" }),
+        })}
       />
       <Tabs.Screen
         name="(finances)"
@@ -117,6 +126,9 @@ export default function ManagerLayout() {
             <CreditCard size={size} color={color} />
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: () => navigation.navigate("(finances)", { screen: "index" }),
+        })}
       />
     </Tabs>
   );
