@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Check } from "lucide-react-native";
+import { MaskedTextInput } from "react-native-mask-text";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
@@ -68,10 +69,9 @@ export default function CreatePlanScreen() {
   const isUnlimited = watch("unlimited");
 
   const onSubmit = async (data: FormData) => {
-    const priceText = data.priceCents.replace(",", ".");
-    const cents = Math.round(parseFloat(priceText) * 100);
+    const cents = parseInt(data.priceCents, 10);
 
-    if (isNaN(cents) || cents < 0) {
+    if (isNaN(cents) || cents <= 0) {
       Alert.alert("Erro", "Valor inválido");
       return;
     }
@@ -138,14 +138,44 @@ export default function CreatePlanScreen() {
             control={control}
             name="priceCents"
             render={({ field: { onChange, value } }) => (
-              <FormInput
-                label="Valor (R$)"
-                placeholder="199,00"
-                value={value}
-                onChangeText={onChange}
-                keyboardType="decimal-pad"
-                error={errors.priceCents?.message}
-              />
+              <View style={{ gap: 6 }}>
+                <Text className="font-poppins-medium text-[13px] text-muted">
+                  Valor (R$)
+                </Text>
+                <View
+                  className={`h-[52px] flex-row items-center rounded-xl border bg-surface px-4 ${
+                    errors.priceCents ? "border-red-500" : "border-surface-border"
+                  }`}
+                >
+                  <MaskedTextInput
+                    type="currency"
+                    options={{
+                      prefix: "R$ ",
+                      decimalSeparator: ",",
+                      groupSeparator: ".",
+                      precision: 2,
+                    }}
+                    keyboardType="numeric"
+                    placeholder="R$ 0,00"
+                    placeholderTextColor="#525252"
+                    value={value}
+                    onChangeText={(_formatted, rawValue) => {
+                      onChange(rawValue);
+                    }}
+                    style={{
+                      flex: 1,
+                      fontFamily: "Poppins_400Regular",
+                      fontSize: 15,
+                      color: "#FFFFFF",
+                    }}
+                  />
+                </View>
+                {errors.priceCents?.message ? (
+                  <Text className="font-poppins text-xs text-red-500">
+                    {errors.priceCents.message}
+                  </Text>
+                ) : null}
+              </View>
             )}
           />
 
