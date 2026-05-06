@@ -97,7 +97,7 @@ export class PaymentService {
     if (this.managerSubRepo) {
       const managerSub = await this.managerSubRepo.findByAcademyId(academyId);
       if (managerSub?.plan === "free") {
-        throw new HttpError(403, "Pagamentos automaticos nao estao disponiveis para o plano atual", {
+        throw new HttpError(403, "Pagamentos automáticos não estão disponíveis para o plano atual", {
           code: "PLAN_LIMIT_PAYMENTS",
         });
       }
@@ -180,7 +180,7 @@ export class PaymentService {
     if (this.managerSubRepo) {
       const managerSub = await this.managerSubRepo.findByAcademyId(academyId);
       if (managerSub?.plan === "free") {
-        throw new HttpError(403, "Pagamentos automaticos nao estao disponiveis para o plano atual", {
+        throw new HttpError(403, "Pagamentos automáticos não estão disponíveis para o plano atual", {
           code: "PLAN_LIMIT_PAYMENTS",
         });
       }

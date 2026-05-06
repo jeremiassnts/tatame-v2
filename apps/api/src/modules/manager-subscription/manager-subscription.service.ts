@@ -150,7 +150,7 @@ export class ManagerSubscriptionService {
   async createFree(academyId: string): Promise<ManagerSubscriptionRow> {
     const existing = await this.subRepo.findByAcademyId(academyId);
     if (existing) {
-      throw new HttpError(409, "Uma conta ja existe para esta academia.");
+      throw new HttpError(409, "Uma conta já existe para esta academia.");
     }
 
     return this.subRepo.create({

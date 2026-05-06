@@ -54,9 +54,9 @@ export function PlanLimitModal({ visible, onClose, message }: PlanLimitModalProp
 }
 
 export const PLAN_LIMIT_MESSAGES: Record<string, string> = {
-  PLAN_LIMIT_STUDENTS: "Voce atingiu o numero maximo de alunos para sua conta.",
-  PLAN_LIMIT_INSTRUCTORS: "Voce atingiu o numero maximo de instrutores para sua conta.",
-  PLAN_LIMIT_CLASSES: "Voce atingiu o numero maximo de aulas por dia para sua conta.",
-  PLAN_LIMIT_PLANS: "Voce atingiu o numero maximo de planos para sua conta.",
-  PLAN_LIMIT_PAYMENTS: "Pagamentos automaticos nao estao disponiveis para sua conta.",
+  PLAN_LIMIT_STUDENTS: "Você atingiu o número máximo de alunos para sua conta.",
+  PLAN_LIMIT_INSTRUCTORS: "Você atingiu o número máximo de instrutores para sua conta.",
+  PLAN_LIMIT_CLASSES: "Você atingiu o número máximo de aulas por dia para sua conta.",
+  PLAN_LIMIT_PLANS: "Você atingiu o número máximo de planos para sua conta.",
+  PLAN_LIMIT_PAYMENTS: "Pagamentos automáticos não estão disponíveis para sua conta.",
 };

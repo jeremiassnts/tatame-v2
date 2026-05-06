@@ -18,10 +18,10 @@ function BlockedScreen() {
     <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
       <View className="flex-1 items-center justify-center px-6" style={{ gap: 16 }}>
         <Text className="font-poppins-bold text-xl text-primary text-center">
-          Acesso indisponivel
+          Acesso indisponível
         </Text>
         <Text className="font-poppins text-sm text-muted text-center">
-          Sua conta nao tem acesso ao painel de gestor no momento.
+          Sua conta não tem acesso ao painel de gestor no momento.
         </Text>
         <Pressable
           onPress={() => Linking.openURL(PORTAL_URL)}

@@ -47,7 +47,7 @@ export function requireActivePlan(
 
       res.status(403).json({
         error: "SUBSCRIPTION_BLOCKED",
-        message: "Sua conta nao tem acesso no momento.",
+        message: "Sua conta não tem acesso no momento.",
       });
     } catch (e) {
       next(e);
