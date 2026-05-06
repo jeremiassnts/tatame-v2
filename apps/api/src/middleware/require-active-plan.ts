@@ -25,13 +25,17 @@ export function requireActivePlan(
       const sub = await subRepo.findByAcademyId(academyId);
       if (!sub) {
         res.status(403).json({
-          error: "Nenhuma assinatura encontrada. Selecione um plano.",
-          code: "NO_SUBSCRIPTION",
+          error: "NO_SUBSCRIPTION",
+          message: "Nenhuma conta encontrada.",
         });
         return;
       }
 
-      if (sub.status === "active" || sub.status === "incomplete") {
+      if (
+        sub.status === "active" ||
+        sub.status === "trialing" ||
+        sub.status === "incomplete"
+      ) {
         req.appAuth = {
           ...req.appAuth,
           managerPlan: sub.plan,
@@ -42,11 +46,8 @@ export function requireActivePlan(
       }
 
       res.status(403).json({
-        error:
-          sub.status === "past_due"
-            ? "Seu pagamento está atrasado. Atualize seus dados de pagamento para continuar usando o app."
-            : "Sua assinatura foi cancelada. Reative o plano Pro para continuar usando o app.",
-        code: "SUBSCRIPTION_BLOCKED",
+        error: "SUBSCRIPTION_BLOCKED",
+        message: "Sua conta nao tem acesso no momento.",
       });
     } catch (e) {
       next(e);

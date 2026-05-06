@@ -12,7 +12,7 @@ declare global {
         /** Role on the active membership row (may differ from global `role` in edge cases). */
         academyRole?: Role;
         managerPlan?: "free" | "pro";
-        managerSubscriptionStatus?: "active" | "past_due" | "canceled" | "incomplete";
+        managerSubscriptionStatus?: "active" | "trialing" | "past_due" | "canceled" | "incomplete";
       };
       validatedBody?: unknown;
     }
