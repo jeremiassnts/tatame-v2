@@ -240,6 +240,7 @@ describe("Check-in integration", () => {
       .post("/v1/academies")
       .send({ name: "Empty Dojo" });
     const academyId = ac.body.id as string;
+    await insertFreeSubscription(ctx.db, academyId);
 
     asClerkUser(CLERK_STUDENT);
     const reqJoin = await request(app)
