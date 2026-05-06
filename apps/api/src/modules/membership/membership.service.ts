@@ -1,5 +1,7 @@
 import { HttpError } from "../../lib/http-error.js";
 import type { IAcademyRepository } from "../academy/academy.repository.js";
+import type { IManagerSubscriptionRepository } from "../manager-subscription/manager-subscription.repository.js";
+import { FREE_PLAN_LIMITS } from "../manager-subscription/plan-limits.js";
 import type { NotificationDispatcher } from "../notification/notification-dispatcher.js";
 import type { IMembershipRepository } from "./membership.repository.js";
 
@@ -8,6 +10,7 @@ export class MembershipService {
     private readonly membershipRepo: IMembershipRepository,
     private readonly academyRepo: IAcademyRepository,
     private readonly dispatcher?: NotificationDispatcher,
+    private readonly managerSubRepo?: IManagerSubscriptionRepository,
   ) {}
 
   async getActive(userId: string) {
@@ -129,6 +132,34 @@ export class MembershipService {
 
     if (m.status !== "pending") {
       throw new HttpError(409, "Only pending memberships can be approved");
+    }
+
+    // Plan limit enforcement
+    if (this.managerSubRepo) {
+      const sub = await this.managerSubRepo.findByAcademyId(m.academyId);
+      if (sub?.plan === "free") {
+        if (m.role === "student") {
+          const members = await this.membershipRepo.findByAcademy(m.academyId, {
+            role: "student",
+            status: "active",
+          });
+          if (members.length >= FREE_PLAN_LIMITS.maxStudents) {
+            throw new HttpError(403, "Limite de alunos atingido para o plano atual", {
+              code: "PLAN_LIMIT_STUDENTS",
+            });
+          }
+        } else if (m.role === "instructor") {
+          const instructors = await this.membershipRepo.findByAcademy(m.academyId, {
+            role: "instructor",
+            status: "active",
+          });
+          if (instructors.length >= FREE_PLAN_LIMITS.maxInstructors) {
+            throw new HttpError(403, "Limite de instrutores atingido para o plano atual", {
+              code: "PLAN_LIMIT_INSTRUCTORS",
+            });
+          }
+        }
+      }
     }
 
     const targetActive = await this.membershipRepo.findActiveByUser(m.userId);

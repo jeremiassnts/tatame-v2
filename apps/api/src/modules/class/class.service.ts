@@ -2,6 +2,8 @@ import type { CreateClassBody, UpdateClassBody } from "@tatame/validators";
 import type { Role } from "@tatame/types";
 import { HttpError } from "../../lib/http-error.js";
 import type { IAcademyRepository } from "../academy/academy.repository.js";
+import type { IManagerSubscriptionRepository } from "../manager-subscription/manager-subscription.repository.js";
+import { FREE_PLAN_LIMITS } from "../manager-subscription/plan-limits.js";
 import type { IMembershipRepository } from "../membership/membership.repository.js";
 import type { NotificationDispatcher } from "../notification/notification-dispatcher.js";
 import type { IClassRepository } from "./class.repository.js";
@@ -36,6 +38,7 @@ export class ClassService {
     private readonly membershipRepo: IMembershipRepository,
     private readonly academyRepo: IAcademyRepository,
     private readonly dispatcher?: NotificationDispatcher,
+    private readonly managerSubRepo?: IManagerSubscriptionRepository,
   ) {}
 
   async list(
@@ -70,6 +73,22 @@ export class ClassService {
     const startTime = normalizeTime(body.startTime);
     const endTime = normalizeTime(body.endTime);
     assertEndAfterStart(startTime, endTime);
+
+    // Plan limit enforcement
+    if (this.managerSubRepo) {
+      const sub = await this.managerSubRepo.findByAcademyId(ctx.activeAcademyId);
+      if (sub?.plan === "free") {
+        const existing = await this.classRepo.findByAcademyId(ctx.activeAcademyId, {
+          dayOfWeek: body.dayOfWeek,
+          includeInactive: false,
+        });
+        if (existing.length >= FREE_PLAN_LIMITS.maxClassesPerDay) {
+          throw new HttpError(403, "Limite de aulas por dia atingido para o plano atual", {
+            code: "PLAN_LIMIT_CLASSES",
+          });
+        }
+      }
+    }
 
     if (ctx.role === "manager") {
       await this.assertManagerOwnsAcademy(ctx.userId, ctx.activeAcademyId);
