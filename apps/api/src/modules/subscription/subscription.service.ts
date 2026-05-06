@@ -38,6 +38,7 @@ export type SubscriptionMePayload = {
     effectiveStatus: "active" | "expired" | "cancelled";
   }) | null;
   plan: SubscriptionPlanRow | null;
+  academyPlan: "free" | "pro" | null;
 };
 
 export class SubscriptionService {
@@ -147,9 +148,15 @@ export class SubscriptionService {
       }
     }
 
+    let academyPlan: "free" | "pro" | null = null;
+    if (this.managerSubRepo) {
+      const managerSub = await this.managerSubRepo.findByAcademyId(academyId);
+      academyPlan = managerSub?.plan ?? null;
+    }
+
     const candidate = rows.find((r) => r.subscription.status !== "cancelled");
     if (!candidate) {
-      return { subscription: null, plan: null };
+      return { subscription: null, plan: null, academyPlan };
     }
 
     const { subscription: sub, plan } = candidate;
@@ -166,6 +173,7 @@ export class SubscriptionService {
         effectiveStatus,
       },
       plan,
+      academyPlan,
     };
   }
 
