@@ -1,9 +1,11 @@
 import { ClassForm, type ClassFormData } from "@/components/ClassForm";
+import { PlanLimitModal, PLAN_LIMIT_MESSAGES } from "@/components/PlanLimitModal";
 import { useAcademyContext } from "@/lib/academy-context";
 import { ApiError } from "@/lib/api";
 import { useCreateClass } from "@/lib/hooks/use-classes";
 import { useMembers } from "@/lib/hooks/use-membership";
 import { useRouter } from "expo-router";
+import { useState } from "react";
 import { Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -11,6 +13,10 @@ export default function ManagerCreateClass() {
   const router = useRouter();
   const { academyId } = useAcademyContext();
   const createClass = useCreateClass();
+  const [limitModal, setLimitModal] = useState<{ visible: boolean; message: string }>({
+    visible: false,
+    message: "",
+  });
   const { data: members } = useMembers(academyId, {
     status: "active",
   });
@@ -41,6 +47,13 @@ export default function ManagerCreateClass() {
       }
       router.back();
     } catch (e) {
+      if (e instanceof ApiError && e.status === 403) {
+        const msg = PLAN_LIMIT_MESSAGES[e.message];
+        if (msg) {
+          setLimitModal({ visible: true, message: msg });
+          return;
+        }
+      }
       const message =
         e instanceof ApiError ? e.message : "Não foi possível criar a aula";
       Alert.alert("Erro", message);
@@ -55,6 +68,11 @@ export default function ManagerCreateClass() {
         instructors={instructors}
         onSubmit={handleSubmit}
         isSubmitting={createClass.isPending}
+      />
+      <PlanLimitModal
+        visible={limitModal.visible}
+        onClose={() => setLimitModal({ visible: false, message: "" })}
+        message={limitModal.message}
       />
     </SafeAreaView>
   );

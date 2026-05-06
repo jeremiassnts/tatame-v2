@@ -1,11 +1,14 @@
 import { FormInput } from "@/components/FormInput";
 import { ModalSelect } from "@/components/ModalSelect";
+import { PlanLimitModal, PLAN_LIMIT_MESSAGES } from "@/components/PlanLimitModal";
 import { ApiError } from "@/lib/api";
 import { useCreatePlan } from "@/lib/hooks/use-subscription-plans";
+import { useManagerSubscription } from "@/lib/hooks/use-manager-subscription";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Check } from "lucide-react-native";
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
@@ -39,6 +42,12 @@ const RECURRENCE_OPTIONS = [
 export default function CreatePlanScreen() {
   const router = useRouter();
   const createPlan = useCreatePlan();
+  const { data: managerSub } = useManagerSubscription();
+  const isFree = managerSub?.plan === "free";
+  const [limitModal, setLimitModal] = useState<{ visible: boolean; message: string }>({
+    visible: false,
+    message: "",
+  });
 
   const {
     control,
@@ -78,6 +87,13 @@ export default function CreatePlanScreen() {
       });
       router.back();
     } catch (e) {
+      if (e instanceof ApiError && e.status === 403) {
+        const msg = PLAN_LIMIT_MESSAGES[e.message];
+        if (msg) {
+          setLimitModal({ visible: true, message: msg });
+          return;
+        }
+      }
       const msg = e instanceof ApiError ? e.message : "Erro ao criar plano";
       Alert.alert("Erro", msg);
     }
@@ -192,19 +208,21 @@ export default function CreatePlanScreen() {
           </View>
         </ScrollView>
 
-        <View
-          className="rounded-xl border border-surface-border bg-surface"
-          style={{ padding: 12, gap: 4 }}
-        >
-          <Text className="font-poppins-medium text-xs text-muted">
-            ℹ️ Taxas de pagamento
-          </Text>
-          <Text className="font-poppins text-[11px] text-muted" style={{ lineHeight: 16 }}>
-            Pagamentos via cartão possuem uma taxa de 3,99% + R$0,39 por transação,
-            cobrada pela plataforma de pagamento (Stripe). Essa taxa não é do Tatame —
-            cobramos apenas a mensalidade da assinatura.
-          </Text>
-        </View>
+        {!isFree && (
+          <View
+            className="rounded-xl border border-surface-border bg-surface"
+            style={{ padding: 12, gap: 4 }}
+          >
+            <Text className="font-poppins-medium text-xs text-muted">
+              ℹ️ Taxas de pagamento
+            </Text>
+            <Text className="font-poppins text-[11px] text-muted" style={{ lineHeight: 16 }}>
+              Pagamentos via cartão possuem uma taxa de 3,99% + R$0,39 por transação,
+              cobrada pela plataforma de pagamento (Stripe). Essa taxa não é do Tatame —
+              cobramos apenas a mensalidade da assinatura.
+            </Text>
+          </View>
+        )}
 
         <View style={{ paddingBottom: 24 }}>
           <Pressable
@@ -243,6 +261,11 @@ export default function CreatePlanScreen() {
           </Pressable>
         </View>
       </View>
+      <PlanLimitModal
+        visible={limitModal.visible}
+        onClose={() => setLimitModal({ visible: false, message: "" })}
+        message={limitModal.message}
+      />
     </SafeAreaView>
   );
 }
