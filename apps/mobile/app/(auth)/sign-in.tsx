@@ -54,13 +54,15 @@ export default function SignInScreen() {
             e.code === "form_password_incorrect"
           ) {
             mapped.general = "E-mail ou senha incorretos";
+          } else if (e.code === "too_many_requests") {
+            mapped.general = "Muitas tentativas. Aguarde alguns minutos e tente novamente.";
           } else {
-            mapped.general = e.longMessage ?? "Nao foi possivel entrar.";
+            mapped.general = e.longMessage ?? "Não foi possível entrar.";
           }
         }
         setErrors(mapped);
       } else {
-        Alert.alert("Erro", "Nao foi possivel entrar. Tente novamente.");
+        Alert.alert("Erro", "Não foi possível entrar. Tente novamente.");
       }
     } finally {
       setLoading(false);
@@ -139,7 +141,7 @@ export default function SignInScreen() {
           />
 
           <View className="flex-row items-center justify-center gap-1 py-2">
-            <Text className="font-poppins text-sm text-muted">Nao tem uma conta?</Text>
+            <Text className="font-poppins text-sm text-muted">Não tem uma conta?</Text>
             <Pressable onPress={() => router.replace("/(auth)/sign-up")}>
               <Text className="font-poppins-semibold text-sm text-accent">Criar conta</Text>
             </Pressable>

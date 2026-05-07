@@ -11,6 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 type ClerkError = {
   errors?: Array<{
+    code?: string;
     longMessage?: string;
     meta?: { paramName?: string };
   }>;
@@ -32,26 +33,33 @@ export default function SignUpScreen() {
     setErrors({});
     setLoading(true);
     try {
-      await signUp.create({
+      console.log("[sign-up] creating account…", { email, name });
+      const result = await signUp.create({
         emailAddress: email,
         password,
         firstName: name,
       });
+      console.log("[sign-up] create result:", JSON.stringify(result, null, 2));
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+      console.log("[sign-up] verification email sent");
       router.push({ pathname: "/(auth)/verify-email", params: { email } });
     } catch (error) {
+      console.log("[sign-up] error:", JSON.stringify(error, null, 2));
       const err = error as ClerkError;
       if (err.errors?.length) {
         const mapped: Record<string, string> = {};
         for (const e of err.errors) {
+          console.log("[sign-up] clerk error detail:", JSON.stringify(e, null, 2));
           if (e.meta?.paramName === "email_address") mapped.email = e.longMessage ?? "";
           else if (e.meta?.paramName === "password") mapped.password = e.longMessage ?? "";
           else if (e.meta?.paramName === "first_name") mapped.name = e.longMessage ?? "";
-          else mapped.general = e.longMessage ?? "Nao foi possivel criar a conta.";
+          else if (e.code === "too_many_requests")
+            mapped.general = "Muitas tentativas. Aguarde alguns minutos e tente novamente.";
+          else mapped.general = e.longMessage ?? "Não foi possível criar a conta.";
         }
         setErrors(mapped);
       } else {
-        Alert.alert("Erro", "Nao foi possivel criar a conta. Tente novamente.");
+        Alert.alert("Erro", "Não foi possível criar a conta. Tente novamente.");
       }
     } finally {
       setLoading(false);
@@ -71,7 +79,7 @@ export default function SignUpScreen() {
             Criar conta
           </Text>
           <Text className="font-poppins text-[15px] text-[#525252]">
-            Preencha seus dados para comecar
+            Preencha seus dados para começar
           </Text>
         </View>
 
@@ -95,7 +103,7 @@ export default function SignUpScreen() {
           />
           <FormInput
             label="Senha"
-            placeholder="Minimo 8 caracteres"
+            placeholder="Mínimo 8 caracteres"
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -131,7 +139,7 @@ export default function SignUpScreen() {
           />
 
           <View className="flex-row items-center justify-center gap-1 py-2">
-            <Text className="font-poppins text-sm text-muted">Ja tem uma conta?</Text>
+            <Text className="font-poppins text-sm text-muted">Já tem uma conta?</Text>
             <Pressable onPress={() => router.replace("/(auth)/sign-in")}>
               <Text className="font-poppins-semibold text-sm text-accent">Entrar</Text>
             </Pressable>
