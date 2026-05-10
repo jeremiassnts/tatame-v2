@@ -50,8 +50,16 @@ export default function SignUpScreen() {
         const mapped: Record<string, string> = {};
         for (const e of err.errors) {
           console.log("[sign-up] clerk error detail:", JSON.stringify(e, null, 2));
-          if (e.meta?.paramName === "email_address") mapped.email = e.longMessage ?? "";
-          else if (e.meta?.paramName === "password") mapped.password = e.longMessage ?? "";
+          if (e.meta?.paramName === "email_address")
+            mapped.email =
+              e.code === "form_identifier_exists"
+                ? "Este e-mail já está em uso."
+                : (e.longMessage ?? "E-mail inválido.");
+          else if (e.meta?.paramName === "password")
+            mapped.password =
+              e.code === "form_password_length_too_short"
+                ? "A senha deve ter no mínimo 8 caracteres."
+                : (e.longMessage ?? "Senha inválida.");
           else if (e.meta?.paramName === "first_name") mapped.name = e.longMessage ?? "";
           else if (e.code === "too_many_requests")
             mapped.general = "Muitas tentativas. Aguarde alguns minutos e tente novamente.";
