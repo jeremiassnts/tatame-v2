@@ -1,25 +1,13 @@
 import { Divider } from "@/components/Divider";
 import { SocialButtons } from "@/components/SocialButtons";
 import { useStartSSO } from "@/lib/hooks/use-start-sso";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
 import { Image, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function AuthWelcomeScreen() {
   const router = useRouter();
   const { handleSSO } = useStartSSO();
-  const [userType, setUserType] = useState<string | null>(null);
-
-  useEffect(() => {
-    AsyncStorage.getItem("userType").then(setUserType);
-  }, []);
-
-  const handleChangeUserType = async () => {
-    await AsyncStorage.removeItem("userType");
-    router.replace("/(onboarding)/user-type");
-  };
 
   return (
     <SafeAreaView className="flex-1 bg-background pt-4" edges={["bottom"]}>
@@ -67,14 +55,6 @@ export default function AuthWelcomeScreen() {
           onApplePress={() => handleSSO("oauth_apple")}
         />
 
-        <Pressable
-          onPress={() => void handleChangeUserType()}
-          className="items-center pt-1"
-        >
-          <Text className="font-poppins text-[13px] text-muted">
-            Mudar tipo de usuário
-          </Text>
-        </Pressable>
       </View>
     </SafeAreaView>
   );

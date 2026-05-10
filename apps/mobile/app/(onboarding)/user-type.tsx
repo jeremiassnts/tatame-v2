@@ -2,18 +2,12 @@ import { GradientButton } from "@/components/GradientButton";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { Building2, GraduationCap, User } from "lucide-react-native";
+import { GraduationCap, User } from "lucide-react-native";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const ROLES = [
-  {
-    key: "manager",
-    label: "Gestor",
-    description: "Gerencie sua academia, turmas e alunos",
-    Icon: Building2,
-  },
   {
     key: "instructor",
     label: "Instrutor",
@@ -31,7 +25,7 @@ const ROLES = [
 type UserType = (typeof ROLES)[number]["key"];
 
 export default function UserTypeScreen() {
-  const [selected, setSelected] = useState<UserType>("manager");
+  const [selected, setSelected] = useState<UserType>("student");
   const router = useRouter();
 
   const handleContinue = async () => {
