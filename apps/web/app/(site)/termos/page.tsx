@@ -1,3 +1,5 @@
+import { Header } from "@/components/header";
+import { Footer } from "@/components/footer";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -50,6 +52,8 @@ const sections = [
 
 export default function Termos() {
   return (
+    <>
+    <Header />
     <main className="px-6 py-16 md:px-20 md:py-20">
       <div className="mx-auto max-w-[800px]">
         {/* Header */}
@@ -80,5 +84,7 @@ export default function Termos() {
         </div>
       </div>
     </main>
+    <Footer />
+    </>
   );
 }
