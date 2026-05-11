@@ -1,24 +1,30 @@
 #!/bin/bash
 
-# Helper script to run local EAS builds for iOS preview
+# Helper script to run local EAS builds for iOS simulator preview
 # Usage: ./ios-build-preview.sh
-# This will create a preview build for iOS devices (TestFlight)
+# This will create a preview build for the iOS Simulator
+# Large temp artifacts use EAS_BUILD_ROOT (default: /Volumes/ExternalDisk1); override with env if needed.
 
-# Ensure we run from the mobile app directory
-cd "$(dirname "$0")/.." || exit 1
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=eas-build-common.sh
+source "$SCRIPT_DIR/eas-build-common.sh"
 
-echo "🍎 iOS Preview Build"
-echo "===================="
+echo "🍎 iOS Simulator Preview Build"
+echo "==============================="
 echo ""
 
-# Check disk space
-echo "Checking disk space..."
-DISK_INFO=$(df -h / | tail -1)
+# Check disk space (build volume, not only the system disk)
+echo "Checking disk space on build volume..."
+eas_build_print_cache_env
+DISK_INFO=$(df -h "$EAS_BUILD_ROOT" | tail -1)
 DISK_SPACE=$(echo "$DISK_INFO" | awk '{print $4}')
-DISK_SPACE_NUM=$(echo "$DISK_SPACE" | grep -oE '[0-9]+\.?[0-9]*')
-DISK_SPACE_UNIT=$(echo "$DISK_SPACE" | grep -oE '[A-Za-z]+')
+DISK_USAGE=$(echo "$DISK_INFO" | awk '{print $5}' | sed 's/%//')
 echo "Available space: $DISK_SPACE"
 echo ""
+
+# Check if there is enough space (at least 5GB recommended)
+DISK_SPACE_NUM=$(echo "$DISK_SPACE" | grep -oE '[0-9]+\.?[0-9]*')
+DISK_SPACE_UNIT=$(echo "$DISK_SPACE" | grep -oE '[A-Za-z]+')
 
 if [[ "$DISK_SPACE_UNIT" == "Gi" ]] && (( $(echo "$DISK_SPACE_NUM < 5" | bc -l 2>/dev/null || echo "1") )); then
   echo "⚠️  WARNING: Low disk space ($DISK_SPACE available)"
@@ -48,8 +54,8 @@ find /private/var/folders -name "*eas-build-local*" -type d -maxdepth 3 -exec rm
 echo "Cleanup completed."
 echo ""
 
-# Execute EAS build for iOS preview
-echo "Executing: eas build --platform ios --profile preview --local"
+# Execute EAS build for iOS simulator preview
+echo "Executing: eas build --platform ios --profile preview-simulator --local"
 echo ""
 
-eas build --platform ios --profile preview --local
+eas build --platform ios --profile preview-simulator --local
