@@ -18,6 +18,11 @@ export default function AppHomePlaceholder() {
     }
     if (isPending || !user) return;
 
+    if (!user.activeRole) {
+      router.replace("/(onboarding)/user-type");
+      return;
+    }
+
     if (user.activeRole === "manager" && !user.activeAcademy) {
       router.replace("/(app)/create-academy");
     } else if (user.activeRole === "manager" && user.activeAcademy) {

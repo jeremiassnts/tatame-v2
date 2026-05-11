@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { syncUser } from "@/lib/api";
 
 type SetActiveFn = (params: { session: string | null }) => Promise<void>;
@@ -25,8 +24,7 @@ export function useAuthComplete() {
       if (!token) {
         throw new Error("Sessão inválida. Tente novamente.");
       }
-      const userType = await AsyncStorage.getItem("userType");
-      await syncUser(token, userType);
+      await syncUser(token);
       router.replace("/(app)");
     } finally {
       setLoading(false);

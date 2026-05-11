@@ -1,10 +1,12 @@
 import { GradientButton } from "@/components/GradientButton";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { syncUser } from "@/lib/api";
+import { queryClient } from "@/lib/query-client";
+import { useAuth } from "@clerk/clerk-expo";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { GraduationCap, User } from "lucide-react-native";
 import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Alert, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const ROLES = [
@@ -26,11 +28,23 @@ type UserType = (typeof ROLES)[number]["key"];
 
 export default function UserTypeScreen() {
   const [selected, setSelected] = useState<UserType>("student");
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { getToken } = useAuth();
 
   const handleContinue = async () => {
-    await AsyncStorage.setItem("userType", selected);
-    router.replace("/(auth)");
+    setLoading(true);
+    try {
+      const token = await getToken();
+      if (!token) throw new Error("Sessão inválida.");
+      await syncUser(token, selected);
+      await queryClient.refetchQueries({ queryKey: ["user", "me"] });
+      router.replace("/(app)");
+    } catch {
+      Alert.alert("Erro", "Não foi possível salvar seu perfil. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -98,7 +112,7 @@ export default function UserTypeScreen() {
         <View className="flex-1" />
 
         {/* CTA */}
-        <GradientButton label="Continuar" onPress={handleContinue} />
+        <GradientButton label="Continuar" onPress={handleContinue} disabled={loading} />
       </View>
     </SafeAreaView>
   );
