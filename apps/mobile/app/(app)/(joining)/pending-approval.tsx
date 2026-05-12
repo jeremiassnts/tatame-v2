@@ -24,7 +24,7 @@ export default function PendingApprovalScreen() {
       "Cancelar solicitação",
       "Deseja realmente cancelar sua solicitação de entrada?",
       [
-        { text: "Nao", style: "cancel" },
+        { text: "Não", style: "cancel" },
         {
           text: "Sim, cancelar",
           style: "destructive",
@@ -32,6 +32,9 @@ export default function PendingApprovalScreen() {
             cancelMembership.mutate(undefined, {
               onSuccess: () => {
                 router.replace("/(app)/(joining)/search-academy");
+              },
+              onError: () => {
+                Alert.alert("Erro", "Não foi possível cancelar a solicitação. Tente novamente.");
               },
             });
           },

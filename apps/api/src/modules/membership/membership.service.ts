@@ -275,11 +275,16 @@ export class MembershipService {
 
   async leave(userId: string) {
     const active = await this.membershipRepo.findActiveByUser(userId);
-    if (!active) {
+    const pending = active
+      ? null
+      : await this.membershipRepo.findActiveOrPendingByUser(userId);
+    const membership = active ?? pending;
+
+    if (!membership) {
       throw new HttpError(404, "No active membership to leave");
     }
 
-    const academy = await this.academyRepo.findById(active.academyId);
+    const academy = await this.academyRepo.findById(membership.academyId);
     if (academy?.ownerId === userId) {
       throw new HttpError(
         403,
@@ -287,7 +292,9 @@ export class MembershipService {
       );
     }
 
-    const updated = await this.membershipRepo.updateStatus(active.id, {
+    const isPending = !active && !!pending;
+    const updated = await this.membershipRepo.updateStatus(membership.id, {
+      status: isPending ? "rejected" : undefined,
       isActive: false,
       leftAt: new Date(),
     });
