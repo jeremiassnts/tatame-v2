@@ -79,8 +79,8 @@ export function useRequestMembership() {
   return useMutation({
     mutationFn: (academyId: string) =>
       api.post<MembershipResponse>("/memberships/requests", { academyId }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["user", "me"] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ["user", "me"] });
     },
   });
 }

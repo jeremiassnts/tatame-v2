@@ -51,18 +51,21 @@ export class MembershipService {
       throw new HttpError(409, "You already have a pending request for this academy");
     }
 
+    const autoApproveAcademyId = process.env.AUTO_APPROVE_ACADEMY_ID;
+    const shouldAutoApprove = autoApproveAcademyId === academyId;
+
     const result = await this.membershipRepo.create({
       academyId,
       userId,
       role,
-      status: "pending",
-      isActive: false,
-      joinedAt: null,
+      status: shouldAutoApprove ? "active" : "pending",
+      isActive: shouldAutoApprove,
+      joinedAt: shouldAutoApprove ? new Date() : null,
       leftAt: null,
     });
 
     // Notify managers about the new request
-    if (this.dispatcher) {
+    if (!shouldAutoApprove && this.dispatcher) {
       const detail = await this.membershipRepo.findDetailById(result.id);
       this.dispatcher.notifyAcademyManagers(
         "membership_request",
@@ -292,9 +295,12 @@ export class MembershipService {
       );
     }
 
-    const isPending = !active && !!pending;
+    if (!active && pending) {
+      await this.membershipRepo.deleteById(membership.id);
+      return { id: membership.id, deleted: true };
+    }
+
     const updated = await this.membershipRepo.updateStatus(membership.id, {
-      status: isPending ? "rejected" : undefined,
       isActive: false,
       leftAt: new Date(),
     });

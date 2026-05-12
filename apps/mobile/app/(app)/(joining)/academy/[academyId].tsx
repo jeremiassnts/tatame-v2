@@ -26,14 +26,18 @@ export default function AcademyDetailScreen() {
     if (!academyId) return;
 
     requestMembership.mutate(academyId, {
-      onSuccess: () => {
-        router.replace("/(app)/(joining)/pending-approval");
+      onSuccess: (data) => {
+        if (data.status === "active") {
+          router.replace("/(app)");
+        } else {
+          router.replace("/(app)/(joining)/pending-approval");
+        }
       },
       onError: (error) => {
         const message =
           error instanceof ApiError
             ? error.message
-            : "Nao foi possivel enviar sua solicitacao.";
+            : "Não foi possível enviar sua solicitação.";
         Alert.alert("Erro", message);
       },
     });
@@ -43,7 +47,7 @@ export default function AcademyDetailScreen() {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-background">
         <Text className="font-poppins text-sm" style={{ color: TEXT_MUTED }}>
-          Academia invalida.
+          Academia inválida.
         </Text>
       </SafeAreaView>
     );
@@ -90,7 +94,7 @@ export default function AcademyDetailScreen() {
             <Avatar variant="brand" imageUrl={academy.logoUrl} size={80} />
             <Text className="font-poppins-bold text-primary" style={{ fontSize: 24, letterSpacing: -0.3 }}>{academy.name}</Text>
             <Text className="font-poppins text-sm" style={{ color: TEXT_SECONDARY }}>
-              {academy.address ?? "Endereco nao informado"}
+              {academy.address ?? "Endereço não informado"}
             </Text>
           </View>
 
@@ -98,21 +102,21 @@ export default function AcademyDetailScreen() {
             <View className="flex-row items-center gap-3 px-4 py-3.5">
               <MapPin size={16} color={TEXT_MUTED} />
               <Text className="font-poppins text-sm text-primary">
-                {academy.address ?? "Endereco nao informado"}
+                {academy.address ?? "Endereço não informado"}
               </Text>
             </View>
             <View className="h-px" style={{ backgroundColor: SEPARATOR }} />
             <View className="flex-row items-center gap-3 px-4 py-3.5">
               <Mail size={16} color={TEXT_MUTED} />
               <Text className="font-poppins text-sm text-primary">
-                {academy.contactEmail ?? "Contato nao informado"}
+                {academy.contactEmail ?? "Contato não informado"}
               </Text>
             </View>
             <View className="h-px" style={{ backgroundColor: SEPARATOR }} />
             <View className="flex-row items-center gap-3 px-4 py-3.5">
               <Phone size={16} color={TEXT_MUTED} />
               <Text className="font-poppins text-sm text-primary">
-                {academy.contactPhone ?? "Contato nao informado"}
+                {academy.contactPhone ?? "Contato não informado"}
               </Text>
             </View>
           </View>
