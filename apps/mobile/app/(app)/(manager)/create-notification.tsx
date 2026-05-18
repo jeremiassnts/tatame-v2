@@ -1,5 +1,5 @@
-import { useAcademyContext } from "@/lib/academy-context";
 import { useMembers } from "@/lib/hooks/use-membership";
+import { useCurrentUser } from "@/lib/hooks/use-user";
 import {
   useCustomNotificationQuota,
   useSendCustomNotification,
@@ -64,7 +64,8 @@ function getRoleLabel(role: string): string {
 
 export default function CreateNotificationScreen() {
   const router = useRouter();
-  const { academyId } = useAcademyContext();
+  const { data: user } = useCurrentUser();
+  const academyId = user?.activeAcademy?.id ?? "";
   const { data: quota, isLoading: quotaLoading } =
     useCustomNotificationQuota();
   const sendNotification = useSendCustomNotification();
