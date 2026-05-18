@@ -75,8 +75,10 @@ export default function CreateNotificationScreen() {
     new Set(),
   );
 
-  // Fetch members when "specific" is selected
-  const { data: members } = useMembers(academyId, { status: "active" });
+  // Fetch members for recipient selection and count
+  const { data: members, isLoading: membersLoading } = useMembers(academyId, {
+    status: "active",
+  });
 
   const activeMembers = members ?? [];
 
@@ -187,7 +189,7 @@ export default function CreateNotificationScreen() {
             </Pressable>
             <Text
               style={{
-                fontFamily: "Sora_700Bold",
+                fontFamily: "Poppins_700Bold",
                 fontSize: 18,
                 color: "#FFFFFF",
               }}
@@ -217,7 +219,7 @@ export default function CreateNotificationScreen() {
               <Info size={16} color="#A078E8" />
               <Text
                 style={{
-                  fontFamily: "Inter_500Medium",
+                  fontFamily: "Poppins_500Medium",
                   fontSize: 12,
                   color: "#A078E8",
                   flex: 1,
@@ -233,7 +235,7 @@ export default function CreateNotificationScreen() {
             <View style={{ gap: 6 }}>
               <Text
                 style={{
-                  fontFamily: "Inter_600SemiBold",
+                  fontFamily: "Poppins_600SemiBold",
                   fontSize: 13,
                   color: "#ABABAB",
                 }}
@@ -263,7 +265,7 @@ export default function CreateNotificationScreen() {
                       placeholderTextColor="#525252"
                       maxLength={TITLE_MAX}
                       style={{
-                        fontFamily: "Inter_400Regular",
+                        fontFamily: "Poppins_400Regular",
                         fontSize: 15,
                         color: "#FFFFFF",
                       }}
@@ -273,7 +275,7 @@ export default function CreateNotificationScreen() {
               />
               <Text
                 style={{
-                  fontFamily: "Inter_400Regular",
+                  fontFamily: "Poppins_400Regular",
                   fontSize: 11,
                   color: "#525252",
                   textAlign: "right",
@@ -287,7 +289,7 @@ export default function CreateNotificationScreen() {
             <View style={{ gap: 6 }}>
               <Text
                 style={{
-                  fontFamily: "Inter_600SemiBold",
+                  fontFamily: "Poppins_600SemiBold",
                   fontSize: 13,
                   color: "#ABABAB",
                 }}
@@ -320,7 +322,7 @@ export default function CreateNotificationScreen() {
                       textAlignVertical="top"
                       style={{
                         flex: 1,
-                        fontFamily: "Inter_400Regular",
+                        fontFamily: "Poppins_400Regular",
                         fontSize: 15,
                         color: "#FFFFFF",
                       }}
@@ -330,7 +332,7 @@ export default function CreateNotificationScreen() {
               />
               <Text
                 style={{
-                  fontFamily: "Inter_400Regular",
+                  fontFamily: "Poppins_400Regular",
                   fontSize: 11,
                   color: "#525252",
                   textAlign: "right",
@@ -344,7 +346,7 @@ export default function CreateNotificationScreen() {
             <View style={{ gap: 10 }}>
               <Text
                 style={{
-                  fontFamily: "Inter_600SemiBold",
+                  fontFamily: "Poppins_600SemiBold",
                   fontSize: 13,
                   color: "#ABABAB",
                 }}
@@ -380,7 +382,7 @@ export default function CreateNotificationScreen() {
                         >
                           <Text
                             style={{
-                              fontFamily: "Inter_600SemiBold",
+                              fontFamily: "Poppins_600SemiBold",
                               fontSize: 12,
                               color: "#FFFFFF",
                             }}
@@ -401,7 +403,7 @@ export default function CreateNotificationScreen() {
                         >
                           <Text
                             style={{
-                              fontFamily: "Inter_500Medium",
+                              fontFamily: "Poppins_500Medium",
                               fontSize: 12,
                               color: "#ABABAB",
                             }}
@@ -432,7 +434,7 @@ export default function CreateNotificationScreen() {
                     />
                     <Text
                       style={{
-                        fontFamily: "Inter_400Regular",
+                        fontFamily: "Poppins_400Regular",
                         fontSize: 14,
                         color: "#FFFFFF",
                         flex: 1,
@@ -442,7 +444,7 @@ export default function CreateNotificationScreen() {
                     </Text>
                     <Text
                       style={{
-                        fontFamily: "Inter_400Regular",
+                        fontFamily: "Poppins_400Regular",
                         fontSize: 12,
                         color: "#ABABAB",
                       }}
@@ -485,7 +487,7 @@ export default function CreateNotificationScreen() {
                         >
                           <Text
                             style={{
-                              fontFamily: "Inter_400Regular",
+                              fontFamily: "Poppins_400Regular",
                               fontSize: 11,
                               color: "#A078E8",
                             }}
@@ -495,7 +497,7 @@ export default function CreateNotificationScreen() {
                         </View>
                         <Text
                           style={{
-                            fontFamily: "Inter_400Regular",
+                            fontFamily: "Poppins_400Regular",
                             fontSize: 14,
                             color: "#FFFFFF",
                             flex: 1,
@@ -506,7 +508,7 @@ export default function CreateNotificationScreen() {
                         </Text>
                         <Text
                           style={{
-                            fontFamily: "Inter_400Regular",
+                            fontFamily: "Poppins_400Regular",
                             fontSize: 11,
                             color: "#ABABAB",
                           }}
@@ -515,7 +517,18 @@ export default function CreateNotificationScreen() {
                         </Text>
                       </Pressable>
                     ))}
-                    {activeMembers.length === 0 && (
+                    {membersLoading && (
+                      <View
+                        style={{
+                          height: 48,
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <ActivityIndicator size="small" color="#A078E8" />
+                      </View>
+                    )}
+                    {!membersLoading && activeMembers.length === 0 && (
                       <View
                         style={{
                           height: 48,
@@ -525,7 +538,7 @@ export default function CreateNotificationScreen() {
                       >
                         <Text
                           style={{
-                            fontFamily: "Inter_400Regular",
+                            fontFamily: "Poppins_400Regular",
                             fontSize: 13,
                             color: "#525252",
                           }}
@@ -571,7 +584,7 @@ export default function CreateNotificationScreen() {
                     <Send size={18} color="#FFFFFF" />
                     <Text
                       style={{
-                        fontFamily: "Inter_700Bold",
+                        fontFamily: "Poppins_700Bold",
                         fontSize: 16,
                         color: "#FFFFFF",
                       }}
