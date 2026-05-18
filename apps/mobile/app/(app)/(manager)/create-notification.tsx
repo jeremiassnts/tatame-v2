@@ -1,9 +1,9 @@
 import { useMembers } from "@/lib/hooks/use-membership";
-import { useCurrentUser } from "@/lib/hooks/use-user";
 import {
   useCustomNotificationQuota,
   useSendCustomNotification,
 } from "@/lib/hooks/use-notifications";
+import { useCurrentUser } from "@/lib/hooks/use-user";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { Check, Info, Send, X } from "lucide-react-native";
@@ -12,7 +12,6 @@ import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
   Alert,
-  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -184,7 +183,7 @@ export default function CreateNotificationScreen() {
   }, [recipientFilter]);
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
@@ -480,37 +479,26 @@ export default function CreateNotificationScreen() {
                   >
                     <Checkbox checked={selectedUserIds.has(member.userId)} />
                     {/* Avatar */}
-                    {member.userProfileImageUrl ? (
-                      <Image
-                        source={{ uri: member.userProfileImageUrl }}
+                    <View
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 16,
+                        backgroundColor: "rgba(160,120,232,0.125)",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Text
                         style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: 16,
-                        }}
-                      />
-                    ) : (
-                      <View
-                        style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: 16,
-                          backgroundColor: "rgba(160,120,232,0.125)",
-                          alignItems: "center",
-                          justifyContent: "center",
+                          fontFamily: "Poppins_400Regular",
+                          fontSize: 11,
+                          color: "#A078E8",
                         }}
                       >
-                        <Text
-                          style={{
-                            fontFamily: "Poppins_400Regular",
-                            fontSize: 11,
-                            color: "#A078E8",
-                          }}
-                        >
-                          {getInitials(member.userName)}
-                        </Text>
-                      </View>
-                    )}
+                        {getInitials(member.userName)}
+                      </Text>
+                    </View>
                     <Text
                       style={{
                         fontFamily: "Poppins_400Regular",
@@ -568,7 +556,7 @@ export default function CreateNotificationScreen() {
           </ScrollView>
 
           {/* Send Button */}
-          <View style={{ paddingBottom: 4, paddingTop: 8 }}>
+          <View style={{ paddingBottom: 16, paddingTop: 8 }}>
             <Pressable
               onPress={handleSubmit(onSubmit)}
               disabled={!isFormValid || sendNotification.isPending}
