@@ -92,15 +92,21 @@ export default function CreateNotificationScreen() {
 
   const remaining = quota?.remaining ?? 0;
 
-  // Compute recipient count for confirmation
-  const recipientCount = (() => {
-    if (recipientFilter === "all") return activeMembers.length;
+  // Filter members visible in the list based on the selected chip
+  const visibleMembers = (() => {
     if (recipientFilter === "students")
-      return activeMembers.filter((m) => m.role === "student").length;
+      return activeMembers.filter((m) => m.role === "student");
     if (recipientFilter === "instructors")
-      return activeMembers.filter((m) => m.role === "instructor").length;
-    return selectedUserIds.size;
+      return activeMembers.filter((m) => m.role === "instructor");
+    if (recipientFilter === "specific") return activeMembers;
+    return activeMembers; // "all"
   })();
+
+  // Compute recipient count for confirmation
+  const recipientCount =
+    recipientFilter === "specific"
+      ? selectedUserIds.size
+      : visibleMembers.length;
 
   const isFormValid =
     titleValue.trim().length > 0 &&
@@ -418,106 +424,121 @@ export default function CreateNotificationScreen() {
                 })}
               </ScrollView>
 
-              {/* Specific Members Picker */}
-              {recipientFilter === "specific" && (
-                <View style={{ gap: 10, marginTop: 4 }}>
-                  {/* Select All Row */}
-                  <Pressable
-                    onPress={toggleSelectAll}
-                    className="flex-row items-center"
-                    style={{ gap: 10 }}
+              {/* Members List — always visible, filtered by selected chip */}
+              <View style={{ gap: 10, marginTop: 4 }}>
+                {/* Select All Row */}
+                <Pressable
+                  onPress={
+                    recipientFilter === "specific"
+                      ? toggleSelectAll
+                      : undefined
+                  }
+                  disabled={recipientFilter !== "specific"}
+                  className="flex-row items-center"
+                  style={{ gap: 10 }}
+                >
+                  <Checkbox
+                    checked={
+                      recipientFilter === "specific"
+                        ? activeMembers.length > 0 &&
+                          selectedUserIds.size === activeMembers.length
+                        : true
+                    }
+                  />
+                  <Text
+                    style={{
+                      fontFamily: "Poppins_400Regular",
+                      fontSize: 14,
+                      color: "#FFFFFF",
+                      flex: 1,
+                    }}
                   >
-                    <Checkbox
-                      checked={
-                        activeMembers.length > 0 &&
-                        selectedUserIds.size === activeMembers.length
-                      }
-                    />
-                    <Text
-                      style={{
-                        fontFamily: "Poppins_400Regular",
-                        fontSize: 14,
-                        color: "#FFFFFF",
-                        flex: 1,
-                      }}
-                    >
-                      Selecionar todos
-                    </Text>
-                    <Text
-                      style={{
-                        fontFamily: "Poppins_400Regular",
-                        fontSize: 12,
-                        color: "#ABABAB",
-                      }}
-                    >
-                      {activeMembers.length} membros
-                    </Text>
-                  </Pressable>
+                    Selecionar todos
+                  </Text>
+                  <Text
+                    style={{
+                      fontFamily: "Poppins_400Regular",
+                      fontSize: 12,
+                      color: "#ABABAB",
+                    }}
+                  >
+                    {visibleMembers.length} membros
+                  </Text>
+                </Pressable>
 
-                  {/* Members List */}
-                  <View
-                    className="border border-surface-border bg-surface"
-                    style={{ borderRadius: 12, overflow: "hidden" }}
-                  >
-                    {activeMembers.map((member, index) => (
-                      <Pressable
-                        key={member.userId}
-                        onPress={() => toggleUser(member.userId)}
-                        className="flex-row items-center"
+                {/* Members List */}
+                <View
+                  className="border border-surface-border bg-surface"
+                  style={{ borderRadius: 12, overflow: "hidden" }}
+                >
+                  {visibleMembers.map((member, index) => (
+                    <Pressable
+                      key={member.userId}
+                      onPress={
+                        recipientFilter === "specific"
+                          ? () => toggleUser(member.userId)
+                          : undefined
+                      }
+                      disabled={recipientFilter !== "specific"}
+                      className="flex-row items-center"
+                      style={{
+                        height: 48,
+                        paddingHorizontal: 14,
+                        gap: 10,
+                        borderTopWidth: index > 0 ? 1 : 0,
+                        borderTopColor: "#2A2A2A",
+                      }}
+                    >
+                      <Checkbox
+                        checked={
+                          recipientFilter === "specific"
+                            ? selectedUserIds.has(member.userId)
+                            : true
+                        }
+                      />
+                      {/* Avatar */}
+                      <View
                         style={{
-                          height: 48,
-                          paddingHorizontal: 14,
-                          gap: 10,
-                          borderTopWidth: index > 0 ? 1 : 0,
-                          borderTopColor: "#2A2A2A",
+                          width: 32,
+                          height: 32,
+                          borderRadius: 16,
+                          backgroundColor: "rgba(160,120,232,0.125)",
+                          alignItems: "center",
+                          justifyContent: "center",
                         }}
                       >
-                        <Checkbox
-                          checked={selectedUserIds.has(member.userId)}
-                        />
-                        {/* Avatar */}
-                        <View
-                          style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: 16,
-                            backgroundColor: "rgba(160,120,232,0.125)",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <Text
-                            style={{
-                              fontFamily: "Poppins_400Regular",
-                              fontSize: 11,
-                              color: "#A078E8",
-                            }}
-                          >
-                            {getInitials(member.userName)}
-                          </Text>
-                        </View>
-                        <Text
-                          style={{
-                            fontFamily: "Poppins_400Regular",
-                            fontSize: 14,
-                            color: "#FFFFFF",
-                            flex: 1,
-                          }}
-                          numberOfLines={1}
-                        >
-                          {member.userName}
-                        </Text>
                         <Text
                           style={{
                             fontFamily: "Poppins_400Regular",
                             fontSize: 11,
-                            color: "#ABABAB",
+                            color: "#A078E8",
                           }}
                         >
-                          {getRoleLabel(member.role)}
+                          {getInitials(member.userName)}
                         </Text>
-                      </Pressable>
-                    ))}
+                      </View>
+                      <Text
+                        style={{
+                          fontFamily: "Poppins_400Regular",
+                          fontSize: 14,
+                          color: "#FFFFFF",
+                          flex: 1,
+                        }}
+                        numberOfLines={1}
+                      >
+                        {member.userName}
+                      </Text>
+                      <Text
+                        style={{
+                          fontFamily: "Poppins_400Regular",
+                          fontSize: 11,
+                          color: "#ABABAB",
+                        }}
+                      >
+                        {getRoleLabel(member.role)}
+                      </Text>
+                    </Pressable>
+                  ))}
                     {membersLoading && (
                       <View
                         style={{
@@ -529,7 +550,7 @@ export default function CreateNotificationScreen() {
                         <ActivityIndicator size="small" color="#A078E8" />
                       </View>
                     )}
-                    {!membersLoading && activeMembers.length === 0 && (
+                    {!membersLoading && visibleMembers.length === 0 && (
                       <View
                         style={{
                           height: 48,
@@ -550,7 +571,7 @@ export default function CreateNotificationScreen() {
                     )}
                   </View>
                 </View>
-              )}
+              </View>
             </View>
           </ScrollView>
 
