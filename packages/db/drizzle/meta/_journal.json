@@ -85,6 +85,13 @@
       "when": 1779321600000,
       "tag": "0011_custom_notification_sends",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1779322800000,
+      "tag": "0012_fix_custom_notification_sends_sender_fk",
+      "breakpoints": true
     }
   ]
 }

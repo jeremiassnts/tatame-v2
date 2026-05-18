@@ -441,9 +441,9 @@ export const customNotificationSends = pgTable(
     academyId: uuid("academy_id")
       .notNull()
       .references(() => academies.id),
-    senderId: text("sender_id")
+    senderId: uuid("sender_id")
       .notNull()
-      .references(() => users.clerkUserId),
+      .references(() => users.id),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
