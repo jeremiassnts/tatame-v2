@@ -1,5 +1,7 @@
 import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
+import * as Crypto from "expo-crypto";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 
 Notifications.setNotificationHandler({
@@ -47,6 +49,13 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
   return token;
 }
 
-export function getDeviceId(): string {
-  return Constants.installationId ?? Constants.sessionId ?? "unknown";
+const DEVICE_ID_KEY = "@tatame/device-id";
+
+export async function getDeviceId(): Promise<string> {
+  const stored = await AsyncStorage.getItem(DEVICE_ID_KEY);
+  if (stored) return stored;
+
+  const id = Crypto.randomUUID();
+  await AsyncStorage.setItem(DEVICE_ID_KEY, id);
+  return id;
 }

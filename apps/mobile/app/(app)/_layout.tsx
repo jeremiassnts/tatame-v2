@@ -49,7 +49,7 @@ function PushTokenRegistrar() {
         await api.post("/push-tokens", {
           token,
           platform: Platform.OS as "ios" | "android",
-          deviceId: getDeviceId(),
+          deviceId: await getDeviceId(),
         });
       } catch {
         // Silent failure — push registration is not critical
