@@ -38,4 +38,11 @@ export interface INotificationRepository {
     recipientId: string,
     categories: NotificationRow["category"][],
   ): Promise<number>;
+
+  countCustomSendsToday(academyId: string): Promise<number>;
+
+  createCustomSend(data: {
+    academyId: string;
+    senderId: string;
+  }): Promise<void>;
 }

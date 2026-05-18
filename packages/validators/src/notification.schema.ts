@@ -34,3 +34,32 @@ export const listNotificationsQuerySchema = z.object({
 });
 
 export type ListNotificationsQuery = z.infer<typeof listNotificationsQuerySchema>;
+
+const recipientFilterValues = [
+  "all",
+  "students",
+  "instructors",
+  "specific",
+] as const;
+
+export const sendCustomNotificationBodySchema = z
+  .object({
+    title: z.string().min(1).max(200),
+    body: z.string().min(1).max(1000),
+    recipientFilter: z.enum(recipientFilterValues),
+    specificUserIds: z.array(z.string().uuid()).optional(),
+  })
+  .refine(
+    (data) =>
+      data.recipientFilter !== "specific" ||
+      (Array.isArray(data.specificUserIds) && data.specificUserIds.length > 0),
+    {
+      message:
+        "specificUserIds must contain at least one ID when recipientFilter is 'specific'",
+      path: ["specificUserIds"],
+    },
+  );
+
+export type SendCustomNotificationBody = z.infer<
+  typeof sendCustomNotificationBodySchema
+>;

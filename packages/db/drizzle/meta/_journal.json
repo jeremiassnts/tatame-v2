@@ -78,6 +78,13 @@
       "when": 1777301813054,
       "tag": "0010_slow_grandmaster",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1779321600000,
+      "tag": "0011_custom_notification_sends",
+      "breakpoints": true
     }
   ]
 }

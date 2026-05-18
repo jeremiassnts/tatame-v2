@@ -7,3 +7,4 @@
   - **Title** — concise summary of the task
   - **Description** — detailed explanation of what needs to be done
   - **Acceptance Criteria** — clear conditions that must be met for the task to be considered done
+- **Designs** — All UI designs live in `design.pen`. Always use the **Pencil MCP** tools (`batch_get`, `get_screenshot`, `get_guidelines`, etc.) to read designs — never use `Read` or `Grep` on `.pen` files.

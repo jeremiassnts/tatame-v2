@@ -106,4 +106,6 @@ export interface IMembershipRepository {
 
   findManagerClerkIdsByAcademy(academyId: string): Promise<string[]>;
   findActiveStudentClerkIdsByAcademy(academyId: string): Promise<string[]>;
+  findActiveInstructorClerkIdsByAcademy(academyId: string): Promise<string[]>;
+  findAllActiveClerkIdsByAcademy(academyId: string): Promise<string[]>;
 }

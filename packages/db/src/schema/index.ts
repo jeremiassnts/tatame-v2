@@ -434,6 +434,28 @@ export const engagementMilestones = pgTable(
   }),
 );
 
+export const customNotificationSends = pgTable(
+  "custom_notification_sends",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    academyId: uuid("academy_id")
+      .notNull()
+      .references(() => academies.id),
+    senderId: text("sender_id")
+      .notNull()
+      .references(() => users.clerkUserId),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (t) => ({
+    academyCreatedIdx: index("custom_notification_sends_academy_created_idx").on(
+      t.academyId,
+      t.createdAt,
+    ),
+  }),
+);
+
 export const notifications = pgTable(
   "notifications",
   {

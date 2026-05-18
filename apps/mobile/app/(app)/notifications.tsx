@@ -5,6 +5,10 @@ import type { NotificationItem } from "@/lib/hooks/use-notifications";
 import {
   useNotifications,
 } from "@/lib/hooks/use-notifications";
+import { useCurrentUser } from "@/lib/hooks/use-user";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import { Plus } from "lucide-react-native";
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -46,6 +50,9 @@ function matchesFilter(item: NotificationItem, filter: FilterKey): boolean {
 }
 
 export default function NotificationsScreen() {
+  const router = useRouter();
+  const { data: user } = useCurrentUser();
+  const isManager = user?.activeRole === "manager";
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
   const [selectedNotification, setSelectedNotification] =
     useState<NotificationItem | null>(null);
@@ -196,6 +203,33 @@ export default function NotificationsScreen() {
         notification={selectedNotification}
         onClose={() => setSelectedNotification(null)}
       />
+
+      {isManager && (
+        <Pressable
+          onPress={() => router.push("/(manager)/create-notification")}
+          style={{
+            position: "absolute",
+            right: 24,
+            bottom: 24,
+            width: 56,
+            height: 56,
+            borderRadius: 28,
+            shadowColor: "#A078E8",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.35,
+            shadowRadius: 8,
+            elevation: 8,
+          }}
+        >
+          <LinearGradient
+            colors={["#A078E8", "#7C5CBF"]}
+            className="h-full w-full items-center justify-center"
+            style={{ borderRadius: 28 }}
+          >
+            <Plus size={24} color="#FFFFFF" />
+          </LinearGradient>
+        </Pressable>
+      )}
     </SafeAreaView>
   );
 }

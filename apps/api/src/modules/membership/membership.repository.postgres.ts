@@ -383,6 +383,37 @@ export class PostgresMembershipRepository implements IMembershipRepository {
     return rows.map((r) => r.clerkUserId);
   }
 
+  async findActiveInstructorClerkIdsByAcademy(academyId: string): Promise<string[]> {
+    const rows = await this.db
+      .select({ clerkUserId: users.clerkUserId })
+      .from(academyMemberships)
+      .innerJoin(users, eq(users.id, academyMemberships.userId))
+      .where(
+        and(
+          eq(academyMemberships.academyId, academyId),
+          eq(academyMemberships.role, "instructor"),
+          eq(academyMemberships.status, "active"),
+          eq(academyMemberships.isActive, true),
+        ),
+      );
+    return rows.map((r) => r.clerkUserId);
+  }
+
+  async findAllActiveClerkIdsByAcademy(academyId: string): Promise<string[]> {
+    const rows = await this.db
+      .select({ clerkUserId: users.clerkUserId })
+      .from(academyMemberships)
+      .innerJoin(users, eq(users.id, academyMemberships.userId))
+      .where(
+        and(
+          eq(academyMemberships.academyId, academyId),
+          eq(academyMemberships.status, "active"),
+          eq(academyMemberships.isActive, true),
+        ),
+      );
+    return rows.map((r) => r.clerkUserId);
+  }
+
   async withTransaction<T>(
     fn: (txRepo: IMembershipRepository) => Promise<T>,
   ): Promise<T> {

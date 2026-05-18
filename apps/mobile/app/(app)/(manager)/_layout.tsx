@@ -130,6 +130,10 @@ export default function ManagerLayout() {
           tabPress: () => navigation.navigate("(finances)", { screen: "index" }),
         })}
       />
+      <Tabs.Screen
+        name="create-notification"
+        options={{ href: null }}
+      />
     </Tabs>
   );
 }
