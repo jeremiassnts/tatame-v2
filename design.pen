@@ -66464,6 +66464,765 @@
           ]
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "QXTf9",
+      "x": -983,
+      "y": 20890,
+      "name": "APP-STORE-01: Agenda de Aulas",
+      "clip": true,
+      "width": 430,
+      "height": 932,
+      "fill": "$--bg-page",
+      "layout": "vertical",
+      "gap": 28,
+      "padding": [
+        80,
+        36,
+        0,
+        36
+      ],
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "frame",
+          "id": "uiLxg",
+          "name": "Logo",
+          "gap": 8,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "aDUYY",
+              "width": 28,
+              "height": 28,
+              "fill": {
+                "type": "image",
+                "enabled": true,
+                "url": "apps/mobile/assets/images/icon.png",
+                "mode": "fill"
+              },
+              "cornerRadius": 6
+            },
+            {
+              "type": "text",
+              "id": "dfWZ4",
+              "fill": "#FFFFFF",
+              "content": "TATAME",
+              "fontFamily": "Sora",
+              "fontSize": 14,
+              "fontWeight": "700",
+              "letterSpacing": -0.3
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "F4lJTg",
+          "name": "ts1",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 16,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "Gzn1f",
+              "fill": "$--text-primary",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Suas aulas\norganizadas!",
+              "lineHeight": 1.1,
+              "textAlign": "center",
+              "fontFamily": "Sora",
+              "fontSize": 40,
+              "fontWeight": "800",
+              "letterSpacing": -1.5
+            },
+            {
+              "type": "text",
+              "id": "PVQ2U",
+              "fill": "$--text-secondary",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Monte sua grade semanal com turmas recorrentes, instrutores e controle de capacidade.",
+              "lineHeight": 1.5,
+              "textAlign": "center",
+              "fontFamily": "Inter",
+              "fontSize": 16,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "KXock",
+          "name": "Phone Mockup",
+          "width": 300,
+          "height": 700,
+          "fill": "$--bg-card",
+          "cornerRadius": 36,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "$--border-default"
+          },
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#A078E830",
+            "offset": {
+              "x": 0,
+              "y": 20
+            },
+            "blur": 60
+          }
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "j5oBB",
+      "x": -493,
+      "y": 20890,
+      "name": "APP-STORE-02: Pagamentos",
+      "clip": true,
+      "width": 430,
+      "height": 932,
+      "fill": {
+        "type": "gradient",
+        "gradientType": "linear",
+        "enabled": true,
+        "rotation": 180,
+        "size": {
+          "height": 1
+        },
+        "colors": [
+          {
+            "color": "#A078E8",
+            "position": 0
+          },
+          {
+            "color": "#7C5CBF",
+            "position": 1
+          }
+        ]
+      },
+      "layout": "vertical",
+      "gap": 28,
+      "padding": [
+        80,
+        36,
+        0,
+        36
+      ],
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "frame",
+          "id": "KeDRo",
+          "name": "Logo",
+          "gap": 8,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "IaATy",
+              "width": 28,
+              "height": 28,
+              "fill": [
+                "#FFFFFF",
+                {
+                  "type": "image",
+                  "enabled": true,
+                  "url": "apps/mobile/assets/images/icon.png",
+                  "mode": "fill"
+                }
+              ],
+              "cornerRadius": 6
+            },
+            {
+              "type": "text",
+              "id": "n0Ozk",
+              "fill": "#FFFFFF",
+              "content": "TATAME",
+              "fontFamily": "Sora",
+              "fontSize": 14,
+              "fontWeight": "700",
+              "letterSpacing": -0.3
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "njxmr",
+          "name": "ts2",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 16,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "hms48",
+              "fill": "#FFFFFF",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Pagamentos\nsimplificados!",
+              "lineHeight": 1.1,
+              "textAlign": "center",
+              "fontFamily": "Sora",
+              "fontSize": 40,
+              "fontWeight": "800",
+              "letterSpacing": -1.5
+            },
+            {
+              "type": "text",
+              "id": "mfdAh",
+              "fill": "#FFFFFFCC",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Controle de mensalidades, confirmação de pagamentos e histórico financeiro completo.",
+              "lineHeight": 1.5,
+              "textAlign": "center",
+              "fontFamily": "Inter",
+              "fontSize": 16,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "zD5i5",
+          "name": "Phone Mockup",
+          "width": 300,
+          "height": 700,
+          "fill": "$--bg-page",
+          "cornerRadius": 36,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#FFFFFF20"
+          },
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#00000040",
+            "offset": {
+              "x": 0,
+              "y": 20
+            },
+            "blur": 60
+          }
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "mheBc",
+      "x": -3,
+      "y": 20890,
+      "name": "APP-STORE-03: Gestao de Membros",
+      "clip": true,
+      "width": 430,
+      "height": 932,
+      "fill": "$--bg-page",
+      "layout": "vertical",
+      "gap": 28,
+      "padding": [
+        80,
+        36,
+        0,
+        36
+      ],
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "frame",
+          "id": "no31j",
+          "name": "Logo",
+          "gap": 8,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "kIEbH",
+              "width": 28,
+              "height": 28,
+              "fill": {
+                "type": "image",
+                "enabled": true,
+                "url": "apps/mobile/assets/images/icon.png",
+                "mode": "fill"
+              },
+              "cornerRadius": 6
+            },
+            {
+              "type": "text",
+              "id": "Z3FxVo",
+              "fill": "#FFFFFF",
+              "content": "TATAME",
+              "fontFamily": "Sora",
+              "fontSize": 14,
+              "fontWeight": "700",
+              "letterSpacing": -0.3
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "iBuCn",
+          "name": "ts3",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 16,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "nriY2",
+              "fill": "$--text-primary",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Sua equipe\nsob controle!",
+              "lineHeight": 1.1,
+              "textAlign": "center",
+              "fontFamily": "Sora",
+              "fontSize": 40,
+              "fontWeight": "800",
+              "letterSpacing": -1.5
+            },
+            {
+              "type": "text",
+              "id": "j92hk",
+              "fill": "$--text-secondary",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Gerencie alunos, instrutores e aprovações de novos membros em um único lugar.",
+              "lineHeight": 1.5,
+              "textAlign": "center",
+              "fontFamily": "Inter",
+              "fontSize": 16,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "W60TFj",
+          "name": "Phone Mockup",
+          "width": 300,
+          "height": 700,
+          "fill": "$--bg-card",
+          "cornerRadius": 36,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "$--border-default"
+          },
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#A078E830",
+            "offset": {
+              "x": 0,
+              "y": 20
+            },
+            "blur": 60
+          }
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "yi2Y8",
+      "x": 487,
+      "y": 20890,
+      "name": "APP-STORE-04: Gestao Financeira",
+      "clip": true,
+      "width": 430,
+      "height": 932,
+      "fill": {
+        "type": "gradient",
+        "gradientType": "linear",
+        "enabled": true,
+        "rotation": 180,
+        "size": {
+          "height": 1
+        },
+        "colors": [
+          {
+            "color": "#A078E8",
+            "position": 0
+          },
+          {
+            "color": "#7C5CBF",
+            "position": 1
+          }
+        ]
+      },
+      "layout": "vertical",
+      "gap": 28,
+      "padding": [
+        80,
+        36,
+        0,
+        36
+      ],
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "frame",
+          "id": "gFBB5",
+          "name": "Logo",
+          "gap": 8,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "hzVPr",
+              "width": 28,
+              "height": 28,
+              "fill": [
+                "#FFFFFF",
+                {
+                  "type": "image",
+                  "enabled": true,
+                  "url": "apps/mobile/assets/images/icon.png",
+                  "mode": "fill"
+                }
+              ],
+              "cornerRadius": 6
+            },
+            {
+              "type": "text",
+              "id": "hYpmH",
+              "fill": "#FFFFFF",
+              "content": "TATAME",
+              "fontFamily": "Sora",
+              "fontSize": 14,
+              "fontWeight": "700",
+              "letterSpacing": -0.3
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "C4rzb",
+          "name": "ts4",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 16,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "bhGFt",
+              "fill": "#FFFFFF",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Controle\nfinanceiro total!",
+              "lineHeight": 1.1,
+              "textAlign": "center",
+              "fontFamily": "Sora",
+              "fontSize": 40,
+              "fontWeight": "800",
+              "letterSpacing": -1.5
+            },
+            {
+              "type": "text",
+              "id": "P8fJj7",
+              "fill": "#FFFFFFCC",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Acompanhe receita, inadimplência e crescimento com dashboards visuais e relatórios.",
+              "lineHeight": 1.5,
+              "textAlign": "center",
+              "fontFamily": "Inter",
+              "fontSize": 16,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "RXW6g",
+          "name": "Phone Mockup",
+          "width": 300,
+          "height": 700,
+          "fill": "$--bg-page",
+          "cornerRadius": 36,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#FFFFFF20"
+          },
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#00000040",
+            "offset": {
+              "x": 0,
+              "y": 20
+            },
+            "blur": 60
+          }
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "EEKl6",
+      "x": 977,
+      "y": 20890,
+      "name": "APP-STORE-05: Check-in",
+      "clip": true,
+      "width": 430,
+      "height": 932,
+      "fill": "$--bg-page",
+      "layout": "vertical",
+      "gap": 28,
+      "padding": [
+        80,
+        36,
+        0,
+        36
+      ],
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "frame",
+          "id": "f5Ucg",
+          "name": "Logo",
+          "gap": 8,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "P90Lg",
+              "width": 28,
+              "height": 28,
+              "fill": {
+                "type": "image",
+                "enabled": true,
+                "url": "apps/mobile/assets/images/icon.png",
+                "mode": "fill"
+              },
+              "cornerRadius": 6
+            },
+            {
+              "type": "text",
+              "id": "otkoT",
+              "fill": "#FFFFFF",
+              "content": "TATAME",
+              "fontFamily": "Sora",
+              "fontSize": 14,
+              "fontWeight": "700",
+              "letterSpacing": -0.3
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "wbVc3",
+          "name": "ts5",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 16,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "OWadQ",
+              "fill": "$--text-primary",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Check-in\ninteligente!",
+              "lineHeight": 1.1,
+              "textAlign": "center",
+              "fontFamily": "Sora",
+              "fontSize": 40,
+              "fontWeight": "800",
+              "letterSpacing": -1.5
+            },
+            {
+              "type": "text",
+              "id": "v1Jlr",
+              "fill": "$--text-secondary",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Presenças com controle de capacidade, limite semanal e janela de horário automáticos.",
+              "lineHeight": 1.5,
+              "textAlign": "center",
+              "fontFamily": "Inter",
+              "fontSize": 16,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "On6Cy",
+          "name": "Phone Mockup",
+          "width": 300,
+          "height": 700,
+          "fill": "$--bg-card",
+          "cornerRadius": 36,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "$--border-default"
+          },
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#A078E830",
+            "offset": {
+              "x": 0,
+              "y": 20
+            },
+            "blur": 60
+          }
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "ly93Z",
+      "x": 1467,
+      "y": 20890,
+      "name": "APP-STORE-06: Trial 30 dias",
+      "clip": true,
+      "width": 430,
+      "height": 932,
+      "fill": {
+        "type": "gradient",
+        "gradientType": "linear",
+        "enabled": true,
+        "rotation": 180,
+        "size": {
+          "height": 1
+        },
+        "colors": [
+          {
+            "color": "#A078E8",
+            "position": 0
+          },
+          {
+            "color": "#7C5CBF",
+            "position": 1
+          }
+        ]
+      },
+      "layout": "vertical",
+      "gap": 28,
+      "padding": [
+        80,
+        36,
+        0,
+        36
+      ],
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "frame",
+          "id": "j1hV8",
+          "name": "Logo",
+          "gap": 8,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "qZY7r",
+              "width": 28,
+              "height": 28,
+              "fill": [
+                "#FFFFFF",
+                {
+                  "type": "image",
+                  "enabled": true,
+                  "url": "apps/mobile/assets/images/icon.png",
+                  "mode": "fill"
+                }
+              ],
+              "cornerRadius": 6
+            },
+            {
+              "type": "text",
+              "id": "QI9fx",
+              "fill": "#FFFFFF",
+              "content": "TATAME",
+              "fontFamily": "Sora",
+              "fontSize": 14,
+              "fontWeight": "700",
+              "letterSpacing": -0.3
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "nmSXX",
+          "name": "ts6",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 16,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "vqeca",
+              "fill": "#FFFFFF",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Teste grátis\npor 30 dias!",
+              "lineHeight": 1.1,
+              "textAlign": "center",
+              "fontFamily": "Sora",
+              "fontSize": 40,
+              "fontWeight": "800",
+              "letterSpacing": -1.5
+            },
+            {
+              "type": "text",
+              "id": "knM51",
+              "fill": "#FFFFFFCC",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Explore todos os recursos sem compromisso. Comece agora e transforme sua academia.",
+              "lineHeight": 1.5,
+              "textAlign": "center",
+              "fontFamily": "Inter",
+              "fontSize": 16,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "zhroU",
+          "name": "Phone Mockup",
+          "width": 300,
+          "height": 700,
+          "fill": "$--bg-page",
+          "cornerRadius": 36,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#FFFFFF20"
+          },
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#00000040",
+            "offset": {
+              "x": 0,
+              "y": 20
+            },
+            "blur": 60
+          }
+        }
+      ]
     }
   ],
   "variables": {
