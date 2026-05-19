@@ -52,17 +52,6 @@ export function useAnnouncement(id: string | null) {
   });
 }
 
-export function useAnnouncementCount(academyId: string | null) {
-  const api = useApi();
-  return useQuery({
-    queryKey: ["announcement-count", academyId],
-    enabled: !!academyId,
-    queryFn: async () => {
-      const res = await api.get<AnnouncementsResponse>(`/announcements?limit=1`);
-      return res.total;
-    },
-  });
-}
 
 export function useCreateAnnouncement() {
   const api = useApi();
@@ -72,7 +61,6 @@ export function useCreateAnnouncement() {
       api.post<AnnouncementItem>("/announcements", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["announcements"] });
-      queryClient.invalidateQueries({ queryKey: ["announcement-count"] });
     },
   });
 }
@@ -93,7 +81,6 @@ export function useUpdateAnnouncement() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["announcements"] });
       queryClient.invalidateQueries({ queryKey: ["announcement", variables.id] });
-      queryClient.invalidateQueries({ queryKey: ["announcement-count"] });
     },
   });
 }
@@ -105,7 +92,6 @@ export function useDeleteAnnouncement() {
     mutationFn: (id: string) => api.delete(`/announcements/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["announcements"] });
-      queryClient.invalidateQueries({ queryKey: ["announcement-count"] });
     },
   });
 }

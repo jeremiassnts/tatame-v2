@@ -1,6 +1,6 @@
 import { AnnouncementListCard } from "@/components/announcements/AnnouncementListCard";
 import { useAcademyContext } from "@/lib/academy-context";
-import { useAnnouncements, useAnnouncementCount } from "@/lib/hooks/use-announcements";
+import { useAnnouncements } from "@/lib/hooks/use-announcements";
 import { useRouter } from "expo-router";
 import { Megaphone } from "lucide-react-native";
 import {
@@ -18,7 +18,6 @@ const ACCENT = "#A078E8";
 export default function StudentAnnouncementsScreen() {
   const router = useRouter();
   const { academyId } = useAcademyContext();
-  const { data: countData } = useAnnouncementCount(academyId);
   const {
     data,
     fetchNextPage,
@@ -30,7 +29,7 @@ export default function StudentAnnouncementsScreen() {
   } = useAnnouncements(academyId);
 
   const items = data?.pages.flatMap((p) => p.items) ?? [];
-  const total = countData ?? 0;
+  const total = data?.pages[0]?.total ?? 0;
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
