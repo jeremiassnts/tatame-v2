@@ -1,3 +1,4 @@
+import { BackButton } from "@/components/BackButton";
 import { useAcademyContext } from "@/lib/academy-context";
 import { useAnnouncements } from "@/lib/hooks/use-announcements";
 import { formatAnnouncementDate } from "@/lib/utils/date";
@@ -65,20 +66,14 @@ export default function AnnouncementsScreen() {
   const total = data?.pages[0]?.total ?? 0;
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-background pt-8" edges={["top"]}>
       <View className="flex-1">
-        <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 16, gap: 4 }}>
-          <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace("/(app)/(manager)/(more)")} style={{ marginBottom: 8 }}>
-            <Text className="font-poppins text-sm" style={{ color: ACCENT }}>
-              ← Voltar
-            </Text>
-          </Pressable>
-          <Text
-            className="font-poppins-bold text-primary"
-            style={{ fontSize: 22, letterSpacing: -0.5 }}
-          >
-            Avisos
-          </Text>
+        <View className="flex-row items-center justify-between px-6 pb-2 pt-2">
+          <BackButton />
+          <Text className="font-poppins-bold text-lg text-primary">Avisos</Text>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={{ paddingHorizontal: 24, paddingBottom: 16 }}>
           <Text className="font-poppins text-sm" style={{ color: TEXT_SECONDARY }}>
             {total} {total === 1 ? "aviso publicado" : "avisos publicados"}
           </Text>
