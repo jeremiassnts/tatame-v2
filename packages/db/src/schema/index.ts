@@ -457,6 +457,35 @@ export const notificationPreferences = pgTable(
   }),
 );
 
+export const announcements = pgTable(
+  "announcements",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    academyId: uuid("academy_id")
+      .notNull()
+      .references(() => academies.id, { onDelete: "cascade" }),
+    authorId: uuid("author_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    imageUrl: text("image_url"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => ({
+    academyCreatedIdx: index("announcements_academy_id_created_at_idx").on(
+      t.academyId,
+      t.createdAt,
+    ),
+  }),
+);
+
 export const customNotificationSends = pgTable(
   "custom_notification_sends",
   {
