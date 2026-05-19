@@ -8,7 +8,7 @@ import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Camera, ImageIcon } from "lucide-react-native";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
@@ -41,9 +41,7 @@ export default function CreateAnnouncementScreen() {
 
   const { data: existing } = useAnnouncement(announcementId ?? null);
 
-  const [imageUrl, setImageUrl] = useState<string | null>(
-    isEditing ? (existing?.imageUrl ?? null) : null,
-  );
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   const uploadImage = useUploadImage();
   const createAnnouncement = useCreateAnnouncement();
@@ -52,13 +50,21 @@ export default function CreateAnnouncementScreen() {
   const {
     control,
     handleSubmit,
+    reset,
     formState: { isSubmitting },
   } = useForm<FormData>({
     defaultValues: {
-      title: existing?.title ?? "",
-      body: existing?.body ?? "",
+      title: "",
+      body: "",
     },
   });
+
+  useEffect(() => {
+    if (existing) {
+      reset({ title: existing.title, body: existing.body });
+      setImageUrl(existing.imageUrl ?? null);
+    }
+  }, [existing, reset]);
 
   const isLoading = isSubmitting || uploadImage.isPending;
 
@@ -122,7 +128,7 @@ export default function CreateAnnouncementScreen() {
           <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 32, gap: 24 }}>
             {/* Header */}
             <View className="flex-row items-center justify-between">
-              <Pressable onPress={() => router.back()}>
+              <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace("/(app)/(manager)/(more)/announcements")}>
                 <Text className="font-poppins text-sm" style={{ color: ACCENT }}>
                   ← Voltar
                 </Text>
