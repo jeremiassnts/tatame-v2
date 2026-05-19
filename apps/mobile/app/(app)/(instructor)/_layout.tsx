@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Calendar, Home, Users } from "lucide-react-native";
+import { Calendar, Home, Megaphone, Users } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function InstructorLayout() {
@@ -37,6 +37,14 @@ export default function InstructorLayout() {
           title: "Aulas",
           href: "/(app)/(instructor)/(classes)",
           tabBarIcon: ({ color, size }) => <Calendar size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="(announcements)"
+        options={{
+          title: "Avisos",
+          href: "/(app)/(instructor)/(announcements)",
+          tabBarIcon: ({ color, size }) => <Megaphone size={size} color={color} />,
         }}
       />
       <Tabs.Screen

@@ -1,8 +1,10 @@
 import { Avatar } from "@/components/Avatar";
+import { AnnouncementFeedCard } from "@/components/announcements/AnnouncementFeedCard";
 import { GraduationCard } from "@/components/GraduationCard";
 import { NotificationBell } from "@/components/NotificationBell";
 import { TodayClassCard } from "@/components/TodayClassCard";
 import { useAcademyContext } from "@/lib/academy-context";
+import { useAnnouncements } from "@/lib/hooks/use-announcements";
 import { useCheckin, useWeeklyCheckinCount } from "@/lib/hooks/use-checkin";
 import { useClasses } from "@/lib/hooks/use-classes";
 import { useMyGraduation } from "@/lib/hooks/use-graduation";
@@ -36,7 +38,7 @@ function todayDateString(): string {
 export default function StudentHome() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { academyName } = useAcademyContext();
+  const { academyName, academyId } = useAcademyContext();
   const { data: me } = useCurrentUser();
   const dayOfWeek = new Date().getDay();
   const { data: classes } = useClasses(dayOfWeek);
@@ -47,12 +49,15 @@ export default function StudentHome() {
   const { data: graduation } = useMyGraduation();
   const checkin = useCheckin();
   const { data: weeklyCount } = useWeeklyCheckinCount();
+  const { data: announcementsData } = useAnnouncements(academyId);
   const [refreshing, setRefreshing] = useState(false);
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 30_000);
     return () => clearInterval(id);
   }, []);
+
+  const latestAnnouncements = announcementsData?.pages[0]?.items.slice(0, 3) ?? [];
 
   const hasSubscription =
     subscription != null && subscription.effectiveStatus === "active";
@@ -249,6 +254,40 @@ export default function StudentHome() {
               ))
             )}
           </View>
+
+          {latestAnnouncements.length > 0 && (
+            <>
+              <View className="flex-row items-center justify-between">
+                <Text
+                  className="font-poppins-semibold text-sm"
+                  style={{ color: TEXT_SECONDARY }}
+                >
+                  Últimos avisos
+                </Text>
+                <Pressable onPress={() => router.push("/(app)/(student)/(announcements)")}>
+                  <Text
+                    className="font-poppins-medium text-xs"
+                    style={{ color: "#A078E8" }}
+                  >
+                    Ver mais
+                  </Text>
+                </Pressable>
+              </View>
+              <View style={{ gap: 10 }}>
+                {latestAnnouncements.map((a) => (
+                  <AnnouncementFeedCard
+                    key={a.id}
+                    title={a.title}
+                    body={a.body}
+                    createdAt={a.createdAt}
+                    onPress={() =>
+                      router.push(`/(app)/(student)/(announcements)/${a.id}`)
+                    }
+                  />
+                ))}
+              </View>
+            </>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

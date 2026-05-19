@@ -4,7 +4,7 @@ import {
 } from "@/lib/hooks/use-manager-subscription";
 import { Tabs } from "expo-router";
 import Constants from "expo-constants";
-import { Calendar, CreditCard, Home, Users } from "lucide-react-native";
+import { Calendar, CreditCard, Home, Menu, Users } from "lucide-react-native";
 import { useEffect } from "react";
 import { ActivityIndicator, Linking, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -128,6 +128,16 @@ export default function ManagerLayout() {
         }}
         listeners={({ navigation }) => ({
           tabPress: () => navigation.navigate("(finances)", { screen: "index" }),
+        })}
+      />
+      <Tabs.Screen
+        name="(more)"
+        options={{
+          title: "Mais",
+          tabBarIcon: ({ color, size }) => <Menu size={size} color={color} />,
+        }}
+        listeners={({ navigation }) => ({
+          tabPress: () => navigation.navigate("(more)", { screen: "index" }),
         })}
       />
       <Tabs.Screen

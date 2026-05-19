@@ -4,11 +4,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { Avatar } from "@/components/Avatar";
+import { AnnouncementFeedCard } from "@/components/announcements/AnnouncementFeedCard";
 import { ClassCard } from "@/components/ClassCard";
 import { GraduationCard } from "@/components/GraduationCard";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useApi } from "@/lib/api";
 import { useAcademyContext } from "@/lib/academy-context";
+import { useAnnouncements } from "@/lib/hooks/use-announcements";
 import { useMyGraduation } from "@/lib/hooks/use-graduation";
 import { useCurrentUser } from "@/lib/hooks/use-user";
 import { useClasses } from "@/lib/hooks/use-classes";
@@ -61,7 +63,7 @@ export default function InstructorHome() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const api = useApi();
-  const { academyName, academyLogoUrl } = useAcademyContext();
+  const { academyName, academyLogoUrl, academyId } = useAcademyContext();
   const { data: me } = useCurrentUser();
   const { data: graduation } = useMyGraduation();
   const dayOfWeek = new Date().getDay();
@@ -69,6 +71,8 @@ export default function InstructorHome() {
   const instructorId = me?.id;
 
   const { data: classesTodayList } = useClasses(dayOfWeek);
+  const { data: announcementsData } = useAnnouncements(academyId);
+  const latestAnnouncements = announcementsData?.pages[0]?.items.slice(0, 3) ?? [];
   const [refreshing, setRefreshing] = useState(false);
 
   const weekClassQueries = useQueries({
@@ -234,6 +238,34 @@ export default function InstructorHome() {
               ))
             )}
           </View>
+
+          {latestAnnouncements.length > 0 && (
+            <>
+              <View className="flex-row items-center justify-between">
+                <Text className="font-poppins-semibold text-sm" style={{ color: TEXT_SECONDARY }}>
+                  Últimos avisos
+                </Text>
+                <Pressable onPress={() => router.push("/(app)/(instructor)/(announcements)")}>
+                  <Text className="font-poppins-medium text-xs" style={{ color: "#A078E8" }}>
+                    Ver mais
+                  </Text>
+                </Pressable>
+              </View>
+              <View style={{ gap: 10 }}>
+                {latestAnnouncements.map((a) => (
+                  <AnnouncementFeedCard
+                    key={a.id}
+                    title={a.title}
+                    body={a.body}
+                    createdAt={a.createdAt}
+                    onPress={() =>
+                      router.push(`/(app)/(instructor)/(announcements)/${a.id}`)
+                    }
+                  />
+                ))}
+              </View>
+            </>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
