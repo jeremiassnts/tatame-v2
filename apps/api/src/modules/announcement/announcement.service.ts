@@ -18,9 +18,11 @@ export class AnnouncementService {
     return this.repo.create(data);
   }
 
-  async getById(id: string): Promise<AnnouncementWithAuthor> {
+  async getById(id: string, academyId: string): Promise<AnnouncementWithAuthor> {
     const row = await this.repo.findById(id);
     if (!row) throw new HttpError(404, "Announcement not found");
+    if (row.academyId !== academyId)
+      throw new HttpError(403, "Announcement does not belong to this academy");
     return row;
   }
 

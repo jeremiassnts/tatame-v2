@@ -63,7 +63,8 @@ announcementRouter.get(
     try {
       const academyId = req.appAuth!.activeAcademyId!;
       const cursor = typeof req.query.cursor === "string" ? req.query.cursor : undefined;
-      const limit = typeof req.query.limit === "string" ? parseInt(req.query.limit, 10) : 20;
+      const rawLimit = typeof req.query.limit === "string" ? parseInt(req.query.limit, 10) : 20;
+      const limit = Math.min(Math.max(rawLimit, 1), 50);
       const service = buildService();
       const [listResult, total] = await Promise.all([
         service.listByAcademy(academyId, cursor, limit),
@@ -80,6 +81,8 @@ announcementRouter.get(
 announcementRouter.get(
   "/:id",
   authorize(Role.Manager, Role.Instructor, Role.Student),
+  attachActiveAcademyContext,
+  requireActiveAcademy,
   async (req, res, next) => {
     try {
       const { id } = req.params;
@@ -87,8 +90,9 @@ announcementRouter.get(
         res.status(400).json({ error: "id is required" });
         return;
       }
+      const academyId = req.appAuth!.activeAcademyId!;
       const service = buildService();
-      const announcement = await service.getById(id);
+      const announcement = await service.getById(id, academyId);
       res.json(announcement);
     } catch (e) {
       next(e);

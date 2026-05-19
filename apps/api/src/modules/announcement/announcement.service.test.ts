@@ -34,16 +34,29 @@ describe("AnnouncementService", () => {
         title: "Hello",
         body: "World",
       });
-      const found = await service.getById(created.id);
+      const found = await service.getById(created.id, "academy-1");
       expect(found.id).toBe(created.id);
       expect(found.authorName).toBeDefined();
     });
 
     it("throws 404 if not found", async () => {
       const { service } = setup();
-      await expect(service.getById("nonexistent")).rejects.toThrow(HttpError);
-      await expect(service.getById("nonexistent")).rejects.toMatchObject({
+      await expect(service.getById("nonexistent", "academy-1")).rejects.toThrow(HttpError);
+      await expect(service.getById("nonexistent", "academy-1")).rejects.toMatchObject({
         statusCode: 404,
+      });
+    });
+
+    it("throws 403 if announcement belongs to a different academy", async () => {
+      const { service } = setup();
+      const created = await service.create({
+        academyId: "academy-1",
+        authorId: "user-1",
+        title: "Hello",
+        body: "World",
+      });
+      await expect(service.getById(created.id, "academy-2")).rejects.toMatchObject({
+        statusCode: 403,
       });
     });
   });
@@ -72,6 +85,28 @@ describe("AnnouncementService", () => {
       const result = await service.listByAcademy("academy-1", undefined, 3);
       expect(result.items).toHaveLength(3);
       expect(result.nextCursor).not.toBeNull();
+    });
+
+    it("returns correct items on second page using cursor", async () => {
+      const { service } = setup();
+      for (let i = 0; i < 5; i++) {
+        await service.create({
+          academyId: "academy-1",
+          authorId: "user-1",
+          title: `Title ${i}`,
+          body: "body",
+        });
+      }
+      const page1 = await service.listByAcademy("academy-1", undefined, 3);
+      expect(page1.items).toHaveLength(3);
+      expect(page1.nextCursor).not.toBeNull();
+
+      const page2 = await service.listByAcademy("academy-1", page1.nextCursor!, 3);
+      expect(page2.items).toHaveLength(2);
+      expect(page2.nextCursor).toBeNull();
+
+      const allIds = [...page1.items, ...page2.items].map((i) => i.id);
+      expect(new Set(allIds).size).toBe(5);
     });
   });
 
