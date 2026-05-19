@@ -8,7 +8,7 @@ import {
 import { useCurrentUser } from "@/lib/hooks/use-user";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { Plus } from "lucide-react-native";
+import { Plus, Settings } from "lucide-react-native";
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -96,7 +96,12 @@ export default function NotificationsScreen() {
         <Text className="flex-1 text-center font-poppins-bold text-lg text-primary">
           Notificações
         </Text>
-        <View className="h-10 w-10" />
+        <Pressable
+          onPress={() => router.push("/notification-preferences")}
+          className="h-10 w-10 items-center justify-center rounded-xl border border-surface-border bg-surface"
+        >
+          <Settings size={20} color="#FFFFFF" />
+        </Pressable>
       </View>
 
       {/* Filter chips */}

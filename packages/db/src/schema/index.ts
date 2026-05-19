@@ -434,6 +434,29 @@ export const engagementMilestones = pgTable(
   }),
 );
 
+export const notificationPreferences = pgTable(
+  "notification_preferences",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.clerkUserId, { onDelete: "cascade" }),
+    pushEnabled: boolean("push_enabled").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => ({
+    userIdUnique: uniqueIndex("notification_preferences_user_id_unique").on(
+      t.userId,
+    ),
+  }),
+);
+
 export const customNotificationSends = pgTable(
   "custom_notification_sends",
   {

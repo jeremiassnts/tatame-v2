@@ -63,3 +63,11 @@ export const sendCustomNotificationBodySchema = z
 export type SendCustomNotificationBody = z.infer<
   typeof sendCustomNotificationBodySchema
 >;
+
+export const updateNotificationPreferencesBodySchema = z.object({
+  pushEnabled: z.boolean(),
+});
+
+export type UpdateNotificationPreferencesBody = z.infer<
+  typeof updateNotificationPreferencesBodySchema
+>;

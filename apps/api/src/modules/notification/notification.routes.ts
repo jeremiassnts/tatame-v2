@@ -5,10 +5,12 @@ import {
   sendNotificationBodySchema,
   listNotificationsQuerySchema,
   sendCustomNotificationBodySchema,
+  updateNotificationPreferencesBodySchema,
 } from "@tatame/validators";
 import type {
   SendNotificationBody,
   SendCustomNotificationBody,
+  UpdateNotificationPreferencesBody,
 } from "@tatame/validators";
 import { getDb } from "../../lib/db.js";
 import { loadEnv } from "@tatame/config";
@@ -23,6 +25,7 @@ import { PostgresNotificationRepository } from "./notification.repository.postgr
 import { PostgresPushTokenRepository } from "../push-token/push-token.repository.postgres.js";
 import { PostgresMembershipRepository } from "../membership/membership.repository.postgres.js";
 import { PostgresUserRepository } from "../user/user.repository.postgres.js";
+import { PostgresNotificationPreferencesRepository } from "./notification-preferences.repository.postgres.js";
 import { getNotificationQueue } from "./notification.queue.js";
 import { NotificationService } from "./notification.service.js";
 
@@ -38,6 +41,7 @@ function buildService() {
     new PostgresNotificationRepository(db),
     new PostgresPushTokenRepository(db),
     queue,
+    new PostgresNotificationPreferencesRepository(db),
   );
 }
 
@@ -177,6 +181,50 @@ notificationRouter.delete(
       const service = buildService();
       await service.deleteNotification(id, clerkId);
       res.status(204).end();
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+// ── Notification preferences ──────────────────────────────────────────────────
+
+notificationRouter.get(
+  "/preferences",
+  authorize(Role.Manager, Role.Instructor, Role.Student),
+  async (req, res, next) => {
+    try {
+      const { userId: clerkId } = getAuth(req);
+      if (!clerkId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+      const db = getDb();
+      const prefsRepo = new PostgresNotificationPreferencesRepository(db);
+      const row = await prefsRepo.findByUserId(clerkId);
+      res.json({ pushEnabled: row?.pushEnabled ?? true });
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+notificationRouter.put(
+  "/preferences",
+  authorize(Role.Manager, Role.Instructor, Role.Student),
+  validateBody(updateNotificationPreferencesBodySchema),
+  async (req, res, next) => {
+    try {
+      const { userId: clerkId } = getAuth(req);
+      if (!clerkId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+      const body = req.validatedBody as UpdateNotificationPreferencesBody;
+      const db = getDb();
+      const prefsRepo = new PostgresNotificationPreferencesRepository(db);
+      const row = await prefsRepo.upsert(clerkId, body.pushEnabled);
+      res.json({ pushEnabled: row.pushEnabled });
     } catch (e) {
       next(e);
     }
