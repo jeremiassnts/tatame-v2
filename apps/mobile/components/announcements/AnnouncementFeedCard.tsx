@@ -1,18 +1,10 @@
+import { formatShortAnnouncementDate } from "@/lib/utils/date";
 import { ChevronRight, Megaphone } from "lucide-react-native";
 import { Pressable, Text, View } from "react-native";
 
 const TEXT_SECONDARY = "#8A8A8A";
 const TEXT_MUTED = "#525252";
 const ACCENT = "#A078E8";
-
-const PT_MONTHS = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
-
-function formatShortDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  const day = d.getDate().toString().padStart(2, "0");
-  const month = PT_MONTHS[d.getMonth()] ?? "";
-  return `${day} ${month}`;
-}
 
 type AnnouncementFeedCardProps = {
   title: string;
@@ -56,7 +48,7 @@ export function AnnouncementFeedCard({
           style={{ color: TEXT_SECONDARY }}
           numberOfLines={1}
         >
-          {formatShortDate(createdAt)} · {body}
+          {formatShortAnnouncementDate(createdAt)} · {body.length > 80 ? body.slice(0, 80) + "…" : body}
         </Text>
       </View>
       <ChevronRight size={16} color={TEXT_MUTED} />

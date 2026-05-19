@@ -1,5 +1,6 @@
 import { useAcademyContext } from "@/lib/academy-context";
-import { useAnnouncements, useAnnouncementCount } from "@/lib/hooks/use-announcements";
+import { useAnnouncements } from "@/lib/hooks/use-announcements";
+import { formatAnnouncementDate } from "@/lib/utils/date";
 import { useRouter } from "expo-router";
 import { Megaphone, Plus } from "lucide-react-native";
 import {
@@ -14,16 +15,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const TEXT_SECONDARY = "#8A8A8A";
 const ACCENT = "#A078E8";
-
-const PT_MONTHS = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
-
-function formatDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  const day = d.getDate().toString().padStart(2, "0");
-  const month = PT_MONTHS[d.getMonth()] ?? "";
-  const year = d.getFullYear();
-  return `${day} ${month} ${year}`;
-}
 
 type AnnouncementCardProps = {
   id: string;
@@ -41,7 +32,7 @@ function AnnouncementCard({ title, body, createdAt, onPress }: AnnouncementCardP
       style={{ padding: 16, gap: 8 }}
     >
       <Text className="font-poppins text-xs" style={{ color: TEXT_SECONDARY }}>
-        {formatDate(createdAt)}
+        {formatAnnouncementDate(createdAt)}
       </Text>
       <Text className="font-poppins-semibold text-sm text-primary" numberOfLines={2}>
         {title}
@@ -60,7 +51,6 @@ function AnnouncementCard({ title, body, createdAt, onPress }: AnnouncementCardP
 export default function AnnouncementsScreen() {
   const router = useRouter();
   const { academyId } = useAcademyContext();
-  const { data: countData } = useAnnouncementCount(academyId);
   const {
     data,
     fetchNextPage,
@@ -72,13 +62,13 @@ export default function AnnouncementsScreen() {
   } = useAnnouncements(academyId);
 
   const items = data?.pages.flatMap((p) => p.items) ?? [];
-  const total = countData ?? 0;
+  const total = data?.pages[0]?.total ?? 0;
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
       <View className="flex-1">
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 16, gap: 4 }}>
-          <Pressable onPress={() => router.back()} style={{ marginBottom: 8 }}>
+          <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace("/(app)/(manager)/(more)")} style={{ marginBottom: 8 }}>
             <Text className="font-poppins text-sm" style={{ color: ACCENT }}>
               ← Voltar
             </Text>

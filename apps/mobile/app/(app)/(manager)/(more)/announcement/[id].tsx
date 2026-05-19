@@ -2,6 +2,7 @@ import {
   useAnnouncement,
   useDeleteAnnouncement,
 } from "@/lib/hooks/use-announcements";
+import { formatAnnouncementDate } from "@/lib/utils/date";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Pencil } from "lucide-react-native";
 import {
@@ -18,15 +19,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const TEXT_SECONDARY = "#8A8A8A";
 const ACCENT = "#A078E8";
 
-const PT_MONTHS = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
-
-function formatDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  const day = d.getDate().toString().padStart(2, "0");
-  const month = PT_MONTHS[d.getMonth()] ?? "";
-  const year = d.getFullYear();
-  return `${day} ${month} ${year}`;
-}
 
 export default function AnnouncementDetailScreen() {
   const router = useRouter();
@@ -126,7 +118,7 @@ export default function AnnouncementDetailScreen() {
             {/* Meta */}
             <View style={{ gap: 4 }}>
               <Text className="font-poppins text-xs" style={{ color: TEXT_SECONDARY }}>
-                {formatDate(announcement.createdAt)} · {announcement.authorName}
+                {formatAnnouncementDate(announcement.createdAt)} · {announcement.authorName}
               </Text>
             </View>
 
