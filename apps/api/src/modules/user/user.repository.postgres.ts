@@ -1,11 +1,15 @@
 import {
   academies,
   academyMemberships,
+  announcements,
+  beltPromotions,
+  classes,
+  customNotificationSends,
   userRoles,
   users,
   type Database,
 } from "@tatame/db";
-import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import type { IUserRepository, UserRow } from "./user.repository.js";
 
 export class PostgresUserRepository implements IUserRepository {
@@ -34,37 +38,6 @@ export class PostgresUserRepository implements IUserRepository {
           updatedAt: new Date(),
         },
       });
-  }
-
-  async findDeletedByEmail(email: string): Promise<UserRow | undefined> {
-    const [row] = await this.db
-      .select()
-      .from(users)
-      .where(and(eq(users.email, email), isNotNull(users.deletedAt)))
-      .limit(1);
-    return row;
-  }
-
-  async reactivate(
-    id: string,
-    data: {
-      clerkUserId: string;
-      email: string;
-      name: string;
-      profileImageUrl: string | null;
-    },
-  ): Promise<void> {
-    await this.db
-      .update(users)
-      .set({
-        clerkUserId: data.clerkUserId,
-        email: data.email,
-        name: data.name,
-        profileImageUrl: data.profileImageUrl,
-        deletedAt: null,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, id));
   }
 
   async findById(userId: string): Promise<UserRow | undefined> {
@@ -102,8 +75,17 @@ export class PostgresUserRepository implements IUserRepository {
     return row;
   }
 
-  async softDelete(id: string): Promise<void> {
-    await this.db.update(users).set({ deletedAt: new Date() }).where(eq(users.id, id));
+  async hardDelete(id: string): Promise<void> {
+    // Clean up tables with "restrict" FK before deleting the user.
+    // Tables with "cascade" FK are handled automatically by Postgres.
+    await this.db.delete(announcements).where(eq(announcements.authorId, id));
+    await this.db.delete(customNotificationSends).where(eq(customNotificationSends.senderId, id));
+    await this.db.delete(beltPromotions).where(eq(beltPromotions.promotedBy, id));
+    await this.db.delete(classes).where(eq(classes.instructorId, id));
+    // If user owns an academy, delete it (cascades members, classes, plans, etc.)
+    await this.db.delete(academies).where(eq(academies.ownerId, id));
+    // Finally delete the user row — remaining cascades clean up the rest
+    await this.db.delete(users).where(eq(users.id, id));
   }
 
   async findActiveRole(userId: string): Promise<string | undefined> {
