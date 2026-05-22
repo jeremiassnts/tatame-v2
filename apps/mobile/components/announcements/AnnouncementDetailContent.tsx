@@ -1,7 +1,9 @@
+import { ImageViewerModal } from "@/components/ImageViewerModal";
 import { formatAnnouncementDate } from "@/lib/utils/date";
 import { LinearGradient } from "expo-linear-gradient";
 import { Calendar, ImageIcon, User } from "lucide-react-native";
-import { Image, ScrollView, Text, View } from "react-native";
+import { useState } from "react";
+import { Image, Pressable, ScrollView, Text, View } from "react-native";
 
 const ACCENT = "#A078E8";
 
@@ -20,6 +22,8 @@ export function AnnouncementDetailContent({
   createdAt,
   authorName,
 }: AnnouncementDetailContentProps) {
+  const [imageViewerVisible, setImageViewerVisible] = useState(false);
+
   return (
     <ScrollView
       className="flex-1"
@@ -28,11 +32,21 @@ export function AnnouncementDetailContent({
     >
       {/* Image */}
       {imageUrl ? (
-        <Image
-          source={{ uri: imageUrl }}
-          style={{ width: "100%", height: 200, borderRadius: 16 }}
-          resizeMode="cover"
-        />
+        <>
+          <Pressable onPress={() => setImageViewerVisible(true)}>
+            <Image
+              source={{ uri: imageUrl }}
+              style={{ width: "100%", height: 200, borderRadius: 16 }}
+              resizeMode="cover"
+            />
+          </Pressable>
+
+          <ImageViewerModal
+            visible={imageViewerVisible}
+            imageUrl={imageUrl}
+            onClose={() => setImageViewerVisible(false)}
+          />
+        </>
       ) : (
         <LinearGradient
           colors={["#2A2A2A", "#1A1A1A"]}

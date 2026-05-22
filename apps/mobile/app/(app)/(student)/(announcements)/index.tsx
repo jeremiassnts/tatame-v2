@@ -1,3 +1,4 @@
+import { BackButton } from "@/components/BackButton";
 import { AnnouncementListCard } from "@/components/announcements/AnnouncementListCard";
 import { useAcademyContext } from "@/lib/academy-context";
 import { useAnnouncements } from "@/lib/hooks/use-announcements";
@@ -32,15 +33,14 @@ export default function StudentAnnouncementsScreen() {
   const total = data?.pages[0]?.total ?? 0;
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
-      <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 16, gap: 4 }}>
-        <Text
-          className="font-poppins-bold text-primary"
-          style={{ fontSize: 22, letterSpacing: -0.5 }}
-        >
-          Avisos
-        </Text>
-        <Text className="font-poppins text-sm" style={{ color: TEXT_SECONDARY }}>
+    <SafeAreaView className="flex-1 bg-background pt-8" edges={["top"]}>
+      <View className="flex-row items-center justify-between px-6 pb-2 pt-2">
+        <BackButton />
+        <Text className="font-poppins-bold text-lg text-primary">Avisos</Text>
+        <View style={{ width: 40 }} />
+      </View>
+      <View style={{ paddingHorizontal: 24, paddingBottom: 16 }}>
+        <Text className="font-poppins-medium text-sm" style={{ color: "#ABABAB" }}>
           {total} {total === 1 ? "aviso publicado" : "avisos publicados"}
         </Text>
       </View>
@@ -53,7 +53,7 @@ export default function StudentAnnouncementsScreen() {
         <FlatList
           data={items}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 32, gap: 10 }}
+          contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 32, gap: 12 }}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
@@ -83,6 +83,7 @@ export default function StudentAnnouncementsScreen() {
             <AnnouncementListCard
               title={item.title}
               body={item.body}
+              imageUrl={item.imageUrl}
               createdAt={item.createdAt}
               onPress={() =>
                 router.push(`/(app)/(student)/(announcements)/${item.id}`)
