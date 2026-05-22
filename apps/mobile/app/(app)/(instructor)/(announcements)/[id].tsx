@@ -1,3 +1,4 @@
+import { BackButton } from "@/components/BackButton";
 import { AnnouncementDetailContent } from "@/components/announcements/AnnouncementDetailContent";
 import { useAnnouncement } from "@/lib/hooks/use-announcements";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -38,19 +39,12 @@ export default function InstructorAnnouncementDetailScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
       {/* Header */}
-      <View
-        className="flex-row items-center justify-between"
-        style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 16 }}
-      >
-        <Pressable onPress={() => router.back()}>
-          <Text className="font-poppins text-sm" style={{ color: ACCENT }}>
-            ← Voltar
-          </Text>
-        </Pressable>
-        <Text className="font-poppins-semibold text-base text-primary">
+      <View className="flex-row items-center justify-between px-6 pb-2 pt-2">
+        <BackButton />
+        <Text className="font-poppins-bold text-lg text-primary">
           Detalhes do aviso
         </Text>
-        <View style={{ width: 60 }} />
+        <View style={{ width: 40 }} />
       </View>
 
       <AnnouncementDetailContent

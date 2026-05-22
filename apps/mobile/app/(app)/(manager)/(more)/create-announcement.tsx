@@ -72,8 +72,6 @@ export default function CreateAnnouncementScreen() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
       quality: 0.8,
-      allowsEditing: true,
-      aspect: [16, 9],
     });
     if (result.canceled) return;
     const asset = result.assets[0];

@@ -1,7 +1,9 @@
 import { formatAnnouncementDate } from "@/lib/utils/date";
-import { Image, Text, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Calendar, ImageIcon, User } from "lucide-react-native";
+import { Image, ScrollView, Text, View } from "react-native";
 
-const TEXT_SECONDARY = "#8A8A8A";
+const ACCENT = "#A078E8";
 
 type AnnouncementDetailContentProps = {
   title: string;
@@ -19,31 +21,69 @@ export function AnnouncementDetailContent({
   authorName,
 }: AnnouncementDetailContentProps) {
   return (
-    <View style={{ gap: 0 }}>
+    <ScrollView
+      className="flex-1"
+      contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 24, gap: 24 }}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Image */}
       {imageUrl ? (
         <Image
           source={{ uri: imageUrl }}
-          style={{ width: "100%", height: 220 }}
+          style={{ width: "100%", height: 200, borderRadius: 16 }}
           resizeMode="cover"
         />
       ) : (
-        <View style={{ height: 120, backgroundColor: "#1A1A1A" }} />
+        <LinearGradient
+          colors={["#2A2A2A", "#1A1A1A"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ width: "100%", height: 200, borderRadius: 16, alignItems: "center", justifyContent: "center" }}
+        >
+          <ImageIcon size={32} color="#525252" />
+        </LinearGradient>
       )}
 
-      <View style={{ paddingHorizontal: 24, paddingTop: 20, gap: 16 }}>
-        <Text className="font-poppins text-xs" style={{ color: TEXT_SECONDARY }}>
-          {formatAnnouncementDate(createdAt)} · {authorName}
-        </Text>
+      {/* Title Section */}
+      <View style={{ gap: 12 }}>
+        {/* Meta Row */}
+        <View className="flex-row" style={{ gap: 12 }}>
+          <View
+            className="flex-row items-center"
+            style={{ gap: 6, backgroundColor: "#A078E820", borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 }}
+          >
+            <Calendar size={14} color={ACCENT} />
+            <Text className="font-poppins-semibold text-xs" style={{ color: ACCENT }}>
+              {formatAnnouncementDate(createdAt)}
+            </Text>
+          </View>
+          <View
+            className="flex-row items-center"
+            style={{ gap: 6, backgroundColor: "#A078E820", borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 }}
+          >
+            <User size={14} color={ACCENT} />
+            <Text className="font-poppins-semibold text-xs" style={{ color: ACCENT }}>
+              {authorName}
+            </Text>
+          </View>
+        </View>
+
+        {/* Title */}
         <Text
           className="font-poppins-bold text-primary"
-          style={{ fontSize: 22, letterSpacing: -0.5, lineHeight: 30 }}
+          style={{ fontSize: 20 }}
         >
           {title}
         </Text>
-        <Text className="font-poppins text-sm text-primary" style={{ lineHeight: 22 }}>
-          {body}
-        </Text>
       </View>
-    </View>
+
+      {/* Body */}
+      <Text
+        className="font-poppins text-sm"
+        style={{ color: "#ABABAB", lineHeight: 22.4 }}
+      >
+        {body}
+      </Text>
+    </ScrollView>
   );
 }

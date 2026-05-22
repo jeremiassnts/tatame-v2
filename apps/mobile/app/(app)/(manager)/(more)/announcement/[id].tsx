@@ -1,16 +1,15 @@
+import { BackButton } from "@/components/BackButton";
+import { AnnouncementDetailContent } from "@/components/announcements/AnnouncementDetailContent";
 import {
   useAnnouncement,
   useDeleteAnnouncement,
 } from "@/lib/hooks/use-announcements";
-import { formatAnnouncementDate } from "@/lib/utils/date";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Pencil } from "lucide-react-native";
 import {
   ActivityIndicator,
   Alert,
-  Image,
   Pressable,
-  ScrollView,
   Text,
   View,
 } from "react-native";
@@ -73,89 +72,53 @@ export default function AnnouncementDetailScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <View style={{ paddingTop: 24, paddingBottom: 32, gap: 0 }}>
-          {/* Header */}
-          <View
-            className="flex-row items-center justify-between"
-            style={{ paddingHorizontal: 24, marginBottom: 20 }}
-          >
-            <Pressable onPress={() => router.back()}>
-              <Text className="font-poppins text-sm" style={{ color: ACCENT }}>
-                ← Voltar
-              </Text>
-            </Pressable>
-            <Text className="font-poppins-semibold text-base text-primary">
-              Detalhes do aviso
-            </Text>
-            <Pressable
-              onPress={() =>
-                router.push({
-                  pathname: "/(app)/(manager)/(more)/create-announcement",
-                  params: { announcementId: id },
-                })
-              }
-            >
-              <Pencil size={20} color={ACCENT} />
-            </Pressable>
-          </View>
+      {/* Header */}
+      <View className="flex-row items-center justify-between px-6 pb-2 pt-2">
+        <BackButton />
+        <Text className="font-poppins-bold text-lg text-primary">
+          Detalhes do aviso
+        </Text>
+        <Pressable
+          onPress={() =>
+            router.push({
+              pathname: "/(app)/(manager)/(more)/create-announcement",
+              params: { announcementId: id },
+            })
+          }
+          className="h-10 w-10 items-center justify-center rounded-xl border border-surface-border bg-surface"
+        >
+          <Pencil size={20} color={ACCENT} />
+        </Pressable>
+      </View>
 
-          {/* Cover image */}
-          {announcement.imageUrl ? (
-            <Image
-              source={{ uri: announcement.imageUrl }}
-              style={{ width: "100%", height: 220 }}
-              resizeMode="cover"
-            />
+      <AnnouncementDetailContent
+        title={announcement.title}
+        body={announcement.body}
+        imageUrl={announcement.imageUrl}
+        createdAt={announcement.createdAt}
+        authorName={announcement.authorName}
+      />
+
+      {/* Delete */}
+      <View style={{ paddingHorizontal: 24, paddingBottom: 24 }}>
+        <Pressable
+          onPress={handleDelete}
+          disabled={deleteAnnouncement.isPending}
+          className="items-center rounded-[14px] border"
+          style={{ padding: 16, borderColor: "#FF453A40" }}
+        >
+          {deleteAnnouncement.isPending ? (
+            <ActivityIndicator color="#FF453A" />
           ) : (
-            <View
-              className="items-center justify-center"
-              style={{ height: 120, backgroundColor: "#1A1A1A" }}
-            />
-          )}
-
-          <View style={{ paddingHorizontal: 24, paddingTop: 20, gap: 16 }}>
-            {/* Meta */}
-            <View style={{ gap: 4 }}>
-              <Text className="font-poppins text-xs" style={{ color: TEXT_SECONDARY }}>
-                {formatAnnouncementDate(announcement.createdAt)} · {announcement.authorName}
-              </Text>
-            </View>
-
-            {/* Title */}
             <Text
-              className="font-poppins-bold text-primary"
-              style={{ fontSize: 22, letterSpacing: -0.5, lineHeight: 30 }}
+              className="font-poppins-semibold text-sm"
+              style={{ color: "#FF453A" }}
             >
-              {announcement.title}
+              Excluir aviso
             </Text>
-
-            {/* Body */}
-            <Text className="font-poppins text-sm text-primary" style={{ lineHeight: 22 }}>
-              {announcement.body}
-            </Text>
-
-            {/* Delete */}
-            <Pressable
-              onPress={handleDelete}
-              disabled={deleteAnnouncement.isPending}
-              className="items-center rounded-[14px] border"
-              style={{ padding: 16, borderColor: "#FF453A40", marginTop: 16 }}
-            >
-              {deleteAnnouncement.isPending ? (
-                <ActivityIndicator color="#FF453A" />
-              ) : (
-                <Text
-                  className="font-poppins-semibold text-sm"
-                  style={{ color: "#FF453A" }}
-                >
-                  Excluir aviso
-                </Text>
-              )}
-            </Pressable>
-          </View>
-        </View>
-      </ScrollView>
+          )}
+        </Pressable>
+      </View>
     </SafeAreaView>
   );
 }
