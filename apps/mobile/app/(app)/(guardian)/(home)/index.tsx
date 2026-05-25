@@ -33,7 +33,17 @@ export default function GuardianHome() {
   const dayOfWeek = new Date().getDay();
   const { data: classes } = useClasses(dayOfWeek);
   const { data: announcementsData } = useAnnouncements(academyId);
+  const { data: dependentsData, isPending: dependentsPending } = useDependents();
   const [refreshing, setRefreshing] = useState(false);
+
+  // Redirect to onboarding if guardian has no dependents yet
+  useEffect(() => {
+    if (dependentsPending) return;
+    const dependents = dependentsData?.items ?? [];
+    if (dependents.length === 0) {
+      router.replace("/(app)/(guardian)/(onboarding)/register-dependent");
+    }
+  }, [dependentsPending, dependentsData, router]);
 
   const latestAnnouncements = announcementsData?.pages[0]?.items.slice(0, 3) ?? [];
 
