@@ -431,7 +431,7 @@ export const beltPromotions = pgTable(
   (t) => ({
     oneCurrentPerUser: uniqueIndex("belt_promotions_one_current_per_user")
       .on(t.userId)
-      .where(sql`${t.isCurrent} = true`),
+      .where(sql`${t.isCurrent} = true AND ${t.dependentId} IS NULL`),
     oneCurrentPerDependent: uniqueIndex("belt_promotions_one_current_per_dependent")
       .on(t.dependentId)
       .where(sql`${t.isCurrent} = true AND ${t.dependentId} IS NOT NULL`),
