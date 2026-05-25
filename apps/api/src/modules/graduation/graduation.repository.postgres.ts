@@ -72,6 +72,9 @@ export class PostgresGraduationRepository implements IGraduationRepository {
           and(
             eq(beltPromotions.userId, data.userId),
             eq(beltPromotions.isCurrent, true),
+            data.dependentId
+              ? eq(beltPromotions.dependentId, data.dependentId)
+              : isNull(beltPromotions.dependentId),
           ),
         )
         .limit(1);
@@ -113,6 +116,9 @@ export class PostgresGraduationRepository implements IGraduationRepository {
           and(
             eq(beltPromotions.userId, data.userId),
             eq(beltPromotions.isCurrent, true),
+            data.dependentId
+              ? eq(beltPromotions.dependentId, data.dependentId)
+              : isNull(beltPromotions.dependentId),
           ),
         );
       const [row] = await tx
