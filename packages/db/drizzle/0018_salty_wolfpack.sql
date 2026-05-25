@@ -1,0 +1,2 @@
+DROP INDEX "checkins_user_class_date_unique";--> statement-breakpoint
+CREATE UNIQUE INDEX "checkins_user_class_date_unique" ON "checkins" USING btree ("user_id","class_id","date") WHERE "checkins"."dependent_id" IS NULL;

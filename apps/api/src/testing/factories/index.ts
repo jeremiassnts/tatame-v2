@@ -213,6 +213,7 @@ export function makeStudentSubscription(
     status: "active",
     startsAt: utcIsoDate(starts),
     expiresAt: utcIsoDate(expires),
+    dependentId: null,
     createdAt: t,
     updatedAt: t,
     ...overrides,

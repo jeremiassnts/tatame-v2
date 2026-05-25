@@ -43,6 +43,7 @@ function buildService(opts: {
   userId: string;
   plan?: ReturnType<typeof makeSubscriptionPlan>;
   sub?: ReturnType<typeof makeStudentSubscription>;
+  extraSubs?: ReturnType<typeof makeStudentSubscription>[];
   payments?: ReturnType<typeof makePayment>[];
   classRow?: ReturnType<typeof makeClass>;
   checkins?: CheckinRow[];
@@ -63,7 +64,7 @@ function buildService(opts: {
       startsAt: "2026-01-01",
       expiresAt: "2027-01-01",
     });
-  const subRepo = new InMemoryStudentSubscriptionRepository(planRepo, [sub]);
+  const subRepo = new InMemoryStudentSubscriptionRepository(planRepo, [sub, ...(opts.extraSubs ?? [])]);
 
   const payRepo = new InMemoryPaymentRepository(
     opts.payments ?? [
@@ -975,9 +976,23 @@ describe("CheckinService", () => {
       const academyId = randomUUID();
       const guardianId = randomUUID();
       const dependentId = randomUUID();
+      const plan = makeSubscriptionPlan({ academyId });
+      const depSub = makeStudentSubscription({
+        userId: guardianId,
+        planId: plan.id,
+        dependentId,
+        status: "active",
+        startsAt: "2026-01-01",
+        expiresAt: "2027-01-01",
+      });
       const { svc, classRow } = buildService({
         academyId,
         userId: guardianId,
+        plan,
+        extraSubs: [depSub],
+        payments: [
+          makePayment({ subscriptionId: depSub.id, userId: guardianId, academyId, referenceMonth: "2026-03-01" }),
+        ],
         membershipOverrides: { role: "guardian" },
       });
 
@@ -1042,7 +1057,16 @@ describe("CheckinService", () => {
       const academyId = randomUUID();
       const userId = randomUUID();
       const dependentId = randomUUID();
-      const { svc, classRow } = buildService({ academyId, userId });
+      const plan = makeSubscriptionPlan({ academyId });
+      const depSub = makeStudentSubscription({
+        userId,
+        planId: plan.id,
+        dependentId,
+        status: "active",
+        startsAt: "2026-01-01",
+        expiresAt: "2027-01-01",
+      });
+      const { svc, classRow } = buildService({ academyId, userId, plan, extraSubs: [depSub] });
 
       const { checkin } = await svc.checkIn({
         userId,
@@ -1070,6 +1094,14 @@ describe("CheckinService", () => {
         startsAt: "2026-01-01",
         expiresAt: "2027-01-01",
       });
+      const depSub = makeStudentSubscription({
+        userId: guardianId,
+        planId: plan.id,
+        dependentId,
+        status: "active",
+        startsAt: "2026-01-01",
+        expiresAt: "2027-01-01",
+      });
 
       // Guardian has 0 checkins this week (limit not reached for guardian)
       // Dependent already has 2 checkins this week (limit reached for dependent)
@@ -1088,6 +1120,7 @@ describe("CheckinService", () => {
         userId: guardianId,
         plan,
         sub,
+        extraSubs: [depSub],
         checkins: dependentCheckins,
         membershipOverrides: { role: "guardian" },
       });
@@ -1120,6 +1153,16 @@ describe("CheckinService", () => {
         isActive: true,
       });
 
+      const plan = makeSubscriptionPlan({ academyId });
+      const depSub = makeStudentSubscription({
+        userId: guardianId,
+        planId: plan.id,
+        dependentId,
+        status: "active",
+        startsAt: "2026-01-01",
+        expiresAt: "2027-01-01",
+      });
+
       // Guardian already checked this dependent into this class today
       const existingCheckins: CheckinRow[] = [
         makeCheckin({
@@ -1134,7 +1177,9 @@ describe("CheckinService", () => {
       const { svc } = buildService({
         academyId,
         userId: guardianId,
+        plan,
         classRow,
+        extraSubs: [depSub],
         checkins: existingCheckins,
         membershipOverrides: { role: "guardian" },
       });

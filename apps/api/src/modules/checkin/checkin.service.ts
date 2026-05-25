@@ -191,10 +191,9 @@ export class CheckinService {
         "O check-in abre 12 horas antes do início da aula e encerra ao fim da aula",
       );
     }
-    const { plan, warnings } = await this.resolveSubscriptionAndWarnings(
-      opts.userId,
-      opts.academyId,
-    );
+    const { plan, warnings } = opts.dependentId
+      ? await this.resolveSubscriptionForDependent(opts.dependentId)
+      : await this.resolveSubscriptionAndWarnings(opts.userId, opts.academyId);
     const weekReference = mondayOfWeekContaining(opts.sessionDate);
     const redis = opts.redis ?? (await requireRedisForCheckin());
     return withCheckinLock(redis, opts.classId, opts.sessionDate, async () => {
@@ -517,6 +516,64 @@ export class CheckinService {
       throw new HttpError(
         403,
         "Seu plano expirou e o período de carência acabou — renove para continuar treinando",
+      );
+    }
+
+    const warnings: CheckinWarnings = {};
+
+    if (today > sub.expiresAt) {
+      warnings.subscriptionGrace = true;
+    } else {
+      const ref = firstOfUtcMonth(today);
+      const paid =
+        await this.paymentRepo.existsForSubscriptionReferenceMonth(
+          sub.id,
+          ref,
+        );
+      if (!paid) {
+        warnings.paymentOverdue = true;
+      }
+    }
+
+    return { plan, warnings };
+  }
+
+  private async resolveSubscriptionForDependent(
+    dependentId: string,
+  ): Promise<{
+    plan: { weeklyCheckinLimit: number | null };
+    warnings: CheckinWarnings;
+  }> {
+    const row = await this.studentSubRepo.findByDependentIdWithPlan(dependentId);
+
+    if (row) {
+      if (
+        row.subscription.status === "active" &&
+        isExpiredByDate(row.subscription.expiresAt)
+      ) {
+        await this.studentSubRepo.update(row.subscription.id, {
+          status: "expired",
+        });
+        row.subscription.status = "expired";
+      }
+    }
+
+    if (!row || row.subscription.status === "cancelled") {
+      throw new HttpError(403, "O dependente não possui um plano ativo nesta academia");
+    }
+
+    const { subscription: sub, plan } = row;
+    const today = utcTodayDateString();
+
+    if (today < sub.startsAt) {
+      throw new HttpError(403, "Subscription has not started yet");
+    }
+
+    const graceEnd = addCalendarDays(sub.expiresAt, 3);
+    if (today > graceEnd) {
+      throw new HttpError(
+        403,
+        "O plano do dependente expirou e o período de carência acabou — renove para continuar treinando",
       );
     }
 

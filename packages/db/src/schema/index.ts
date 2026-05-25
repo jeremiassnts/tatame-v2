@@ -278,11 +278,9 @@ export const checkins = pgTable(
       t.weekReference,
     ),
     classDateIdx: index("checkins_class_id_date_idx").on(t.classId, t.date),
-    onePerUserClassDate: uniqueIndex("checkins_user_class_date_unique").on(
-      t.userId,
-      t.classId,
-      t.date,
-    ),
+    onePerUserClassDate: uniqueIndex("checkins_user_class_date_unique")
+      .on(t.userId, t.classId, t.date)
+      .where(sql`${t.dependentId} IS NULL`),
     onePerDependentClassDate: uniqueIndex("checkins_dependent_class_date_unique")
       .on(t.dependentId, t.classId, t.date)
       .where(sql`${t.dependentId} IS NOT NULL`),
