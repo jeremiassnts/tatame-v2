@@ -1,6 +1,7 @@
 import { Avatar } from "@/components/Avatar";
 import { useCurrentUser } from "@/lib/hooks/use-user";
 import { useAuth } from "@clerk/clerk-expo";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import {
   Bell,
@@ -53,6 +54,7 @@ function MenuItem({ icon, title, subtitle, onPress }: MenuItemProps) {
 export default function StudentMoreScreen() {
   const router = useRouter();
   const { signOut } = useAuth();
+  const queryClient = useQueryClient();
   const { data: me } = useCurrentUser();
 
   const avatarLetter = (me?.name || "?").charAt(0).toUpperCase();
@@ -120,7 +122,11 @@ export default function StudentMoreScreen() {
 
         {/* Sign out */}
         <Pressable
-          onPress={() => signOut()}
+          onPress={async () => {
+            queryClient.clear();
+            await signOut();
+            router.replace("/(auth)");
+          }}
           className="items-center rounded-[14px] border"
           style={{ padding: 16, borderColor: "#FF453A40" }}
         >

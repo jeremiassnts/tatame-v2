@@ -3,6 +3,7 @@ import { useAcademyContext } from "@/lib/academy-context";
 import { useAcademyStats } from "@/lib/hooks/use-academy";
 import { useCurrentUser } from "@/lib/hooks/use-user";
 import { useAuth } from "@clerk/clerk-expo";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import {
   Bell,
@@ -61,6 +62,7 @@ function firstName(fullName: string): string {
 export default function MoreMenuScreen() {
   const router = useRouter();
   const { signOut } = useAuth();
+  const queryClient = useQueryClient();
   const { academyId } = useAcademyContext();
   const { data: me } = useCurrentUser();
   const { data: stats } = useAcademyStats(academyId);
@@ -135,7 +137,11 @@ export default function MoreMenuScreen() {
 
         {/* Sign out */}
         <Pressable
-          onPress={() => signOut()}
+          onPress={async () => {
+            queryClient.clear();
+            await signOut();
+            router.replace("/(auth)");
+          }}
           className="items-center rounded-[14px] border"
           style={{ padding: 16, borderColor: "#FF453A40" }}
         >
