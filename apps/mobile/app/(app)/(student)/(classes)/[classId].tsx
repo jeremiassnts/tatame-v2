@@ -11,7 +11,7 @@ import {
   resolveClassSessionDate,
 } from "@/lib/class-session-date";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -89,8 +89,44 @@ export default function StudentClassDetail() {
       : false;
 
   const checkinCount = checkins?.length ?? 0;
-  const checkinDone =
-    me?.id != null && checkins?.some((c) => c.userId === me.id) === true;
+
+  const myCheckins = useMemo(() => {
+    if (!checkins || !me?.id) return [];
+    const dependentIds = new Set(dependents.map((d) => d.id));
+    return checkins
+      .filter(
+        (c) =>
+          (c.userId === me.id && !c.dependentId) ||
+          (c.dependentId != null && dependentIds.has(c.dependentId)),
+      )
+      .map((c) => ({
+        name: c.dependentId ? (c.dependentName ?? "Dependente") : "Eu",
+        checkedInAt: c.checkedInAt,
+      }));
+  }, [checkins, me?.id, dependents]);
+
+  const allCheckedIn = useMemo(() => {
+    if (!checkins || !me?.id) return false;
+    const checkedDependentIds = new Set(
+      checkins.filter((c) => c.dependentId).map((c) => c.dependentId),
+    );
+    const selfCheckedIn = checkins.some(
+      (c) => c.userId === me.id && !c.dependentId,
+    );
+    if (isGuardian) {
+      return (
+        dependents.length > 0 &&
+        dependents.every((d) => checkedDependentIds.has(d.id))
+      );
+    }
+    if (dependents.length > 0) {
+      return (
+        selfCheckedIn &&
+        dependents.every((d) => checkedDependentIds.has(d.id))
+      );
+    }
+    return selfCheckedIn;
+  }, [checkins, me?.id, dependents, isGuardian]);
 
   if (!classId) {
     return (
@@ -182,8 +218,9 @@ export default function StudentClassDetail() {
           capacity: cls.capacity,
           checkinCount,
         }}
+        myCheckins={myCheckins}
         canCheckin
-        checkinDone={checkinDone}
+        checkinDone={allCheckedIn}
         checkinDisabled={checkinDisabled}
         checkinPending={checkinMutation.isPending}
         checkinDisabledReason={checkinDisabledReason}

@@ -10,7 +10,7 @@ import {
   resolveClassSessionDate,
 } from "@/lib/class-session-date";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -76,6 +76,25 @@ export default function GuardianClassDetail() {
       : false;
 
   const checkinCount = checkins?.length ?? 0;
+
+  const myCheckins = useMemo(() => {
+    if (!checkins) return [];
+    const dependentIds = new Set(dependents.map((d) => d.id));
+    return checkins
+      .filter((c) => c.dependentId != null && dependentIds.has(c.dependentId))
+      .map((c) => ({
+        name: c.dependentName ?? "Dependente",
+        checkedInAt: c.checkedInAt,
+      }));
+  }, [checkins, dependents]);
+
+  const allCheckedIn = useMemo(() => {
+    if (!checkins || dependents.length === 0) return false;
+    const checkedDependentIds = new Set(
+      checkins.filter((c) => c.dependentId).map((c) => c.dependentId),
+    );
+    return dependents.every((d) => checkedDependentIds.has(d.id));
+  }, [checkins, dependents]);
 
   if (!classId) {
     return (
@@ -144,8 +163,9 @@ export default function GuardianClassDetail() {
           capacity: cls.capacity,
           checkinCount,
         }}
+        myCheckins={myCheckins}
         canCheckin
-        checkinDone={false}
+        checkinDone={allCheckedIn}
         checkinDisabled={!withinCheckinWindow}
         checkinPending={checkinMutation.isPending}
         checkinDisabledReason={checkinDisabledReason}
