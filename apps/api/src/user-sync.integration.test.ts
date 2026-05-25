@@ -7,7 +7,7 @@ import { eq } from "drizzle-orm";
 import { users } from "@tatame/db/schema";
 import {
   afterAll,
-  afterEach,
+  beforeEach,
   beforeAll,
   describe,
   expect,
@@ -15,10 +15,7 @@ import {
   vi,
 } from "vitest";
 import { setDbForTest } from "./lib/db.js";
-import {
-  insertUserWithGlobalRole,
-  insertUserWithoutRole,
-} from "./testing/integration-seed.js";
+import { insertUserWithGlobalRole } from "./testing/integration-seed.js";
 import { setupIntegrationTest } from "./testing/integration-setup.js";
 
 vi.mock("./lib/clerk.js", () => ({
@@ -49,9 +46,9 @@ describe("User sync integration", () => {
     app = createApp();
   });
 
-  afterEach(async () => {
-    resetIntegrationClerkAuth();
+  beforeEach(async () => {
     await ctx.truncateAll();
+    resetIntegrationClerkAuth();
   });
 
   afterAll(async () => {
