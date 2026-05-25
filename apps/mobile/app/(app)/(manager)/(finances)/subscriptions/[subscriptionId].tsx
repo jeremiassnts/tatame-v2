@@ -96,17 +96,23 @@ export default function SubscriptionDetailScreen() {
             <View className="flex-row items-center" style={{ gap: 14 }}>
               <Avatar
                 variant="user"
-                imageUrl={sub.user.profileImageUrl}
-                fallbackLetter={sub.user.name}
+                imageUrl={sub.dependentName ? null : sub.user.profileImageUrl}
+                fallbackLetter={sub.dependentName ?? sub.user.name}
                 size={48}
               />
               <View style={{ gap: 2 }}>
                 <Text className="font-poppins-bold text-base text-primary">
-                  {sub.user.name}
+                  {sub.dependentName ?? sub.user.name}
                 </Text>
-                <Text className="font-poppins text-xs" style={{ color: TEXT_MUTED }}>
-                  {sub.user.email}
-                </Text>
+                {sub.dependentName ? (
+                  <Text className="font-poppins text-xs" style={{ color: TEXT_MUTED }}>
+                    Responsável: {sub.user.name}
+                  </Text>
+                ) : (
+                  <Text className="font-poppins text-xs" style={{ color: TEXT_MUTED }}>
+                    {sub.user.email}
+                  </Text>
+                )}
               </View>
             </View>
 

@@ -20,6 +20,8 @@ export type AcademySubscriptionItem = {
     email: string;
     profileImageUrl: string | null;
   };
+  dependentId: string | null;
+  dependentName: string | null;
   lastPayment: {
     referenceMonth: string;
     paidAt: Date;

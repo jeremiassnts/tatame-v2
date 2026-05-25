@@ -1,5 +1,6 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
 import {
+  dependents,
   payments,
   studentSubscriptions,
   subscriptionPlans,
@@ -299,6 +300,8 @@ export class PostgresStudentSubscriptionRepository
           email: users.email,
           profileImageUrl: users.profileImageUrl,
         },
+        dependentId: dependents.id,
+        dependentName: dependents.name,
       })
       .from(studentSubscriptions)
       .innerJoin(
@@ -306,6 +309,7 @@ export class PostgresStudentSubscriptionRepository
         eq(studentSubscriptions.planId, subscriptionPlans.id),
       )
       .innerJoin(users, eq(studentSubscriptions.userId, users.id))
+      .leftJoin(dependents, eq(studentSubscriptions.dependentId, dependents.id))
       .where(conditions.length === 1 ? conditions[0]! : and(...conditions))
       .orderBy(desc(studentSubscriptions.createdAt));
 
@@ -332,6 +336,8 @@ export class PostgresStudentSubscriptionRepository
         subscription: r.subscription,
         plan: r.plan,
         user: r.user,
+        dependentId: r.dependentId,
+        dependentName: r.dependentName,
         lastPayment: lp
           ? {
               referenceMonth: lp.referenceMonth,
@@ -381,6 +387,8 @@ export class PostgresStudentSubscriptionRepository
           email: users.email,
           profileImageUrl: users.profileImageUrl,
         },
+        dependentId: dependents.id,
+        dependentName: dependents.name,
       })
       .from(studentSubscriptions)
       .innerJoin(
@@ -388,6 +396,7 @@ export class PostgresStudentSubscriptionRepository
         eq(studentSubscriptions.planId, subscriptionPlans.id),
       )
       .innerJoin(users, eq(studentSubscriptions.userId, users.id))
+      .leftJoin(dependents, eq(studentSubscriptions.dependentId, dependents.id))
       .where(
         and(
           eq(studentSubscriptions.id, subscriptionId),
@@ -413,6 +422,8 @@ export class PostgresStudentSubscriptionRepository
       subscription: row.subscription,
       plan: row.plan,
       user: row.user,
+      dependentId: row.dependentId,
+      dependentName: row.dependentName,
       lastPayment: lastPayments[0]
         ? {
             referenceMonth: lastPayments[0].referenceMonth,
