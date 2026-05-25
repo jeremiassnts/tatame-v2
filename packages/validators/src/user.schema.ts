@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const roleEnumSchema = z.enum(["manager", "instructor", "student"]);
+export const roleEnumSchema = z.enum(["manager", "instructor", "student", "guardian"]);
 
 export const syncUserBodySchema = z.object({
   role: roleEnumSchema.optional(),
