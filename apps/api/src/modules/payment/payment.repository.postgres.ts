@@ -194,4 +194,26 @@ export class PostgresPaymentRepository implements IPaymentRepository {
       .delete(pendingPixPayments)
       .where(eq(pendingPixPayments.pixQrCodeId, pixQrCodeId));
   }
+
+  async findByDependentId(dependentId: string): Promise<PaymentRow[]> {
+    return this.db
+      .select({
+        id: payments.id,
+        subscriptionId: payments.subscriptionId,
+        userId: payments.userId,
+        academyId: payments.academyId,
+        dependentId: payments.dependentId,
+        amountCents: payments.amountCents,
+        method: payments.method,
+        confirmedBy: payments.confirmedBy,
+        stripePaymentId: payments.stripePaymentId,
+        referenceMonth: payments.referenceMonth,
+        notes: payments.notes,
+        paidAt: payments.paidAt,
+        createdAt: payments.createdAt,
+      })
+      .from(payments)
+      .where(eq(payments.dependentId, dependentId))
+      .orderBy(desc(payments.paidAt));
+  }
 }

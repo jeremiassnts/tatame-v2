@@ -117,4 +117,10 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
   async deletePendingPix(pixQrCodeId: string): Promise<void> {
     this.pendingPix.delete(pixQrCodeId);
   }
+
+  async findByDependentId(dependentId: string): Promise<PaymentRow[]> {
+    return this.rows
+      .filter((p) => p.dependentId === dependentId)
+      .sort((a, b) => new Date(b.paidAt).getTime() - new Date(a.paidAt).getTime());
+  }
 }

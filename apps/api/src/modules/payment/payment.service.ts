@@ -55,7 +55,7 @@ export class PaymentService {
 
     if (this.dispatcher) {
       // Notify student
-      this.dispatcher.notifyUsers(
+      void this.dispatcher.notifyUsers(
         "payment_confirmed",
         [result.userId],
         [sub.plan.name],
@@ -83,6 +83,10 @@ export class PaymentService {
     academyId: string,
   ): Promise<PaymentRow[]> {
     return this.paymentRepo.findByAcademy(academyId, { userId: studentUserId });
+  }
+
+  async listForDependent(dependentId: string): Promise<PaymentRow[]> {
+    return this.paymentRepo.findByDependentId(dependentId);
   }
 
   async createCheckoutSession(
@@ -231,15 +235,15 @@ export class PaymentService {
     });
 
     const rawText = await abacateRes.text();
-    let result: any;
+    let result: { error?: string; data?: { id: string; brCode: string; brCodeBase64: string; amount: number; expiresAt: string } };
     try {
-      result = JSON.parse(rawText);
+      result = JSON.parse(rawText) as typeof result;
     } catch {
       throw new HttpError(502, `AbacatePay returned invalid response: ${rawText.slice(0, 200)}`);
     }
 
     if (!abacateRes.ok || result.error) {
-      throw new HttpError(502, result?.error ?? "AbacatePay request failed");
+      throw new HttpError(502, result.error ?? "AbacatePay request failed");
     }
 
     const data = result.data;

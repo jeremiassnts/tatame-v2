@@ -62,4 +62,6 @@ export interface IPaymentRepository {
   } | undefined>;
 
   deletePendingPix(pixQrCodeId: string): Promise<void>;
+
+  findByDependentId(dependentId: string): Promise<PaymentRow[]>;
 }

@@ -220,17 +220,32 @@ paymentRouter.get(
       );
 
       const rawText = await abacateRes.text();
-      let result: any;
+      let result: { data?: { status?: string } };
       try {
-        result = JSON.parse(rawText);
+        result = JSON.parse(rawText) as typeof result;
       } catch {
         throw new HttpError(502, "AbacatePay returned invalid response");
       }
 
-      res.json({ status: result?.data?.status ?? "UNKNOWN" });
+      res.json({ status: result.data?.status ?? "UNKNOWN" });
     } catch (e) {
       next(e);
     }
+  },
+);
+
+paymentRouter.get(
+  "/dependent/:dependentId",
+  authorize(Role.Student, Role.Guardian, Role.Manager),
+  attachActiveAcademyContext,
+  requireActiveAcademy,
+  async (req, res, next) => {
+    try {
+      const { dependentId } = req.params;
+      if (!dependentId) { res.status(400).json({ error: "dependentId required" }); return; }
+      const items = await paymentService.listForDependent(dependentId);
+      res.json({ items });
+    } catch (e) { next(e); }
   },
 );
 
