@@ -44,14 +44,22 @@ export default function PlanDetailScreen() {
     const runSelectPlan = async () => {
       try {
         await selectPlan.mutateAsync({ planId: plan.id, dependentId });
-        await queryClient.refetchQueries({ queryKey: ["subscription", "me"] });
+        if (dependentId) {
+          await queryClient.refetchQueries({ queryKey: ["subscription", dependentId] });
+        } else {
+          await queryClient.refetchQueries({ queryKey: ["subscription", "me"] });
+        }
         Alert.alert(
           hasActiveSubscription ? "Plano atualizado" : "Assinatura ativada",
           hasActiveSubscription
-            ? "Sua assinatura foi atualizada com sucesso."
-            : "Sua assinatura foi ativada com sucesso.",
+            ? "A assinatura foi atualizada com sucesso."
+            : "A assinatura foi ativada com sucesso.",
         );
-        router.replace("/(app)/(student)/(subscription)");
+        if (dependentId) {
+          router.replace(`/(app)/(guardian)/(dependents)/subscription?dependentId=${dependentId}`);
+        } else {
+          router.replace("/(app)/(student)/(subscription)");
+        }
       } catch {
         Alert.alert(
           "Erro",
