@@ -1,14 +1,15 @@
 /**
  * Seed script for development/test environment.
  *
- * Inserts realistic data WITHOUT deleting existing rows.
+ * Truncates all tables and inserts fresh realistic data.
  * Run with: pnpm --filter api seed
  */
 import { faker } from "@faker-js/faker/locale/pt_BR";
 import { loadEnv } from "@tatame/config";
+import { sql } from "drizzle-orm";
 import {
   academies,
-  academyMemberships, beltPromotions, checkins, classes, createDb, managerSubscriptions, notifications, payments, studentSubscriptions, subscriptionPlans, userRoles, users
+  academyMemberships, beltPromotions, checkins, classes, createDb, dependents, managerSubscriptions, notifications, payments, studentSubscriptions, subscriptionPlans, userRoles, users
 } from "@tatame/db";
 
 const env = loadEnv();
@@ -54,6 +55,18 @@ function referenceMonth(d: Date): string {
 
 async function seed() {
   console.log("Seeding database...\n");
+
+  // ── Truncate all tables ────────────────────────────────────────────────
+  await db.execute(
+    sql`TRUNCATE TABLE
+      notifications, custom_notification_sends, announcements,
+      notification_preferences, engagement_milestones, push_tokens,
+      pending_pix_payments, payments, checkins, student_subscriptions,
+      manager_subscriptions, classes, dependents, belt_promotions,
+      academy_memberships, user_roles, academies, users
+    CASCADE`,
+  );
+  console.log("  Truncated all tables");
 
   // ── Manager (academy owner) ──────────────────────────────────────────
   const managerId = rid();
@@ -274,11 +287,7 @@ async function seed() {
     await db.insert(users).values({
       id,
       clerkUserId: clerkId,
-      email: faker.internet.email({
-        firstName,
-        lastName,
-        provider,
-      }),
+      email: `${firstName.toLowerCase()}${i}.${lastName.toLowerCase()}@${provider}`,
       name: fullName,
       phone: faker.phone.number({ style: "national" }),
       instagram: faker.helpers.maybe(
@@ -379,6 +388,206 @@ async function seed() {
   }
   console.log(`  Students: ${studentCount} (${studentIds.filter((_, i) => i < studentCount - 3).length} active, 3 inactive)`);
 
+  // ── Guardians with Dependents ──────────────────────────────────────────
+  const kidBelts: Array<{ belt: "grey_white" | "grey" | "yellow_white" | "yellow" | "orange_white" | "orange"; stripes: number }> = [
+    { belt: "grey_white", stripes: 0 },
+    { belt: "grey_white", stripes: 2 },
+    { belt: "grey", stripes: 1 },
+    { belt: "yellow_white", stripes: 0 },
+    { belt: "yellow", stripes: 3 },
+    { belt: "orange_white", stripes: 0 },
+  ];
+
+  const guardianData = [
+    { name: "Ana Carolina Mendes", dependents: ["Lucas Mendes", "Sofia Mendes"] },
+    { name: "Pedro Augusto Lima", dependents: ["Mateus Lima"] },
+    { name: "Juliana Ferreira Costa", dependents: ["Davi Costa", "Laura Costa", "Miguel Costa"] },
+  ];
+
+  const allDependentIds: string[] = [];
+  const dependentOwnerMap: Record<string, string> = {}; // dependentId → guardianUserId
+  const dependentSubIds: string[] = [];
+
+  for (const g of guardianData) {
+    const guardianId = rid();
+    const clerkId = `clerk_seed_guard_${faker.string.alphanumeric(10)}`;
+
+    await db.insert(users).values({
+      id: guardianId,
+      clerkUserId: clerkId,
+      email: faker.internet.email({
+        firstName: g.name.split(" ")[0],
+        lastName: g.name.split(" ").slice(-1)[0],
+        provider,
+      }),
+      name: g.name,
+      phone: faker.phone.number({ style: "national" }),
+      birthDate: utcIsoDate(faker.date.birthdate({ min: 30, max: 50, mode: "age" })),
+      profileImageUrl: faker.image.personPortrait(),
+    });
+
+    await db.insert(userRoles).values({
+      id: rid(),
+      userId: guardianId,
+      role: "guardian",
+      isActive: true,
+    });
+
+    await db.insert(academyMemberships).values({
+      id: rid(),
+      academyId,
+      userId: guardianId,
+      role: "guardian",
+      status: "active",
+      isActive: true,
+      joinedAt: faker.date.past({ years: 1 }),
+    });
+
+    console.log(`  Guardian: ${g.name} (${clerkId})`);
+
+    for (let di = 0; di < g.dependents.length; di++) {
+      const depName = g.dependents[di]!;
+      const depId = rid();
+      allDependentIds.push(depId);
+
+      dependentOwnerMap[depId] = guardianId;
+
+      await db.insert(dependents).values({
+        id: depId,
+        guardianId,
+        academyId,
+        name: depName,
+        birthDate: utcIsoDate(faker.date.birthdate({ min: 5, max: 14, mode: "age" })),
+      });
+
+      // Belt for dependent
+      const beltData = kidBelts[di % kidBelts.length]!;
+      await db.insert(beltPromotions).values({
+        id: rid(),
+        userId: guardianId,
+        academyId,
+        promotedBy: instructorIds[0]!,
+        dependentId: depId,
+        belt: beltData.belt,
+        stripes: beltData.stripes,
+        isCurrent: true,
+        promotedAt: faker.date.past({ years: 1 }),
+        notes: null,
+      });
+
+      // Subscription for dependent (Kids plan)
+      const depSubId = rid();
+      dependentSubIds.push(depSubId);
+      const depStartsAt = faker.date.past({ years: 1 });
+
+      await db.insert(studentSubscriptions).values({
+        id: depSubId,
+        userId: guardianId,
+        planId: planKidsId,
+        dependentId: depId,
+        status: "active",
+        startsAt: utcIsoDate(depStartsAt),
+        expiresAt: utcIsoDate(addMonths(now, 1)),
+      });
+
+      // Payments for dependent (last 3 months)
+      for (let m = 2; m >= 0; m--) {
+        const payDate = new Date(now);
+        payDate.setMonth(payDate.getMonth() - m);
+        payDate.setDate(faker.number.int({ min: 1, max: 10 }));
+
+        await db.insert(payments).values({
+          id: rid(),
+          subscriptionId: depSubId,
+          userId: guardianId,
+          academyId,
+          dependentId: depId,
+          amountCents: 12000,
+          method: "manual",
+          confirmedBy: managerId,
+          referenceMonth: referenceMonth(payDate),
+          paidAt: payDate,
+        });
+      }
+
+      console.log(`    Dependent: ${depName} (${beltData.belt}, ${beltData.stripes} graus)`);
+    }
+  }
+
+  // ── Students with Dependents (students who also have kids) ─────────────
+  // Pick 2 existing active students and give them dependents
+  const studentsWithDeps = [
+    { idx: 5, depName: "Isabela " + faker.person.lastName() },
+    { idx: 12, depName: "Guilherme " + faker.person.lastName() },
+  ];
+
+  for (const sd of studentsWithDeps) {
+    const studentId = studentIds[sd.idx]!;
+    const depId = rid();
+    allDependentIds.push(depId);
+
+    dependentOwnerMap[depId] = studentId;
+
+    await db.insert(dependents).values({
+      id: depId,
+      guardianId: studentId,
+      academyId,
+      name: sd.depName,
+      birthDate: utcIsoDate(faker.date.birthdate({ min: 6, max: 12, mode: "age" })),
+    });
+
+    const beltData = kidBelts[Math.floor(Math.random() * kidBelts.length)]!;
+    await db.insert(beltPromotions).values({
+      id: rid(),
+      userId: studentId,
+      academyId,
+      promotedBy: instructorIds[0]!,
+      dependentId: depId,
+      belt: beltData.belt,
+      stripes: beltData.stripes,
+      isCurrent: true,
+      promotedAt: faker.date.past({ years: 1 }),
+      notes: null,
+    });
+
+    const depSubId = rid();
+    dependentSubIds.push(depSubId);
+    const depStartsAt = faker.date.past({ years: 1 });
+
+    await db.insert(studentSubscriptions).values({
+      id: depSubId,
+      userId: studentId,
+      planId: planKidsId,
+      dependentId: depId,
+      status: "active",
+      startsAt: utcIsoDate(depStartsAt),
+      expiresAt: utcIsoDate(addMonths(now, 1)),
+    });
+
+    for (let m = 2; m >= 0; m--) {
+      const payDate = new Date(now);
+      payDate.setMonth(payDate.getMonth() - m);
+      payDate.setDate(faker.number.int({ min: 1, max: 10 }));
+
+      await db.insert(payments).values({
+        id: rid(),
+        subscriptionId: depSubId,
+        userId: studentId,
+        academyId,
+        dependentId: depId,
+        amountCents: 12000,
+        method: "manual",
+        confirmedBy: managerId,
+        referenceMonth: referenceMonth(payDate),
+        paidAt: payDate,
+      });
+    }
+
+    console.log(`  Student+Dependent: student[${sd.idx}] → ${sd.depName} (${beltData.belt})`);
+  }
+
+  console.log(`  Total dependents: ${allDependentIds.length} (${guardianData.reduce((s, g) => s + g.dependents.length, 0)} from guardians, ${studentsWithDeps.length} from students)`);
+
   // ── Checkins (last 4 weeks) ──────────────────────────────────────────
   let checkinCount = 0;
   const activeStudentIds = studentIds.slice(0, studentCount - 3);
@@ -430,7 +639,47 @@ async function seed() {
       }
     }
   }
-  console.log(`  Checkins: ${checkinCount} nos últimos 28 dias`);
+  // Dependent checkins (Kids classes only)
+  const kidsClassIds = classIds.filter((_, ci) => classSchedule[ci]!.name === "Kids Jiu-Jitsu");
+
+  for (let weeksAgo = 3; weeksAgo >= 0; weeksAgo--) {
+    for (const depId of allDependentIds) {
+      const sessionsThisWeek = faker.number.int({ min: 1, max: 2 });
+      const selectedClasses = faker.helpers.arrayElements(
+        kidsClassIds,
+        Math.min(sessionsThisWeek, kidsClassIds.length),
+      );
+
+      for (const classId of selectedClasses) {
+        const classIdx = classIds.indexOf(classId);
+        const classDay = classSchedule[classIdx]!.day;
+
+        const d = new Date(now);
+        d.setDate(d.getDate() - weeksAgo * 7);
+        const currentDay = d.getUTCDay();
+        const diff = classDay - currentDay;
+        d.setDate(d.getDate() + diff);
+
+        if (d > now) continue;
+
+        const dateStr = utcIsoDate(d);
+        const weekRef = utcMondayOfWeek(d);
+
+        const inserted = await db.insert(checkins).values({
+          id: rid(),
+          classId,
+          userId: dependentOwnerMap[depId]!,
+          dependentId: depId,
+          checkedInAt: d,
+          date: dateStr,
+          weekReference: weekRef,
+        }).onConflictDoNothing().returning();
+        if (inserted.length > 0) checkinCount++;
+      }
+    }
+  }
+
+  console.log(`  Checkins: ${checkinCount} nos últimos 28 dias (inclui dependentes)`);
 
   // ── Pending membership request ───────────────────────────────────────
   const pendingId = rid();
