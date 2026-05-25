@@ -4,7 +4,7 @@ import { queryClient } from "@/lib/query-client";
 import { useAuth } from "@clerk/clerk-expo";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { GraduationCap, User } from "lucide-react-native";
+import { GraduationCap, User, Users } from "lucide-react-native";
 import { useState } from "react";
 import { Alert, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -21,6 +21,12 @@ const ROLES = [
     label: "Aluno",
     description: "Treine, registre presença e acompanhe sua graduação",
     Icon: User,
+  },
+  {
+    key: "guardian",
+    label: "Responsável",
+    description: "Gerencie o acesso dos seus filhos na academia",
+    Icon: Users,
   },
 ] as const;
 
