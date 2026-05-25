@@ -2,8 +2,9 @@ import { BackButton } from "@/components/BackButton";
 import { BELT_LABELS_SHORT, BELT_COLORS } from "@/lib/belts";
 import type { Belt } from "@/lib/belts";
 import { useDependents } from "@/lib/hooks/use-dependents";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { Plus, Users } from "lucide-react-native";
+import { useCallback } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -35,8 +36,14 @@ function SubscriptionBadge({ status }: { status: SubscriptionStatus }) {
 
 export default function DependentsListScreen() {
   const router = useRouter();
-  const { data, isPending } = useDependents();
+  const { data, isPending, refetch } = useDependents();
   const dependents = data?.items ?? [];
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch]),
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-background pt-4" edges={["top"]}>

@@ -78,6 +78,7 @@ export function useSelectPlan() {
       if (variables.dependentId) {
         queryClient.invalidateQueries({ queryKey: ["subscription", variables.dependentId] });
         queryClient.invalidateQueries({ queryKey: ["payments", variables.dependentId] });
+        queryClient.invalidateQueries({ queryKey: ["dependents", "me"] });
       }
     },
   });
