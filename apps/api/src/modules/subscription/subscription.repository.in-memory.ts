@@ -128,6 +128,7 @@ export class InMemoryStudentSubscriptionRepository
       status: "active" | "expired" | "cancelled";
       startsAt: string;
       expiresAt: string;
+      dependentId?: string | null;
     },
   ): Promise<StudentSubscriptionRow> {
     await this.cancelActiveForUserInAcademy(userId, academyId);
@@ -137,6 +138,7 @@ export class InMemoryStudentSubscriptionRepository
       status: newRow.status,
       startsAt: newRow.startsAt,
       expiresAt: newRow.expiresAt,
+      dependentId: newRow.dependentId ?? null,
     });
   }
 
@@ -146,13 +148,14 @@ export class InMemoryStudentSubscriptionRepository
     status: "active" | "expired" | "cancelled";
     startsAt: string;
     expiresAt: string;
+    dependentId?: string | null;
   }): Promise<StudentSubscriptionRow> {
     const t = new Date();
     const row: StudentSubscriptionRow = {
       id: randomUUID(),
       userId: data.userId,
       planId: data.planId,
-      dependentId: null,
+      dependentId: data.dependentId ?? null,
       status: data.status,
       startsAt: data.startsAt,
       expiresAt: data.expiresAt,

@@ -79,6 +79,7 @@ export interface IStudentSubscriptionRepository {
       status: "active" | "expired" | "cancelled";
       startsAt: string;
       expiresAt: string;
+      dependentId?: string | null;
     },
   ): Promise<StudentSubscriptionRow>;
 
@@ -88,6 +89,7 @@ export interface IStudentSubscriptionRepository {
     status: "active" | "expired" | "cancelled";
     startsAt: string;
     expiresAt: string;
+    dependentId?: string | null;
   }): Promise<StudentSubscriptionRow>;
 
   update(

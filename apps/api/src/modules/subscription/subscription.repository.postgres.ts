@@ -178,6 +178,7 @@ export class PostgresStudentSubscriptionRepository
       status: "active" | "expired" | "cancelled";
       startsAt: string;
       expiresAt: string;
+      dependentId?: string | null;
     },
   ): Promise<StudentSubscriptionRow> {
     return this.db.transaction(async (tx) => {
@@ -191,6 +192,7 @@ export class PostgresStudentSubscriptionRepository
         status: newRow.status,
         startsAt: newRow.startsAt,
         expiresAt: newRow.expiresAt,
+        dependentId: newRow.dependentId ?? null,
       });
     });
   }
@@ -201,6 +203,7 @@ export class PostgresStudentSubscriptionRepository
     status: "active" | "expired" | "cancelled";
     startsAt: string;
     expiresAt: string;
+    dependentId?: string | null;
   }): Promise<StudentSubscriptionRow> {
     const [row] = await this.db
       .insert(studentSubscriptions)
@@ -210,6 +213,7 @@ export class PostgresStudentSubscriptionRepository
         status: data.status,
         startsAt: data.startsAt,
         expiresAt: data.expiresAt,
+        dependentId: data.dependentId ?? null,
       })
       .returning();
     if (!row) throw new Error("Failed to create student subscription");

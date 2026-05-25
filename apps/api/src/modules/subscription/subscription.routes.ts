@@ -56,7 +56,7 @@ const subscriptionService = new SubscriptionService(
 
 subscriptionRouter.get(
   "/plans",
-  authorize(Role.Manager, Role.Instructor, Role.Student),
+  authorize(Role.Manager, Role.Instructor, Role.Student, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   async (req, res, next) => {
@@ -100,7 +100,7 @@ subscriptionRouter.post(
 
 subscriptionRouter.get(
   "/plans/:planId",
-  authorize(Role.Manager, Role.Instructor, Role.Student),
+  authorize(Role.Manager, Role.Instructor, Role.Student, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   async (req, res, next) => {
@@ -152,7 +152,7 @@ subscriptionRouter.patch(
 
 subscriptionRouter.get(
   "/me",
-  authorize(Role.Manager, Role.Instructor, Role.Student),
+  authorize(Role.Manager, Role.Instructor, Role.Student, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   async (req, res, next) => {
@@ -223,22 +223,28 @@ subscriptionRouter.get(
 
 subscriptionRouter.post(
   "/me/plan",
-  authorize(Role.Student),
+  authorize(Role.Student, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   validateBody(selectStudentPlanBodySchema),
   async (req, res, next) => {
     try {
-      const { planId } = req.validatedBody as SelectStudentPlanBody;
-      if (req.appAuth!.academyRole !== Role.Student) {
+      const { planId, dependentId } = req.validatedBody as SelectStudentPlanBody;
+      const role = req.appAuth!.role;
+      if (role !== Role.Student && role !== Role.Guardian) {
         throw new HttpError(
           403,
-          "Only students with an active student membership can select a plan",
+          "Only students or guardians can select a plan",
         );
+      }
+      if (role === Role.Guardian && !dependentId) {
+        throw new HttpError(400, "dependentId is required for guardians");
       }
       const userId = req.appAuth!.userId;
       const academyId = req.appAuth!.activeAcademyId!;
-      const result = await subscriptionService.selectPlan(userId, academyId, planId);
+      const result = await subscriptionService.selectPlan(userId, academyId, planId, {
+        dependentId: dependentId ?? null,
+      });
 
       // Send enrollment email
       if (emailService) {

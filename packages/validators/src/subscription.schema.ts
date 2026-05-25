@@ -39,6 +39,7 @@ export type UpdateSubscriptionPlanBody = z.infer<
 
 export const selectStudentPlanBodySchema = z.object({
   planId: z.string().uuid(),
+  dependentId: z.string().uuid().optional(),
 });
 
 export type SelectStudentPlanBody = z.infer<typeof selectStudentPlanBodySchema>;
