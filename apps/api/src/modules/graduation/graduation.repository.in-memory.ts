@@ -32,6 +32,7 @@ export class InMemoryGraduationRepository implements IGraduationRepository {
     belt: string;
     stripes: number;
     notes: string | null;
+    dependentId?: string | null;
   }): Promise<BeltPromotionRow> {
     const hasCurrent = this.rows.some(
       (r) => r.userId === data.userId && r.isCurrent,
@@ -45,7 +46,7 @@ export class InMemoryGraduationRepository implements IGraduationRepository {
       userId: data.userId,
       academyId: data.academyId,
       promotedBy: data.promotedBy,
-      dependentId: null,
+      dependentId: data.dependentId ?? null,
       belt: data.belt as BeltPromotionRow["belt"],
       stripes: data.stripes,
       isCurrent: true,
