@@ -312,6 +312,30 @@ export class PostgresStudentSubscriptionRepository
     });
   }
 
+  async findByDependentIdWithPlan(
+    dependentId: string,
+  ): Promise<StudentSubscriptionWithPlan | undefined> {
+    const rows = await this.db
+      .select({
+        subscription: studentSubscriptions,
+        plan: subscriptionPlans,
+      })
+      .from(studentSubscriptions)
+      .innerJoin(
+        subscriptionPlans,
+        eq(studentSubscriptions.planId, subscriptionPlans.id),
+      )
+      .where(
+        and(
+          eq(studentSubscriptions.dependentId, dependentId),
+          inArray(studentSubscriptions.status, ["active", "expired"]),
+        ),
+      )
+      .orderBy(desc(studentSubscriptions.createdAt))
+      .limit(1);
+    return rows[0];
+  }
+
   async findByIdForManager(
     subscriptionId: string,
     academyId: string,

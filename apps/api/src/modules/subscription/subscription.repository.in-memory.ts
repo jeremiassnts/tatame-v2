@@ -193,4 +193,19 @@ export class InMemoryStudentSubscriptionRepository
   ): Promise<AcademySubscriptionItem | undefined> {
     return undefined;
   }
+
+  async findByDependentIdWithPlan(
+    dependentId: string,
+  ): Promise<StudentSubscriptionWithPlan | undefined> {
+    for (const sub of [...this.rows].sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    )) {
+      if (sub.dependentId !== dependentId || sub.status === "cancelled")
+        continue;
+      const plan = await this.planRepo.findById(sub.planId);
+      if (plan) return { subscription: sub, plan };
+    }
+    return undefined;
+  }
 }

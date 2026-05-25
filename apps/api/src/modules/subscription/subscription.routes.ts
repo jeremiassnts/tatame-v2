@@ -168,6 +168,30 @@ subscriptionRouter.get(
 );
 
 subscriptionRouter.get(
+  "/dependent/:dependentId",
+  authorize(Role.Student, Role.Guardian, Role.Manager),
+  attachActiveAcademyContext,
+  requireActiveAcademy,
+  async (req, res, next) => {
+    try {
+      const { dependentId } = req.params;
+      if (!dependentId) {
+        res.status(400).json({ error: "dependentId required" });
+        return;
+      }
+      const academyId = req.appAuth!.activeAcademyId!;
+      const payload = await subscriptionService.getSubscriptionForDependent(
+        dependentId,
+        academyId,
+      );
+      res.json(payload);
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+subscriptionRouter.get(
   "/academy",
   authorize(Role.Manager),
   attachActiveAcademyContext,

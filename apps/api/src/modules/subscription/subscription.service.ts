@@ -177,6 +177,36 @@ export class SubscriptionService {
     };
   }
 
+  async getSubscriptionForDependent(
+    dependentId: string,
+    academyId: string,
+  ): Promise<SubscriptionMePayload> {
+    let academyPlan: "free" | "pro" | null = null;
+    if (this.managerSubRepo) {
+      const managerSub = await this.managerSubRepo.findByAcademyId(academyId);
+      academyPlan = managerSub?.plan ?? null;
+    }
+
+    const result =
+      await this.studentSubRepo.findByDependentIdWithPlan(dependentId);
+    if (!result) {
+      return { subscription: null, plan: null, academyPlan };
+    }
+
+    const { subscription: sub, plan } = result;
+    const expiredByDate = isExpiredByDate(sub.expiresAt);
+    let effectiveStatus: "active" | "expired" | "cancelled" = sub.status;
+    if (sub.status === "active" && expiredByDate) {
+      effectiveStatus = "expired";
+    }
+
+    return {
+      subscription: { ...sub, expiredByDate, effectiveStatus },
+      plan,
+      academyPlan,
+    };
+  }
+
   async selectPlan(
     userId: string,
     academyId: string,

@@ -110,4 +110,8 @@ export interface IStudentSubscriptionRepository {
     subscriptionId: string,
     academyId: string,
   ): Promise<AcademySubscriptionItem | undefined>;
+
+  findByDependentIdWithPlan(
+    dependentId: string,
+  ): Promise<StudentSubscriptionWithPlan | undefined>;
 }
