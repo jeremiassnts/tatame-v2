@@ -81036,6 +81036,270 @@
           ]
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "ej5U7",
+      "x": 1950,
+      "y": 1109,
+      "name": "M-AUTH-01b: Welcome Landing (Social Only)",
+      "clip": true,
+      "width": 402,
+      "height": 874,
+      "fill": "$--bg-page",
+      "layout": "vertical",
+      "justifyContent": "center",
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "frame",
+          "id": "j1vFlK",
+          "name": "Status Bar",
+          "width": "fill_container",
+          "height": 62,
+          "padding": [
+            0,
+            24
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "sNfwV",
+              "name": "timeLabel",
+              "fill": "$--text-primary",
+              "content": "9:41",
+              "fontFamily": "Poppins",
+              "fontSize": 16,
+              "fontWeight": "600"
+            },
+            {
+              "type": "frame",
+              "id": "aRHED",
+              "name": "rightIcons",
+              "gap": 6,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "FICjP",
+                  "name": "ic1",
+                  "width": 16,
+                  "height": 16,
+                  "iconFontName": "signal",
+                  "iconFontFamily": "lucide",
+                  "fill": "$--text-primary"
+                },
+                {
+                  "type": "icon_font",
+                  "id": "PuzAO",
+                  "name": "ic2",
+                  "width": 16,
+                  "height": 16,
+                  "iconFontName": "wifi",
+                  "iconFontFamily": "lucide",
+                  "fill": "$--text-primary"
+                },
+                {
+                  "type": "icon_font",
+                  "id": "oXIvP",
+                  "name": "ic3",
+                  "width": 16,
+                  "height": 16,
+                  "iconFontName": "battery-full",
+                  "iconFontFamily": "lucide",
+                  "fill": "$--text-primary"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Ns6Ei",
+          "name": "Brand Group",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 24,
+          "padding": [
+            0,
+            40
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "A7X6Is",
+              "name": "Logo",
+              "width": 88,
+              "height": 88,
+              "fill": "$--bg-elevated",
+              "cornerRadius": 22,
+              "layout": "vertical",
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "nKMzR",
+                  "name": "logoIcon",
+                  "width": 44,
+                  "height": 44,
+                  "iconFontName": "grid-3x3",
+                  "iconFontFamily": "lucide",
+                  "fill": "#FFFFFF"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "H7WRM",
+              "name": "textGroup",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 8,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "emNyA",
+                  "name": "appTitle",
+                  "fill": "$--text-primary",
+                  "content": "TATAME",
+                  "fontFamily": "Poppins",
+                  "fontSize": 32,
+                  "fontWeight": "700",
+                  "letterSpacing": -1
+                },
+                {
+                  "type": "text",
+                  "id": "ALCE1",
+                  "name": "appTag",
+                  "fill": "$--text-muted",
+                  "content": "Sua academia na palma da mão",
+                  "textAlign": "center",
+                  "fontFamily": "Poppins",
+                  "fontSize": 15,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Frymr",
+          "name": "Bottom Area",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 16,
+          "padding": [
+            0,
+            24
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "csLvD",
+              "name": "Login Buttons",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Eq3UJ",
+                  "name": "Google",
+                  "width": "fill_container",
+                  "height": 56,
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 14,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#E0E0E0"
+                  },
+                  "gap": 10,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "dXiis",
+                      "name": "googleIcon",
+                      "width": 22,
+                      "height": 22,
+                      "iconFontName": "globe",
+                      "iconFontFamily": "lucide",
+                      "fill": "#4285F4"
+                    },
+                    {
+                      "type": "text",
+                      "id": "PcRdj",
+                      "name": "googleLabel",
+                      "fill": "#1A1A1A",
+                      "content": "Entrar com Google",
+                      "fontFamily": "Poppins",
+                      "fontSize": 16,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "G5zwh7",
+                  "name": "Apple",
+                  "width": "fill_container",
+                  "height": 56,
+                  "fill": "#1a1a1aff",
+                  "cornerRadius": 14,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 2,
+                    "fill": "#2a2a2aff"
+                  },
+                  "gap": 10,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "mXzri",
+                      "name": "appleIcon",
+                      "width": 22,
+                      "height": 22,
+                      "iconFontName": "apple",
+                      "iconFontFamily": "lucide",
+                      "fill": "#FFFFFF"
+                    },
+                    {
+                      "type": "text",
+                      "id": "EVUce",
+                      "name": "appleLabel",
+                      "fill": "#FFFFFF",
+                      "content": "Entrar com Apple",
+                      "fontFamily": "Poppins",
+                      "fontSize": 16,
+                      "fontWeight": "600"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 3,
+              "id": "XISAF",
+              "name": "Home Indicator",
+              "fill": "$--text-muted",
+              "width": 134,
+              "height": 5
+            }
+          ]
+        }
+      ]
     }
   ],
   "variables": {
