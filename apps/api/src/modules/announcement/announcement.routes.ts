@@ -56,7 +56,7 @@ announcementRouter.post(
 // GET / — list by academy
 announcementRouter.get(
   "/",
-  authorize(Role.Manager, Role.Instructor, Role.Student),
+  authorize(Role.Manager, Role.Instructor, Role.Student, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   async (req, res, next) => {
@@ -80,7 +80,7 @@ announcementRouter.get(
 // GET /:id — detail
 announcementRouter.get(
   "/:id",
-  authorize(Role.Manager, Role.Instructor, Role.Student),
+  authorize(Role.Manager, Role.Instructor, Role.Student, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   async (req, res, next) => {

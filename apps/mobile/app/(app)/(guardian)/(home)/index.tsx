@@ -88,7 +88,7 @@ export default function GuardianHome() {
 
           {/* Meus Dependentes card */}
           <Pressable
-            onPress={() => router.push("/(app)/(guardian)/(more)/dependents")}
+            onPress={() => router.push("/(app)/(guardian)/(dependents)")}
             className="flex-row items-center gap-3 rounded-2xl border border-surface-border bg-surface p-4"
           >
             <View className="h-10 w-10 items-center justify-center rounded-xl bg-accent-translucent">
@@ -110,11 +110,6 @@ export default function GuardianHome() {
             <Text className="font-poppins-semibold text-sm" style={{ color: TEXT_SECONDARY }}>
               Aulas de hoje
             </Text>
-            <Pressable onPress={() => router.push("/(app)/(guardian)/(classes)")}>
-              <Text className="font-poppins-medium text-xs" style={{ color: ACCENT }}>
-                Ver todas
-              </Text>
-            </Pressable>
           </View>
 
           <View style={{ gap: 10 }}>
@@ -148,14 +143,6 @@ export default function GuardianHome() {
                 >
                   Últimos avisos
                 </Text>
-                <Pressable onPress={() => router.push("/(app)/(guardian)/(announcements)")}>
-                  <Text
-                    className="font-poppins-medium text-xs"
-                    style={{ color: ACCENT }}
-                  >
-                    Ver mais
-                  </Text>
-                </Pressable>
               </View>
               <View style={{ gap: 10 }}>
                 {latestAnnouncements.map((a) => (
@@ -164,9 +151,6 @@ export default function GuardianHome() {
                     title={a.title}
                     body={a.body}
                     createdAt={a.createdAt}
-                    onPress={() =>
-                      router.push(`/(app)/(guardian)/(announcements)/${a.id}`)
-                    }
                   />
                 ))}
               </View>
