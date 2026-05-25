@@ -154,7 +154,9 @@ export class SubscriptionService {
       academyPlan = managerSub?.plan ?? null;
     }
 
-    const candidate = rows.find((r) => r.subscription.status !== "cancelled");
+    const candidate = rows.find(
+      (r) => r.subscription.status !== "cancelled" && !r.subscription.dependentId,
+    );
     if (!candidate) {
       return { subscription: null, plan: null, academyPlan };
     }
