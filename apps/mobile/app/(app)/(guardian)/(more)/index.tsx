@@ -5,10 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import {
   Bell,
-  BellRing,
   ChevronRight,
-  LogOut,
-  Megaphone,
   Users,
 } from "lucide-react-native";
 import { Pressable, ScrollView, Text, View } from "react-native";
@@ -103,16 +100,10 @@ export default function GuardianMoreScreen() {
         {/* Menu items */}
         <View style={{ gap: 10 }}>
           <MenuItem
-            icon={<Megaphone size={18} color={ACCENT} />}
-            title="Avisos"
-            subtitle="Veja os avisos da academia"
-            onPress={() => router.push("/(app)/(guardian)/(announcements)")}
-          />
-          <MenuItem
             icon={<Users size={18} color={ACCENT} />}
             title="Dependentes"
             subtitle="Gerencie seus dependentes"
-            onPress={() => router.push("/(app)/(guardian)/(more)/dependents")}
+            onPress={() => router.push("/(app)/(guardian)/(dependents)")}
           />
           <MenuItem
             icon={<Bell size={18} color={ACCENT} />}

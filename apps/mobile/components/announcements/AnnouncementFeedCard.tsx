@@ -10,7 +10,7 @@ type AnnouncementFeedCardProps = {
   title: string;
   body: string;
   createdAt: string;
-  onPress: () => void;
+  onPress?: () => void;
 };
 
 export function AnnouncementFeedCard({
@@ -22,6 +22,7 @@ export function AnnouncementFeedCard({
   return (
     <Pressable
       onPress={onPress}
+      disabled={!onPress}
       className="flex-row items-center rounded-[14px] border"
       style={{
         padding: 14,
