@@ -65,6 +65,7 @@ export type PromoteBeltBody = z.infer<typeof promoteBeltBodySchema>;
 
 export const listGraduationsQuerySchema = z.object({
   userId: z.string().uuid(),
+  dependentId: z.string().uuid().optional(),
 });
 
 export type ListGraduationsQuery = z.infer<typeof listGraduationsQuerySchema>;

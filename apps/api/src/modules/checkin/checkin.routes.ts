@@ -26,6 +26,9 @@ import { PostgresCheckinRepository } from "./checkin.repository.postgres.js";
 import { CheckinService } from "./checkin.service.js";
 import { PostgresMilestoneRepository } from "../engagement/milestone.repository.postgres.js";
 import { EngagementService } from "../engagement/engagement.service.js";
+import { PostgresDependentRepository } from "../dependent/dependent.repository.postgres.js";
+import { PostgresGraduationRepository } from "../graduation/graduation.repository.postgres.js";
+import { DependentService } from "../dependent/dependent.service.js";
 
 export const checkinRouter = Router();
 
@@ -58,6 +61,13 @@ function buildEngagementService(db: ReturnType<typeof getDb>) {
 }
 
 const db = getDb();
+const dependentService = new DependentService(
+  new PostgresDependentRepository(db),
+  new PostgresMembershipRepository(db),
+  new PostgresGraduationRepository(db),
+  new PostgresStudentSubscriptionRepository(db),
+);
+
 const checkinService = new CheckinService(
   new PostgresMembershipRepository(db),
   new PostgresClassRepository(db),
@@ -133,6 +143,8 @@ checkinRouter.get(
       }
       const { dependentId } = req.params;
       if (!dependentId) { res.status(400).json({ error: "dependentId required" }); return; }
+      const auth = req.appAuth!;
+      await dependentService.getById(auth.userId, auth.role, dependentId, auth.activeAcademyId);
       const result = await checkinService.getHistoryForDependent(dependentId, {
         cursor: query.data.cursor,
         limit: query.data.limit,
@@ -151,6 +163,8 @@ checkinRouter.get(
     try {
       const { dependentId } = req.params;
       if (!dependentId) { res.status(400).json({ error: "dependentId required" }); return; }
+      const auth = req.appAuth!;
+      await dependentService.getById(auth.userId, auth.role, dependentId, auth.activeAcademyId);
       const result = await checkinService.getWeeklyCountForDependent(dependentId);
       res.json(result);
     } catch (e) { next(e); }

@@ -34,6 +34,10 @@ import { loadEnv } from "@tatame/config";
 import { PostgresUserRepository } from "../user/user.repository.postgres.js";
 import { getEmailQueue } from "../email/email.queue.js";
 import { EmailService } from "../email/email.service.js";
+import { PostgresDependentRepository } from "../dependent/dependent.repository.postgres.js";
+import { PostgresGraduationRepository } from "../graduation/graduation.repository.postgres.js";
+import { PostgresMembershipRepository } from "../membership/membership.repository.postgres.js";
+import { DependentService } from "../dependent/dependent.service.js";
 
 export const subscriptionRouter = Router();
 
@@ -46,6 +50,13 @@ const emailService = env.REDIS_URL
   : null;
 
 const managerSubRepo = new PostgresManagerSubscriptionRepository(db);
+
+const dependentService = new DependentService(
+  new PostgresDependentRepository(db),
+  new PostgresMembershipRepository(db),
+  new PostgresGraduationRepository(db),
+  new PostgresStudentSubscriptionRepository(db),
+);
 
 const subscriptionService = new SubscriptionService(
   new PostgresSubscriptionPlanRepository(db),
@@ -179,7 +190,9 @@ subscriptionRouter.get(
         res.status(400).json({ error: "dependentId required" });
         return;
       }
-      const academyId = req.appAuth!.activeAcademyId!;
+      const auth = req.appAuth!;
+      await dependentService.getById(auth.userId, auth.role, dependentId, auth.activeAcademyId);
+      const academyId = auth.activeAcademyId!;
       const payload = await subscriptionService.getSubscriptionForDependent(
         dependentId,
         academyId,

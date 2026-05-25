@@ -30,6 +30,9 @@ import { NotificationService } from "../notification/notification.service.js";
 import { PostgresPushTokenRepository } from "../push-token/push-token.repository.postgres.js";
 import { PostgresStudentSubscriptionRepository } from "../subscription/subscription.repository.postgres.js";
 import { PostgresUserRepository } from "../user/user.repository.postgres.js";
+import { PostgresDependentRepository } from "../dependent/dependent.repository.postgres.js";
+import { PostgresGraduationRepository } from "../graduation/graduation.repository.postgres.js";
+import { DependentService } from "../dependent/dependent.service.js";
 import { PostgresPaymentRepository } from "./payment.repository.postgres.js";
 import { PaymentService } from "./payment.service.js";
 
@@ -59,6 +62,13 @@ const emailService = env.REDIS_URL
   : null;
 
 const managerSubRepo = new PostgresManagerSubscriptionRepository(db);
+
+const dependentService = new DependentService(
+  new PostgresDependentRepository(db),
+  new PostgresMembershipRepository(db),
+  new PostgresGraduationRepository(db),
+  new PostgresStudentSubscriptionRepository(db),
+);
 
 const paymentService = new PaymentService(
   new PostgresPaymentRepository(db),
@@ -243,6 +253,8 @@ paymentRouter.get(
     try {
       const { dependentId } = req.params;
       if (!dependentId) { res.status(400).json({ error: "dependentId required" }); return; }
+      const auth = req.appAuth!;
+      await dependentService.getById(auth.userId, auth.role, dependentId, auth.activeAcademyId);
       const items = await paymentService.listForDependent(dependentId);
       res.json({ items });
     } catch (e) { next(e); }
