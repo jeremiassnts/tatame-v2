@@ -38,12 +38,18 @@ type ClassData = {
   checkinCount: number;
 };
 
+type MyCheckinEntry = {
+  name: string;
+  checkedInAt: string;
+};
+
 type ClassDetailViewProps = {
   classData: ClassData;
   checkins?: (CheckinItem & {
     userName: string;
     userProfileImageUrl?: string | null;
   })[];
+  myCheckins?: MyCheckinEntry[];
   canEdit?: boolean;
   canDelete?: boolean;
   canCheckin?: boolean;
@@ -87,6 +93,7 @@ function InfoRow({
 export function ClassDetailView({
   classData,
   checkins,
+  myCheckins,
   canEdit,
   canDelete,
   canCheckin,
@@ -214,6 +221,23 @@ export function ClassDetailView({
             max={classData.capacity}
           />
         </View>
+
+        {myCheckins && myCheckins.length > 0 ? (
+          <>
+            <Text className="font-poppins-semibold text-sm text-muted">
+              Meus check-ins
+            </Text>
+            <View style={{ gap: 10 }}>
+              {myCheckins.map((entry, i) => (
+                <CheckinListItem
+                  key={`my-${i}`}
+                  userName={entry.name}
+                  checkedInAt={entry.checkedInAt}
+                />
+              ))}
+            </View>
+          </>
+        ) : null}
 
         {showCheckins ? (
           <>
