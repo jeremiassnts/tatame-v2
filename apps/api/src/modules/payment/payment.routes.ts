@@ -113,7 +113,7 @@ paymentRouter.post(
 
 paymentRouter.post(
   "/checkout",
-  authorize(Role.Student),
+  authorize(Role.Student, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   validateBody(createCheckoutBodySchema),
@@ -152,7 +152,7 @@ paymentRouter.post(
 
 paymentRouter.post(
   "/checkout/pix",
-  authorize(Role.Student),
+  authorize(Role.Student, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   validateBody(createCheckoutBodySchema),
@@ -197,7 +197,7 @@ paymentRouter.get("/checkout-result", (_req, res) => {
 
 paymentRouter.get(
   "/pix-status/:pixQrCodeId",
-  authorize(Role.Student),
+  authorize(Role.Student, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   async (req, res, next) => {
