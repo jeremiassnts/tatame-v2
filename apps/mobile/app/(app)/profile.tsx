@@ -43,6 +43,7 @@ const ROLE_LABELS: Record<string, string> = {
   manager: "Gestor",
   instructor: "Instrutor",
   student: "Aluno",
+  guardian: "Responsável",
 };
 
 type ProfileForm = {
