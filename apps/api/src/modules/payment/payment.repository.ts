@@ -19,6 +19,7 @@ export interface IPaymentRepository {
     referenceMonth: string;
     notes: string | null;
     paidAt: Date;
+    dependentId?: string | null;
   }): Promise<PaymentRow>;
 
   findByAcademy(

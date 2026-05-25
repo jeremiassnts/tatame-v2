@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import type { IAcademyRepository } from "../academy/academy.repository.js";
 import type { EmailService } from "../email/email.service.js";
 import type { NotificationDispatcher } from "../notification/notification-dispatcher.js";
+import type { IStudentSubscriptionRepository } from "../subscription/subscription.repository.js";
 import type { IUserRepository } from "../user/user.repository.js";
 import type { IPaymentRepository } from "./payment.repository.js";
 
@@ -12,12 +13,13 @@ export class StripeCheckoutWebhookHandler {
     private readonly academyRepo: IAcademyRepository,
     private readonly emailService: EmailService | null,
     private readonly dispatcher?: NotificationDispatcher,
+    private readonly studentSubRepo?: IStudentSubscriptionRepository,
   ) {}
 
   async handleEvent(event: Stripe.Event): Promise<void> {
     if (event.type !== "checkout.session.completed") return;
     await this.onCheckoutSessionCompleted(
-      event.data.object as Stripe.Checkout.Session,
+      event.data.object,
     );
   }
 
@@ -46,6 +48,13 @@ export class StripeCheckoutWebhookHandler {
       if (existing) return;
     }
 
+    // Resolve dependentId from metadata or from the subscription
+    let dependentId: string | null = meta.dependentId ?? null;
+    if (!dependentId && this.studentSubRepo) {
+      const subResult = await this.studentSubRepo.findByIdWithPlan(meta.subscriptionId);
+      dependentId = subResult?.subscription.dependentId ?? null;
+    }
+
     const payment = await this.paymentRepo.create({
       subscriptionId: meta.subscriptionId,
       userId: meta.userId,
@@ -57,18 +66,19 @@ export class StripeCheckoutWebhookHandler {
       referenceMonth: meta.referenceMonth,
       notes: null,
       paidAt: new Date(),
+      dependentId,
     });
 
     // Push notifications
     if (this.dispatcher) {
       const student = await this.userRepo.findById(meta.userId);
-      this.dispatcher.notifyUsers(
+      void this.dispatcher.notifyUsers(
         "payment_confirmed",
         [meta.userId],
         ["assinatura"],
         { academyId: meta.academyId },
       );
-      this.dispatcher.notifyAcademyManagers(
+      void this.dispatcher.notifyAcademyManagers(
         "student_payment_received",
         meta.academyId,
         [student?.name ?? "Aluno", "assinatura"],

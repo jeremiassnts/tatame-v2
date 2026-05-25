@@ -20,6 +20,7 @@ export class PostgresPaymentRepository implements IPaymentRepository {
     referenceMonth: string;
     notes: string | null;
     paidAt: Date;
+    dependentId?: string | null;
   }): Promise<PaymentRow> {
     const [row] = await this.db
       .insert(payments)
@@ -34,6 +35,7 @@ export class PostgresPaymentRepository implements IPaymentRepository {
         referenceMonth: data.referenceMonth,
         notes: data.notes,
         paidAt: data.paidAt,
+        dependentId: data.dependentId ?? null,
       })
       .returning();
     if (!row) throw new Error("Failed to create payment");

@@ -155,6 +155,7 @@ export class PaymentService {
         userId: studentUserId,
         academyId,
         referenceMonth,
+        ...(subscription.dependentId ? { dependentId: subscription.dependentId } : {}),
       },
       success_url: `${apiPublicUrl}/payments/checkout-result?status=success`,
       cancel_url: `${apiPublicUrl}/payments/checkout-result?status=cancel`,

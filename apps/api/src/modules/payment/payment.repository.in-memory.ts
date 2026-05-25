@@ -19,6 +19,7 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
     referenceMonth: string;
     notes: string | null;
     paidAt: Date;
+    dependentId?: string | null;
   }): Promise<PaymentRow> {
     const t = new Date();
     const row: PaymentRow = {
@@ -26,7 +27,7 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
       subscriptionId: data.subscriptionId,
       userId: data.userId,
       academyId: data.academyId,
-      dependentId: null,
+      dependentId: data.dependentId ?? null,
       amountCents: data.amountCents,
       method: data.method,
       confirmedBy: data.confirmedBy,
