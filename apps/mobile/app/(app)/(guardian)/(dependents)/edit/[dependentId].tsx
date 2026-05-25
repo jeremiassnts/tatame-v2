@@ -1,7 +1,7 @@
 import { DatePickerField } from "@/components/DatePickerField";
 import { FormInput } from "@/components/FormInput";
 import { ModalSelect } from "@/components/ModalSelect";
-import { BELT_LABELS_SHORT, BELT_COLORS } from "@/lib/belts";
+import { BELT_LABELS_SHORT, BELT_COLORS, KIDS_BELTS } from "@/lib/belts";
 import type { Belt } from "@/lib/belts";
 import { useDependent, useUpdateDependent } from "@/lib/hooks/use-dependents";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,9 +13,9 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from "rea
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
 
-const BELT_OPTIONS: Array<{ value: Belt; label: string }> = (
-  ["white", "blue", "purple", "brown", "black"] as Belt[]
-).map((b) => ({ value: b, label: BELT_LABELS_SHORT[b] }));
+const BELT_OPTIONS: Array<{ value: Belt; label: string }> = KIDS_BELTS.map(
+  (b) => ({ value: b, label: BELT_LABELS_SHORT[b] }),
+);
 
 const STRIPES_OPTIONS = [
   { value: "0", label: "0 graus" },

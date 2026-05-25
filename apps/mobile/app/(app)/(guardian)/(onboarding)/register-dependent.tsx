@@ -2,6 +2,8 @@ import { DatePickerField } from "@/components/DatePickerField";
 import { FormInput } from "@/components/FormInput";
 import { GradientButton } from "@/components/GradientButton";
 import { ModalSelect } from "@/components/ModalSelect";
+import { BELT_LABELS_SHORT, KIDS_BELTS } from "@/lib/belts";
+import type { Belt } from "@/lib/belts";
 import { useCreateDependent } from "@/lib/hooks/use-dependents";
 import { useRouter } from "expo-router";
 import { Check, Users } from "lucide-react-native";
@@ -9,15 +11,10 @@ import { useState } from "react";
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-type Belt = "white" | "blue" | "purple" | "brown" | "black";
-
-const BELT_OPTIONS: { value: Belt; label: string }[] = [
-  { value: "white", label: "Branca" },
-  { value: "blue", label: "Azul" },
-  { value: "purple", label: "Roxa" },
-  { value: "brown", label: "Marrom" },
-  { value: "black", label: "Preta" },
-];
+const BELT_OPTIONS: { value: Belt; label: string }[] = KIDS_BELTS.map((b) => ({
+  value: b,
+  label: BELT_LABELS_SHORT[b],
+}));
 
 type FormState = {
   name: string;
