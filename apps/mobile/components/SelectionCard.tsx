@@ -1,23 +1,6 @@
+import { BELT_COLORS, BELT_LABELS_SHORT } from "@/lib/belts";
 import { User } from "lucide-react-native";
 import { Pressable, Text, View } from "react-native";
-
-const BELT_COLORS: Record<string, string> = {
-  white: "#FFFFFF",
-  blue: "#2962FF",
-  purple: "#9C27B0",
-  brown: "#795548",
-  black: "#212121",
-  yellow: "#FFD60A",
-};
-
-const BELT_LABELS: Record<string, string> = {
-  white: "Branca",
-  blue: "Azul",
-  purple: "Roxa",
-  brown: "Marrom",
-  black: "Preta",
-  yellow: "Amarela",
-};
 
 export type SelectionCardProps = {
   name: string;
@@ -40,8 +23,8 @@ export function SelectionCard({
   subscriptionStatus,
   onPress,
 }: SelectionCardProps) {
-  const beltColor = belt ? (BELT_COLORS[belt] ?? "#FFFFFF") : null;
-  const beltLabel = belt ? (BELT_LABELS[belt] ?? belt) : null;
+  const beltColor = belt ? (BELT_COLORS[belt as keyof typeof BELT_COLORS] ?? "#FFFFFF") : null;
+  const beltLabel = belt ? (BELT_LABELS_SHORT[belt as keyof typeof BELT_LABELS_SHORT] ?? belt) : null;
   const beltSub =
     beltLabel && stripes != null && stripes > 0
       ? `${beltLabel} · ${stripes} ${stripes === 1 ? "grau" : "graus"}`

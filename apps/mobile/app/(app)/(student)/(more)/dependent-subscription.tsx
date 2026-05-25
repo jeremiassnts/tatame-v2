@@ -46,15 +46,21 @@ export default function DependentSubscriptionScreen() {
   const [showProcessingBanner, setShowProcessingBanner] = useState(false);
 
   useEffect(() => {
-    if (showProcessingBanner && payments) {
+    if (!showProcessingBanner) return;
+    if (payments) {
       const today = new Date().toISOString().slice(0, 10);
       const currentMonth = today.slice(0, 7) + "-01";
       const hasPaid = payments.some((p) => p.referenceMonth === currentMonth);
       if (hasPaid) {
         setShowProcessingBanner(false);
+        return;
       }
     }
-  }, [payments, showProcessingBanner]);
+    const interval = setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: ["payments", dependentId] });
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [payments, showProcessingBanner, queryClient, dependentId]);
 
   const onRefresh = async () => {
     setRefreshing(true);

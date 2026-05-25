@@ -1,15 +1,7 @@
+import { BELT_COLORS } from "@/lib/belts";
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SelectionCard } from "./SelectionCard";
-
-const BELT_COLORS: Record<string, string> = {
-  white: "#FFFFFF",
-  blue: "#2962FF",
-  purple: "#9C27B0",
-  brown: "#795548",
-  black: "#212121",
-  yellow: "#FFD60A",
-};
 
 type DependentOption = {
   id: string;

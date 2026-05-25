@@ -1,4 +1,5 @@
 import { BackButton } from "@/components/BackButton";
+import { useDependentSubscription } from "@/lib/hooks/use-dependents";
 import { useMySubscription, useSelectPlan } from "@/lib/hooks/use-subscription";
 import { useSubscriptionPlan } from "@/lib/hooks/use-subscription-plans";
 import { useQueryClient } from "@tanstack/react-query";
@@ -20,7 +21,9 @@ export default function PlanDetailScreen() {
   const { planId, dependentId, callerRole } = useLocalSearchParams<{ planId: string; dependentId?: string; callerRole?: string }>();
   const router = useRouter();
   const { data: plan, isLoading } = useSubscriptionPlan(planId);
-  const { data: subResponse } = useMySubscription();
+  const { data: mySubResponse } = useMySubscription();
+  const { data: depSubResponse } = useDependentSubscription(dependentId ?? null);
+  const subResponse = dependentId ? depSubResponse : mySubResponse;
   const selectPlan = useSelectPlan();
   const queryClient = useQueryClient();
 
