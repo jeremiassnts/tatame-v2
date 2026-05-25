@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Calendar, CreditCard, Home, Megaphone, Menu, Users } from "lucide-react-native";
+import { Calendar, CreditCard, Home, Menu, Users } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function StudentLayout() {
@@ -47,14 +47,7 @@ export default function StudentLayout() {
           tabBarIcon: ({ color, size }) => <Calendar size={size} color={color} />,
         }}
       />
-      <Tabs.Screen
-        name="(announcements)"
-        options={{
-          title: "Avisos",
-          href: "/(app)/(student)/(announcements)",
-          tabBarIcon: ({ color, size }) => <Megaphone size={size} color={color} />,
-        }}
-      />
+      <Tabs.Screen name="(announcements)" options={{ href: null }} />
       <Tabs.Screen
         name="(subscription)"
         options={{
