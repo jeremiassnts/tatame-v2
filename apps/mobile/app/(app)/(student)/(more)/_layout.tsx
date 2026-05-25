@@ -7,6 +7,7 @@ export default function StudentMoreLayout() {
       <Stack.Screen name="dependents" />
       <Stack.Screen name="create-dependent" />
       <Stack.Screen name="dependent-detail" />
+      <Stack.Screen name="edit-dependent" />
     </Stack>
   );
 }
