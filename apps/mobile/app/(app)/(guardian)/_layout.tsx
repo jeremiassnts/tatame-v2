@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Home, Menu, Users } from "lucide-react-native";
+import { Calendar, Home, Menu, Users } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function GuardianLayout() {
@@ -37,6 +37,14 @@ export default function GuardianLayout() {
           title: "Dependentes",
           href: "/(app)/(guardian)/(dependents)",
           tabBarIcon: ({ color, size }) => <Users size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="(classes)"
+        options={{
+          title: "Agenda",
+          href: "/(app)/(guardian)/(classes)",
+          tabBarIcon: ({ color, size }) => <Calendar size={size} color={color} />,
         }}
       />
       <Tabs.Screen
