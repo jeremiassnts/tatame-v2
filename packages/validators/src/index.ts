@@ -111,3 +111,4 @@ export {
 export * from "./push-token.schema.js";
 export * from "./notification.schema.js";
 export * from "./announcement.schema.js";
+export * from "./dependent.schema.js";
