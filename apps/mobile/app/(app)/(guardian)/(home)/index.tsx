@@ -110,6 +110,11 @@ export default function GuardianHome() {
             <Text className="font-poppins-semibold text-sm" style={{ color: TEXT_SECONDARY }}>
               Aulas de hoje
             </Text>
+            <Pressable onPress={() => router.push("/(app)/(guardian)/(classes)")}>
+              <Text className="font-poppins-medium text-xs" style={{ color: ACCENT }}>
+                Ver todas
+              </Text>
+            </Pressable>
           </View>
 
           <View style={{ gap: 10 }}>
