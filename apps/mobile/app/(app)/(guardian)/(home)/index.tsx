@@ -5,11 +5,12 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { useAcademyContext } from "@/lib/academy-context";
 import { useAnnouncements } from "@/lib/hooks/use-announcements";
 import { useClasses } from "@/lib/hooks/use-classes";
+import { useDependents } from "@/lib/hooks/use-dependents";
 import { useCurrentUser } from "@/lib/hooks/use-user";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { ChevronRight, Users } from "lucide-react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
