@@ -968,6 +968,190 @@ describe("CheckinService", () => {
     expect(checkin.userId).toBe(userId);
   });
 
+  // ─── Dependent check-in ───────────────────────────────────────
+
+  describe("dependent check-in", () => {
+    it("guardian can check in for their dependent", async () => {
+      const academyId = randomUUID();
+      const guardianId = randomUUID();
+      const dependentId = randomUUID();
+      const { svc, classRow } = buildService({
+        academyId,
+        userId: guardianId,
+        membershipOverrides: { role: "guardian" },
+      });
+
+      const { checkin, warnings } = await svc.checkIn({
+        userId: guardianId,
+        academyId,
+        academyRole: "guardian",
+        classId: classRow.id,
+        sessionDate: SESSION_DATE,
+        dependentId,
+      });
+
+      expect(checkin.userId).toBe(guardianId);
+      expect(checkin.dependentId).toBe(dependentId);
+      expect(checkin.classId).toBe(classRow.id);
+      expect(checkin.date).toBe(SESSION_DATE);
+      expect(warnings.paymentOverdue).toBeUndefined();
+      expect(warnings.subscriptionGrace).toBeUndefined();
+    });
+
+    it("guardian cannot check in without dependentId", async () => {
+      const academyId = randomUUID();
+      const guardianId = randomUUID();
+      const { svc, classRow } = buildService({
+        academyId,
+        userId: guardianId,
+        membershipOverrides: { role: "guardian" },
+      });
+
+      await expect(
+        svc.checkIn({
+          userId: guardianId,
+          academyId,
+          academyRole: "guardian",
+          classId: classRow.id,
+          sessionDate: SESSION_DATE,
+        }),
+      ).rejects.toMatchObject({
+        statusCode: 400,
+        message: "Responsável deve informar o dependente para check-in",
+      });
+    });
+
+    it("student can check in for themselves (existing behavior preserved)", async () => {
+      const academyId = randomUUID();
+      const userId = randomUUID();
+      const { svc, classRow } = buildService({ academyId, userId });
+
+      const { checkin } = await svc.checkIn({
+        userId,
+        academyId,
+        academyRole: "student",
+        classId: classRow.id,
+        sessionDate: SESSION_DATE,
+      });
+
+      expect(checkin.userId).toBe(userId);
+      expect(checkin.dependentId).toBeNull();
+    });
+
+    it("student can check in for their dependent", async () => {
+      const academyId = randomUUID();
+      const userId = randomUUID();
+      const dependentId = randomUUID();
+      const { svc, classRow } = buildService({ academyId, userId });
+
+      const { checkin } = await svc.checkIn({
+        userId,
+        academyId,
+        academyRole: "student",
+        classId: classRow.id,
+        sessionDate: SESSION_DATE,
+        dependentId,
+      });
+
+      expect(checkin.userId).toBe(userId);
+      expect(checkin.dependentId).toBe(dependentId);
+    });
+
+    it("weekly limit is enforced per dependent, not shared with guardian", async () => {
+      const academyId = randomUUID();
+      const guardianId = randomUUID();
+      const dependentId = randomUUID();
+
+      const plan = makeSubscriptionPlan({ academyId, weeklyCheckinLimit: 2 });
+      const sub = makeStudentSubscription({
+        userId: guardianId,
+        planId: plan.id,
+        status: "active",
+        startsAt: "2026-01-01",
+        expiresAt: "2027-01-01",
+      });
+
+      // Guardian has 0 checkins this week (limit not reached for guardian)
+      // Dependent already has 2 checkins this week (limit reached for dependent)
+      const dependentCheckins: CheckinRow[] = Array.from({ length: 2 }, (_, i) =>
+        makeCheckin({
+          userId: randomUUID(), // another guardian who did the earlier check-ins
+          dependentId,
+          classId: randomUUID(),
+          date: `2026-03-${16 + i}`,
+          weekReference: WEEK_REFERENCE,
+        }),
+      );
+
+      const { svc, classRow } = buildService({
+        academyId,
+        userId: guardianId,
+        plan,
+        sub,
+        checkins: dependentCheckins,
+        membershipOverrides: { role: "guardian" },
+      });
+
+      await expect(
+        svc.checkIn({
+          userId: guardianId,
+          academyId,
+          academyRole: "guardian",
+          classId: classRow.id,
+          sessionDate: SESSION_DATE,
+          dependentId,
+        }),
+      ).rejects.toMatchObject({
+        statusCode: 409,
+        message: "Limite semanal de check-ins atingido",
+      });
+    });
+
+    it("duplicate dependent check-in returns 409", async () => {
+      const academyId = randomUUID();
+      const guardianId = randomUUID();
+      const dependentId = randomUUID();
+      const classRow = makeClass({
+        academyId,
+        dayOfWeek: 3,
+        startTime: "18:00:00",
+        endTime: "19:00:00",
+        capacity: 10,
+        isActive: true,
+      });
+
+      // Guardian already checked this dependent into this class today
+      const existingCheckins: CheckinRow[] = [
+        makeCheckin({
+          classId: classRow.id,
+          userId: guardianId,
+          dependentId,
+          date: SESSION_DATE,
+          weekReference: WEEK_REFERENCE,
+        }),
+      ];
+
+      const { svc } = buildService({
+        academyId,
+        userId: guardianId,
+        classRow,
+        checkins: existingCheckins,
+        membershipOverrides: { role: "guardian" },
+      });
+
+      await expect(
+        svc.checkIn({
+          userId: guardianId,
+          academyId,
+          academyRole: "guardian",
+          classId: classRow.id,
+          sessionDate: SESSION_DATE,
+          dependentId,
+        }),
+      ).rejects.toMatchObject({ statusCode: 409 });
+    });
+  });
+
   // ─── Expired subscription auto-update ─────────────────────────
 
   it("auto-updates subscription status from active to expired when expiresAt has passed", async () => {
