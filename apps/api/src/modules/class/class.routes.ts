@@ -87,7 +87,7 @@ async function enrichWithInstructorName(
 
 classRouter.get(
   "/",
-  authorize(Role.Manager, Role.Instructor, Role.Student),
+  authorize(Role.Manager, Role.Instructor, Role.Student, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   async (req, res, next) => {
@@ -107,7 +107,7 @@ classRouter.get(
 
 classRouter.get(
   "/:classId",
-  authorize(Role.Manager, Role.Instructor, Role.Student),
+  authorize(Role.Manager, Role.Instructor, Role.Student, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   async (req, res, next) => {
@@ -198,7 +198,7 @@ classRouter.delete(
 
 classRouter.get(
   "/:classId/checkins",
-  authorize(Role.Manager, Role.Instructor, Role.Student),
+  authorize(Role.Manager, Role.Instructor, Role.Student, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   async (req, res, next) => {

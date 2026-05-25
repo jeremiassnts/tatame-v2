@@ -23,7 +23,7 @@ const pushTokenService = new PushTokenService(
  */
 pushTokenRouter.post(
   "/",
-  authorize(Role.Manager, Role.Instructor, Role.Student),
+  authorize(Role.Manager, Role.Instructor, Role.Student, Role.Guardian),
   validateBody(registerPushTokenBodySchema),
   async (req, res, next) => {
     try {
@@ -54,7 +54,7 @@ pushTokenRouter.post(
 
 pushTokenRouter.delete(
   "/:deviceId",
-  authorize(Role.Manager, Role.Instructor, Role.Student),
+  authorize(Role.Manager, Role.Instructor, Role.Student, Role.Guardian),
   async (req, res, next) => {
     try {
       const { userId: clerkId } = getAuth(req);

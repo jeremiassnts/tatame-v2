@@ -75,7 +75,7 @@ notificationRouter.post(
 
 notificationRouter.get(
   "/unread-count",
-  authorize(Role.Manager, Role.Instructor, Role.Student),
+  authorize(Role.Manager, Role.Instructor, Role.Student, Role.Guardian),
   async (req, res, next) => {
     try {
       const { userId: clerkId } = getAuth(req);
@@ -94,7 +94,7 @@ notificationRouter.get(
 
 notificationRouter.get(
   "/",
-  authorize(Role.Manager, Role.Instructor, Role.Student),
+  authorize(Role.Manager, Role.Instructor, Role.Student, Role.Guardian),
   async (req, res, next) => {
     try {
       const { userId: clerkId } = getAuth(req);
@@ -122,7 +122,7 @@ notificationRouter.get(
 
 notificationRouter.patch(
   "/:id/read",
-  authorize(Role.Manager, Role.Instructor, Role.Student),
+  authorize(Role.Manager, Role.Instructor, Role.Student, Role.Guardian),
   async (req, res, next) => {
     try {
       const { userId: clerkId } = getAuth(req);
@@ -146,7 +146,7 @@ notificationRouter.patch(
 
 notificationRouter.post(
   "/read-all",
-  authorize(Role.Manager, Role.Instructor, Role.Student),
+  authorize(Role.Manager, Role.Instructor, Role.Student, Role.Guardian),
   async (req, res, next) => {
     try {
       const { userId: clerkId } = getAuth(req);
@@ -165,7 +165,7 @@ notificationRouter.post(
 
 notificationRouter.delete(
   "/:id",
-  authorize(Role.Manager, Role.Instructor, Role.Student),
+  authorize(Role.Manager, Role.Instructor, Role.Student, Role.Guardian),
   async (req, res, next) => {
     try {
       const { userId: clerkId } = getAuth(req);
@@ -191,7 +191,7 @@ notificationRouter.delete(
 
 notificationRouter.get(
   "/preferences",
-  authorize(Role.Manager, Role.Instructor, Role.Student),
+  authorize(Role.Manager, Role.Instructor, Role.Student, Role.Guardian),
   async (req, res, next) => {
     try {
       const { userId: clerkId } = getAuth(req);
@@ -211,7 +211,7 @@ notificationRouter.get(
 
 notificationRouter.put(
   "/preferences",
-  authorize(Role.Manager, Role.Instructor, Role.Student),
+  authorize(Role.Manager, Role.Instructor, Role.Student, Role.Guardian),
   validateBody(updateNotificationPreferencesBodySchema),
   async (req, res, next) => {
     try {
