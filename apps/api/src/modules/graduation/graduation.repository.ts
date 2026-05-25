@@ -33,5 +33,13 @@ export interface IGraduationRepository {
     belt: string;
     stripes: number;
     notes: string | null;
+    dependentId?: string | null;
   }): Promise<BeltPromotionRow>;
+
+  findCurrentByDependentId(dependentId: string): Promise<BeltPromotionRow | undefined>;
+
+  listByDependentInAcademy(
+    dependentId: string,
+    academyId: string,
+  ): Promise<BeltPromotionRow[]>;
 }

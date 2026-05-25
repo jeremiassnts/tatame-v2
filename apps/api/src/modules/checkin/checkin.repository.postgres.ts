@@ -38,11 +38,28 @@ export class PostgresCheckinRepository implements ICheckinRepository {
     return Number(row?.c ?? 0);
   }
 
+  async countByDependentAndWeek(
+    dependentId: string,
+    weekReference: string,
+  ): Promise<number> {
+    const [row] = await this.db
+      .select({ c: count() })
+      .from(checkins)
+      .where(
+        and(
+          eq(checkins.dependentId, dependentId),
+          eq(checkins.weekReference, weekReference),
+        ),
+      );
+    return Number(row?.c ?? 0);
+  }
+
   async insert(data: {
     classId: string;
     userId: string;
     date: string;
     weekReference: string;
+    dependentId?: string;
   }): Promise<CheckinRow> {
     const [row] = await this.db
       .insert(checkins)
@@ -51,6 +68,7 @@ export class PostgresCheckinRepository implements ICheckinRepository {
         userId: data.userId,
         date: data.date,
         weekReference: data.weekReference,
+        dependentId: data.dependentId ?? null,
       })
       .returning();
     if (!row) throw new Error("Failed to create check-in");

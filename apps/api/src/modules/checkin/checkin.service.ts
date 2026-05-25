@@ -148,11 +148,17 @@ export class CheckinService {
     academyRole: Role;
     classId: string;
     sessionDate: string;
+    dependentId?: string;
     now?: Date;
     redis?: RedisClientType;
   }): Promise<CheckinSuccess> {
-    if (opts.academyRole !== "student") {
+    const allowedRoles: Role[] = ["student", "guardian"];
+    if (!allowedRoles.includes(opts.academyRole)) {
       throw new HttpError(403, "Apenas alunos podem fazer check-in");
+    }
+
+    if (opts.academyRole === "guardian" && !opts.dependentId) {
+      throw new HttpError(400, "Responsável deve informar o dependente para check-in");
     }
 
     const membership = await this.membershipRepo.findActiveByUserAndAcademy(
@@ -162,7 +168,7 @@ export class CheckinService {
     if (!membership || membership.status !== "active") {
       throw new HttpError(403, "Você não possui matrícula ativa nesta academia");
     }
-    if (membership.role !== "student") {
+    if (membership.role !== "student" && membership.role !== "guardian") {
       throw new HttpError(403, "Apenas alunos podem fazer check-in");
     }
     const classRow = await this.classRepo.findById(
@@ -202,10 +208,9 @@ export class CheckinService {
       ) {
         throw new HttpError(409, "Aula lotada — não há mais vagas para esta sessão");
       }
-      const userWeekCount = await this.checkinRepo.countByUserAndWeek(
-        opts.userId,
-        weekReference,
-      );
+      const userWeekCount = opts.dependentId
+        ? await this.checkinRepo.countByDependentAndWeek(opts.dependentId, weekReference)
+        : await this.checkinRepo.countByUserAndWeek(opts.userId, weekReference);
       if (
         plan.weeklyCheckinLimit !== null &&
         userWeekCount >= plan.weeklyCheckinLimit
@@ -218,11 +223,12 @@ export class CheckinService {
           userId: opts.userId,
           date: opts.sessionDate,
           weekReference,
+          dependentId: opts.dependentId,
         });
 
         if (this.dispatcher && (warnings.subscriptionGrace || warnings.paymentOverdue)) {
           const detail = await this.membershipRepo.findDetailById(membership.id);
-          this.dispatcher.notifyAcademyManagers(
+          void this.dispatcher.notifyAcademyManagers(
             "checkin_anomaly",
             opts.academyId,
             [detail?.userName ?? "Aluno", classRow.name],
@@ -230,7 +236,7 @@ export class CheckinService {
         }
 
         if (this.engagementService) {
-          this.engagementService.checkMilestone(opts.userId);
+          void this.engagementService.checkMilestone(opts.userId);
         }
 
         return { checkin, warnings };

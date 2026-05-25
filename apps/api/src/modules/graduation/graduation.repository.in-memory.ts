@@ -64,6 +64,7 @@ export class InMemoryGraduationRepository implements IGraduationRepository {
     belt: string;
     stripes: number;
     notes: string | null;
+    dependentId?: string | null;
   }): Promise<BeltPromotionRow> {
     for (const r of this.rows) {
       if (r.userId === data.userId && r.isCurrent) {
@@ -76,7 +77,7 @@ export class InMemoryGraduationRepository implements IGraduationRepository {
       userId: data.userId,
       academyId: data.academyId,
       promotedBy: data.promotedBy,
-      dependentId: null,
+      dependentId: data.dependentId ?? null,
       belt: data.belt as BeltPromotionRow["belt"],
       stripes: data.stripes,
       isCurrent: true,
@@ -85,5 +86,21 @@ export class InMemoryGraduationRepository implements IGraduationRepository {
     };
     this.rows.push(row);
     return row;
+  }
+
+  async findCurrentByDependentId(dependentId: string): Promise<BeltPromotionRow | undefined> {
+    return this.rows.find((r) => r.dependentId === dependentId && r.isCurrent);
+  }
+
+  async listByDependentInAcademy(
+    dependentId: string,
+    academyId: string,
+  ): Promise<BeltPromotionRow[]> {
+    return this.rows
+      .filter((r) => r.dependentId === dependentId && r.academyId === academyId)
+      .sort(
+        (a, b) =>
+          new Date(b.promotedAt).getTime() - new Date(a.promotedAt).getTime(),
+      );
   }
 }

@@ -132,7 +132,7 @@ export class PostgresMembershipRepository implements IMembershipRepository {
       .values({
         academyId: data.academyId,
         userId: data.userId,
-        role: data.role as "manager" | "instructor" | "student",
+        role: data.role as "manager" | "instructor" | "student" | "guardian",
         status: data.status as "pending" | "active" | "rejected" | "blocked",
         isActive: data.isActive,
         joinedAt: data.joinedAt ?? null,
@@ -200,7 +200,7 @@ export class PostgresMembershipRepository implements IMembershipRepository {
 
     if (filters.role) {
       conditions.push(
-        eq(academyMemberships.role, filters.role as "instructor" | "student"),
+        eq(academyMemberships.role, filters.role as "instructor" | "student" | "guardian"),
       );
     }
     if (filters.status) {

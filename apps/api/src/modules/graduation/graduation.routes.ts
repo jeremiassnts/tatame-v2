@@ -126,7 +126,7 @@ graduationRouter.post(
 
 graduationRouter.get(
   "/",
-  authorize(Role.Manager, Role.Instructor),
+  authorize(Role.Manager, Role.Instructor, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   async (req, res, next) => {
@@ -172,6 +172,7 @@ graduationRouter.post(
         belt: body.belt,
         stripes: body.stripes,
         notes: body.notes ?? null,
+        dependentId: body.dependentId ?? null,
       });
       res.status(201).json(formatPromotion(row));
     } catch (e) {

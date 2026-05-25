@@ -83,7 +83,7 @@ function formatCheckinRow(row: CheckinRow) {
 
 checkinRouter.get(
   "/me/weekly-count",
-  authorize(Role.Student, Role.Instructor),
+  authorize(Role.Student, Role.Instructor, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   async (req, res, next) => {
@@ -99,7 +99,7 @@ checkinRouter.get(
 
 checkinRouter.get(
   "/me/history",
-  authorize(Role.Student, Role.Instructor),
+  authorize(Role.Student, Role.Instructor, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   async (req, res, next) => {
@@ -122,23 +122,21 @@ checkinRouter.get(
 
 checkinRouter.post(
   "/",
-  authorize(Role.Student),
+  authorize(Role.Student, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   validateBody(createCheckinBodySchema),
   async (req, res, next) => {
     try {
       const auth = req.appAuth!;
-      if (auth.academyRole !== Role.Student) {
-        throw new HttpError(403, "Only students can check in");
-      }
       const body = req.validatedBody as CreateCheckinBody;
       const { checkin, warnings } = await checkinService.checkIn({
         userId: auth.userId,
         academyId: auth.activeAcademyId!,
-        academyRole: auth.academyRole,
+        academyRole: auth.academyRole!,
         classId: body.classId,
         sessionDate: body.date,
+        dependentId: body.dependentId,
       });
 
       const payload: {

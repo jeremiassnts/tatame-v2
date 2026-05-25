@@ -26,11 +26,21 @@ export class InMemoryCheckinRepository implements ICheckinRepository {
     ).length;
   }
 
+  async countByDependentAndWeek(
+    dependentId: string,
+    weekReference: string,
+  ): Promise<number> {
+    return this.rows.filter(
+      (r) => r.dependentId === dependentId && r.weekReference === weekReference,
+    ).length;
+  }
+
   async insert(data: {
     classId: string;
     userId: string;
     date: string;
     weekReference: string;
+    dependentId?: string;
   }): Promise<CheckinRow> {
     const dup = this.rows.some(
       (r) =>
@@ -51,7 +61,7 @@ export class InMemoryCheckinRepository implements ICheckinRepository {
       date: data.date,
       weekReference: data.weekReference,
       checkedInAt: t,
-      dependentId: null,
+      dependentId: data.dependentId ?? null,
     };
     this.rows.push(row);
     return row;

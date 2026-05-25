@@ -98,6 +98,7 @@ export class PostgresGraduationRepository implements IGraduationRepository {
     belt: string;
     stripes: number;
     notes: string | null;
+    dependentId?: string | null;
   }): Promise<BeltPromotionRow> {
     return this.db.transaction(async (tx) => {
       await tx
@@ -119,10 +120,41 @@ export class PostgresGraduationRepository implements IGraduationRepository {
           stripes: data.stripes,
           isCurrent: true,
           notes: data.notes,
+          dependentId: data.dependentId ?? null,
         })
         .returning();
       if (!row) throw new Error("Failed to insert belt promotion");
       return row;
     });
+  }
+
+  async findCurrentByDependentId(dependentId: string): Promise<BeltPromotionRow | undefined> {
+    const [row] = await this.db
+      .select()
+      .from(beltPromotions)
+      .where(
+        and(
+          eq(beltPromotions.dependentId, dependentId),
+          eq(beltPromotions.isCurrent, true),
+        ),
+      )
+      .limit(1);
+    return row;
+  }
+
+  async listByDependentInAcademy(
+    dependentId: string,
+    academyId: string,
+  ): Promise<BeltPromotionRow[]> {
+    return this.db
+      .select()
+      .from(beltPromotions)
+      .where(
+        and(
+          eq(beltPromotions.dependentId, dependentId),
+          eq(beltPromotions.academyId, academyId),
+        ),
+      )
+      .orderBy(desc(beltPromotions.promotedAt));
   }
 }

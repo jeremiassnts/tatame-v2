@@ -167,6 +167,7 @@ export class GraduationService {
     belt: Belt;
     stripes: number;
     notes: string | null;
+    dependentId?: string | null;
   }): Promise<BeltPromotionRow> {
     await this.assertActorCanPromoteInAcademy(
       opts.actorUserId,
@@ -174,7 +175,7 @@ export class GraduationService {
       opts.academyId,
     );
 
-    if (opts.targetUserId === opts.actorUserId) {
+    if (opts.targetUserId === opts.actorUserId && !opts.dependentId) {
       throw new HttpError(400, "Use the initial belt endpoint for your own belt");
     }
 
@@ -199,9 +200,9 @@ export class GraduationService {
       throw new HttpError(404, "Member not found in this academy");
     }
 
-    const current = await this.graduationRepo.findCurrentByUserId(
-      opts.targetUserId,
-    );
+    const current = opts.dependentId
+      ? await this.graduationRepo.findCurrentByDependentId(opts.dependentId)
+      : await this.graduationRepo.findCurrentByUserId(opts.targetUserId);
     if (!current) {
       throw new HttpError(
         409,
@@ -221,13 +222,14 @@ export class GraduationService {
       belt: opts.belt,
       stripes: opts.stripes,
       notes: opts.notes,
+      dependentId: opts.dependentId,
     });
 
     if (this.dispatcher) {
       const beltNames: Record<string, string> = {
         white: "branca", blue: "azul", purple: "roxa", brown: "marrom", black: "preta",
       };
-      this.dispatcher.notifyUsers(
+      void this.dispatcher.notifyUsers(
         "belt_promotion",
         [opts.targetUserId],
         [beltNames[opts.belt] ?? opts.belt, String(opts.stripes)],

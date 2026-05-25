@@ -31,6 +31,7 @@ export const registerInitialBeltBodySchema = z
     belt: beltSchema,
     stripes: z.number().int(),
     notes: z.string().max(2000).nullable().optional(),
+    dependentId: z.string().uuid().optional(),
   })
   .superRefine(refineBeltStripes);
 
@@ -44,6 +45,7 @@ export const promoteBeltBodySchema = z
     belt: beltSchema,
     stripes: z.number().int(),
     notes: z.string().max(2000).nullable().optional(),
+    dependentId: z.string().uuid().optional(),
   })
   .superRefine(refineBeltStripes);
 
