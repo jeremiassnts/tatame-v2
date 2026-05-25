@@ -3,7 +3,21 @@ import { z } from "zod";
 export const createDependentBodySchema = z.object({
   name: z.string().min(2).max(100),
   birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected date as YYYY-MM-DD"),
-  belt: z.enum(["white", "blue", "purple", "brown", "black"]),
+  belt: z.enum([
+    "white",
+    "grey_white",
+    "grey",
+    "grey_black",
+    "yellow_white",
+    "yellow",
+    "yellow_black",
+    "orange_white",
+    "orange",
+    "orange_black",
+    "green_white",
+    "green",
+    "green_black",
+  ]),
   stripes: z.number().int().min(0).max(4),
 });
 

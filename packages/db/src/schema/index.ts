@@ -47,6 +47,18 @@ export const beltEnum = pgEnum("belt", [
   "purple",
   "brown",
   "black",
+  "grey_white",
+  "grey",
+  "grey_black",
+  "yellow_white",
+  "yellow",
+  "yellow_black",
+  "orange_white",
+  "orange",
+  "orange_black",
+  "green_white",
+  "green",
+  "green_black",
 ]);
 
 export const managerPlanEnum = pgEnum("manager_plan", ["free", "pro"]);
