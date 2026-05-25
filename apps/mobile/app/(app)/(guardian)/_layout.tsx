@@ -56,6 +56,7 @@ export default function GuardianLayout() {
         }}
       />
       <Tabs.Screen name="(onboarding)" options={{ href: null }} />
+      <Tabs.Screen name="(subscription)" options={{ href: null }} />
     </Tabs>
   );
 }
