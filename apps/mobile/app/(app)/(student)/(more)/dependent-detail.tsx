@@ -161,7 +161,7 @@ export default function DependentDetailScreen() {
                 {dependent.name.charAt(0).toUpperCase()}
               </Text>
             </View>
-            <Text className="font-poppins-bold text-[28px] text-primary">
+            <Text className="text-center font-poppins-bold text-[28px] text-primary">
               {dependent.name}
             </Text>
             <Text className="font-poppins text-sm" style={{ color: TEXT_SECONDARY }}>
