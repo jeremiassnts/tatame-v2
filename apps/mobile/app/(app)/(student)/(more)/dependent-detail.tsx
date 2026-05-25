@@ -1,7 +1,7 @@
 import { BackButton } from "@/components/BackButton";
 import { BELT_LABELS_SHORT, BELT_COLORS } from "@/lib/belts";
 import type { Belt } from "@/lib/belts";
-import { useDeleteDependent, useDependent } from "@/lib/hooks/use-dependents";
+import { useDeleteDependent, useDependent, useDependentSubscription, useDependentWeeklyCheckinCount, useDependentCheckinHistory } from "@/lib/hooks/use-dependents";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   ActivityIndicator,
@@ -27,6 +27,11 @@ const SEPARATOR = "#2A2A2A";
 
 function calcAge(birthDate: string): number {
   return Math.floor((Date.now() - new Date(birthDate).getTime()) / 31557600000);
+}
+
+function formatDisplayDate(dateStr: string): string {
+  const d = new Date(`${dateStr}T00:00:00`);
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
 }
 
 type QuickAction = {
@@ -58,6 +63,9 @@ export default function DependentDetailScreen() {
   const router = useRouter();
   const { data: dependent, isPending } = useDependent(id ?? null);
   const deleteDependent = useDeleteDependent();
+  const { data: subData } = useDependentSubscription(id ?? null);
+  const { data: weeklyCount } = useDependentWeeklyCheckinCount(id ?? null);
+  const { data: checkinHistory } = useDependentCheckinHistory(id ?? null);
 
   const handleDelete = () => {
     if (!id) return;
@@ -95,6 +103,11 @@ export default function DependentDetailScreen() {
   const beltColor = belt ? (BELT_COLORS[belt] ?? TEXT_MUTED) : TEXT_MUTED;
   const beltLabel = belt ? (BELT_LABELS_SHORT[belt] ?? belt) : "—";
   const age = calcAge(dependent.birthDate);
+
+  const planName = subData?.plan?.name ?? "Sem plano";
+  const weeklyCheckinCount = weeklyCount?.count ?? 0;
+  const lastCheckin = checkinHistory?.pages?.[0]?.items?.[0]?.checkins?.[0];
+  const lastCheckinDisplay = lastCheckin ? formatDisplayDate(lastCheckin.date) : "—";
 
   const quickActions: QuickAction[] = [
     {
@@ -176,7 +189,7 @@ export default function DependentDetailScreen() {
               </Text>
               <View className="flex-row items-center" style={{ gap: 6 }}>
                 <Text className="font-poppins-semibold text-sm text-primary">
-                  Sem plano
+                  {planName}
                 </Text>
                 <ChevronRight size={14} color={TEXT_MUTED} />
               </View>
@@ -188,7 +201,7 @@ export default function DependentDetailScreen() {
               <Text className="font-poppins text-sm" style={{ color: TEXT_SECONDARY }}>
                 Check-ins este mês
               </Text>
-              <Text className="font-poppins-semibold text-sm text-primary">—</Text>
+              <Text className="font-poppins-semibold text-sm text-primary">{weeklyCheckinCount}</Text>
             </View>
 
             <View className="h-px" style={{ backgroundColor: SEPARATOR }} />
@@ -197,7 +210,7 @@ export default function DependentDetailScreen() {
               <Text className="font-poppins text-sm" style={{ color: TEXT_SECONDARY }}>
                 Último check-in
               </Text>
-              <Text className="font-poppins-semibold text-sm text-primary">—</Text>
+              <Text className="font-poppins-semibold text-sm text-primary">{lastCheckinDisplay}</Text>
             </View>
           </View>
 
