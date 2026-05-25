@@ -63,6 +63,11 @@ export class DependentService {
     return this.enrichMany(deps);
   }
 
+  async listByGuardian(guardianId: string) {
+    const deps = await this.dependentRepo.findByGuardian(guardianId);
+    return this.enrichMany(deps);
+  }
+
   private async enrichOne(dep: DependentRow) {
     const belt = await this.graduationRepo.findCurrentByDependentId(dep.id);
     return {

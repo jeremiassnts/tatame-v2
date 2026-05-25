@@ -156,10 +156,23 @@ export class PostgresGraduationRepository implements IGraduationRepository {
   async listByDependentInAcademy(
     dependentId: string,
     academyId: string,
-  ): Promise<BeltPromotionRow[]> {
+  ): Promise<BeltPromotionWithPromoterName[]> {
     return this.db
-      .select()
+      .select({
+        id: beltPromotions.id,
+        userId: beltPromotions.userId,
+        academyId: beltPromotions.academyId,
+        promotedBy: beltPromotions.promotedBy,
+        dependentId: beltPromotions.dependentId,
+        promotedByName: users.name,
+        belt: beltPromotions.belt,
+        stripes: beltPromotions.stripes,
+        isCurrent: beltPromotions.isCurrent,
+        promotedAt: beltPromotions.promotedAt,
+        notes: beltPromotions.notes,
+      })
       .from(beltPromotions)
+      .innerJoin(users, eq(users.id, beltPromotions.promotedBy))
       .where(
         and(
           eq(beltPromotions.dependentId, dependentId),

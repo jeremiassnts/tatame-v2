@@ -144,10 +144,10 @@ graduationRouter.get(
         academyId,
         query.data.userId,
       );
-      const items = await graduationService.listForUserInAcademy(
-        query.data.userId,
-        academyId,
-      );
+      const dependentId = (req.query.dependentId as string) || null;
+      const items = dependentId
+        ? await graduationService.listForDependentInAcademy(dependentId, academyId)
+        : await graduationService.listForUserInAcademy(query.data.userId, academyId);
       res.json({ items: items.map(formatPromotion) });
     } catch (e) {
       next(e);

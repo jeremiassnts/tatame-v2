@@ -41,6 +41,17 @@ export function useDependent(id: string | null) {
   });
 }
 
+export function useDependentsByGuardian(guardianId: string | null | undefined) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ["dependents", "guardian", guardianId],
+    queryFn: () =>
+      api.get<DependentsResponse>(`/dependents/guardian/${guardianId}`),
+    select: (data) => data.items,
+    enabled: !!guardianId,
+  });
+}
+
 export function useCreateDependent() {
   const api = useApi();
   const queryClient = useQueryClient();

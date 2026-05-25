@@ -52,6 +52,10 @@ export class GraduationService {
     return this.graduationRepo.listByUserInAcademy(userId, academyId);
   }
 
+  async listForDependentInAcademy(dependentId: string, academyId: string) {
+    return this.graduationRepo.listByDependentInAcademy(dependentId, academyId);
+  }
+
   /**
    * First belt in the academy for this user (`promotedBy` = own user id).
    * Allowed when: active student membership + global role student; or academy owner
@@ -149,11 +153,12 @@ export class GraduationService {
     if (actorRole === "instructor" && m.role !== "student") {
       throw new HttpError(404, "Member not found in this academy");
     }
-    // Managers can view student and instructor graduations
+    // Managers can view student, instructor, and guardian graduations
     if (
       actorRole === "manager" &&
       m.role !== "student" &&
-      m.role !== "instructor"
+      m.role !== "instructor" &&
+      m.role !== "guardian"
     ) {
       throw new HttpError(404, "Member not found in this academy");
     }
@@ -191,11 +196,12 @@ export class GraduationService {
     if (opts.actorRole === "instructor" && m.role !== "student") {
       throw new HttpError(404, "Member not found in this academy");
     }
-    // Managers can promote students and instructors
+    // Managers can promote students, instructors, and dependents of guardians
     if (
       opts.actorRole === "manager" &&
       m.role !== "student" &&
-      m.role !== "instructor"
+      m.role !== "instructor" &&
+      m.role !== "guardian"
     ) {
       throw new HttpError(404, "Member not found in this academy");
     }

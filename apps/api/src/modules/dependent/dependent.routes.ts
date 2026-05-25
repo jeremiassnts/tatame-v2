@@ -90,6 +90,27 @@ dependentRouter.get(
   },
 );
 
+// GET /dependents/guardian/:guardianId - List dependents by guardian (manager only)
+dependentRouter.get(
+  "/guardian/:guardianId",
+  authorize(Role.Manager),
+  attachActiveAcademyContext,
+  requireActiveAcademy,
+  async (req, res, next) => {
+    try {
+      const { guardianId } = req.params;
+      if (!guardianId) {
+        res.status(400).json({ error: "guardianId is required" });
+        return;
+      }
+      const items = await dependentService.listByGuardian(guardianId);
+      res.json({ items });
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
 // GET /dependents/:id - Dependent detail
 dependentRouter.get(
   "/:id",

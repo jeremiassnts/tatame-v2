@@ -41,5 +41,5 @@ export interface IGraduationRepository {
   listByDependentInAcademy(
     dependentId: string,
     academyId: string,
-  ): Promise<BeltPromotionRow[]>;
+  ): Promise<BeltPromotionWithPromoterName[]>;
 }

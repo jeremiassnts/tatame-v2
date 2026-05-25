@@ -95,12 +95,13 @@ export class InMemoryGraduationRepository implements IGraduationRepository {
   async listByDependentInAcademy(
     dependentId: string,
     academyId: string,
-  ): Promise<BeltPromotionRow[]> {
+  ): Promise<BeltPromotionWithPromoterName[]> {
     return this.rows
       .filter((r) => r.dependentId === dependentId && r.academyId === academyId)
       .sort(
         (a, b) =>
           new Date(b.promotedAt).getTime() - new Date(a.promotedAt).getTime(),
-      );
+      )
+      .map((r) => ({ ...r, promotedByName: "" }));
   }
 }

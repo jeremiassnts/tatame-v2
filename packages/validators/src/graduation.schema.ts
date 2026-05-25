@@ -8,6 +8,18 @@ const beltValues = [
   Belt.Purple,
   Belt.Brown,
   Belt.Black,
+  Belt.GreyWhite,
+  Belt.Grey,
+  Belt.GreyBlack,
+  Belt.YellowWhite,
+  Belt.Yellow,
+  Belt.YellowBlack,
+  Belt.OrangeWhite,
+  Belt.Orange,
+  Belt.OrangeBlack,
+  Belt.GreenWhite,
+  Belt.Green,
+  Belt.GreenBlack,
 ] as const;
 
 export const beltSchema = z.enum(beltValues);
