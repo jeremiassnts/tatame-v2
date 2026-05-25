@@ -21,7 +21,9 @@ function AcademySyncer() {
         academyLogoUrl: user.activeAcademy.logoUrl,
       });
     } else if (
-      (user?.activeRole === "instructor" || user?.activeRole === "student") &&
+      (user?.activeRole === "instructor" ||
+        user?.activeRole === "student" ||
+        user?.activeRole === "guardian") &&
       user?.activeMembership?.status === "active"
     ) {
       update({

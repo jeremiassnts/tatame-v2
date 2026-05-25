@@ -47,6 +47,7 @@ export default function GuardianLayout() {
           tabBarIcon: ({ color, size }) => <Menu size={size} color={color} />,
         }}
       />
+      <Tabs.Screen name="(announcements)" options={{ href: null }} />
       <Tabs.Screen name="(onboarding)" options={{ href: null }} />
       <Tabs.Screen name="(subscription)" options={{ href: null }} />
     </Tabs>

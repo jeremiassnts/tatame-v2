@@ -143,6 +143,14 @@ export default function GuardianHome() {
                 >
                   Últimos avisos
                 </Text>
+                <Pressable onPress={() => router.push("/(app)/(guardian)/(announcements)")}>
+                  <Text
+                    className="font-poppins-medium text-xs"
+                    style={{ color: ACCENT }}
+                  >
+                    Ver mais
+                  </Text>
+                </Pressable>
               </View>
               <View style={{ gap: 10 }}>
                 {latestAnnouncements.map((a) => (
@@ -151,6 +159,9 @@ export default function GuardianHome() {
                     title={a.title}
                     body={a.body}
                     createdAt={a.createdAt}
+                    onPress={() =>
+                      router.push(`/(app)/(guardian)/(announcements)/${a.id}`)
+                    }
                   />
                 ))}
               </View>
