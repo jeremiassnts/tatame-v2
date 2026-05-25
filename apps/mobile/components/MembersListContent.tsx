@@ -32,8 +32,10 @@ type MemberWithGraduation = {
   role: string;
   status: string;
   userProfileImageUrl: string | null;
-  currentBelt: "white" | "blue" | "purple" | "brown" | "black" | null;
+  currentBelt: string | null;
   currentStripes: number | null;
+  guardianName?: string | null;
+  guardianMembershipId?: string | null;
 };
 
 type MembersListContentProps = {
@@ -41,6 +43,7 @@ type MembersListContentProps = {
   showBackButton?: boolean;
   allowMemberDetails?: boolean;
   getMemberDetailHref?: (membershipId: string) => string;
+  getDependentDetailHref?: (dependentId: string, guardianName?: string | null, guardianMembershipId?: string | null) => string;
   tabs?: { key: string; label: string }[];
   /** Applied after API results (e.g. hide managers on instructor list). */
   additionalFilter?: (m: MemberWithGraduation) => boolean;
@@ -51,6 +54,7 @@ export function MembersListContent({
   showBackButton = false,
   allowMemberDetails = false,
   getMemberDetailHref,
+  getDependentDetailHref,
   tabs = DEFAULT_TABS,
   additionalFilter,
 }: MembersListContentProps) {
@@ -65,6 +69,7 @@ export function MembersListContent({
     if (activeTab === "instructor") next.role = "instructor";
     else if (activeTab === "student") next.role = "student";
     else if (activeTab === "guardian") next.role = "guardian";
+    else if (activeTab === "dependent") next.role = "dependent";
     else if (activeTab === "pending") next.status = "pending";
 
     if (searchQuery.trim().length >= 2) {
@@ -138,9 +143,20 @@ export function MembersListContent({
                 profileImageUrl={item.userProfileImageUrl}
                 belt={item.currentBelt}
                 stripes={item.currentStripes}
+                subtitle={
+                  item.role === "dependent" && item.guardianName
+                    ? `Resp: ${item.guardianName}`
+                    : null
+                }
                 onPress={
                   canOpenMember
-                    ? () => router.push(getMemberDetailHref(item.id))
+                    ? () => {
+                        if (item.role === "dependent" && getDependentDetailHref) {
+                          router.push(getDependentDetailHref(item.id, item.guardianName, item.guardianMembershipId));
+                        } else {
+                          router.push(getMemberDetailHref(item.id));
+                        }
+                      }
                     : undefined
                 }
               />

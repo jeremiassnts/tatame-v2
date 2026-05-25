@@ -3,6 +3,7 @@ import {
   academies,
   academyMemberships,
   beltPromotions,
+  dependents,
   users,
   type Database,
 } from "@tatame/db";
@@ -413,6 +414,103 @@ export class PostgresMembershipRepository implements IMembershipRepository {
         ),
       );
     return rows.map((r) => r.clerkUserId);
+  }
+
+  async findDependentsForMemberList(
+    academyId: string,
+    filters: { q?: string },
+  ): Promise<MemberListItemRow[]> {
+    const guardianUsers = this.db.$with("guardian_users").as(
+      this.db
+        .select({
+          membershipId: academyMemberships.id,
+          userId: academyMemberships.userId,
+          userName: users.name,
+        })
+        .from(academyMemberships)
+        .innerJoin(users, eq(academyMemberships.userId, users.id))
+        .where(
+          and(
+            eq(academyMemberships.academyId, academyId),
+            eq(academyMemberships.role, "guardian"),
+            eq(academyMemberships.status, "active"),
+          ),
+        ),
+    );
+
+    const kidBeltRank = sql<number>`case
+      when ${beltPromotions.belt} = 'green_black' then 13
+      when ${beltPromotions.belt} = 'green' then 12
+      when ${beltPromotions.belt} = 'green_white' then 11
+      when ${beltPromotions.belt} = 'orange_black' then 10
+      when ${beltPromotions.belt} = 'orange' then 9
+      when ${beltPromotions.belt} = 'orange_white' then 8
+      when ${beltPromotions.belt} = 'yellow_black' then 7
+      when ${beltPromotions.belt} = 'yellow' then 6
+      when ${beltPromotions.belt} = 'yellow_white' then 5
+      when ${beltPromotions.belt} = 'grey_black' then 4
+      when ${beltPromotions.belt} = 'grey' then 3
+      when ${beltPromotions.belt} = 'grey_white' then 2
+      when ${beltPromotions.belt} = 'white' then 1
+      else 0
+    end`;
+
+    const rows = await this.db
+      .with(guardianUsers)
+      .select({
+        id: dependents.id,
+        guardianUserId: guardianUsers.userId,
+        guardianName: guardianUsers.userName,
+        guardianMembershipId: guardianUsers.membershipId,
+        dependentName: dependents.name,
+        createdAt: dependents.createdAt,
+        currentBelt: beltPromotions.belt,
+        currentStripes: beltPromotions.stripes,
+      })
+      .from(dependents)
+      .innerJoin(guardianUsers, eq(dependents.guardianId, guardianUsers.userId))
+      .leftJoin(
+        beltPromotions,
+        and(
+          eq(beltPromotions.dependentId, dependents.id),
+          eq(beltPromotions.academyId, academyId),
+          eq(beltPromotions.isCurrent, true),
+        ),
+      )
+      .where(
+        and(
+          eq(dependents.academyId, academyId),
+          isNull(dependents.deletedAt),
+        ),
+      )
+      .orderBy(desc(kidBeltRank), desc(beltPromotions.stripes), asc(dependents.name));
+
+    const mapped: MemberListItemRow[] = rows.map((r) => ({
+      id: r.id,
+      userId: r.guardianUserId,
+      role: "dependent",
+      status: "active",
+      joinedAt: null,
+      createdAt: r.createdAt,
+      userName: r.dependentName,
+      userEmail: "",
+      userProfileImageUrl: null,
+      currentBelt: r.currentBelt,
+      currentStripes: r.currentStripes,
+      guardianName: r.guardianName,
+      guardianMembershipId: r.guardianMembershipId,
+    }));
+
+    if (filters.q) {
+      const lower = filters.q.toLowerCase();
+      return mapped.filter(
+        (r) =>
+          r.userName.toLowerCase().includes(lower) ||
+          (r.guardianName?.toLowerCase().includes(lower) ?? false),
+      );
+    }
+
+    return mapped;
   }
 
   async withTransaction<T>(

@@ -234,6 +234,13 @@ export class InMemoryMembershipRepository implements IMembershipRepository {
     return [];
   }
 
+  async findDependentsForMemberList(
+    _academyId: string,
+    _filters: { q?: string },
+  ): Promise<MemberListItemRow[]> {
+    return [];
+  }
+
   async withTransaction<T>(
     fn: (txRepo: IMembershipRepository) => Promise<T>,
   ): Promise<T> {

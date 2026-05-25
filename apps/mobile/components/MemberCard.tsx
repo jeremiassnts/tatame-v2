@@ -1,6 +1,6 @@
 import { Avatar } from "@/components/Avatar";
 import { Badge } from "@/components/Badge";
-import { getBeltColor } from "@/lib/belts";
+import { BELT_LABELS_SHORT, getBeltColor } from "@/lib/belts";
 import { Pressable, Text, View } from "react-native";
 
 type MemberCardProps = {
@@ -10,20 +10,13 @@ type MemberCardProps = {
   profileImageUrl: string | null;
   belt?: string | null;
   stripes?: number | null;
+  subtitle?: string | null;
   onPress?: () => void;
-};
-
-const BELT_LABELS: Record<string, string> = {
-  white: "Branca",
-  blue: "Azul",
-  purple: "Roxa",
-  brown: "Marrom",
-  black: "Preta",
 };
 
 function formatBeltLabel(belt?: string | null, stripes?: number | null) {
   if (!belt) return null;
-  const beltLabel = BELT_LABELS[belt] ?? belt;
+  const beltLabel = BELT_LABELS_SHORT[belt as keyof typeof BELT_LABELS_SHORT] ?? belt;
   if (typeof stripes !== "number" || stripes <= 0) {
     return beltLabel;
   }
@@ -38,6 +31,7 @@ export function MemberCard({
   profileImageUrl,
   belt,
   stripes,
+  subtitle,
   onPress,
 }: MemberCardProps) {
   const letter = (name || "?").charAt(0).toUpperCase();
@@ -59,6 +53,9 @@ export function MemberCard({
           </Text>
           <Badge variant="role" value={role} />
         </View>
+        {subtitle ? (
+          <Text className="font-poppins text-xs text-muted">{subtitle}</Text>
+        ) : null}
         <View className="flex-row items-center gap-1.5">
           {beltLabel ? (
             <View className="flex-row items-center gap-1.5">

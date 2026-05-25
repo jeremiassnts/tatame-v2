@@ -7,6 +7,7 @@ const ROLE_COLORS: Record<string, { bg: string; text: string }> = {
   student: { bg: "#2A2A2A", text: "#8A8A8A" },
   manager: { bg: "#2A2A2A", text: "#A078E8" },
   guardian: { bg: "#2A2A2A", text: "#8A8A8A" },
+  dependent: { bg: "#2A2A2A", text: "#60A5FA" },
 };
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
@@ -21,6 +22,7 @@ const ROLE_LABELS: Record<string, string> = {
   student: "Aluno",
   manager: "Gestor",
   guardian: "Responsável",
+  dependent: "Dependente",
 };
 
 const STATUS_LABELS: Record<string, string> = {

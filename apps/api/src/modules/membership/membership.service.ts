@@ -85,7 +85,24 @@ export class MembershipService {
   ) {
     if (requesterRole === "manager") {
       await this.assertManagerOwnsAcademy(requesterUserId, academyId);
-      return this.membershipRepo.findByAcademy(academyId, filters);
+
+      if (filters.role === "dependent") {
+        return this.membershipRepo.findDependentsForMemberList(academyId, {
+          q: filters.q,
+        });
+      }
+
+      const members = await this.membershipRepo.findByAcademy(academyId, filters);
+
+      if (!filters.role && !filters.status) {
+        const dependents = await this.membershipRepo.findDependentsForMemberList(
+          academyId,
+          { q: filters.q },
+        );
+        return [...members, ...dependents];
+      }
+
+      return members;
     }
 
     await this.assertActiveMemberInAcademy(requesterUserId, academyId);

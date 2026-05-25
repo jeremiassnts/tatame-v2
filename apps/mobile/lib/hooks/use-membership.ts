@@ -14,8 +14,10 @@ type MemberFilters = {
 };
 
 type MemberListItemWithGraduation = MemberListItem & {
-  currentBelt: "white" | "blue" | "purple" | "brown" | "black" | null;
+  currentBelt: string | null;
   currentStripes: number | null;
+  guardianName?: string | null;
+  guardianMembershipId?: string | null;
 };
 
 type AcademySearchItem = {
