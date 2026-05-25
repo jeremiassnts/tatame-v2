@@ -18,6 +18,7 @@ export type MembershipStatus =
 export const PaymentMethod = {
   Manual: "manual",
   Stripe: "stripe",
+  Pix: "pix",
 } as const;
 export type PaymentMethod =
   (typeof PaymentMethod)[keyof typeof PaymentMethod];
