@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, ne, sql } from "drizzle-orm";
 import {
   academies,
   academyMemberships,
@@ -243,6 +243,7 @@ export class PostgresMembershipRepository implements IMembershipRepository {
           eq(beltPromotions.userId, academyMemberships.userId),
           eq(beltPromotions.academyId, academyMemberships.academyId),
           eq(beltPromotions.isCurrent, true),
+          isNull(beltPromotions.dependentId),
         ),
       )
       .where(and(...conditions))

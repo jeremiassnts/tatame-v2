@@ -21,6 +21,7 @@ const DEFAULT_TABS: { key: string; label: string }[] = [
   { key: "all", label: "Todos" },
   { key: "instructor", label: "Instrutores" },
   { key: "student", label: "Alunos" },
+  { key: "guardian", label: "Responsáveis" },
   { key: "pending", label: "Pendentes" },
 ];
 
@@ -63,6 +64,7 @@ export function MembersListContent({
 
     if (activeTab === "instructor") next.role = "instructor";
     else if (activeTab === "student") next.role = "student";
+    else if (activeTab === "guardian") next.role = "guardian";
     else if (activeTab === "pending") next.status = "pending";
 
     if (searchQuery.trim().length >= 2) {
