@@ -2,6 +2,7 @@ import { Avatar } from "@/components/Avatar";
 import { AnnouncementFeedCard } from "@/components/announcements/AnnouncementFeedCard";
 import { ClassCard } from "@/components/ClassCard";
 import { NotificationBell } from "@/components/NotificationBell";
+import { localDateStringForAgendaWeekday } from "@/lib/class-session-date";
 import { useAcademyContext } from "@/lib/academy-context";
 import { useAnnouncements } from "@/lib/hooks/use-announcements";
 import { useClasses } from "@/lib/hooks/use-classes";
@@ -133,6 +134,11 @@ export default function GuardianHome() {
                   endTime={formatTime(cls.endTime)}
                   instructorName={cls.instructorName ?? undefined}
                   capacity={cls.capacity}
+                  onPress={() =>
+                    router.push(
+                      `/(app)/(guardian)/(classes)/${cls.id}?sessionDate=${localDateStringForAgendaWeekday(dayOfWeek)}`,
+                    )
+                  }
                 />
               ))
             )}
