@@ -8,12 +8,12 @@ import {
 type DependentItem = {
   id: string;
   guardianId: string;
+  academyId: string;
   name: string;
   birthDate: string;
-  belt: string;
-  stripes: number;
+  currentBelt: { belt: string; stripes: number } | null;
+  subscriptionStatus: "active" | "expired" | "none" | null;
   createdAt: string;
-  updatedAt: string;
 };
 
 type DependentsResponse = {

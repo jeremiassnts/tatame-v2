@@ -1,6 +1,8 @@
 import { ClassDetailView } from "@/components/ClassDetailView";
+import { DependentSelectionModal } from "@/components/DependentSelectionModal";
 import { useCheckin, useClassCheckins } from "@/lib/hooks/use-checkin";
 import { useClass } from "@/lib/hooks/use-classes";
+import { useDependents } from "@/lib/hooks/use-dependents";
 import { useMySubscription } from "@/lib/hooks/use-subscription";
 import { useCurrentUser } from "@/lib/hooks/use-user";
 import { isWithinCheckinWindow } from "@/lib/checkin-window";
@@ -50,6 +52,12 @@ export default function StudentClassDetail() {
   const subscription = subResponse?.subscription;
   const hasSubscription =
     subscription != null && subscription.effectiveStatus === "active";
+
+  const { data: dependentsResponse } = useDependents();
+  const dependents = dependentsResponse?.items ?? [];
+  const isGuardian = me?.activeRole === "guardian";
+
+  const [dependentModalVisible, setDependentModalVisible] = useState(false);
 
   const sessionDate =
     cls != null
@@ -110,8 +118,20 @@ export default function StudentClassDetail() {
     );
   }
 
+  const performCheckin = (dependentId?: string) => {
+    checkinMutation.mutate(
+      { classId, date: sessionDate, dependentId },
+      {
+        onError: (err) => {
+          const msg = err instanceof Error ? err.message : "Erro ao fazer check-in";
+          Alert.alert("Check-in não realizado", msg);
+        },
+      },
+    );
+  };
+
   const handleCheckin = () => {
-    if (!hasSubscription) {
+    if (!isGuardian && !hasSubscription) {
       Alert.alert("Plano necessário", "Assine um plano para fazer check-in nas aulas.");
       return;
     }
@@ -121,16 +141,32 @@ export default function StudentClassDetail() {
     ) {
       return;
     }
-    checkinMutation.mutate(
-      { classId, date: sessionDate },
-      {
-        onError: (err) => {
-          const msg = err instanceof Error ? err.message : "Erro ao fazer check-in";
-          Alert.alert("Check-in não realizado", msg);
-        },
-      },
-    );
+    // Show the dependent selection modal when:
+    // - user is a guardian (always — no self option), or
+    // - user is a student with dependents
+    if (isGuardian || dependents.length > 0) {
+      setDependentModalVisible(true);
+      return;
+    }
+    // Student with no dependents — check in directly
+    performCheckin(undefined);
   };
+
+  // For guardians: check-in button is always "enabled" visually (they pick a dependent);
+  // subscription guard applies to dependents individually and is handled server-side.
+  const checkinDisabled = isGuardian
+    ? !withinCheckinWindow
+    : !hasSubscription || !withinCheckinWindow;
+
+  const checkinDisabledReason = isGuardian
+    ? (!withinCheckinWindow
+        ? "O check-in abre 12 horas antes do início da aula e encerra ao fim da aula."
+        : undefined)
+    : (!hasSubscription
+        ? "Assine um plano para fazer check-in nas aulas."
+        : !withinCheckinWindow
+          ? "O check-in abre 12 horas antes do início da aula e encerra ao fim da aula."
+          : undefined);
 
   return (
     <SafeAreaView className="flex-1 bg-background pt-4" edges={["top"]}>
@@ -148,17 +184,21 @@ export default function StudentClassDetail() {
         }}
         canCheckin
         checkinDone={checkinDone}
-        checkinDisabled={!hasSubscription || !withinCheckinWindow}
+        checkinDisabled={checkinDisabled}
         checkinPending={checkinMutation.isPending}
-        checkinDisabledReason={
-          !hasSubscription
-            ? "Assine um plano para fazer check-in nas aulas."
-            : !withinCheckinWindow
-              ? "O check-in abre 12 horas antes do início da aula e encerra ao fim da aula."
-              : undefined
-        }
+        checkinDisabledReason={checkinDisabledReason}
         showCheckins={false}
         onCheckin={handleCheckin}
+      />
+
+      <DependentSelectionModal
+        visible={dependentModalVisible}
+        onClose={() => setDependentModalVisible(false)}
+        onSelect={performCheckin}
+        dependents={dependents}
+        showSelfOption={!isGuardian}
+        userName={me?.name}
+        userBelt={null}
       />
     </SafeAreaView>
   );

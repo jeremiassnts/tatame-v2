@@ -48,7 +48,7 @@ export function useCheckin() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (body: { classId: string; date: string }) =>
+    mutationFn: (body: { classId: string; date: string; dependentId?: string }) =>
       api.post<CreateCheckinResponse>("/checkins", body),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
