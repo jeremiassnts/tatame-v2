@@ -100,23 +100,20 @@ export default function DependentDetailScreen() {
     {
       icon: <CalendarDays size={22} color="#A078E8" />,
       label: "Histórico de check-ins",
-      onPress: () => {
-        // TODO: navigate to dependent checkin history
-      },
+      onPress: () =>
+        router.push(`/(app)/(guardian)/(dependents)/checkin-history?dependentId=${dependentId}`),
     },
     {
       icon: <CreditCard size={22} color="#A078E8" />,
       label: "Assinatura",
-      onPress: () => {
-        // TODO: navigate to dependent subscription
-      },
+      onPress: () =>
+        router.push(`/(app)/(guardian)/(dependents)/subscription?dependentId=${dependentId}`),
     },
     {
       icon: <History size={22} color="#A078E8" />,
       label: "Histórico de pagamentos",
-      onPress: () => {
-        // TODO: navigate to dependent payment history
-      },
+      onPress: () =>
+        router.push(`/(app)/(guardian)/(dependents)/payment-history?dependentId=${dependentId}`),
     },
     {
       icon: <Pencil size={22} color="#A078E8" />,
