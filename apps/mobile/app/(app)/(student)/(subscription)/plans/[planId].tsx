@@ -17,7 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const TEXT_SECONDARY = "#8A8A8A";
 
 export default function PlanDetailScreen() {
-  const { planId } = useLocalSearchParams<{ planId: string }>();
+  const { planId, dependentId } = useLocalSearchParams<{ planId: string; dependentId?: string }>();
   const router = useRouter();
   const { data: plan, isLoading } = useSubscriptionPlan(planId);
   const { data: subResponse } = useMySubscription();
@@ -43,7 +43,7 @@ export default function PlanDetailScreen() {
 
     const runSelectPlan = async () => {
       try {
-        await selectPlan.mutateAsync(plan.id);
+        await selectPlan.mutateAsync({ planId: plan.id, dependentId });
         await queryClient.refetchQueries({ queryKey: ["subscription", "me"] });
         Alert.alert(
           hasActiveSubscription ? "Plano atualizado" : "Assinatura ativada",
