@@ -93,7 +93,7 @@ export default function DependentSubscriptionScreen() {
   const handleChoosePlan = () => {
     router.push({
       pathname: "/(app)/(student)/(subscription)/plans",
-      params: { dependentId },
+      params: { dependentId, callerRole: "guardian" },
     });
   };
 

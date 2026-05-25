@@ -17,7 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const TEXT_SECONDARY = "#8A8A8A";
 
 export default function PlanDetailScreen() {
-  const { planId, dependentId } = useLocalSearchParams<{ planId: string; dependentId?: string }>();
+  const { planId, dependentId, callerRole } = useLocalSearchParams<{ planId: string; dependentId?: string; callerRole?: string }>();
   const router = useRouter();
   const { data: plan, isLoading } = useSubscriptionPlan(planId);
   const { data: subResponse } = useMySubscription();
@@ -55,8 +55,10 @@ export default function PlanDetailScreen() {
             ? "A assinatura foi atualizada com sucesso."
             : "A assinatura foi ativada com sucesso.",
         );
-        if (dependentId) {
+        if (dependentId && callerRole === "guardian") {
           router.replace(`/(app)/(guardian)/(dependents)/subscription?dependentId=${dependentId}`);
+        } else if (dependentId) {
+          router.replace(`/(app)/(student)/(more)/dependent-subscription?dependentId=${dependentId}`);
         } else {
           router.replace("/(app)/(student)/(subscription)");
         }

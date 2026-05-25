@@ -17,7 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const TEXT_SECONDARY = "#8A8A8A";
 
 export default function SubscriptionPlansScreen() {
-  const { dependentId } = useLocalSearchParams<{ dependentId?: string }>();
+  const { dependentId, callerRole } = useLocalSearchParams<{ dependentId?: string; callerRole?: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: plans, isLoading } = useSubscriptionPlans();
@@ -83,7 +83,7 @@ export default function SubscriptionPlansScreen() {
                   onPress={() =>
                     router.push({
                       pathname: `/(app)/(student)/(subscription)/plans/${plan.id}`,
-                      params: dependentId ? { dependentId } : undefined,
+                      params: dependentId ? { dependentId, callerRole } : undefined,
                     })
                   }
                 />
