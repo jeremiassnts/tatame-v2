@@ -5,6 +5,8 @@ export default function StudentMoreLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="dependents" />
+      <Stack.Screen name="create-dependent" />
+      <Stack.Screen name="dependent-detail" />
     </Stack>
   );
 }

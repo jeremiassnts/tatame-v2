@@ -48,7 +48,7 @@ export default function StudentDependentsScreen() {
             Meus Dependentes
           </Text>
           <Pressable
-            onPress={() => router.push("/(app)/(guardian)/(dependents)/create")}
+            onPress={() => router.push("/(app)/(student)/(more)/create-dependent")}
             className="h-10 w-10 items-center justify-center rounded-xl border border-surface-border bg-surface"
           >
             <Plus size={18} color="#A078E8" />
@@ -80,7 +80,7 @@ export default function StudentDependentsScreen() {
               </Text>
             </View>
             <Pressable
-              onPress={() => router.push("/(app)/(guardian)/(dependents)/create")}
+              onPress={() => router.push("/(app)/(student)/(more)/create-dependent")}
               className="flex-row items-center justify-center gap-2 rounded-xl px-6"
               style={{ height: 48, backgroundColor: "#A078E8" }}
             >
@@ -106,7 +106,7 @@ export default function StudentDependentsScreen() {
                 <Pressable
                   key={dep.id}
                   onPress={() =>
-                    router.push(`/(app)/(guardian)/(dependents)/${dep.id}`)
+                    router.push(`/(app)/(student)/(more)/dependent-detail?id=${dep.id}`)
                   }
                   className="rounded-2xl border border-surface-border bg-surface"
                   style={{ padding: 16 }}
