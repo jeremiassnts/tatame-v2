@@ -19,6 +19,7 @@ export const appRoleEnum = pgEnum("app_role", [
   "manager",
   "instructor",
   "student",
+  "guardian",
 ]);
 
 export const membershipStatusEnum = pgEnum("membership_status", [
@@ -187,6 +188,26 @@ export const academyMemberships = pgTable(
   }),
 );
 
+export const dependents = pgTable("dependents", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  guardianId: uuid("guardian_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  academyId: uuid("academy_id")
+    .notNull()
+    .references(() => academies.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  birthDate: date("birth_date").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+});
+
 export const classes = pgTable(
   "classes",
   {
@@ -235,6 +256,9 @@ export const checkins = pgTable(
       .notNull(),
     date: date("date").notNull(),
     weekReference: date("week_reference").notNull(),
+    dependentId: uuid("dependent_id").references(() => dependents.id, {
+      onDelete: "set null",
+    }),
   },
   (t) => ({
     userWeekIdx: index("checkins_user_id_week_reference_idx").on(
@@ -247,6 +271,9 @@ export const checkins = pgTable(
       t.classId,
       t.date,
     ),
+    onePerDependentClassDate: uniqueIndex("checkins_dependent_class_date_unique")
+      .on(t.dependentId, t.classId, t.date)
+      .where(sql`${t.dependentId} IS NOT NULL`),
   }),
 );
 
@@ -277,6 +304,9 @@ export const studentSubscriptions = pgTable("student_subscriptions", {
   planId: uuid("plan_id")
     .notNull()
     .references(() => subscriptionPlans.id, { onDelete: "restrict" }),
+  dependentId: uuid("dependent_id").references(() => dependents.id, {
+    onDelete: "set null",
+  }),
   status: subscriptionStatusEnum("status").notNull(),
   startsAt: date("starts_at").notNull(),
   expiresAt: date("expires_at").notNull(),
@@ -326,6 +356,9 @@ export const payments = pgTable("payments", {
   academyId: uuid("academy_id")
     .notNull()
     .references(() => academies.id, { onDelete: "cascade" }),
+  dependentId: uuid("dependent_id").references(() => dependents.id, {
+    onDelete: "set null",
+  }),
   amountCents: integer("amount_cents").notNull(),
   method: paymentMethodEnum("method").notNull(),
   confirmedBy: uuid("confirmed_by").references(() => users.id, {
@@ -372,6 +405,9 @@ export const beltPromotions = pgTable(
     promotedBy: uuid("promoted_by")
       .notNull()
       .references(() => users.id, { onDelete: "restrict" }),
+    dependentId: uuid("dependent_id").references(() => dependents.id, {
+      onDelete: "set null",
+    }),
     belt: beltEnum("belt").notNull(),
     stripes: smallint("stripes").notNull(),
     isCurrent: boolean("is_current").notNull(),
@@ -384,6 +420,9 @@ export const beltPromotions = pgTable(
     oneCurrentPerUser: uniqueIndex("belt_promotions_one_current_per_user")
       .on(t.userId)
       .where(sql`${t.isCurrent} = true`),
+    oneCurrentPerDependent: uniqueIndex("belt_promotions_one_current_per_dependent")
+      .on(t.dependentId)
+      .where(sql`${t.isCurrent} = true AND ${t.dependentId} IS NOT NULL`),
   }),
 );
 

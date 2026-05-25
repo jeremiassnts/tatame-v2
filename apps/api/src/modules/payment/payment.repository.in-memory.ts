@@ -26,6 +26,7 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
       subscriptionId: data.subscriptionId,
       userId: data.userId,
       academyId: data.academyId,
+      dependentId: null,
       amountCents: data.amountCents,
       method: data.method,
       confirmedBy: data.confirmedBy,

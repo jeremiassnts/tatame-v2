@@ -152,6 +152,7 @@ export class InMemoryStudentSubscriptionRepository
       id: randomUUID(),
       userId: data.userId,
       planId: data.planId,
+      dependentId: null,
       status: data.status,
       startsAt: data.startsAt,
       expiresAt: data.expiresAt,

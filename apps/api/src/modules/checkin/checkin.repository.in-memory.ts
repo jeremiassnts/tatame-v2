@@ -51,6 +51,7 @@ export class InMemoryCheckinRepository implements ICheckinRepository {
       date: data.date,
       weekReference: data.weekReference,
       checkedInAt: t,
+      dependentId: null,
     };
     this.rows.push(row);
     return row;

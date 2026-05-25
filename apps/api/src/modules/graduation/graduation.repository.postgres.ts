@@ -30,6 +30,7 @@ export class PostgresGraduationRepository implements IGraduationRepository {
         userId: beltPromotions.userId,
         academyId: beltPromotions.academyId,
         promotedBy: beltPromotions.promotedBy,
+        dependentId: beltPromotions.dependentId,
         promotedByName: users.name,
         belt: beltPromotions.belt,
         stripes: beltPromotions.stripes,
