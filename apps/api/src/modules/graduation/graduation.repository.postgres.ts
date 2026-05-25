@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { beltPromotions, users, type Database } from "@tatame/db";
 import type {
   BeltPromotionRow,
@@ -14,7 +14,11 @@ export class PostgresGraduationRepository implements IGraduationRepository {
       .select()
       .from(beltPromotions)
       .where(
-        and(eq(beltPromotions.userId, userId), eq(beltPromotions.isCurrent, true)),
+        and(
+          eq(beltPromotions.userId, userId),
+          eq(beltPromotions.isCurrent, true),
+          isNull(beltPromotions.dependentId),
+        ),
       )
       .limit(1);
     return row;
@@ -44,6 +48,7 @@ export class PostgresGraduationRepository implements IGraduationRepository {
         and(
           eq(beltPromotions.userId, userId),
           eq(beltPromotions.academyId, academyId),
+          isNull(beltPromotions.dependentId),
         ),
       )
       .orderBy(desc(beltPromotions.promotedAt));

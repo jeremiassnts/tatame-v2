@@ -91,9 +91,9 @@ export default function DependentDetailScreen() {
     );
   }
 
-  const belt = dependent.belt as Belt;
-  const beltColor = BELT_COLORS[belt] ?? TEXT_MUTED;
-  const beltLabel = BELT_LABELS_SHORT[belt] ?? dependent.belt;
+  const belt = dependent.currentBelt?.belt as Belt | undefined;
+  const beltColor = belt ? (BELT_COLORS[belt] ?? TEXT_MUTED) : TEXT_MUTED;
+  const beltLabel = belt ? (BELT_LABELS_SHORT[belt] ?? belt) : "—";
   const age = calcAge(dependent.birthDate);
 
   const quickActions: QuickAction[] = [
@@ -164,8 +164,8 @@ export default function DependentDetailScreen() {
               />
               <Text className="font-poppins text-xs" style={{ color: TEXT_SECONDARY }}>
                 Faixa {beltLabel}
-                {dependent.stripes > 0
-                  ? ` · ${dependent.stripes} ${dependent.stripes === 1 ? "grau" : "graus"}`
+                {dependent.currentBelt && dependent.currentBelt.stripes > 0
+                  ? ` · ${dependent.currentBelt.stripes} ${dependent.currentBelt.stripes === 1 ? "grau" : "graus"}`
                   : ""}
               </Text>
             </View>

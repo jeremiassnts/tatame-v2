@@ -97,9 +97,9 @@ export default function DependentsListScreen() {
             contentContainerStyle={{ gap: 10, paddingBottom: 32 }}
           >
             {dependents.map((dep) => {
-              const belt = dep.belt as Belt;
-              const beltColor = BELT_COLORS[belt] ?? TEXT_MUTED;
-              const beltLabel = BELT_LABELS_SHORT[belt] ?? dep.belt;
+              const belt = dep.currentBelt?.belt as Belt | undefined;
+              const beltColor = belt ? (BELT_COLORS[belt] ?? TEXT_MUTED) : TEXT_MUTED;
+              const beltLabel = belt ? (BELT_LABELS_SHORT[belt] ?? belt) : "—";
               const age = calcAge(dep.birthDate);
 
               return (
@@ -132,8 +132,8 @@ export default function DependentsListScreen() {
                     />
                     <Text className="font-poppins text-xs" style={{ color: TEXT_SECONDARY }}>
                       Faixa {beltLabel}
-                      {dep.stripes > 0
-                        ? ` · ${dep.stripes} ${dep.stripes === 1 ? "grau" : "graus"}`
+                      {dep.currentBelt && dep.currentBelt.stripes > 0
+                        ? ` · ${dep.currentBelt.stripes} ${dep.currentBelt.stripes === 1 ? "grau" : "graus"}`
                         : ""}
                     </Text>
                   </View>

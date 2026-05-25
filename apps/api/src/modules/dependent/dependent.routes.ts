@@ -59,7 +59,7 @@ dependentRouter.get(
   async (req, res, next) => {
     try {
       const result = await dependentService.listMine(req.appAuth!.userId);
-      res.json(result);
+      res.json({ items: result });
     } catch (e) {
       next(e);
     }

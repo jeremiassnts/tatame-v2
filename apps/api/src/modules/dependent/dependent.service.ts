@@ -58,11 +58,42 @@ export class DependentService {
     return dependent;
   }
 
-  async listMine(userId: string): Promise<DependentRow[]> {
-    return this.dependentRepo.findByGuardian(userId);
+  async listMine(userId: string) {
+    const deps = await this.dependentRepo.findByGuardian(userId);
+    return this.enrichMany(deps);
+  }
+
+  private async enrichOne(dep: DependentRow) {
+    const belt = await this.graduationRepo.findCurrentByDependentId(dep.id);
+    return {
+      id: dep.id,
+      guardianId: dep.guardianId,
+      academyId: dep.academyId,
+      name: dep.name,
+      birthDate: dep.birthDate,
+      currentBelt: belt
+        ? { belt: belt.belt, stripes: belt.stripes }
+        : null,
+      subscriptionStatus: null as string | null,
+      createdAt: dep.createdAt.toISOString(),
+    };
+  }
+
+  private async enrichMany(deps: DependentRow[]) {
+    return Promise.all(deps.map((dep) => this.enrichOne(dep)));
   }
 
   async getById(
+    userId: string,
+    role: Role,
+    dependentId: string,
+    academyId?: string,
+  ) {
+    const dep = await this.findAndAuthorize(userId, role, dependentId, academyId);
+    return this.enrichOne(dep);
+  }
+
+  private async findAndAuthorize(
     userId: string,
     role: Role,
     dependentId: string,
@@ -94,7 +125,7 @@ export class DependentService {
     },
     academyId?: string,
   ): Promise<DependentRow | undefined> {
-    const dep = await this.getById(userId, role, dependentId, academyId);
+    const dep = await this.findAndAuthorize(userId, role, dependentId, academyId);
 
     if (role !== "manager" && dep.guardianId !== userId) {
       throw new HttpError(403, "Sem permissão para editar este dependente");
@@ -109,7 +140,7 @@ export class DependentService {
     dependentId: string,
     academyId?: string,
   ): Promise<void> {
-    const dep = await this.getById(userId, role, dependentId, academyId);
+    const dep = await this.findAndAuthorize(userId, role, dependentId, academyId);
 
     if (role !== "manager" && dep.guardianId !== userId) {
       throw new HttpError(403, "Sem permissão para excluir este dependente");
