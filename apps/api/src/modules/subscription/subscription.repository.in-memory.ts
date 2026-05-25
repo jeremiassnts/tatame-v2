@@ -120,6 +120,29 @@ export class InMemoryStudentSubscriptionRepository
     }
   }
 
+  async cancelActiveForDependent(
+    userId: string,
+    academyId: string,
+    dependentId: string,
+  ): Promise<void> {
+    const planRows = await this.planRepo.findByAcademy(academyId, {
+      includeInactive: true,
+    });
+    const planIds = new Set(planRows.map((p) => p.id));
+    const t = new Date();
+    for (const sub of this.rows) {
+      if (
+        sub.userId === userId &&
+        sub.status === "active" &&
+        sub.dependentId === dependentId &&
+        planIds.has(sub.planId)
+      ) {
+        sub.status = "cancelled";
+        sub.updatedAt = t;
+      }
+    }
+  }
+
   async replaceActiveSubscriptionForAcademy(
     userId: string,
     academyId: string,
@@ -131,7 +154,11 @@ export class InMemoryStudentSubscriptionRepository
       dependentId?: string | null;
     },
   ): Promise<StudentSubscriptionRow> {
-    await this.cancelActiveForUserInAcademy(userId, academyId);
+    if (newRow.dependentId) {
+      await this.cancelActiveForDependent(userId, academyId, newRow.dependentId);
+    } else {
+      await this.cancelActiveForUserInAcademy(userId, academyId);
+    }
     return this.create({
       userId,
       planId: newRow.planId,

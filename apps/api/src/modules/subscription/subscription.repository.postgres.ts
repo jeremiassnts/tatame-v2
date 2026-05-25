@@ -170,6 +170,31 @@ export class PostgresStudentSubscriptionRepository
       );
   }
 
+  async cancelActiveForDependent(
+    userId: string,
+    academyId: string,
+    dependentId: string,
+  ): Promise<void> {
+    const planRows = await this.db
+      .select({ id: subscriptionPlans.id })
+      .from(subscriptionPlans)
+      .where(eq(subscriptionPlans.academyId, academyId));
+    const planIds = planRows.map((p) => p.id);
+    if (planIds.length === 0) return;
+
+    await this.db
+      .update(studentSubscriptions)
+      .set({ status: "cancelled", updatedAt: new Date() })
+      .where(
+        and(
+          eq(studentSubscriptions.userId, userId),
+          eq(studentSubscriptions.status, "active"),
+          eq(studentSubscriptions.dependentId, dependentId),
+          inArray(studentSubscriptions.planId, planIds),
+        ),
+      );
+  }
+
   async replaceActiveSubscriptionForAcademy(
     userId: string,
     academyId: string,
@@ -185,7 +210,13 @@ export class PostgresStudentSubscriptionRepository
       const inner = new PostgresStudentSubscriptionRepository(
         tx as unknown as Database,
       );
-      await inner.cancelActiveForUserInAcademy(userId, academyId);
+      if (newRow.dependentId) {
+        // Only cancel the active subscription for this specific dependent
+        await inner.cancelActiveForDependent(userId, academyId, newRow.dependentId);
+      } else {
+        // Cancel all active subscriptions for this user (no dependent) in the academy
+        await inner.cancelActiveForUserInAcademy(userId, academyId);
+      }
       return inner.create({
         userId,
         planId: newRow.planId,

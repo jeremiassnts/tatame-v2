@@ -68,6 +68,8 @@ export interface IStudentSubscriptionRepository {
 
   cancelActiveForUserInAcademy(userId: string, academyId: string): Promise<void>;
 
+  cancelActiveForDependent(userId: string, academyId: string, dependentId: string): Promise<void>;
+
   /**
    * Cancels active subscriptions for the user in this academy and inserts a new row — single transaction.
    */
