@@ -8,6 +8,9 @@ export default function StudentMoreLayout() {
       <Stack.Screen name="create-dependent" />
       <Stack.Screen name="dependent-detail" />
       <Stack.Screen name="edit-dependent" />
+      <Stack.Screen name="dependent-checkin-history" />
+      <Stack.Screen name="dependent-subscription" />
+      <Stack.Screen name="dependent-payment-history" />
     </Stack>
   );
 }
