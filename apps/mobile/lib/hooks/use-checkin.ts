@@ -13,6 +13,8 @@ type CheckinItem = {
   userId: string;
   checkedInAt: string;
   date: string;
+  dependentId: string | null;
+  dependentName: string | null;
   userName?: string;
   userProfileImageUrl?: string | null;
 };
