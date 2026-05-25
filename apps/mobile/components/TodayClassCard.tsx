@@ -11,9 +11,11 @@ type TodayClassCardProps = {
   instructorName?: string | null;
   capacity?: number | null;
   userId: string | undefined;
+  dependentIds: string[];
+  isGuardian: boolean;
   hasSubscription: boolean;
   checkinPending: boolean;
-  sessionDate: string; // YYYY-MM-DD (same as request body.date)
+  sessionDate: string;
   now: Date;
   onCheckin: () => void;
   onPress: () => void;
@@ -27,6 +29,8 @@ export function TodayClassCard({
   instructorName,
   capacity,
   userId,
+  dependentIds,
+  isGuardian,
   hasSubscription,
   checkinPending,
   sessionDate,
@@ -38,16 +42,32 @@ export function TodayClassCard({
     enabled: Boolean(classId) && Boolean(sessionDate),
   });
 
-  const { checkinDone, checkinCount, withinWindow } = useMemo(() => {
+  const { allCheckedIn, checkinCount, withinWindow } = useMemo(() => {
     const list = checkins ?? [];
     const count = list.length;
-    const done = userId ? list.some((c) => c.userId === userId) : false;
     const within = isWithinCheckinWindow(now, sessionDate, startTime, endTime);
-    return { checkinDone: done, checkinCount: count, withinWindow: within };
-  }, [checkins, userId, now, sessionDate, startTime, endTime]);
+
+    if (!userId) return { allCheckedIn: false, checkinCount: count, withinWindow: within };
+
+    const checkedDependentIds = new Set(
+      list.filter((c) => c.dependentId).map((c) => c.dependentId),
+    );
+    const selfCheckedIn = list.some((c) => c.userId === userId && !c.dependentId);
+
+    let allDone: boolean;
+    if (isGuardian) {
+      allDone = dependentIds.length > 0 && dependentIds.every((id) => checkedDependentIds.has(id));
+    } else if (dependentIds.length > 0) {
+      allDone = selfCheckedIn && dependentIds.every((id) => checkedDependentIds.has(id));
+    } else {
+      allDone = selfCheckedIn;
+    }
+
+    return { allCheckedIn: allDone, checkinCount: count, withinWindow: within };
+  }, [checkins, userId, dependentIds, isGuardian, now, sessionDate, startTime, endTime]);
 
   const checkinDisabled =
-    !hasSubscription || checkinPending || checkinDone || !withinWindow;
+    !hasSubscription || checkinPending || allCheckedIn || !withinWindow;
 
   return (
     <ClassCard
@@ -60,7 +80,7 @@ export function TodayClassCard({
       showCheckinButton
       onCheckin={onCheckin}
       checkinDisabled={checkinDisabled}
-      checkinLabel={checkinDone ? "Check-in realizado" : "Check-in"}
+      checkinLabel={allCheckedIn ? "Check-in realizado" : "Check-in"}
       onPress={onPress}
     />
   );

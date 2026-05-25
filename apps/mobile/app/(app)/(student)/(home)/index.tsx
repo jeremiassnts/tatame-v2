@@ -269,6 +269,8 @@ export default function StudentHome() {
                   instructorName={cls.instructorName ?? undefined}
                   capacity={cls.capacity}
                   userId={me?.id}
+                  dependentIds={dependents.map((d) => d.id)}
+                  isGuardian={false}
                   hasSubscription={hasSubscription}
                   checkinPending={checkin.isPending}
                   sessionDate={today}
