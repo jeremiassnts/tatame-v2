@@ -1,9 +1,11 @@
 import { useApi } from "@/lib/api";
 import {
+  useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
+import type { MySubscriptionResponse, PaymentItem } from "./use-subscription";
 
 type DependentItem = {
   id: string;
@@ -84,5 +86,74 @@ export function useDeleteDependent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["dependents"] });
     },
+  });
+}
+
+type CheckinHistoryWeek = {
+  weekReference: string;
+  weekLabel: string;
+  count: number;
+  checkins: Array<{
+    id: string;
+    className: string;
+    date: string;
+    dayOfWeek: string;
+    time: string;
+  }>;
+};
+
+type CheckinHistoryResponse = {
+  items: CheckinHistoryWeek[];
+  nextCursor: string | null;
+};
+
+export function useDependentCheckinHistory(dependentId: string | null) {
+  const api = useApi();
+  return useInfiniteQuery({
+    queryKey: ["checkins", dependentId, "history"],
+    queryFn: ({ pageParam }) => {
+      const params = new URLSearchParams();
+      if (pageParam) params.set("cursor", pageParam);
+      const qs = params.toString();
+      return api.get<CheckinHistoryResponse>(
+        `/checkins/dependent/${dependentId}/history${qs ? `?${qs}` : ""}`,
+      );
+    },
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    enabled: !!dependentId,
+  });
+}
+
+export function useDependentWeeklyCheckinCount(dependentId: string | null) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ["checkins", dependentId, "weekly-count"],
+    queryFn: () =>
+      api.get<{ count: number; weekReference: string }>(
+        `/checkins/dependent/${dependentId}/weekly-count`,
+      ),
+    enabled: !!dependentId,
+  });
+}
+
+export function useDependentSubscription(dependentId: string | null) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ["subscription", dependentId],
+    queryFn: () =>
+      api.get<MySubscriptionResponse>(`/subscriptions/dependent/${dependentId}`),
+    enabled: !!dependentId,
+  });
+}
+
+export function useDependentPayments(dependentId: string | null) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ["payments", dependentId],
+    queryFn: () =>
+      api.get<{ items: PaymentItem[] }>(`/payments/dependent/${dependentId}`),
+    select: (data) => data.items,
+    enabled: !!dependentId,
   });
 }

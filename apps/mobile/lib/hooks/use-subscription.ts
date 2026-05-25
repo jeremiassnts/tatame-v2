@@ -38,7 +38,7 @@ export function useMySubscription() {
   });
 }
 
-type PaymentItem = {
+export type PaymentItem = {
   id: string;
   subscriptionId: string;
   userId: string;
