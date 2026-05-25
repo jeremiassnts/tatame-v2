@@ -105,6 +105,36 @@ export class PostgresCheckinRepository implements ICheckinRepository {
     }));
   }
 
+  async findByDependentWithClass(
+    dependentId: string,
+    opts: { cursor?: string; limit: number },
+  ): Promise<CheckinHistoryItem[]> {
+    const conditions = [eq(checkins.dependentId, dependentId)];
+    if (opts.cursor) {
+      conditions.push(lt(checkins.weekReference, opts.cursor));
+    }
+
+    const rows = await this.db
+      .select({
+        id: checkins.id,
+        date: checkins.date,
+        className: classes.name,
+        startTime: classes.startTime,
+      })
+      .from(checkins)
+      .innerJoin(classes, eq(checkins.classId, classes.id))
+      .where(conditions.length === 1 ? conditions[0]! : and(...conditions))
+      .orderBy(desc(checkins.date))
+      .limit(opts.limit);
+
+    return rows.map((r) => ({
+      id: r.id,
+      className: r.className,
+      date: r.date.slice(0, 10),
+      startTime: r.startTime,
+    }));
+  }
+
   async countTotalByUser(userId: string): Promise<number> {
     const [row] = await this.db
       .select({ c: count() })

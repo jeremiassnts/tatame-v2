@@ -364,6 +364,118 @@ export class CheckinService {
     return { items, nextCursor };
   }
 
+  async getHistoryForDependent(
+    dependentId: string,
+    opts: { cursor?: string; limit: number },
+  ): Promise<{
+    items: Array<{
+      weekReference: string;
+      weekLabel: string;
+      count: number;
+      checkins: Array<{
+        id: string;
+        className: string;
+        date: string;
+        dayOfWeek: string;
+        time: string;
+      }>;
+    }>;
+    nextCursor: string | null;
+  }> {
+    const DAY_NAMES = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+    const MONTH_NAMES = [
+      "jan",
+      "fev",
+      "mar",
+      "abr",
+      "mai",
+      "jun",
+      "jul",
+      "ago",
+      "set",
+      "out",
+      "nov",
+      "dez",
+    ];
+
+    const rawItems = await this.checkinRepo.findByDependentWithClass(dependentId, {
+      cursor: opts.cursor,
+      limit: opts.limit * 20,
+    });
+
+    const weekMap = new Map<
+      string,
+      Array<{ id: string; className: string; date: string; startTime: string }>
+    >();
+    for (const item of rawItems) {
+      const weekRef = mondayOfWeekContaining(item.date);
+      let arr = weekMap.get(weekRef);
+      if (!arr) {
+        arr = [];
+        weekMap.set(weekRef, arr);
+      }
+      arr.push(item);
+    }
+
+    const sortedWeeks = [...weekMap.keys()].sort((a, b) => b.localeCompare(a));
+    const selectedWeeks = sortedWeeks.slice(0, opts.limit);
+    const nextCursor =
+      sortedWeeks.length > opts.limit ? sortedWeeks[opts.limit]! : null;
+
+    function formatWeekLabel(monday: string): string {
+      const parts = monday.split("-").map(Number);
+      const y = parts[0] ?? 0;
+      const m = parts[1] ?? 1;
+      const d = parts[2] ?? 1;
+      const start = new Date(Date.UTC(y, m - 1, d));
+      const end = new Date(Date.UTC(y, m - 1, d + 6));
+      const startDay = start.getUTCDate();
+      const endDay = end.getUTCDate();
+      const endMonth = MONTH_NAMES[end.getUTCMonth()]!;
+      const endYear = end.getUTCFullYear();
+      return `${startDay}–${endDay} ${endMonth} ${endYear}`;
+    }
+
+    function formatTime(t: string): string {
+      const p = t.split(":");
+      return `${(p[0] ?? "0").padStart(2, "0")}:${p[1] ?? "00"}`;
+    }
+
+    const items = selectedWeeks.map((weekRef) => {
+      const checkins = weekMap.get(weekRef) ?? [];
+      return {
+        weekReference: weekRef,
+        weekLabel: formatWeekLabel(weekRef),
+        count: checkins.length,
+        checkins: checkins.map((c) => {
+          const p = c.date.split("-").map(Number);
+          const dt = new Date(
+            Date.UTC(p[0] ?? 0, (p[1] ?? 1) - 1, p[2] ?? 1),
+          );
+          return {
+            id: c.id,
+            className: c.className,
+            date: c.date,
+            dayOfWeek: DAY_NAMES[dt.getUTCDay()]!,
+            time: formatTime(c.startTime),
+          };
+        }),
+      };
+    });
+
+    return { items, nextCursor };
+  }
+
+  async getWeeklyCountForDependent(dependentId: string): Promise<{
+    count: number;
+    weekReference: string;
+  }> {
+    const today = utcTodayDateString();
+    const weekRef = mondayOfWeekContaining(today);
+    const count = await this.checkinRepo.countByDependentAndWeek(dependentId, weekRef);
+    return { count, weekReference: weekRef };
+  }
+
   private async resolveSubscriptionAndWarnings(
     userId: string,
     academyId: string,

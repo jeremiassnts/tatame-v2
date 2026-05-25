@@ -74,6 +74,13 @@ export class InMemoryCheckinRepository implements ICheckinRepository {
     return [];
   }
 
+  async findByDependentWithClass(
+    _dependentId: string,
+    _opts: { cursor?: string; limit: number },
+  ): Promise<CheckinHistoryItem[]> {
+    return [];
+  }
+
   async countTotalByUser(userId: string): Promise<number> {
     return this.rows.filter((r) => r.userId === userId).length;
   }

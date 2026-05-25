@@ -120,6 +120,43 @@ checkinRouter.get(
   },
 );
 
+checkinRouter.get(
+  "/dependent/:dependentId/history",
+  authorize(Role.Student, Role.Guardian, Role.Manager),
+  attachActiveAcademyContext,
+  requireActiveAcademy,
+  async (req, res, next) => {
+    try {
+      const query = checkinHistoryQuerySchema.safeParse(req.query);
+      if (!query.success) {
+        throw new HttpError(400, "Invalid query");
+      }
+      const { dependentId } = req.params;
+      if (!dependentId) { res.status(400).json({ error: "dependentId required" }); return; }
+      const result = await checkinService.getHistoryForDependent(dependentId, {
+        cursor: query.data.cursor,
+        limit: query.data.limit,
+      });
+      res.json(result);
+    } catch (e) { next(e); }
+  },
+);
+
+checkinRouter.get(
+  "/dependent/:dependentId/weekly-count",
+  authorize(Role.Student, Role.Guardian, Role.Manager),
+  attachActiveAcademyContext,
+  requireActiveAcademy,
+  async (req, res, next) => {
+    try {
+      const { dependentId } = req.params;
+      if (!dependentId) { res.status(400).json({ error: "dependentId required" }); return; }
+      const result = await checkinService.getWeeklyCountForDependent(dependentId);
+      res.json(result);
+    } catch (e) { next(e); }
+  },
+);
+
 checkinRouter.post(
   "/",
   authorize(Role.Student, Role.Guardian),
