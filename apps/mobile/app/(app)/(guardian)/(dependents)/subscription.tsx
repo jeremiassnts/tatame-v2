@@ -1,9 +1,11 @@
 import { BackButton } from "@/components/BackButton";
 import { useDependent, useDependentPayments, useDependentSubscription, useDependentWeeklyCheckinCount } from "@/lib/hooks/use-dependents";
+import { useCreateCheckout } from "@/lib/hooks/use-subscription";
 import { useQueryClient } from "@tanstack/react-query";
+import * as WebBrowser from "expo-web-browser";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Calendar, ChevronRight } from "lucide-react-native";
-import { useState } from "react";
+import { Calendar, ChevronRight, CreditCard, QrCode } from "lucide-react-native";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -40,6 +42,20 @@ export default function DependentSubscriptionScreen() {
   const plan = subResponse?.plan;
   const hasActive = subscription != null && subscription.effectiveStatus === "active";
 
+  const createCheckout = useCreateCheckout();
+  const [showProcessingBanner, setShowProcessingBanner] = useState(false);
+
+  useEffect(() => {
+    if (showProcessingBanner && payments) {
+      const today = new Date().toISOString().slice(0, 10);
+      const currentMonth = today.slice(0, 7) + "-01";
+      const hasPaid = payments.some((p) => p.referenceMonth === currentMonth);
+      if (hasPaid) {
+        setShowProcessingBanner(false);
+      }
+    }
+  }, [payments, showProcessingBanner]);
+
   const onRefresh = async () => {
     setRefreshing(true);
     await Promise.all([
@@ -48,6 +64,30 @@ export default function DependentSubscriptionScreen() {
       queryClient.invalidateQueries({ queryKey: ["payments", dependentId] }),
     ]);
     setRefreshing(false);
+  };
+
+  const handlePay = async () => {
+    try {
+      const result = await createCheckout.mutateAsync({
+        subscriptionId: subscription!.id,
+      });
+      await WebBrowser.openBrowserAsync(result.checkoutUrl);
+      setShowProcessingBanner(true);
+      queryClient.invalidateQueries({ queryKey: ["payments", dependentId] });
+    } catch {
+      // Checkout creation failed
+    }
+  };
+
+  const handlePayPix = () => {
+    router.push({
+      pathname: "/(app)/(student)/(subscription)/pix-payment",
+      params: {
+        subscriptionId: subscription!.id,
+        planName: plan!.name,
+        priceCents: String(plan!.priceCents),
+      },
+    });
   };
 
   const handleChoosePlan = () => {
@@ -160,12 +200,119 @@ export default function DependentSubscriptionScreen() {
             </View>
           </Pressable>
 
-          {/* Payment note */}
-          <View className="items-center justify-center rounded-xl" style={{ height: 48, backgroundColor: "#2A2A2A" }}>
-            <Text className="font-poppins text-sm text-muted">
-              Pagamento gerenciado pela academia
-            </Text>
-          </View>
+          {showProcessingBanner && (
+            <View
+              className="flex-row items-center rounded-xl"
+              style={{ padding: 12, gap: 8, backgroundColor: "#A078E820" }}
+            >
+              <ActivityIndicator size="small" color="#A078E8" />
+              <Text className="font-poppins text-xs" style={{ color: "#A078E8", flex: 1 }}>
+                Pagamento sendo processado. Em breve aparecerá aqui.
+              </Text>
+            </View>
+          )}
+
+          {/* Payment section */}
+          {(() => {
+            const today = new Date().toISOString().slice(0, 10);
+            const currentMonth = today.slice(0, 7) + "-01";
+            const hasPaid = payments?.some((p) => p.referenceMonth === currentMonth);
+            const currentPayment = payments?.find((p) => p.referenceMonth === currentMonth);
+
+            return (
+              <View
+                className="rounded-2xl border border-surface-border bg-surface"
+                style={{ padding: 20, gap: 16 }}
+              >
+                <View className="flex-row items-center justify-between">
+                  <Text className="font-poppins-semibold text-base text-primary">
+                    {hasPaid ? "Mensalidade atual" : "Pagamento pendente"}
+                  </Text>
+                  <View
+                    className="rounded-full px-3 py-1"
+                    style={{ backgroundColor: hasPaid ? "#32D74B20" : "#FF453A20" }}
+                  >
+                    <Text
+                      className="font-poppins-semibold text-xs"
+                      style={{ color: hasPaid ? "#32D74B" : "#FF453A" }}
+                    >
+                      {hasPaid ? "Pago" : "Pendente"}
+                    </Text>
+                  </View>
+                </View>
+
+                <View className="flex-row items-center justify-between">
+                  <View style={{ gap: 2 }}>
+                    <Text className="font-poppins text-sm text-primary">
+                      {plan.name} · mensal
+                    </Text>
+                    <Text className="font-poppins text-xs" style={{ color: "#525252" }}>
+                      {hasPaid && currentPayment
+                        ? `Pago em: ${formatDate(currentPayment.paidAt)}`
+                        : `Vencimento: ${formatDate(subscription.expiresAt)}`}
+                    </Text>
+                  </View>
+                  <Text className="font-poppins-bold text-xl text-primary">
+                    {formatCurrency(plan.priceCents)}
+                  </Text>
+                </View>
+
+                {hasPaid ? (
+                  <View
+                    className="items-center justify-center rounded-xl"
+                    style={{ height: 48, backgroundColor: "#3A3A3A" }}
+                  >
+                    <Text
+                      className="font-poppins-semibold text-base"
+                      style={{ color: "#8A8A8A" }}
+                    >
+                      Pago
+                    </Text>
+                  </View>
+                ) : subResponse?.academyPlan === "free" ? (
+                  <View
+                    className="items-center justify-center rounded-xl"
+                    style={{ height: 48, backgroundColor: "#2A2A2A" }}
+                  >
+                    <Text className="font-poppins text-sm text-muted">
+                      Pagamento gerenciado pela academia
+                    </Text>
+                  </View>
+                ) : (
+                  <View className="flex-row" style={{ gap: 10 }}>
+                    <Pressable
+                      onPress={handlePayPix}
+                      disabled={createCheckout.isPending}
+                      className="flex-1 flex-row items-center justify-center rounded-xl"
+                      style={{ height: 48, gap: 8, backgroundColor: "#A078E8" }}
+                    >
+                      <QrCode size={18} color="#FFFFFF" />
+                      <Text className="font-poppins-semibold text-sm text-white">
+                        Pix
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={handlePay}
+                      disabled={createCheckout.isPending}
+                      className="flex-1 flex-row items-center justify-center rounded-xl"
+                      style={{ height: 48, gap: 8, backgroundColor: "#6C63FF" }}
+                    >
+                      {createCheckout.isPending ? (
+                        <ActivityIndicator color="#FFFFFF" size="small" />
+                      ) : (
+                        <>
+                          <CreditCard size={18} color="#FFFFFF" />
+                          <Text className="font-poppins-semibold text-sm text-white">
+                            Cartão
+                          </Text>
+                        </>
+                      )}
+                    </Pressable>
+                  </View>
+                )}
+              </View>
+            );
+          })()}
 
           {/* Payment history */}
           <View style={{ gap: 12 }}>
