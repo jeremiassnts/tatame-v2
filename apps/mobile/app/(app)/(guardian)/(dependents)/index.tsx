@@ -120,7 +120,7 @@ export default function DependentsListScreen() {
                         {age} {age === 1 ? "ano" : "anos"}
                       </Text>
                     </View>
-                    <SubscriptionBadge status="none" />
+                    <SubscriptionBadge status={dep.subscriptionStatus ?? "none"} />
                   </View>
 
                   <View className="mt-3 h-px" style={{ backgroundColor: SEPARATOR }} />

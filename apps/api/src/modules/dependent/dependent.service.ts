@@ -69,7 +69,21 @@ export class DependentService {
   }
 
   private async enrichOne(dep: DependentRow) {
-    const belt = await this.graduationRepo.findCurrentByDependentId(dep.id);
+    const [belt, subResult] = await Promise.all([
+      this.graduationRepo.findCurrentByDependentId(dep.id),
+      this.studentSubRepo.findByDependentIdWithPlan(dep.id),
+    ]);
+
+    let subscriptionStatus: string | null = null;
+    if (subResult) {
+      const now = new Date();
+      const expired = new Date(subResult.subscription.expiresAt) < now;
+      const cancelled = subResult.subscription.status === "cancelled";
+      if (cancelled) subscriptionStatus = "cancelled";
+      else if (expired) subscriptionStatus = "expired";
+      else subscriptionStatus = "active";
+    }
+
     return {
       id: dep.id,
       guardianId: dep.guardianId,
@@ -79,7 +93,7 @@ export class DependentService {
       currentBelt: belt
         ? { belt: belt.belt, stripes: belt.stripes }
         : null,
-      subscriptionStatus: null as string | null,
+      subscriptionStatus,
       createdAt: dep.createdAt.toISOString(),
     };
   }
