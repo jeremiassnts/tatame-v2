@@ -2,7 +2,7 @@
   "expo": {
     "name": "Tatame",
     "slug": "tatame",
-    "version": "2.1.0",
+    "version": "2.1.1",
     "orientation": "portrait",
     "scheme": "tatame",
     "userInterfaceStyle": "dark",
@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.anonymous.tatame",
-      "icon": "./assets/images/icon.png",
+      "icon": "./assets/images/apple-icon.png",
       "infoPlist": {
         "NSCameraUsageDescription": "Este app precisa de acesso à câmera para capturar fotos e vídeos.",
         "NSPhotoLibraryUsageDescription": "Este app precisa de acesso à biblioteca de fotos para salvar e carregar mídias.",
