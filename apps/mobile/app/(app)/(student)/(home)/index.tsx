@@ -1,16 +1,19 @@
 import { Avatar } from "@/components/Avatar";
+import { AnnouncementFeedCard } from "@/components/announcements/AnnouncementFeedCard";
 import { GraduationCard } from "@/components/GraduationCard";
 import { NotificationBell } from "@/components/NotificationBell";
 import { TodayClassCard } from "@/components/TodayClassCard";
 import { useAcademyContext } from "@/lib/academy-context";
+import { useAnnouncements } from "@/lib/hooks/use-announcements";
 import { useCheckin, useWeeklyCheckinCount } from "@/lib/hooks/use-checkin";
 import { useClasses } from "@/lib/hooks/use-classes";
 import { useMyGraduation } from "@/lib/hooks/use-graduation";
+import { useDependents } from "@/lib/hooks/use-dependents";
 import { useMyPayments, useMySubscription } from "@/lib/hooks/use-subscription";
 import { useCurrentUser } from "@/lib/hooks/use-user";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { ChevronRight, CreditCard, TriangleAlert } from "lucide-react-native";
+import { ChevronRight, CreditCard, TriangleAlert, Users } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -36,7 +39,7 @@ function todayDateString(): string {
 export default function StudentHome() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { academyName } = useAcademyContext();
+  const { academyName, academyId } = useAcademyContext();
   const { data: me } = useCurrentUser();
   const dayOfWeek = new Date().getDay();
   const { data: classes } = useClasses(dayOfWeek);
@@ -47,12 +50,17 @@ export default function StudentHome() {
   const { data: graduation } = useMyGraduation();
   const checkin = useCheckin();
   const { data: weeklyCount } = useWeeklyCheckinCount();
+  const { data: dependentsData } = useDependents();
+  const { data: announcementsData } = useAnnouncements(academyId);
   const [refreshing, setRefreshing] = useState(false);
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 30_000);
     return () => clearInterval(id);
   }, []);
+
+  const dependents = dependentsData?.items ?? [];
+  const latestAnnouncements = announcementsData?.pages[0]?.items.slice(0, 3) ?? [];
 
   const hasSubscription =
     subscription != null && subscription.effectiveStatus === "active";
@@ -210,6 +218,28 @@ export default function StudentHome() {
             <ChevronRight size={18} color={TEXT_MUTED} />
           </Pressable>
 
+          {dependents.length > 0 && (
+            <Pressable
+              onPress={() => router.push("/(app)/(student)/(more)/dependents")}
+              className="flex-row items-center gap-3 rounded-2xl border border-surface-border bg-surface p-4"
+            >
+              <View className="h-10 w-10 items-center justify-center rounded-xl bg-accent-translucent">
+                <Users size={18} color="#A078E8" />
+              </View>
+              <View className="min-w-0 flex-1" style={{ gap: 4 }}>
+                <Text className="font-poppins-semibold text-sm text-primary">
+                  Meus Dependentes
+                </Text>
+                <Text className="font-poppins text-xs text-muted">
+                  {dependents.length === 1
+                    ? "1 dependente cadastrado"
+                    : `${dependents.length} dependentes cadastrados`}
+                </Text>
+              </View>
+              <ChevronRight size={18} color={TEXT_MUTED} />
+            </Pressable>
+          )}
+
           <View className="flex-row items-center justify-between">
             <Text className="font-poppins-semibold text-sm" style={{ color: TEXT_SECONDARY }}>
               Aulas de hoje
@@ -239,6 +269,8 @@ export default function StudentHome() {
                   instructorName={cls.instructorName ?? undefined}
                   capacity={cls.capacity}
                   userId={me?.id}
+                  dependentIds={dependents.map((d) => d.id)}
+                  isGuardian={false}
                   hasSubscription={hasSubscription}
                   checkinPending={checkin.isPending}
                   sessionDate={today}
@@ -249,6 +281,40 @@ export default function StudentHome() {
               ))
             )}
           </View>
+
+          {latestAnnouncements.length > 0 && (
+            <>
+              <View className="flex-row items-center justify-between">
+                <Text
+                  className="font-poppins-semibold text-sm"
+                  style={{ color: TEXT_SECONDARY }}
+                >
+                  Últimos avisos
+                </Text>
+                <Pressable onPress={() => router.push("/(app)/(student)/(announcements)")}>
+                  <Text
+                    className="font-poppins-medium text-xs"
+                    style={{ color: "#A078E8" }}
+                  >
+                    Ver mais
+                  </Text>
+                </Pressable>
+              </View>
+              <View style={{ gap: 10 }}>
+                {latestAnnouncements.map((a) => (
+                  <AnnouncementFeedCard
+                    key={a.id}
+                    title={a.title}
+                    body={a.body}
+                    createdAt={a.createdAt}
+                    onPress={() =>
+                      router.push(`/(app)/(student)/(announcements)/${a.id}`)
+                    }
+                  />
+                ))}
+              </View>
+            </>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

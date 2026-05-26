@@ -15,9 +15,16 @@
     "db:seed": "pnpm --filter @tatame/api seed",
     "api:dev": "pnpm --filter @tatame/api dev",
     "mobile:dev": "pnpm --filter @tatame/mobile dev",
-    "web:dev": "pnpm --filter @tatame/web dev"
+    "web:dev": "pnpm --filter @tatame/web dev",
+    "typecheck": "turbo run typecheck",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "apps/api/**/*.ts": "pnpm --filter @tatame/api exec eslint --fix"
   },
   "devDependencies": {
+    "husky": "9.1.7",
+    "lint-staged": "17.0.5",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "turbo": "2.8.20",

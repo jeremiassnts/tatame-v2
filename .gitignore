@@ -12,3 +12,5 @@ coverage
 apps/mobile/ios
 apps/mobile/android
 apps/mobile/**/*.pem
+.windsurf
+.cursor

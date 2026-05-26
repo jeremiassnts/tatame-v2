@@ -10,11 +10,6 @@ export class UserService {
     name: string;
     profileImageUrl: string | null;
   }): Promise<void> {
-    const deleted = await this.userRepo.findDeletedByEmail(data.email);
-    if (deleted) {
-      await this.userRepo.reactivate(deleted.id, data);
-      return;
-    }
     await this.userRepo.upsert(data);
   }
 
@@ -57,7 +52,7 @@ export class UserService {
     return (await this.userRepo.update(userId, data)) ?? null;
   }
 
-  async softDelete(userId: string): Promise<void> {
-    await this.userRepo.softDelete(userId);
+  async hardDelete(userId: string): Promise<void> {
+    await this.userRepo.hardDelete(userId);
   }
 }

@@ -10,7 +10,7 @@ import { useManagerSubscription } from "@/lib/hooks/use-manager-subscription";
 import { useCurrentUser } from "@/lib/hooks/use-user";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { AlertTriangle, Calendar, CreditCard, UserPlus } from "lucide-react-native";
+import { AlertTriangle, Calendar, CreditCard, Megaphone, UserPlus } from "lucide-react-native";
 import { useState } from "react";
 import {
   Pressable,
@@ -263,56 +263,75 @@ export default function ManagerDashboard() {
             Ações rápidas
           </Text>
 
-          <View className="flex-row gap-3">
-            <Pressable
-              onPress={() => router.push("/(app)/(manager)/(members)/pending")}
-              className="min-w-0 flex-1 rounded-[14px] border border-surface-border bg-surface"
-              style={{ padding: 16, gap: 10 }}
-            >
-              <View className="h-9 w-9 items-center justify-center rounded-[10px] bg-accent-translucent">
-                <UserPlus size={18} color="#A078E8" />
-              </View>
-              <Text
-                className="font-poppins-medium text-xs text-primary"
-                style={{ lineHeight: 16 }}
+          <View style={{ gap: 12 }}>
+            <View className="flex-row" style={{ gap: 12 }}>
+              <Pressable
+                onPress={() => router.push("/(app)/(manager)/(members)/pending")}
+                className="min-w-0 flex-1 rounded-[14px] border border-surface-border bg-surface"
+                style={{ padding: 16, gap: 10 }}
               >
-                {"Solicitações\npendentes"}
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => router.push("/(app)/(manager)/(classes)")}
-              className="min-w-0 flex-1 rounded-[14px] border border-surface-border bg-surface"
-              style={{ padding: 16, gap: 10 }}
-            >
-              <View className="h-9 w-9 items-center justify-center rounded-[10px] bg-accent-translucent">
-                <Calendar size={18} color="#A078E8" />
-              </View>
-              <Text
-                className="font-poppins-medium text-xs text-primary"
-                style={{ lineHeight: 16 }}
+                <View className="h-9 w-9 items-center justify-center rounded-[10px] bg-accent-translucent">
+                  <UserPlus size={18} color="#A078E8" />
+                </View>
+                <Text
+                  className="font-poppins-medium text-xs text-primary"
+                  style={{ lineHeight: 16 }}
+                >
+                  {"Solicitações\npendentes"}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => router.push("/(app)/(manager)/(classes)")}
+                className="min-w-0 flex-1 rounded-[14px] border border-surface-border bg-surface"
+                style={{ padding: 16, gap: 10 }}
               >
-                {"Agenda\nde hoje"}
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() =>
-                router.push(
-                  "/(app)/(manager)/(finances)/subscriptions?filter=pending",
-                )
-              }
-              className="min-w-0 flex-1 rounded-[14px] border border-surface-border bg-surface"
-              style={{ padding: 16, gap: 10 }}
-            >
-              <View className="h-9 w-9 items-center justify-center rounded-[10px] bg-accent-translucent">
-                <CreditCard size={18} color="#A078E8" />
-              </View>
-              <Text
-                className="font-poppins-medium text-xs text-primary"
-                style={{ lineHeight: 16 }}
+                <View className="h-9 w-9 items-center justify-center rounded-[10px] bg-accent-translucent">
+                  <Calendar size={18} color="#A078E8" />
+                </View>
+                <Text
+                  className="font-poppins-medium text-xs text-primary"
+                  style={{ lineHeight: 16 }}
+                >
+                  {"Agenda\nde hoje"}
+                </Text>
+              </Pressable>
+            </View>
+            <View className="flex-row" style={{ gap: 12 }}>
+              <Pressable
+                onPress={() =>
+                  router.push(
+                    "/(app)/(manager)/(finances)/subscriptions?filter=pending",
+                  )
+                }
+                className="min-w-0 flex-1 rounded-[14px] border border-surface-border bg-surface"
+                style={{ padding: 16, gap: 10 }}
               >
-                {"Pagamentos\npendentes"}
-              </Text>
-            </Pressable>
+                <View className="h-9 w-9 items-center justify-center rounded-[10px] bg-accent-translucent">
+                  <CreditCard size={18} color="#A078E8" />
+                </View>
+                <Text
+                  className="font-poppins-medium text-xs text-primary"
+                  style={{ lineHeight: 16 }}
+                >
+                  {"Pagamentos\npendentes"}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => router.push("/(app)/(manager)/(more)/announcements")}
+                className="min-w-0 flex-1 rounded-[14px] border border-surface-border bg-surface"
+                style={{ padding: 16, gap: 10 }}
+              >
+                <View className="h-9 w-9 items-center justify-center rounded-[10px] bg-accent-translucent">
+                  <Megaphone size={18} color="#A078E8" />
+                </View>
+                <Text
+                  className="font-poppins-medium text-xs text-primary"
+                  style={{ lineHeight: 16 }}
+                >
+                  {"Ver\navisos"}
+                </Text>
+              </Pressable>
+            </View>
           </View>
 
           <Text className="font-poppins-semibold text-sm" style={{ color: TEXT_SECONDARY }}>

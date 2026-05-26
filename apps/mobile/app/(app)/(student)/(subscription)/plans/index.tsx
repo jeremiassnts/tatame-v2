@@ -3,7 +3,7 @@ import { SubscriptionPlanListItem } from "@/components/SubscriptionPlanListItem"
 import { useMySubscription } from "@/lib/hooks/use-subscription";
 import { useSubscriptionPlans } from "@/lib/hooks/use-subscription-plans";
 import { useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -17,6 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const TEXT_SECONDARY = "#8A8A8A";
 
 export default function SubscriptionPlansScreen() {
+  const { dependentId, callerRole } = useLocalSearchParams<{ dependentId?: string; callerRole?: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: plans, isLoading } = useSubscriptionPlans();
@@ -80,7 +81,10 @@ export default function SubscriptionPlansScreen() {
                   plan={plan}
                   isCurrent={plan.id === currentPlanId}
                   onPress={() =>
-                    router.push(`/(app)/(student)/(subscription)/plans/${plan.id}`)
+                    router.push({
+                      pathname: `/(app)/(student)/(subscription)/plans/${plan.id}`,
+                      params: dependentId ? { dependentId, callerRole } : undefined,
+                    })
                   }
                 />
               ))}

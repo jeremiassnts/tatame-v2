@@ -26,6 +26,9 @@ import { PostgresCheckinRepository } from "./checkin.repository.postgres.js";
 import { CheckinService } from "./checkin.service.js";
 import { PostgresMilestoneRepository } from "../engagement/milestone.repository.postgres.js";
 import { EngagementService } from "../engagement/engagement.service.js";
+import { PostgresDependentRepository } from "../dependent/dependent.repository.postgres.js";
+import { PostgresGraduationRepository } from "../graduation/graduation.repository.postgres.js";
+import { DependentService } from "../dependent/dependent.service.js";
 
 export const checkinRouter = Router();
 
@@ -58,6 +61,13 @@ function buildEngagementService(db: ReturnType<typeof getDb>) {
 }
 
 const db = getDb();
+const dependentService = new DependentService(
+  new PostgresDependentRepository(db),
+  new PostgresMembershipRepository(db),
+  new PostgresGraduationRepository(db),
+  new PostgresStudentSubscriptionRepository(db),
+);
+
 const checkinService = new CheckinService(
   new PostgresMembershipRepository(db),
   new PostgresClassRepository(db),
@@ -83,7 +93,7 @@ function formatCheckinRow(row: CheckinRow) {
 
 checkinRouter.get(
   "/me/weekly-count",
-  authorize(Role.Student, Role.Instructor),
+  authorize(Role.Student, Role.Instructor, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   async (req, res, next) => {
@@ -99,7 +109,7 @@ checkinRouter.get(
 
 checkinRouter.get(
   "/me/history",
-  authorize(Role.Student, Role.Instructor),
+  authorize(Role.Student, Role.Instructor, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   async (req, res, next) => {
@@ -120,25 +130,64 @@ checkinRouter.get(
   },
 );
 
+checkinRouter.get(
+  "/dependent/:dependentId/history",
+  authorize(Role.Student, Role.Guardian, Role.Manager),
+  attachActiveAcademyContext,
+  requireActiveAcademy,
+  async (req, res, next) => {
+    try {
+      const query = checkinHistoryQuerySchema.safeParse(req.query);
+      if (!query.success) {
+        throw new HttpError(400, "Invalid query");
+      }
+      const { dependentId } = req.params;
+      if (!dependentId) { res.status(400).json({ error: "dependentId required" }); return; }
+      const auth = req.appAuth!;
+      await dependentService.getById(auth.userId, auth.role, dependentId, auth.activeAcademyId);
+      const result = await checkinService.getHistoryForDependent(dependentId, {
+        cursor: query.data.cursor,
+        limit: query.data.limit,
+      });
+      res.json(result);
+    } catch (e) { next(e); }
+  },
+);
+
+checkinRouter.get(
+  "/dependent/:dependentId/weekly-count",
+  authorize(Role.Student, Role.Guardian, Role.Manager),
+  attachActiveAcademyContext,
+  requireActiveAcademy,
+  async (req, res, next) => {
+    try {
+      const { dependentId } = req.params;
+      if (!dependentId) { res.status(400).json({ error: "dependentId required" }); return; }
+      const auth = req.appAuth!;
+      await dependentService.getById(auth.userId, auth.role, dependentId, auth.activeAcademyId);
+      const result = await checkinService.getWeeklyCountForDependent(dependentId);
+      res.json(result);
+    } catch (e) { next(e); }
+  },
+);
+
 checkinRouter.post(
   "/",
-  authorize(Role.Student),
+  authorize(Role.Student, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   validateBody(createCheckinBodySchema),
   async (req, res, next) => {
     try {
       const auth = req.appAuth!;
-      if (auth.academyRole !== Role.Student) {
-        throw new HttpError(403, "Only students can check in");
-      }
       const body = req.validatedBody as CreateCheckinBody;
       const { checkin, warnings } = await checkinService.checkIn({
         userId: auth.userId,
         academyId: auth.activeAcademyId!,
-        academyRole: auth.academyRole,
+        academyRole: auth.academyRole!,
         classId: body.classId,
         sessionDate: body.date,
+        dependentId: body.dependentId,
       });
 
       const payload: {

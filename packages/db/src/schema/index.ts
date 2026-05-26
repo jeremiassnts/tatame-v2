@@ -19,6 +19,7 @@ export const appRoleEnum = pgEnum("app_role", [
   "manager",
   "instructor",
   "student",
+  "guardian",
 ]);
 
 export const membershipStatusEnum = pgEnum("membership_status", [
@@ -46,6 +47,18 @@ export const beltEnum = pgEnum("belt", [
   "purple",
   "brown",
   "black",
+  "grey_white",
+  "grey",
+  "grey_black",
+  "yellow_white",
+  "yellow",
+  "yellow_black",
+  "orange_white",
+  "orange",
+  "orange_black",
+  "green_white",
+  "green",
+  "green_black",
 ]);
 
 export const managerPlanEnum = pgEnum("manager_plan", ["free", "pro"]);
@@ -187,6 +200,26 @@ export const academyMemberships = pgTable(
   }),
 );
 
+export const dependents = pgTable("dependents", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  guardianId: uuid("guardian_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  academyId: uuid("academy_id")
+    .notNull()
+    .references(() => academies.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  birthDate: date("birth_date").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+});
+
 export const classes = pgTable(
   "classes",
   {
@@ -235,6 +268,9 @@ export const checkins = pgTable(
       .notNull(),
     date: date("date").notNull(),
     weekReference: date("week_reference").notNull(),
+    dependentId: uuid("dependent_id").references(() => dependents.id, {
+      onDelete: "set null",
+    }),
   },
   (t) => ({
     userWeekIdx: index("checkins_user_id_week_reference_idx").on(
@@ -242,11 +278,12 @@ export const checkins = pgTable(
       t.weekReference,
     ),
     classDateIdx: index("checkins_class_id_date_idx").on(t.classId, t.date),
-    onePerUserClassDate: uniqueIndex("checkins_user_class_date_unique").on(
-      t.userId,
-      t.classId,
-      t.date,
-    ),
+    onePerUserClassDate: uniqueIndex("checkins_user_class_date_unique")
+      .on(t.userId, t.classId, t.date)
+      .where(sql`${t.dependentId} IS NULL`),
+    onePerDependentClassDate: uniqueIndex("checkins_dependent_class_date_unique")
+      .on(t.dependentId, t.classId, t.date)
+      .where(sql`${t.dependentId} IS NOT NULL`),
   }),
 );
 
@@ -277,6 +314,9 @@ export const studentSubscriptions = pgTable("student_subscriptions", {
   planId: uuid("plan_id")
     .notNull()
     .references(() => subscriptionPlans.id, { onDelete: "restrict" }),
+  dependentId: uuid("dependent_id").references(() => dependents.id, {
+    onDelete: "set null",
+  }),
   status: subscriptionStatusEnum("status").notNull(),
   startsAt: date("starts_at").notNull(),
   expiresAt: date("expires_at").notNull(),
@@ -326,6 +366,9 @@ export const payments = pgTable("payments", {
   academyId: uuid("academy_id")
     .notNull()
     .references(() => academies.id, { onDelete: "cascade" }),
+  dependentId: uuid("dependent_id").references(() => dependents.id, {
+    onDelete: "set null",
+  }),
   amountCents: integer("amount_cents").notNull(),
   method: paymentMethodEnum("method").notNull(),
   confirmedBy: uuid("confirmed_by").references(() => users.id, {
@@ -372,6 +415,9 @@ export const beltPromotions = pgTable(
     promotedBy: uuid("promoted_by")
       .notNull()
       .references(() => users.id, { onDelete: "restrict" }),
+    dependentId: uuid("dependent_id").references(() => dependents.id, {
+      onDelete: "set null",
+    }),
     belt: beltEnum("belt").notNull(),
     stripes: smallint("stripes").notNull(),
     isCurrent: boolean("is_current").notNull(),
@@ -383,7 +429,10 @@ export const beltPromotions = pgTable(
   (t) => ({
     oneCurrentPerUser: uniqueIndex("belt_promotions_one_current_per_user")
       .on(t.userId)
-      .where(sql`${t.isCurrent} = true`),
+      .where(sql`${t.isCurrent} = true AND ${t.dependentId} IS NULL`),
+    oneCurrentPerDependent: uniqueIndex("belt_promotions_one_current_per_dependent")
+      .on(t.dependentId)
+      .where(sql`${t.isCurrent} = true AND ${t.dependentId} IS NOT NULL`),
   }),
 );
 
@@ -430,6 +479,80 @@ export const engagementMilestones = pgTable(
     userMilestoneUnique: uniqueIndex("engagement_milestones_user_milestone_unique").on(
       t.userId,
       t.milestone,
+    ),
+  }),
+);
+
+export const notificationPreferences = pgTable(
+  "notification_preferences",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.clerkUserId, { onDelete: "cascade" }),
+    pushEnabled: boolean("push_enabled").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => ({
+    userIdUnique: uniqueIndex("notification_preferences_user_id_unique").on(
+      t.userId,
+    ),
+  }),
+);
+
+export const announcements = pgTable(
+  "announcements",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    academyId: uuid("academy_id")
+      .notNull()
+      .references(() => academies.id, { onDelete: "cascade" }),
+    authorId: uuid("author_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    imageUrl: text("image_url"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => ({
+    academyCreatedIdx: index("announcements_academy_id_created_at_idx").on(
+      t.academyId,
+      t.createdAt,
+    ),
+  }),
+);
+
+export const customNotificationSends = pgTable(
+  "custom_notification_sends",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    academyId: uuid("academy_id")
+      .notNull()
+      .references(() => academies.id),
+    senderId: uuid("sender_id")
+      .notNull()
+      .references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (t) => ({
+    academyCreatedIdx: index("custom_notification_sends_academy_created_idx").on(
+      t.academyId,
+      t.createdAt,
     ),
   }),
 );

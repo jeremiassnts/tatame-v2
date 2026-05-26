@@ -8,6 +8,7 @@ export const checkinSessionDateSchema = z
 export const createCheckinBodySchema = z.object({
   classId: z.string().uuid(),
   date: checkinSessionDateSchema,
+  dependentId: z.string().uuid().optional(),
 });
 
 export type CreateCheckinBody = z.infer<typeof createCheckinBodySchema>;

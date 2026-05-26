@@ -120,6 +120,29 @@ export class InMemoryStudentSubscriptionRepository
     }
   }
 
+  async cancelActiveForDependent(
+    userId: string,
+    academyId: string,
+    dependentId: string,
+  ): Promise<void> {
+    const planRows = await this.planRepo.findByAcademy(academyId, {
+      includeInactive: true,
+    });
+    const planIds = new Set(planRows.map((p) => p.id));
+    const t = new Date();
+    for (const sub of this.rows) {
+      if (
+        sub.userId === userId &&
+        sub.status === "active" &&
+        sub.dependentId === dependentId &&
+        planIds.has(sub.planId)
+      ) {
+        sub.status = "cancelled";
+        sub.updatedAt = t;
+      }
+    }
+  }
+
   async replaceActiveSubscriptionForAcademy(
     userId: string,
     academyId: string,
@@ -128,15 +151,21 @@ export class InMemoryStudentSubscriptionRepository
       status: "active" | "expired" | "cancelled";
       startsAt: string;
       expiresAt: string;
+      dependentId?: string | null;
     },
   ): Promise<StudentSubscriptionRow> {
-    await this.cancelActiveForUserInAcademy(userId, academyId);
+    if (newRow.dependentId) {
+      await this.cancelActiveForDependent(userId, academyId, newRow.dependentId);
+    } else {
+      await this.cancelActiveForUserInAcademy(userId, academyId);
+    }
     return this.create({
       userId,
       planId: newRow.planId,
       status: newRow.status,
       startsAt: newRow.startsAt,
       expiresAt: newRow.expiresAt,
+      dependentId: newRow.dependentId ?? null,
     });
   }
 
@@ -146,12 +175,14 @@ export class InMemoryStudentSubscriptionRepository
     status: "active" | "expired" | "cancelled";
     startsAt: string;
     expiresAt: string;
+    dependentId?: string | null;
   }): Promise<StudentSubscriptionRow> {
     const t = new Date();
     const row: StudentSubscriptionRow = {
       id: randomUUID(),
       userId: data.userId,
       planId: data.planId,
+      dependentId: data.dependentId ?? null,
       status: data.status,
       startsAt: data.startsAt,
       expiresAt: data.expiresAt,
@@ -187,6 +218,21 @@ export class InMemoryStudentSubscriptionRepository
     _subscriptionId: string,
     _academyId: string,
   ): Promise<AcademySubscriptionItem | undefined> {
+    return undefined;
+  }
+
+  async findByDependentIdWithPlan(
+    dependentId: string,
+  ): Promise<StudentSubscriptionWithPlan | undefined> {
+    for (const sub of [...this.rows].sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    )) {
+      if (sub.dependentId !== dependentId || sub.status === "cancelled")
+        continue;
+      const plan = await this.planRepo.findById(sub.planId);
+      if (plan) return { subscription: sub, plan };
+    }
     return undefined;
   }
 }

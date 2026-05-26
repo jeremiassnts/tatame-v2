@@ -19,7 +19,7 @@ export class MembershipService {
 
   async request(
     userId: string,
-    role: "instructor" | "student",
+    role: "instructor" | "student" | "guardian",
     academyId: string,
   ) {
     const academy = await this.academyRepo.findById(academyId);
@@ -67,7 +67,7 @@ export class MembershipService {
     // Notify managers about the new request
     if (!shouldAutoApprove && this.dispatcher) {
       const detail = await this.membershipRepo.findDetailById(result.id);
-      this.dispatcher.notifyAcademyManagers(
+      void this.dispatcher.notifyAcademyManagers(
         "membership_request",
         academyId,
         [detail?.userName ?? "Novo membro", role],
@@ -80,12 +80,29 @@ export class MembershipService {
   async listMembers(
     academyId: string,
     requesterUserId: string,
-    requesterRole: "manager" | "instructor" | "student",
+    requesterRole: "manager" | "instructor" | "student" | "guardian",
     filters: { role?: string; status?: string; q?: string },
   ) {
     if (requesterRole === "manager") {
       await this.assertManagerOwnsAcademy(requesterUserId, academyId);
-      return this.membershipRepo.findByAcademy(academyId, filters);
+
+      if (filters.role === "dependent") {
+        return this.membershipRepo.findDependentsForMemberList(academyId, {
+          q: filters.q,
+        });
+      }
+
+      const members = await this.membershipRepo.findByAcademy(academyId, filters);
+
+      if (!filters.role && !filters.status) {
+        const dependents = await this.membershipRepo.findDependentsForMemberList(
+          academyId,
+          { q: filters.q },
+        );
+        return [...members, ...dependents];
+      }
+
+      return members;
     }
 
     await this.assertActiveMemberInAcademy(requesterUserId, academyId);
@@ -189,7 +206,7 @@ export class MembershipService {
     if (this.dispatcher) {
       // Notify managers about new member
       const detail = await this.membershipRepo.findDetailById(membershipId);
-      this.dispatcher.notifyAcademyManagers(
+      void this.dispatcher.notifyAcademyManagers(
         "new_member",
         m.academyId,
         [detail?.userName ?? "Novo membro"],
@@ -197,7 +214,7 @@ export class MembershipService {
 
       // Notify the member they were approved
       const academy = await this.academyRepo.findById(m.academyId);
-      this.dispatcher.notifyUsers(
+      void this.dispatcher.notifyUsers(
         "membership_approved",
         [m.userId],
         [academy?.name ?? "academia"],
@@ -229,7 +246,7 @@ export class MembershipService {
     // Notify the member they were rejected
     if (this.dispatcher) {
       const academy = await this.academyRepo.findById(m.academyId);
-      this.dispatcher.notifyUsers(
+      void this.dispatcher.notifyUsers(
         "membership_rejected",
         [m.userId],
         [academy?.name ?? "academia"],

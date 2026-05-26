@@ -13,6 +13,8 @@ type CheckinItem = {
   userId: string;
   checkedInAt: string;
   date: string;
+  dependentId: string | null;
+  dependentName: string | null;
   userName?: string;
   userProfileImageUrl?: string | null;
 };
@@ -48,7 +50,7 @@ export function useCheckin() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (body: { classId: string; date: string }) =>
+    mutationFn: (body: { classId: string; date: string; dependentId?: string }) =>
       api.post<CreateCheckinResponse>("/checkins", body),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({

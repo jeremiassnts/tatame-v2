@@ -30,6 +30,9 @@ import { NotificationService } from "../notification/notification.service.js";
 import { PostgresPushTokenRepository } from "../push-token/push-token.repository.postgres.js";
 import { PostgresStudentSubscriptionRepository } from "../subscription/subscription.repository.postgres.js";
 import { PostgresUserRepository } from "../user/user.repository.postgres.js";
+import { PostgresDependentRepository } from "../dependent/dependent.repository.postgres.js";
+import { PostgresGraduationRepository } from "../graduation/graduation.repository.postgres.js";
+import { DependentService } from "../dependent/dependent.service.js";
 import { PostgresPaymentRepository } from "./payment.repository.postgres.js";
 import { PaymentService } from "./payment.service.js";
 
@@ -59,6 +62,13 @@ const emailService = env.REDIS_URL
   : null;
 
 const managerSubRepo = new PostgresManagerSubscriptionRepository(db);
+
+const dependentService = new DependentService(
+  new PostgresDependentRepository(db),
+  new PostgresMembershipRepository(db),
+  new PostgresGraduationRepository(db),
+  new PostgresStudentSubscriptionRepository(db),
+);
 
 const paymentService = new PaymentService(
   new PostgresPaymentRepository(db),
@@ -113,7 +123,7 @@ paymentRouter.post(
 
 paymentRouter.post(
   "/checkout",
-  authorize(Role.Student),
+  authorize(Role.Student, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   validateBody(createCheckoutBodySchema),
@@ -152,7 +162,7 @@ paymentRouter.post(
 
 paymentRouter.post(
   "/checkout/pix",
-  authorize(Role.Student),
+  authorize(Role.Student, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   validateBody(createCheckoutBodySchema),
@@ -197,7 +207,7 @@ paymentRouter.get("/checkout-result", (_req, res) => {
 
 paymentRouter.get(
   "/pix-status/:pixQrCodeId",
-  authorize(Role.Student),
+  authorize(Role.Student, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   async (req, res, next) => {
@@ -220,17 +230,34 @@ paymentRouter.get(
       );
 
       const rawText = await abacateRes.text();
-      let result: any;
+      let result: { data?: { status?: string } };
       try {
-        result = JSON.parse(rawText);
+        result = JSON.parse(rawText) as typeof result;
       } catch {
         throw new HttpError(502, "AbacatePay returned invalid response");
       }
 
-      res.json({ status: result?.data?.status ?? "UNKNOWN" });
+      res.json({ status: result.data?.status ?? "UNKNOWN" });
     } catch (e) {
       next(e);
     }
+  },
+);
+
+paymentRouter.get(
+  "/dependent/:dependentId",
+  authorize(Role.Student, Role.Guardian, Role.Manager),
+  attachActiveAcademyContext,
+  requireActiveAcademy,
+  async (req, res, next) => {
+    try {
+      const { dependentId } = req.params;
+      if (!dependentId) { res.status(400).json({ error: "dependentId required" }); return; }
+      const auth = req.appAuth!;
+      await dependentService.getById(auth.userId, auth.role, dependentId, auth.activeAcademyId);
+      const items = await paymentService.listForDependent(dependentId);
+      res.json({ items });
+    } catch (e) { next(e); }
   },
 );
 

@@ -22,6 +22,7 @@ export interface IGraduationRepository {
     belt: string;
     stripes: number;
     notes: string | null;
+    dependentId?: string | null;
   }): Promise<BeltPromotionRow>;
 
   /** Clears `is_current` for the user and inserts the new current row (spec §6.10). */
@@ -32,5 +33,13 @@ export interface IGraduationRepository {
     belt: string;
     stripes: number;
     notes: string | null;
+    dependentId?: string | null;
   }): Promise<BeltPromotionRow>;
+
+  findCurrentByDependentId(dependentId: string): Promise<BeltPromotionRow | undefined>;
+
+  listByDependentInAcademy(
+    dependentId: string,
+    academyId: string,
+  ): Promise<BeltPromotionWithPromoterName[]>;
 }

@@ -29,7 +29,8 @@ export default function AppHomePlaceholder() {
       router.replace("/(app)/(manager)/(home)");
     } else if (
       user.activeRole === "instructor" ||
-      user.activeRole === "student"
+      user.activeRole === "student" ||
+      user.activeRole === "guardian"
     ) {
       if (!user.activeMembership) {
         router.replace("/(app)/(joining)/search-academy");
@@ -38,6 +39,8 @@ export default function AppHomePlaceholder() {
       } else if (user.activeMembership.status === "active") {
         if (user.activeRole === "instructor") {
           router.replace("/(app)/(instructor)/(home)");
+        } else if (user.activeRole === "guardian") {
+          router.replace("/(app)/(guardian)/(home)");
         } else {
           router.replace("/(app)/(student)/(home)");
         }

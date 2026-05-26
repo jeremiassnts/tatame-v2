@@ -86,3 +86,36 @@ export function useDeleteNotification() {
     },
   });
 }
+
+export function useSendCustomNotification() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: {
+      title: string;
+      body: string;
+      recipientFilter: "all" | "students" | "instructors" | "specific";
+      specificUserIds?: string[];
+    }) => {
+      return api.post<{ sent: number; remaining: number }>(
+        "/notifications/send-custom",
+        data,
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["custom-notification-quota"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+}
+
+export function useCustomNotificationQuota() {
+  const api = useApi();
+  return useQuery({
+    queryKey: ["custom-notification-quota"],
+    queryFn: () =>
+      api.get<{ used: number; limit: number; remaining: number }>(
+        "/notifications/custom-quota",
+      ),
+  });
+}

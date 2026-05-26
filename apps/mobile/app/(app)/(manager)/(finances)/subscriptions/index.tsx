@@ -83,7 +83,10 @@ export default function SubscriptionsListScreen() {
 
     if (search.trim()) {
       const q = search.toLowerCase();
-      items = items.filter((s) => s.user.name.toLowerCase().includes(q));
+      items = items.filter(
+        (s) =>
+          (s.dependentName ?? s.user.name).toLowerCase().includes(q),
+      );
     }
 
     switch (filter) {
@@ -197,14 +200,14 @@ export default function SubscriptionsListScreen() {
               >
                 <Avatar
                   variant="user"
-                  imageUrl={sub.user.profileImageUrl}
-                  fallbackLetter={sub.user.name}
+                  imageUrl={sub.dependentName ? null : sub.user.profileImageUrl}
+                  fallbackLetter={sub.dependentName ?? sub.user.name}
                   size={44}
                 />
                 <View className="flex-1" style={{ gap: 4 }}>
                   <View className="flex-row items-center" style={{ gap: 8 }}>
                     <Text className="font-poppins-semibold text-sm text-primary">
-                      {sub.user.name}
+                      {sub.dependentName ?? sub.user.name}
                     </Text>
                     <View
                       className="rounded-full px-2 py-0.5"

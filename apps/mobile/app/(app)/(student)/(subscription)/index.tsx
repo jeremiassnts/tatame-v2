@@ -48,17 +48,23 @@ export default function MySubscriptionScreen() {
   const createCheckout = useCreateCheckout();
   const [showProcessingBanner, setShowProcessingBanner] = useState(false);
 
-  // Hide banner when payment for current month appears
+  // Hide banner when payment for current month appears; poll every 5s while processing
   useEffect(() => {
-    if (showProcessingBanner && payments) {
+    if (!showProcessingBanner) return;
+    if (payments) {
       const today = new Date().toISOString().slice(0, 10);
       const currentMonth = today.slice(0, 7) + "-01";
       const hasPaid = payments.some((p) => p.referenceMonth === currentMonth);
       if (hasPaid) {
         setShowProcessingBanner(false);
+        return;
       }
     }
-  }, [payments, showProcessingBanner]);
+    const interval = setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: ["payments", "me"] });
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [payments, showProcessingBanner, queryClient]);
 
   const onRefresh = async () => {
     setRefreshing(true);

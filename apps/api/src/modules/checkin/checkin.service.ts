@@ -148,11 +148,17 @@ export class CheckinService {
     academyRole: Role;
     classId: string;
     sessionDate: string;
+    dependentId?: string;
     now?: Date;
     redis?: RedisClientType;
   }): Promise<CheckinSuccess> {
-    if (opts.academyRole !== "student") {
+    const allowedRoles: Role[] = ["student", "guardian"];
+    if (!allowedRoles.includes(opts.academyRole)) {
       throw new HttpError(403, "Apenas alunos podem fazer check-in");
+    }
+
+    if (opts.academyRole === "guardian" && !opts.dependentId) {
+      throw new HttpError(400, "Responsável deve informar o dependente para check-in");
     }
 
     const membership = await this.membershipRepo.findActiveByUserAndAcademy(
@@ -162,7 +168,7 @@ export class CheckinService {
     if (!membership || membership.status !== "active") {
       throw new HttpError(403, "Você não possui matrícula ativa nesta academia");
     }
-    if (membership.role !== "student") {
+    if (membership.role !== "student" && membership.role !== "guardian") {
       throw new HttpError(403, "Apenas alunos podem fazer check-in");
     }
     const classRow = await this.classRepo.findById(
@@ -185,10 +191,9 @@ export class CheckinService {
         "O check-in abre 12 horas antes do início da aula e encerra ao fim da aula",
       );
     }
-    const { plan, warnings } = await this.resolveSubscriptionAndWarnings(
-      opts.userId,
-      opts.academyId,
-    );
+    const { plan, warnings } = opts.dependentId
+      ? await this.resolveSubscriptionForDependent(opts.dependentId)
+      : await this.resolveSubscriptionAndWarnings(opts.userId, opts.academyId);
     const weekReference = mondayOfWeekContaining(opts.sessionDate);
     const redis = opts.redis ?? (await requireRedisForCheckin());
     return withCheckinLock(redis, opts.classId, opts.sessionDate, async () => {
@@ -202,10 +207,9 @@ export class CheckinService {
       ) {
         throw new HttpError(409, "Aula lotada — não há mais vagas para esta sessão");
       }
-      const userWeekCount = await this.checkinRepo.countByUserAndWeek(
-        opts.userId,
-        weekReference,
-      );
+      const userWeekCount = opts.dependentId
+        ? await this.checkinRepo.countByDependentAndWeek(opts.dependentId, weekReference)
+        : await this.checkinRepo.countByUserAndWeek(opts.userId, weekReference);
       if (
         plan.weeklyCheckinLimit !== null &&
         userWeekCount >= plan.weeklyCheckinLimit
@@ -218,11 +222,12 @@ export class CheckinService {
           userId: opts.userId,
           date: opts.sessionDate,
           weekReference,
+          dependentId: opts.dependentId,
         });
 
         if (this.dispatcher && (warnings.subscriptionGrace || warnings.paymentOverdue)) {
           const detail = await this.membershipRepo.findDetailById(membership.id);
-          this.dispatcher.notifyAcademyManagers(
+          void this.dispatcher.notifyAcademyManagers(
             "checkin_anomaly",
             opts.academyId,
             [detail?.userName ?? "Aluno", classRow.name],
@@ -230,7 +235,7 @@ export class CheckinService {
         }
 
         if (this.engagementService) {
-          this.engagementService.checkMilestone(opts.userId);
+          void this.engagementService.checkMilestone(opts.userId);
         }
 
         return { checkin, warnings };
@@ -259,7 +264,29 @@ export class CheckinService {
   async getHistory(
     userId: string,
     opts: { cursor?: string; limit: number },
-  ): Promise<{
+  ) {
+    const rawItems = await this.checkinRepo.findByUserWithClass(userId, {
+      cursor: opts.cursor,
+      limit: opts.limit * 20,
+    });
+    return this.formatHistory(rawItems, opts.limit);
+  }
+
+  async getHistoryForDependent(
+    dependentId: string,
+    opts: { cursor?: string; limit: number },
+  ) {
+    const rawItems = await this.checkinRepo.findByDependentWithClass(dependentId, {
+      cursor: opts.cursor,
+      limit: opts.limit * 20,
+    });
+    return this.formatHistory(rawItems, opts.limit);
+  }
+
+  private formatHistory(
+    rawItems: Array<{ id: string; className: string; date: string; startTime: string }>,
+    limit: number,
+  ): {
     items: Array<{
       weekReference: string;
       weekLabel: string;
@@ -273,27 +300,12 @@ export class CheckinService {
       }>;
     }>;
     nextCursor: string | null;
-  }> {
+  } {
     const DAY_NAMES = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
     const MONTH_NAMES = [
-      "jan",
-      "fev",
-      "mar",
-      "abr",
-      "mai",
-      "jun",
-      "jul",
-      "ago",
-      "set",
-      "out",
-      "nov",
-      "dez",
+      "jan", "fev", "mar", "abr", "mai", "jun",
+      "jul", "ago", "set", "out", "nov", "dez",
     ];
-
-    const rawItems = await this.checkinRepo.findByUserWithClass(userId, {
-      cursor: opts.cursor,
-      limit: opts.limit * 20,
-    });
 
     const weekMap = new Map<
       string,
@@ -310,9 +322,9 @@ export class CheckinService {
     }
 
     const sortedWeeks = [...weekMap.keys()].sort((a, b) => b.localeCompare(a));
-    const selectedWeeks = sortedWeeks.slice(0, opts.limit);
+    const selectedWeeks = sortedWeeks.slice(0, limit);
     const nextCursor =
-      sortedWeeks.length > opts.limit ? sortedWeeks[opts.limit]! : null;
+      sortedWeeks.length > limit ? sortedWeeks[limit]! : null;
 
     function formatWeekLabel(monday: string): string {
       const parts = monday.split("-").map(Number);
@@ -358,6 +370,16 @@ export class CheckinService {
     return { items, nextCursor };
   }
 
+  async getWeeklyCountForDependent(dependentId: string): Promise<{
+    count: number;
+    weekReference: string;
+  }> {
+    const today = utcTodayDateString();
+    const weekRef = mondayOfWeekContaining(today);
+    const count = await this.checkinRepo.countByDependentAndWeek(dependentId, weekRef);
+    return { count, weekReference: weekRef };
+  }
+
   private async resolveSubscriptionAndWarnings(
     userId: string,
     academyId: string,
@@ -399,6 +421,64 @@ export class CheckinService {
       throw new HttpError(
         403,
         "Seu plano expirou e o período de carência acabou — renove para continuar treinando",
+      );
+    }
+
+    const warnings: CheckinWarnings = {};
+
+    if (today > sub.expiresAt) {
+      warnings.subscriptionGrace = true;
+    } else {
+      const ref = firstOfUtcMonth(today);
+      const paid =
+        await this.paymentRepo.existsForSubscriptionReferenceMonth(
+          sub.id,
+          ref,
+        );
+      if (!paid) {
+        warnings.paymentOverdue = true;
+      }
+    }
+
+    return { plan, warnings };
+  }
+
+  private async resolveSubscriptionForDependent(
+    dependentId: string,
+  ): Promise<{
+    plan: { weeklyCheckinLimit: number | null };
+    warnings: CheckinWarnings;
+  }> {
+    const row = await this.studentSubRepo.findByDependentIdWithPlan(dependentId);
+
+    if (row) {
+      if (
+        row.subscription.status === "active" &&
+        isExpiredByDate(row.subscription.expiresAt)
+      ) {
+        await this.studentSubRepo.update(row.subscription.id, {
+          status: "expired",
+        });
+        row.subscription.status = "expired";
+      }
+    }
+
+    if (!row || row.subscription.status === "cancelled") {
+      throw new HttpError(403, "O dependente não possui um plano ativo nesta academia");
+    }
+
+    const { subscription: sub, plan } = row;
+    const today = utcTodayDateString();
+
+    if (today < sub.startsAt) {
+      throw new HttpError(403, "Subscription has not started yet");
+    }
+
+    const graceEnd = addCalendarDays(sub.expiresAt, 3);
+    if (today > graceEnd) {
+      throw new HttpError(
+        403,
+        "O plano do dependente expirou e o período de carência acabou — renove para continuar treinando",
       );
     }
 

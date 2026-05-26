@@ -1,8 +1,8 @@
-import type { Queue } from "bullmq";
 import { logger } from "../../lib/logger.js";
 import { HttpError } from "../../lib/http-error.js";
 import type { INotificationRepository, NotificationRow } from "./notification.repository.js";
 import type { IPushTokenRepository } from "../push-token/push-token.repository.js";
+import type { INotificationPreferencesRepository } from "./notification-preferences.repository.js";
 import type { NotificationJobData } from "./notification.queue.js";
 
 export class NotificationService {
@@ -10,6 +10,7 @@ export class NotificationService {
     private readonly notificationRepo: INotificationRepository,
     private readonly pushTokenRepo: IPushTokenRepository,
     private readonly queue: { add(name: string, data: NotificationJobData): Promise<unknown> } | null,
+    private readonly prefsRepo?: INotificationPreferencesRepository,
   ) {}
 
   async send(opts: {
@@ -33,6 +34,11 @@ export class NotificationService {
 
     for (const row of rows) {
       try {
+        if (this.prefsRepo) {
+          const pushEnabled = await this.prefsRepo.isPushEnabled(row.recipientId);
+          if (!pushEnabled) continue;
+        }
+
         const tokens = await this.pushTokenRepo.findByUserId(row.recipientId);
         if (tokens.length === 0) continue;
 

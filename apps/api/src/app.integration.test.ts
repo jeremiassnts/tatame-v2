@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import request from "supertest";
 import { users } from "@tatame/db/schema";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { setDbForTest } from "./lib/db.js";
 import { makeUser } from "./testing/factories/index.js";
 import {
@@ -21,9 +21,9 @@ describe("createApp integration", () => {
     app = createApp();
   });
 
-  afterEach(async () => {
-    resetIntegrationClerkAuth();
+  beforeEach(async () => {
     await ctx.truncateAll();
+    resetIntegrationClerkAuth();
   });
 
   afterAll(async () => {

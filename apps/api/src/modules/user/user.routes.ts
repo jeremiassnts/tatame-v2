@@ -8,7 +8,6 @@ import {
 import { Router } from "express";
 import { getClerkClient } from "../../lib/clerk.js";
 import { getDb } from "../../lib/db.js";
-import { logger } from "../../lib/logger.js";
 import { requireSession } from "../../middleware/require-session.js";
 import { validateBody } from "../../middleware/validate.js";
 import { PostgresMembershipRepository } from "../membership/membership.repository.postgres.js";
@@ -42,7 +41,7 @@ function buildMeResponse(
     birthDate: row.birthDate ?? null,
     activeRole,
     activeAcademy,
-    hasPendingSubscription: !!(row as any).pendingStripeCustomerId,
+    hasPendingSubscription: !!row.pendingStripeCustomerId,
     activeMembership,
   });
 }
@@ -223,14 +222,9 @@ userRouter.delete("/me", requireSession, async (req, res, next) => {
       return;
     }
 
-    await userService.softDelete(row.id);
-
-    try {
-      const clerkClient = getClerkClient();
-      await clerkClient.users.deleteUser(clerkUserId);
-    } catch (clerkErr) {
-      logger.error({ err: clerkErr }, "Failed to delete Clerk user");
-    }
+    const clerkClient = getClerkClient();
+    await clerkClient.users.deleteUser(clerkUserId);
+    await userService.hardDelete(row.id);
 
     res.status(204).send();
   } catch (e) {

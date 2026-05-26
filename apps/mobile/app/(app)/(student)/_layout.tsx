@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Calendar, CreditCard, Home, Users } from "lucide-react-native";
+import { Calendar, CreditCard, Home, Menu, Users } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function StudentLayout() {
@@ -47,6 +47,7 @@ export default function StudentLayout() {
           tabBarIcon: ({ color, size }) => <Calendar size={size} color={color} />,
         }}
       />
+      <Tabs.Screen name="(announcements)" options={{ href: null }} />
       <Tabs.Screen
         name="(subscription)"
         options={{
@@ -55,6 +56,14 @@ export default function StudentLayout() {
           tabBarIcon: ({ color, size }) => (
             <CreditCard size={size} color={color} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="(more)"
+        options={{
+          title: "Mais",
+          href: "/(app)/(student)/(more)",
+          tabBarIcon: ({ color, size }) => <Menu size={size} color={color} />,
         }}
       />
       <Tabs.Screen name="register-belt" options={{ href: null }} />

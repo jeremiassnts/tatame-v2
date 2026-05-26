@@ -1,5 +1,6 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
 import {
+  dependents,
   payments,
   studentSubscriptions,
   subscriptionPlans,
@@ -170,6 +171,31 @@ export class PostgresStudentSubscriptionRepository
       );
   }
 
+  async cancelActiveForDependent(
+    userId: string,
+    academyId: string,
+    dependentId: string,
+  ): Promise<void> {
+    const planRows = await this.db
+      .select({ id: subscriptionPlans.id })
+      .from(subscriptionPlans)
+      .where(eq(subscriptionPlans.academyId, academyId));
+    const planIds = planRows.map((p) => p.id);
+    if (planIds.length === 0) return;
+
+    await this.db
+      .update(studentSubscriptions)
+      .set({ status: "cancelled", updatedAt: new Date() })
+      .where(
+        and(
+          eq(studentSubscriptions.userId, userId),
+          eq(studentSubscriptions.status, "active"),
+          eq(studentSubscriptions.dependentId, dependentId),
+          inArray(studentSubscriptions.planId, planIds),
+        ),
+      );
+  }
+
   async replaceActiveSubscriptionForAcademy(
     userId: string,
     academyId: string,
@@ -178,19 +204,27 @@ export class PostgresStudentSubscriptionRepository
       status: "active" | "expired" | "cancelled";
       startsAt: string;
       expiresAt: string;
+      dependentId?: string | null;
     },
   ): Promise<StudentSubscriptionRow> {
     return this.db.transaction(async (tx) => {
       const inner = new PostgresStudentSubscriptionRepository(
         tx as unknown as Database,
       );
-      await inner.cancelActiveForUserInAcademy(userId, academyId);
+      if (newRow.dependentId) {
+        // Only cancel the active subscription for this specific dependent
+        await inner.cancelActiveForDependent(userId, academyId, newRow.dependentId);
+      } else {
+        // Cancel all active subscriptions for this user (no dependent) in the academy
+        await inner.cancelActiveForUserInAcademy(userId, academyId);
+      }
       return inner.create({
         userId,
         planId: newRow.planId,
         status: newRow.status,
         startsAt: newRow.startsAt,
         expiresAt: newRow.expiresAt,
+        dependentId: newRow.dependentId ?? null,
       });
     });
   }
@@ -201,6 +235,7 @@ export class PostgresStudentSubscriptionRepository
     status: "active" | "expired" | "cancelled";
     startsAt: string;
     expiresAt: string;
+    dependentId?: string | null;
   }): Promise<StudentSubscriptionRow> {
     const [row] = await this.db
       .insert(studentSubscriptions)
@@ -210,6 +245,7 @@ export class PostgresStudentSubscriptionRepository
         status: data.status,
         startsAt: data.startsAt,
         expiresAt: data.expiresAt,
+        dependentId: data.dependentId ?? null,
       })
       .returning();
     if (!row) throw new Error("Failed to create student subscription");
@@ -264,6 +300,8 @@ export class PostgresStudentSubscriptionRepository
           email: users.email,
           profileImageUrl: users.profileImageUrl,
         },
+        dependentId: dependents.id,
+        dependentName: dependents.name,
       })
       .from(studentSubscriptions)
       .innerJoin(
@@ -271,6 +309,7 @@ export class PostgresStudentSubscriptionRepository
         eq(studentSubscriptions.planId, subscriptionPlans.id),
       )
       .innerJoin(users, eq(studentSubscriptions.userId, users.id))
+      .leftJoin(dependents, eq(studentSubscriptions.dependentId, dependents.id))
       .where(conditions.length === 1 ? conditions[0]! : and(...conditions))
       .orderBy(desc(studentSubscriptions.createdAt));
 
@@ -297,6 +336,8 @@ export class PostgresStudentSubscriptionRepository
         subscription: r.subscription,
         plan: r.plan,
         user: r.user,
+        dependentId: r.dependentId,
+        dependentName: r.dependentName,
         lastPayment: lp
           ? {
               referenceMonth: lp.referenceMonth,
@@ -306,6 +347,30 @@ export class PostgresStudentSubscriptionRepository
           : null,
       };
     });
+  }
+
+  async findByDependentIdWithPlan(
+    dependentId: string,
+  ): Promise<StudentSubscriptionWithPlan | undefined> {
+    const rows = await this.db
+      .select({
+        subscription: studentSubscriptions,
+        plan: subscriptionPlans,
+      })
+      .from(studentSubscriptions)
+      .innerJoin(
+        subscriptionPlans,
+        eq(studentSubscriptions.planId, subscriptionPlans.id),
+      )
+      .where(
+        and(
+          eq(studentSubscriptions.dependentId, dependentId),
+          inArray(studentSubscriptions.status, ["active", "expired"]),
+        ),
+      )
+      .orderBy(desc(studentSubscriptions.createdAt))
+      .limit(1);
+    return rows[0];
   }
 
   async findByIdForManager(
@@ -322,6 +387,8 @@ export class PostgresStudentSubscriptionRepository
           email: users.email,
           profileImageUrl: users.profileImageUrl,
         },
+        dependentId: dependents.id,
+        dependentName: dependents.name,
       })
       .from(studentSubscriptions)
       .innerJoin(
@@ -329,6 +396,7 @@ export class PostgresStudentSubscriptionRepository
         eq(studentSubscriptions.planId, subscriptionPlans.id),
       )
       .innerJoin(users, eq(studentSubscriptions.userId, users.id))
+      .leftJoin(dependents, eq(studentSubscriptions.dependentId, dependents.id))
       .where(
         and(
           eq(studentSubscriptions.id, subscriptionId),
@@ -354,6 +422,8 @@ export class PostgresStudentSubscriptionRepository
       subscription: row.subscription,
       plan: row.plan,
       user: row.user,
+      dependentId: row.dependentId,
+      dependentName: row.dependentName,
       lastPayment: lastPayments[0]
         ? {
             referenceMonth: lastPayments[0].referenceMonth,

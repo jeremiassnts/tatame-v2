@@ -52,6 +52,10 @@ export class GraduationService {
     return this.graduationRepo.listByUserInAcademy(userId, academyId);
   }
 
+  async listForDependentInAcademy(dependentId: string, academyId: string) {
+    return this.graduationRepo.listByDependentInAcademy(dependentId, academyId);
+  }
+
   /**
    * First belt in the academy for this user (`promotedBy` = own user id).
    * Allowed when: active student membership + global role student; or academy owner
@@ -149,11 +153,12 @@ export class GraduationService {
     if (actorRole === "instructor" && m.role !== "student") {
       throw new HttpError(404, "Member not found in this academy");
     }
-    // Managers can view student and instructor graduations
+    // Managers can view student, instructor, and guardian graduations
     if (
       actorRole === "manager" &&
       m.role !== "student" &&
-      m.role !== "instructor"
+      m.role !== "instructor" &&
+      m.role !== "guardian"
     ) {
       throw new HttpError(404, "Member not found in this academy");
     }
@@ -167,6 +172,7 @@ export class GraduationService {
     belt: Belt;
     stripes: number;
     notes: string | null;
+    dependentId?: string | null;
   }): Promise<BeltPromotionRow> {
     await this.assertActorCanPromoteInAcademy(
       opts.actorUserId,
@@ -174,7 +180,7 @@ export class GraduationService {
       opts.academyId,
     );
 
-    if (opts.targetUserId === opts.actorUserId) {
+    if (opts.targetUserId === opts.actorUserId && !opts.dependentId) {
       throw new HttpError(400, "Use the initial belt endpoint for your own belt");
     }
 
@@ -190,18 +196,19 @@ export class GraduationService {
     if (opts.actorRole === "instructor" && m.role !== "student") {
       throw new HttpError(404, "Member not found in this academy");
     }
-    // Managers can promote students and instructors
+    // Managers can promote students, instructors, and dependents of guardians
     if (
       opts.actorRole === "manager" &&
       m.role !== "student" &&
-      m.role !== "instructor"
+      m.role !== "instructor" &&
+      m.role !== "guardian"
     ) {
       throw new HttpError(404, "Member not found in this academy");
     }
 
-    const current = await this.graduationRepo.findCurrentByUserId(
-      opts.targetUserId,
-    );
+    const current = opts.dependentId
+      ? await this.graduationRepo.findCurrentByDependentId(opts.dependentId)
+      : await this.graduationRepo.findCurrentByUserId(opts.targetUserId);
     if (!current) {
       throw new HttpError(
         409,
@@ -221,13 +228,14 @@ export class GraduationService {
       belt: opts.belt,
       stripes: opts.stripes,
       notes: opts.notes,
+      dependentId: opts.dependentId,
     });
 
     if (this.dispatcher) {
       const beltNames: Record<string, string> = {
         white: "branca", blue: "azul", purple: "roxa", brown: "marrom", black: "preta",
       };
-      this.dispatcher.notifyUsers(
+      void this.dispatcher.notifyUsers(
         "belt_promotion",
         [opts.targetUserId],
         [beltNames[opts.belt] ?? opts.belt, String(opts.stripes)],

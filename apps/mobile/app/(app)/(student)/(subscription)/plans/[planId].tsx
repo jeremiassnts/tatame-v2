@@ -1,4 +1,5 @@
 import { BackButton } from "@/components/BackButton";
+import { useDependentSubscription } from "@/lib/hooks/use-dependents";
 import { useMySubscription, useSelectPlan } from "@/lib/hooks/use-subscription";
 import { useSubscriptionPlan } from "@/lib/hooks/use-subscription-plans";
 import { useQueryClient } from "@tanstack/react-query";
@@ -17,10 +18,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const TEXT_SECONDARY = "#8A8A8A";
 
 export default function PlanDetailScreen() {
-  const { planId } = useLocalSearchParams<{ planId: string }>();
+  const { planId, dependentId, callerRole } = useLocalSearchParams<{ planId: string; dependentId?: string; callerRole?: string }>();
   const router = useRouter();
   const { data: plan, isLoading } = useSubscriptionPlan(planId);
-  const { data: subResponse } = useMySubscription();
+  const { data: mySubResponse } = useMySubscription();
+  const { data: depSubResponse } = useDependentSubscription(dependentId ?? null);
+  const subResponse = dependentId ? depSubResponse : mySubResponse;
   const selectPlan = useSelectPlan();
   const queryClient = useQueryClient();
 
@@ -43,15 +46,25 @@ export default function PlanDetailScreen() {
 
     const runSelectPlan = async () => {
       try {
-        await selectPlan.mutateAsync(plan.id);
-        await queryClient.refetchQueries({ queryKey: ["subscription", "me"] });
+        await selectPlan.mutateAsync({ planId: plan.id, dependentId });
+        if (dependentId) {
+          await queryClient.refetchQueries({ queryKey: ["subscription", dependentId] });
+        } else {
+          await queryClient.refetchQueries({ queryKey: ["subscription", "me"] });
+        }
         Alert.alert(
           hasActiveSubscription ? "Plano atualizado" : "Assinatura ativada",
           hasActiveSubscription
-            ? "Sua assinatura foi atualizada com sucesso."
-            : "Sua assinatura foi ativada com sucesso.",
+            ? "A assinatura foi atualizada com sucesso."
+            : "A assinatura foi ativada com sucesso.",
         );
-        router.replace("/(app)/(student)/(subscription)");
+        if (dependentId && callerRole === "guardian") {
+          router.replace(`/(app)/(guardian)/(dependents)/subscription?dependentId=${dependentId}`);
+        } else if (dependentId) {
+          router.replace(`/(app)/(student)/(more)/dependent-subscription?dependentId=${dependentId}`);
+        } else {
+          router.replace("/(app)/(student)/(subscription)");
+        }
       } catch {
         Alert.alert(
           "Erro",

@@ -18,13 +18,19 @@ export function useMyGraduation() {
   });
 }
 
-export function useGraduationHistory(userId: string | undefined) {
+export function useGraduationHistory(
+  userId: string | undefined,
+  dependentId?: string | undefined,
+) {
   const api = useApi();
+  const params = new URLSearchParams();
+  if (userId) params.set("userId", userId);
+  if (dependentId) params.set("dependentId", dependentId);
 
   return useQuery({
-    queryKey: ["graduation", userId],
+    queryKey: ["graduation", userId, dependentId ?? null],
     queryFn: () =>
-      api.get<GraduationsResponse>(`/graduations?userId=${userId}`),
+      api.get<GraduationsResponse>(`/graduations?${params.toString()}`),
     enabled: !!userId,
   });
 }
@@ -52,12 +58,14 @@ export function usePromoteGraduation() {
       belt: string;
       stripes: number;
       notes?: string | null;
+      dependentId?: string | null;
     }) => api.post<BeltPromotionResponse>("/graduations", body),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["graduation", variables.userId],
       });
       queryClient.invalidateQueries({ queryKey: ["members"] });
+      queryClient.invalidateQueries({ queryKey: ["dependents"] });
     },
   });
 }

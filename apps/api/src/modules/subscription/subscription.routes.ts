@@ -34,6 +34,10 @@ import { loadEnv } from "@tatame/config";
 import { PostgresUserRepository } from "../user/user.repository.postgres.js";
 import { getEmailQueue } from "../email/email.queue.js";
 import { EmailService } from "../email/email.service.js";
+import { PostgresDependentRepository } from "../dependent/dependent.repository.postgres.js";
+import { PostgresGraduationRepository } from "../graduation/graduation.repository.postgres.js";
+import { PostgresMembershipRepository } from "../membership/membership.repository.postgres.js";
+import { DependentService } from "../dependent/dependent.service.js";
 
 export const subscriptionRouter = Router();
 
@@ -47,6 +51,13 @@ const emailService = env.REDIS_URL
 
 const managerSubRepo = new PostgresManagerSubscriptionRepository(db);
 
+const dependentService = new DependentService(
+  new PostgresDependentRepository(db),
+  new PostgresMembershipRepository(db),
+  new PostgresGraduationRepository(db),
+  new PostgresStudentSubscriptionRepository(db),
+);
+
 const subscriptionService = new SubscriptionService(
   new PostgresSubscriptionPlanRepository(db),
   new PostgresStudentSubscriptionRepository(db),
@@ -56,7 +67,7 @@ const subscriptionService = new SubscriptionService(
 
 subscriptionRouter.get(
   "/plans",
-  authorize(Role.Manager, Role.Instructor, Role.Student),
+  authorize(Role.Manager, Role.Instructor, Role.Student, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   async (req, res, next) => {
@@ -100,7 +111,7 @@ subscriptionRouter.post(
 
 subscriptionRouter.get(
   "/plans/:planId",
-  authorize(Role.Manager, Role.Instructor, Role.Student),
+  authorize(Role.Manager, Role.Instructor, Role.Student, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   async (req, res, next) => {
@@ -152,7 +163,7 @@ subscriptionRouter.patch(
 
 subscriptionRouter.get(
   "/me",
-  authorize(Role.Manager, Role.Instructor, Role.Student),
+  authorize(Role.Manager, Role.Instructor, Role.Student, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   async (req, res, next) => {
@@ -160,6 +171,32 @@ subscriptionRouter.get(
       const userId = req.appAuth!.userId;
       const academyId = req.appAuth!.activeAcademyId!;
       const payload = await subscriptionService.getMySubscription(userId, academyId);
+      res.json(payload);
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+subscriptionRouter.get(
+  "/dependent/:dependentId",
+  authorize(Role.Student, Role.Guardian, Role.Manager),
+  attachActiveAcademyContext,
+  requireActiveAcademy,
+  async (req, res, next) => {
+    try {
+      const { dependentId } = req.params;
+      if (!dependentId) {
+        res.status(400).json({ error: "dependentId required" });
+        return;
+      }
+      const auth = req.appAuth!;
+      await dependentService.getById(auth.userId, auth.role, dependentId, auth.activeAcademyId);
+      const academyId = auth.activeAcademyId!;
+      const payload = await subscriptionService.getSubscriptionForDependent(
+        dependentId,
+        academyId,
+      );
       res.json(payload);
     } catch (e) {
       next(e);
@@ -223,22 +260,28 @@ subscriptionRouter.get(
 
 subscriptionRouter.post(
   "/me/plan",
-  authorize(Role.Student),
+  authorize(Role.Student, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   validateBody(selectStudentPlanBodySchema),
   async (req, res, next) => {
     try {
-      const { planId } = req.validatedBody as SelectStudentPlanBody;
-      if (req.appAuth!.academyRole !== Role.Student) {
+      const { planId, dependentId } = req.validatedBody as SelectStudentPlanBody;
+      const role = req.appAuth!.role;
+      if (role !== Role.Student && role !== Role.Guardian) {
         throw new HttpError(
           403,
-          "Only students with an active student membership can select a plan",
+          "Only students or guardians can select a plan",
         );
+      }
+      if (role === Role.Guardian && !dependentId) {
+        throw new HttpError(400, "dependentId is required for guardians");
       }
       const userId = req.appAuth!.userId;
       const academyId = req.appAuth!.activeAcademyId!;
-      const result = await subscriptionService.selectPlan(userId, academyId, planId);
+      const result = await subscriptionService.selectPlan(userId, academyId, planId, {
+        dependentId: dependentId ?? null,
+      });
 
       // Send enrollment email
       if (emailService) {

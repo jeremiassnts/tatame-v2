@@ -1,0 +1,2 @@
+DROP INDEX "belt_promotions_one_current_per_user";--> statement-breakpoint
+CREATE UNIQUE INDEX "belt_promotions_one_current_per_user" ON "belt_promotions" USING btree ("user_id") WHERE "belt_promotions"."is_current" = true AND "belt_promotions"."dependent_id" IS NULL;

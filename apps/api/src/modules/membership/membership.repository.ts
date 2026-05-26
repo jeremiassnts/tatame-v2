@@ -20,6 +20,8 @@ export type MemberListItemRow = {
   userProfileImageUrl: string | null;
   currentBelt: string | null;
   currentStripes: number | null;
+  guardianName?: string | null;
+  guardianMembershipId?: string | null;
 };
 
 export type MemberDetailRow = {
@@ -100,10 +102,17 @@ export interface IMembershipRepository {
 
   findDetailById(membershipId: string): Promise<MemberDetailRow | null>;
 
+  findDependentsForMemberList(
+    academyId: string,
+    filters: { q?: string },
+  ): Promise<MemberListItemRow[]>;
+
   findActiveOrPendingByUser(userId: string): Promise<ActiveOrPendingMembershipRow | null>;
 
   withTransaction<T>(fn: (txRepo: IMembershipRepository) => Promise<T>): Promise<T>;
 
   findManagerClerkIdsByAcademy(academyId: string): Promise<string[]>;
   findActiveStudentClerkIdsByAcademy(academyId: string): Promise<string[]>;
+  findActiveInstructorClerkIdsByAcademy(academyId: string): Promise<string[]>;
+  findAllActiveClerkIdsByAcademy(academyId: string): Promise<string[]>;
 }

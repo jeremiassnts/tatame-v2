@@ -38,7 +38,7 @@ export function useMySubscription() {
   });
 }
 
-type PaymentItem = {
+export type PaymentItem = {
   id: string;
   subscriptionId: string;
   userId: string;
@@ -69,12 +69,17 @@ export function useSelectPlan() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (planId: string) =>
-      api.post<MySubscriptionResponse>("/subscriptions/me/plan", { planId }),
-    onSuccess: () => {
+    mutationFn: (params: { planId: string; dependentId?: string }) =>
+      api.post<MySubscriptionResponse>("/subscriptions/me/plan", params),
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["subscription", "me"] });
       queryClient.invalidateQueries({ queryKey: ["payments", "me"] });
       queryClient.invalidateQueries({ queryKey: ["checkins", "me"] });
+      if (variables.dependentId) {
+        queryClient.invalidateQueries({ queryKey: ["subscription", variables.dependentId] });
+        queryClient.invalidateQueries({ queryKey: ["payments", variables.dependentId] });
+        queryClient.invalidateQueries({ queryKey: ["dependents", "me"] });
+      }
     },
   });
 }

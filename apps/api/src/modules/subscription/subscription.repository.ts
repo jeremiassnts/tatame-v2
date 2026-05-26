@@ -20,6 +20,8 @@ export type AcademySubscriptionItem = {
     email: string;
     profileImageUrl: string | null;
   };
+  dependentId: string | null;
+  dependentName: string | null;
   lastPayment: {
     referenceMonth: string;
     paidAt: Date;
@@ -68,6 +70,8 @@ export interface IStudentSubscriptionRepository {
 
   cancelActiveForUserInAcademy(userId: string, academyId: string): Promise<void>;
 
+  cancelActiveForDependent(userId: string, academyId: string, dependentId: string): Promise<void>;
+
   /**
    * Cancels active subscriptions for the user in this academy and inserts a new row — single transaction.
    */
@@ -79,6 +83,7 @@ export interface IStudentSubscriptionRepository {
       status: "active" | "expired" | "cancelled";
       startsAt: string;
       expiresAt: string;
+      dependentId?: string | null;
     },
   ): Promise<StudentSubscriptionRow>;
 
@@ -88,6 +93,7 @@ export interface IStudentSubscriptionRepository {
     status: "active" | "expired" | "cancelled";
     startsAt: string;
     expiresAt: string;
+    dependentId?: string | null;
   }): Promise<StudentSubscriptionRow>;
 
   update(
@@ -108,4 +114,8 @@ export interface IStudentSubscriptionRepository {
     subscriptionId: string,
     academyId: string,
   ): Promise<AcademySubscriptionItem | undefined>;
+
+  findByDependentIdWithPlan(
+    dependentId: string,
+  ): Promise<StudentSubscriptionWithPlan | undefined>;
 }

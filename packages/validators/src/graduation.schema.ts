@@ -8,6 +8,18 @@ const beltValues = [
   Belt.Purple,
   Belt.Brown,
   Belt.Black,
+  Belt.GreyWhite,
+  Belt.Grey,
+  Belt.GreyBlack,
+  Belt.YellowWhite,
+  Belt.Yellow,
+  Belt.YellowBlack,
+  Belt.OrangeWhite,
+  Belt.Orange,
+  Belt.OrangeBlack,
+  Belt.GreenWhite,
+  Belt.Green,
+  Belt.GreenBlack,
 ] as const;
 
 export const beltSchema = z.enum(beltValues);
@@ -31,6 +43,7 @@ export const registerInitialBeltBodySchema = z
     belt: beltSchema,
     stripes: z.number().int(),
     notes: z.string().max(2000).nullable().optional(),
+    dependentId: z.string().uuid().optional(),
   })
   .superRefine(refineBeltStripes);
 
@@ -44,6 +57,7 @@ export const promoteBeltBodySchema = z
     belt: beltSchema,
     stripes: z.number().int(),
     notes: z.string().max(2000).nullable().optional(),
+    dependentId: z.string().uuid().optional(),
   })
   .superRefine(refineBeltStripes);
 
@@ -51,6 +65,7 @@ export type PromoteBeltBody = z.infer<typeof promoteBeltBodySchema>;
 
 export const listGraduationsQuerySchema = z.object({
   userId: z.string().uuid(),
+  dependentId: z.string().uuid().optional(),
 });
 
 export type ListGraduationsQuery = z.infer<typeof listGraduationsQuerySchema>;

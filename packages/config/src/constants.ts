@@ -1,7 +1,7 @@
 import type { Belt } from "@tatame/types";
 import { Belt as BeltValues, DayOfWeek } from "@tatame/types";
 
-/** Belt progression order (spec §6.10) */
+/** Adult belt progression order (spec §6.10) */
 export const BELT_ORDER: readonly Belt[] = [
   BeltValues.White,
   BeltValues.Blue,
@@ -10,13 +10,42 @@ export const BELT_ORDER: readonly Belt[] = [
   BeltValues.Black,
 ];
 
-/** Max stripes per belt (white–brown: 4, black: 10) */
+/** Kids belt progression order */
+export const KIDS_BELT_ORDER: readonly Belt[] = [
+  BeltValues.White,
+  BeltValues.GreyWhite,
+  BeltValues.Grey,
+  BeltValues.GreyBlack,
+  BeltValues.YellowWhite,
+  BeltValues.Yellow,
+  BeltValues.YellowBlack,
+  BeltValues.OrangeWhite,
+  BeltValues.Orange,
+  BeltValues.OrangeBlack,
+  BeltValues.GreenWhite,
+  BeltValues.Green,
+  BeltValues.GreenBlack,
+];
+
+/** Max stripes per belt (white–brown: 4, black: 10, kids: 4) */
 export const MAX_STRIPES_BY_BELT: Record<Belt, number> = {
   [BeltValues.White]: 4,
   [BeltValues.Blue]: 4,
   [BeltValues.Purple]: 4,
   [BeltValues.Brown]: 4,
   [BeltValues.Black]: 10,
+  [BeltValues.GreyWhite]: 4,
+  [BeltValues.Grey]: 4,
+  [BeltValues.GreyBlack]: 4,
+  [BeltValues.YellowWhite]: 4,
+  [BeltValues.Yellow]: 4,
+  [BeltValues.YellowBlack]: 4,
+  [BeltValues.OrangeWhite]: 4,
+  [BeltValues.Orange]: 4,
+  [BeltValues.OrangeBlack]: 4,
+  [BeltValues.GreenWhite]: 4,
+  [BeltValues.Green]: 4,
+  [BeltValues.GreenBlack]: 4,
 };
 
 export const DAY_OF_WEEK_LABEL: Record<number, string> = {

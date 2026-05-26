@@ -1,5 +1,5 @@
 import { loadEnv } from "@tatame/config";
-import { checkins, users } from "@tatame/db";
+import { checkins, dependents, users } from "@tatame/db";
 import { Role } from "@tatame/types";
 import type { CreateClassBody, UpdateClassBody } from "@tatame/validators";
 import {
@@ -87,7 +87,7 @@ async function enrichWithInstructorName(
 
 classRouter.get(
   "/",
-  authorize(Role.Manager, Role.Instructor, Role.Student),
+  authorize(Role.Manager, Role.Instructor, Role.Student, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   async (req, res, next) => {
@@ -107,7 +107,7 @@ classRouter.get(
 
 classRouter.get(
   "/:classId",
-  authorize(Role.Manager, Role.Instructor, Role.Student),
+  authorize(Role.Manager, Role.Instructor, Role.Student, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   async (req, res, next) => {
@@ -198,7 +198,7 @@ classRouter.delete(
 
 classRouter.get(
   "/:classId/checkins",
-  authorize(Role.Manager, Role.Instructor, Role.Student),
+  authorize(Role.Manager, Role.Instructor, Role.Student, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   async (req, res, next) => {
@@ -222,11 +222,14 @@ classRouter.get(
           userId: checkins.userId,
           checkedInAt: checkins.checkedInAt,
           date: checkins.date,
+          dependentId: checkins.dependentId,
+          dependentName: dependents.name,
           userName: users.name,
           userProfileImageUrl: users.profileImageUrl,
         })
         .from(checkins)
         .innerJoin(users, eq(checkins.userId, users.id))
+        .leftJoin(dependents, eq(checkins.dependentId, dependents.id))
         .where(
           and(
             eq(checkins.classId, params.data.classId),
@@ -242,6 +245,8 @@ classRouter.get(
           userId: r.userId,
           checkedInAt: r.checkedInAt.toISOString(),
           date: typeof r.date === "string" ? r.date.slice(0, 10) : r.date,
+          dependentId: r.dependentId ?? null,
+          dependentName: r.dependentName ?? null,
           userName: r.userName,
           userProfileImageUrl: r.userProfileImageUrl,
         })),

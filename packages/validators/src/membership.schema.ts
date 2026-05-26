@@ -37,7 +37,7 @@ export const pendingMembershipItemSchema = membershipResponseSchema.extend({
 export type PendingMembershipItem = z.infer<typeof pendingMembershipItemSchema>;
 
 export const listMembersQuerySchema = z.object({
-  role: z.enum(["instructor", "student"]).optional(),
+  role: z.enum(["instructor", "student", "guardian", "dependent"]).optional(),
   status: z.enum(["pending", "active", "blocked"]).optional(),
   q: z.string().optional(),
 });

@@ -148,7 +148,7 @@ describe("UserService", () => {
     expect(result).toBeNull();
   });
 
-  it("upsertFromClerk reactivates a soft-deleted user with the same email", async () => {
+  it("hardDelete removes user completely and allows re-registration", async () => {
     const repo = new InMemoryUserRepository();
     const svc = new UserService(repo);
 
@@ -159,9 +159,13 @@ describe("UserService", () => {
       profileImageUrl: null,
     });
     const original = (await svc.getByClerkId("clerk_old"))!;
-    await svc.softDelete(original.id);
+    await svc.hardDelete(original.id);
 
-    // User returns with a new Clerk account but the same email
+    // User is gone
+    const found = await svc.getByClerkId("clerk_old");
+    expect(found).toBeNull();
+
+    // User re-registers with a new Clerk account
     await svc.upsertFromClerk({
       clerkUserId: "clerk_new",
       email: "returning@example.com",
@@ -169,33 +173,10 @@ describe("UserService", () => {
       profileImageUrl: "https://img.example.com/new.jpg",
     });
 
-    const reactivated = await svc.getByClerkId("clerk_new");
-    expect(reactivated).not.toBeNull();
-    expect(reactivated!.id).toBe(original.id);
-    expect(reactivated!.email).toBe("returning@example.com");
-    expect(reactivated!.name).toBe("Returning User");
-    expect(reactivated!.profileImageUrl).toBe("https://img.example.com/new.jpg");
-    expect(reactivated!.deletedAt).toBeNull();
-
-    // Old clerk ID should no longer resolve
-    const oldLookup = await svc.getByClerkId("clerk_old");
-    expect(oldLookup).toBeNull();
-  });
-
-  it("softDelete sets deletedAt and user is no longer findable", async () => {
-    const repo = new InMemoryUserRepository();
-    const svc = new UserService(repo);
-    await svc.upsertFromClerk({
-      clerkUserId: "clerk_del",
-      email: "del@example.com",
-      name: "Delete Me",
-      profileImageUrl: null,
-    });
-    const user = (await svc.getByClerkId("clerk_del"))!;
-
-    await svc.softDelete(user.id);
-
-    const found = await svc.getByClerkId("clerk_del");
-    expect(found).toBeNull();
+    const newUser = await svc.getByClerkId("clerk_new");
+    expect(newUser).not.toBeNull();
+    expect(newUser!.id).not.toBe(original.id);
+    expect(newUser!.email).toBe("returning@example.com");
+    expect(newUser!.name).toBe("Returning User");
   });
 });

@@ -15,15 +15,23 @@ export interface ICheckinRepository {
 
   countByUserAndWeek(userId: string, weekReference: string): Promise<number>;
 
+  countByDependentAndWeek(dependentId: string, weekReference: string): Promise<number>;
+
   insert(data: {
     classId: string;
     userId: string;
     date: string;
     weekReference: string;
+    dependentId?: string;
   }): Promise<CheckinRow>;
 
   findByUserWithClass(
     userId: string,
+    opts: { cursor?: string; limit: number },
+  ): Promise<CheckinHistoryItem[]>;
+
+  findByDependentWithClass(
+    dependentId: string,
     opts: { cursor?: string; limit: number },
   ): Promise<CheckinHistoryItem[]>;
 

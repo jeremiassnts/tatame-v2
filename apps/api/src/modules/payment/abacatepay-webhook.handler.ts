@@ -1,6 +1,7 @@
 import type { IPaymentRepository } from "./payment.repository.js";
 import type { IUserRepository } from "../user/user.repository.js";
 import type { IAcademyRepository } from "../academy/academy.repository.js";
+import type { IStudentSubscriptionRepository } from "../subscription/subscription.repository.js";
 import type { EmailService } from "../email/email.service.js";
 import type { NotificationDispatcher } from "../notification/notification-dispatcher.js";
 
@@ -28,6 +29,7 @@ export class AbacatePayWebhookHandler {
     private readonly academyRepo: IAcademyRepository,
     private readonly emailService: EmailService | null,
     private readonly dispatcher?: NotificationDispatcher,
+    private readonly studentSubRepo?: IStudentSubscriptionRepository,
   ) {}
 
   async handleEvent(body: AbacatePayWebhookEvent): Promise<void> {
@@ -44,6 +46,13 @@ export class AbacatePayWebhookHandler {
     const existing = await this.paymentRepo.findByStripePaymentId(pixQrCodeId);
     if (existing) return;
 
+    // Resolve dependentId from the subscription
+    let dependentId: string | null = null;
+    if (this.studentSubRepo) {
+      const subResult = await this.studentSubRepo.findByIdWithPlan(pending.subscriptionId);
+      dependentId = subResult?.subscription.dependentId ?? null;
+    }
+
     const payment = await this.paymentRepo.create({
       subscriptionId: pending.subscriptionId,
       userId: pending.userId,
@@ -55,6 +64,7 @@ export class AbacatePayWebhookHandler {
       referenceMonth: pending.referenceMonth,
       notes: null,
       paidAt: new Date(),
+      dependentId,
     });
 
     // Clean up pending record
@@ -63,13 +73,13 @@ export class AbacatePayWebhookHandler {
     // Push notifications
     if (this.dispatcher) {
       const student = await this.userRepo.findById(pending.userId);
-      this.dispatcher.notifyUsers(
+      void this.dispatcher.notifyUsers(
         "payment_confirmed",
         [pending.userId],
         ["assinatura"],
         { academyId: pending.academyId },
       );
-      this.dispatcher.notifyAcademyManagers(
+      void this.dispatcher.notifyAcademyManagers(
         "student_payment_received",
         pending.academyId,
         [student?.name ?? "Aluno", "assinatura"],

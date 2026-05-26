@@ -23,7 +23,7 @@ import { PostgresPaymentRepository } from "../payment/payment.repository.postgre
 import { StripeCheckoutWebhookHandler } from "../payment/stripe-checkout-webhook.handler.js";
 import { PostgresMembershipRepository } from "../membership/membership.repository.postgres.js";
 import { PostgresPushTokenRepository } from "../push-token/push-token.repository.postgres.js";
-import { PostgresSubscriptionPlanRepository } from "../subscription/subscription.repository.postgres.js";
+import { PostgresStudentSubscriptionRepository, PostgresSubscriptionPlanRepository } from "../subscription/subscription.repository.postgres.js";
 import { PostgresUserRepository } from "../user/user.repository.postgres.js";
 import { UserService } from "../user/user.service.js";
 import { PostgresManagerSubscriptionRepository } from "./manager-subscription.repository.postgres.js";
@@ -249,17 +249,19 @@ export function createWebhookRouter() {
   const webhookRouter = Router();
 
   // AbacatePay student payments
+  const studentSubRepo = new PostgresStudentSubscriptionRepository(db);
   const abacatePayHandler = new AbacatePayWebhookHandler(
     paymentRepo,
     userRepo,
     acadRepo,
     emailService,
     webhookDispatcher,
+    studentSubRepo,
   );
 
   webhookRouter.post("/abacatepay", async (req, res, next) => {
     try {
-      await abacatePayHandler.handleEvent(req.body);
+      await abacatePayHandler.handleEvent(req.body as Parameters<typeof abacatePayHandler.handleEvent>[0]);
       res.json({ received: true });
     } catch (e) {
       next(e);
@@ -273,6 +275,7 @@ export function createWebhookRouter() {
     acadRepo,
     emailService,
     webhookDispatcher,
+    studentSubRepo,
   );
 
   const stripeSubHandler = new StripeSubscriptionWebhookHandler(
@@ -294,7 +297,7 @@ export function createWebhookRouter() {
         return;
       }
       const event = stripeInstance.webhooks.constructEvent(
-        (req as any).rawBody,
+        (req as unknown as { rawBody: string | Buffer }).rawBody,
         sig,
         env.STRIPE_WEBHOOK_SECRET,
       );

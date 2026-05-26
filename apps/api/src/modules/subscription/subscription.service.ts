@@ -154,7 +154,9 @@ export class SubscriptionService {
       academyPlan = managerSub?.plan ?? null;
     }
 
-    const candidate = rows.find((r) => r.subscription.status !== "cancelled");
+    const candidate = rows.find(
+      (r) => r.subscription.status !== "cancelled" && !r.subscription.dependentId,
+    );
     if (!candidate) {
       return { subscription: null, plan: null, academyPlan };
     }
@@ -177,10 +179,41 @@ export class SubscriptionService {
     };
   }
 
+  async getSubscriptionForDependent(
+    dependentId: string,
+    academyId: string,
+  ): Promise<SubscriptionMePayload> {
+    let academyPlan: "free" | "pro" | null = null;
+    if (this.managerSubRepo) {
+      const managerSub = await this.managerSubRepo.findByAcademyId(academyId);
+      academyPlan = managerSub?.plan ?? null;
+    }
+
+    const result =
+      await this.studentSubRepo.findByDependentIdWithPlan(dependentId);
+    if (!result) {
+      return { subscription: null, plan: null, academyPlan };
+    }
+
+    const { subscription: sub, plan } = result;
+    const expiredByDate = isExpiredByDate(sub.expiresAt);
+    let effectiveStatus: "active" | "expired" | "cancelled" = sub.status;
+    if (sub.status === "active" && expiredByDate) {
+      effectiveStatus = "expired";
+    }
+
+    return {
+      subscription: { ...sub, expiredByDate, effectiveStatus },
+      plan,
+      academyPlan,
+    };
+  }
+
   async selectPlan(
     userId: string,
     academyId: string,
     planId: string,
+    opts?: { dependentId?: string | null },
   ): Promise<{ subscription: StudentSubscriptionRow; plan: SubscriptionPlanRow }> {
     const plan = await this.planRepo.findById(planId);
     if (!plan || plan.academyId !== academyId) {
@@ -202,6 +235,7 @@ export class SubscriptionService {
           status: "active",
           startsAt,
           expiresAt,
+          dependentId: opts?.dependentId ?? null,
         },
       );
 
@@ -231,7 +265,7 @@ export class SubscriptionService {
     const enriched = items.map((item) => {
       const expiredByDate = isExpiredByDate(item.subscription.expiresAt, today);
       let effectiveStatus: "active" | "expired" | "cancelled" =
-        item.subscription.status as "active" | "expired" | "cancelled";
+        item.subscription.status;
       if (item.subscription.status === "active" && expiredByDate) {
         effectiveStatus = "expired";
       }
@@ -273,7 +307,7 @@ export class SubscriptionService {
     const currentMonth = today.slice(0, 7) + "-01";
     const expiredByDate = isExpiredByDate(item.subscription.expiresAt, today);
     let effectiveStatus: "active" | "expired" | "cancelled" =
-      item.subscription.status as "active" | "expired" | "cancelled";
+      item.subscription.status;
     if (item.subscription.status === "active" && expiredByDate) {
       effectiveStatus = "expired";
     }

@@ -19,6 +19,7 @@ export interface IPaymentRepository {
     referenceMonth: string;
     notes: string | null;
     paidAt: Date;
+    dependentId?: string | null;
   }): Promise<PaymentRow>;
 
   findByAcademy(
@@ -62,4 +63,6 @@ export interface IPaymentRepository {
   } | undefined>;
 
   deletePendingPix(pixQrCodeId: string): Promise<void>;
+
+  findByDependentId(dependentId: string): Promise<PaymentRow[]>;
 }

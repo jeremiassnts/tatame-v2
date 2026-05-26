@@ -2,6 +2,7 @@ export const Role = {
   Manager: "manager",
   Instructor: "instructor",
   Student: "student",
+  Guardian: "guardian",
 } as const;
 export type Role = (typeof Role)[keyof typeof Role];
 
@@ -17,6 +18,7 @@ export type MembershipStatus =
 export const PaymentMethod = {
   Manual: "manual",
   Stripe: "stripe",
+  Pix: "pix",
 } as const;
 export type PaymentMethod =
   (typeof PaymentMethod)[keyof typeof PaymentMethod];
@@ -27,8 +29,40 @@ export const Belt = {
   Purple: "purple",
   Brown: "brown",
   Black: "black",
+  GreyWhite: "grey_white",
+  Grey: "grey",
+  GreyBlack: "grey_black",
+  YellowWhite: "yellow_white",
+  Yellow: "yellow",
+  YellowBlack: "yellow_black",
+  OrangeWhite: "orange_white",
+  Orange: "orange",
+  OrangeBlack: "orange_black",
+  GreenWhite: "green_white",
+  Green: "green",
+  GreenBlack: "green_black",
 } as const;
 export type Belt = (typeof Belt)[keyof typeof Belt];
+
+/** Adult belts only (for students) */
+export const AdultBelts: Belt[] = ["white", "blue", "purple", "brown", "black"];
+
+/** Kids belts only (for dependents) */
+export const KidsBelts: Belt[] = [
+  "white",
+  "grey_white",
+  "grey",
+  "grey_black",
+  "yellow_white",
+  "yellow",
+  "yellow_black",
+  "orange_white",
+  "orange",
+  "orange_black",
+  "green_white",
+  "green",
+  "green_black",
+];
 
 export const SubscriptionStatus = {
   Active: "active",

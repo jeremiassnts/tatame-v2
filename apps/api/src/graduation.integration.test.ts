@@ -4,7 +4,7 @@ import {
   resetIntegrationClerkAuth,
 } from "./testing/integration-clerk-mock.js";
 import request from "supertest";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { setDbForTest } from "./lib/db.js";
 import { insertFreeSubscription, insertUserWithGlobalRole } from "./testing/integration-seed.js";
 import { setupIntegrationTest } from "./testing/integration-setup.js";
@@ -23,9 +23,9 @@ describe("Graduation routes integration", () => {
     app = createApp();
   });
 
-  afterEach(async () => {
-    resetIntegrationClerkAuth();
+  beforeEach(async () => {
     await ctx.truncateAll();
+    resetIntegrationClerkAuth();
   });
 
   afterAll(async () => {
@@ -99,7 +99,7 @@ describe("Graduation routes integration", () => {
 
     const mine = await request(app).get("/v1/graduations/me");
     expect(mine.status).toBe(200);
-    const current = mine.body.items?.find((g: { isCurrent: boolean }) => g.isCurrent);
+    const current = (mine.body.items as Array<{ isCurrent: boolean; belt: string }>)?.find((g) => g.isCurrent);
     expect(current?.belt).toBe(Belt.White);
   });
 });

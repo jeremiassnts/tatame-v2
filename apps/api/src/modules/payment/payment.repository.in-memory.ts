@@ -19,6 +19,7 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
     referenceMonth: string;
     notes: string | null;
     paidAt: Date;
+    dependentId?: string | null;
   }): Promise<PaymentRow> {
     const t = new Date();
     const row: PaymentRow = {
@@ -26,6 +27,7 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
       subscriptionId: data.subscriptionId,
       userId: data.userId,
       academyId: data.academyId,
+      dependentId: data.dependentId ?? null,
       amountCents: data.amountCents,
       method: data.method,
       confirmedBy: data.confirmedBy,
@@ -115,5 +117,11 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
 
   async deletePendingPix(pixQrCodeId: string): Promise<void> {
     this.pendingPix.delete(pixQrCodeId);
+  }
+
+  async findByDependentId(dependentId: string): Promise<PaymentRow[]> {
+    return this.rows
+      .filter((p) => p.dependentId === dependentId)
+      .sort((a, b) => new Date(b.paidAt).getTime() - new Date(a.paidAt).getTime());
   }
 }

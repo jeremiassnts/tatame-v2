@@ -7,6 +7,8 @@ import type {
 export class InMemoryNotificationRepository implements INotificationRepository {
   constructor(public readonly rows: NotificationRow[] = []) {}
 
+  private customSends: { academyId: string; senderId: string; createdAt: Date }[] = [];
+
   async createMany(
     items: {
       recipientId: string;
@@ -144,5 +146,24 @@ export class InMemoryNotificationRepository implements INotificationRepository {
         categories.includes(r.category) &&
         r.createdAt >= todayStart,
     ).length;
+  }
+
+  async countCustomSendsToday(academyId: string): Promise<number> {
+    const todayStart = new Date();
+    todayStart.setUTCHours(0, 0, 0, 0);
+    return this.customSends.filter(
+      (s) => s.academyId === academyId && s.createdAt >= todayStart,
+    ).length;
+  }
+
+  async createCustomSend(data: {
+    academyId: string;
+    senderId: string;
+  }): Promise<void> {
+    this.customSends.push({
+      academyId: data.academyId,
+      senderId: data.senderId,
+      createdAt: new Date(),
+    });
   }
 }

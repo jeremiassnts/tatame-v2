@@ -78,6 +78,62 @@
       "when": 1777301813054,
       "tag": "0010_slow_grandmaster",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1779321600000,
+      "tag": "0011_custom_notification_sends",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1779322800000,
+      "tag": "0012_fix_custom_notification_sends_sender_fk",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1779408000000,
+      "tag": "0013_notification_preferences",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1748304000000,
+      "tag": "0014_announcements",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1748736000000,
+      "tag": "0015_guardian_dependents",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1779675661517,
+      "tag": "0016_simple_turbo",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1779708999681,
+      "tag": "0017_certain_lightspeed",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1779737415861,
+      "tag": "0018_salty_wolfpack",
+      "breakpoints": true
     }
   ]
 }

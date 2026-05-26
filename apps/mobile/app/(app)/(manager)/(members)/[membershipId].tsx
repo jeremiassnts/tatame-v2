@@ -1,6 +1,8 @@
 import { Avatar } from "@/components/Avatar";
 import { Badge } from "@/components/Badge";
 import { BELT_LABELS_SHORT, getBeltColor } from "@/lib/belts";
+import type { DependentItem } from "@/lib/hooks/use-dependents";
+import { useDependentsByGuardian } from "@/lib/hooks/use-dependents";
 import { useGraduationHistory } from "@/lib/hooks/use-graduation";
 import {
   useBlockMembership,
@@ -13,8 +15,10 @@ import {
   AtSign,
   Ban,
   Calendar,
+  ChevronRight,
   Mail,
   Phone,
+  Users,
 } from "lucide-react-native";
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -56,6 +60,10 @@ export default function MemberDetailScreen() {
   const { data: member, isPending } = useMemberDetail(membershipId);
   const blockMutation = useBlockMembership();
   const { data: gradData } = useGraduationHistory(member?.userId);
+  const isGuardian = member?.role === "guardian";
+  const { data: dependents } = useDependentsByGuardian(
+    isGuardian || member?.role === "student" ? member?.userId : null,
+  );
 
   const handleBlock = () => {
     if (!membershipId) return;
@@ -201,25 +209,120 @@ export default function MemberDetailScreen() {
               );
             })}
           </View>
+
+          {/* Dependents section */}
+          {dependents && dependents.length > 0 && (
+            <>
+              <Text
+                className="font-poppins-semibold text-sm"
+                style={{ color: TEXT_SECONDARY }}
+              >
+                Dependentes
+              </Text>
+
+              <View className="overflow-hidden rounded-2xl border border-surface-border bg-surface">
+                {dependents.map((dep: DependentItem, index: number) => {
+                  const depBeltColor = dep.currentBelt
+                    ? getBeltColor(dep.currentBelt.belt)
+                    : TEXT_MUTED;
+                  const depBeltLabel = dep.currentBelt
+                    ? BELT_LABELS_SHORT[dep.currentBelt.belt] ?? dep.currentBelt.belt
+                    : null;
+
+                  return (
+                    <View key={dep.id}>
+                      <Pressable
+                        onPress={() =>
+                          router.push({
+                            pathname: "/(app)/promote-graduation",
+                            params: {
+                              userId: member.userId,
+                              membershipId: membershipId!,
+                              dependentId: dep.id,
+                              dependentName: dep.name,
+                            },
+                          })
+                        }
+                        className="flex-row items-center px-4 py-3.5"
+                        style={{ gap: 12 }}
+                      >
+                        <View
+                          className="h-9 w-9 items-center justify-center rounded-xl"
+                          style={{ backgroundColor: "#A078E820" }}
+                        >
+                          <Text className="font-poppins-semibold text-sm text-primary">
+                            {dep.name.charAt(0).toUpperCase()}
+                          </Text>
+                        </View>
+                        <View className="min-w-0 flex-1" style={{ gap: 2 }}>
+                          <Text className="font-poppins-semibold text-sm text-primary">
+                            {dep.name}
+                          </Text>
+                          {depBeltLabel ? (
+                            <View className="flex-row items-center" style={{ gap: 4 }}>
+                              <View
+                                className="rounded-full"
+                                style={{
+                                  width: 6,
+                                  height: 6,
+                                  backgroundColor: depBeltColor,
+                                }}
+                              />
+                              <Text
+                                className="font-poppins text-xs"
+                                style={{ color: TEXT_MUTED }}
+                              >
+                                {depBeltLabel}
+                                {dep.currentBelt && dep.currentBelt.stripes > 0
+                                  ? ` · ${dep.currentBelt.stripes} ${dep.currentBelt.stripes === 1 ? "grau" : "graus"}`
+                                  : ""}
+                              </Text>
+                            </View>
+                          ) : null}
+                        </View>
+                        <View className="flex-row items-center" style={{ gap: 4 }}>
+                          <ArrowUpRight size={14} color="#A078E8" />
+                          <Text
+                            className="font-poppins-medium text-xs"
+                            style={{ color: "#A078E8" }}
+                          >
+                            Graduar
+                          </Text>
+                        </View>
+                      </Pressable>
+                      {index < dependents.length - 1 && (
+                        <View
+                          className="h-px"
+                          style={{ backgroundColor: SEPARATOR }}
+                        />
+                      )}
+                    </View>
+                  );
+                })}
+              </View>
+            </>
+          )}
         </ScrollView>
 
         {member.status === "active" && member.role !== "manager" ? (
           <View className="mb-6" style={{ gap: 10 }}>
-            <Pressable
-              onPress={() =>
-                router.push({
-                  pathname: "/(app)/promote-graduation",
-                  params: { userId: member.userId, membershipId },
-                })
-              }
-              className="flex-row items-center justify-center gap-2 rounded-xl py-3.5"
-              style={{ backgroundColor: "#A078E8", height: 48 }}
-            >
-              <ArrowUpRight size={16} color="#FFFFFF" />
-              <Text className="font-poppins-semibold text-sm text-white">
-                Promover graduação
-              </Text>
-            </Pressable>
+            {!isGuardian && (
+              <Pressable
+                onPress={() =>
+                  router.push({
+                    pathname: "/(app)/promote-graduation",
+                    params: { userId: member.userId, membershipId },
+                  })
+                }
+                className="flex-row items-center justify-center gap-2 rounded-xl py-3.5"
+                style={{ backgroundColor: "#A078E8", height: 48 }}
+              >
+                <ArrowUpRight size={16} color="#FFFFFF" />
+                <Text className="font-poppins-semibold text-sm text-white">
+                  Promover graduação
+                </Text>
+              </Pressable>
+            )}
             <Pressable
               onPress={handleBlock}
               disabled={blockMutation.isPending}

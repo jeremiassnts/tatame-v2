@@ -20,6 +20,7 @@ export class PostgresPaymentRepository implements IPaymentRepository {
     referenceMonth: string;
     notes: string | null;
     paidAt: Date;
+    dependentId?: string | null;
   }): Promise<PaymentRow> {
     const [row] = await this.db
       .insert(payments)
@@ -34,6 +35,7 @@ export class PostgresPaymentRepository implements IPaymentRepository {
         referenceMonth: data.referenceMonth,
         notes: data.notes,
         paidAt: data.paidAt,
+        dependentId: data.dependentId ?? null,
       })
       .returning();
     if (!row) throw new Error("Failed to create payment");
@@ -70,6 +72,7 @@ export class PostgresPaymentRepository implements IPaymentRepository {
         subscriptionId: payments.subscriptionId,
         userId: payments.userId,
         academyId: payments.academyId,
+        dependentId: payments.dependentId,
         amountCents: payments.amountCents,
         method: payments.method,
         confirmedBy: payments.confirmedBy,
@@ -108,6 +111,7 @@ export class PostgresPaymentRepository implements IPaymentRepository {
         subscriptionId: payments.subscriptionId,
         userId: payments.userId,
         academyId: payments.academyId,
+        dependentId: payments.dependentId,
         amountCents: payments.amountCents,
         method: payments.method,
         confirmedBy: payments.confirmedBy,
@@ -191,5 +195,27 @@ export class PostgresPaymentRepository implements IPaymentRepository {
     await this.db
       .delete(pendingPixPayments)
       .where(eq(pendingPixPayments.pixQrCodeId, pixQrCodeId));
+  }
+
+  async findByDependentId(dependentId: string): Promise<PaymentRow[]> {
+    return this.db
+      .select({
+        id: payments.id,
+        subscriptionId: payments.subscriptionId,
+        userId: payments.userId,
+        academyId: payments.academyId,
+        dependentId: payments.dependentId,
+        amountCents: payments.amountCents,
+        method: payments.method,
+        confirmedBy: payments.confirmedBy,
+        stripePaymentId: payments.stripePaymentId,
+        referenceMonth: payments.referenceMonth,
+        notes: payments.notes,
+        paidAt: payments.paidAt,
+        createdAt: payments.createdAt,
+      })
+      .from(payments)
+      .where(eq(payments.dependentId, dependentId))
+      .orderBy(desc(payments.paidAt));
   }
 }

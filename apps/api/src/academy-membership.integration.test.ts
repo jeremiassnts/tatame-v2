@@ -3,7 +3,7 @@ import {
   resetIntegrationClerkAuth,
 } from "./testing/integration-clerk-mock.js";
 import request from "supertest";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { setDbForTest } from "./lib/db.js";
 import { insertFreeSubscription, insertUserWithGlobalRole } from "./testing/integration-seed.js";
 import { setupIntegrationTest } from "./testing/integration-setup.js";
@@ -23,9 +23,9 @@ describe("Academy & membership integration", () => {
     app = createApp();
   });
 
-  afterEach(async () => {
-    resetIntegrationClerkAuth();
+  beforeEach(async () => {
     await ctx.truncateAll();
+    resetIntegrationClerkAuth();
   });
 
   afterAll(async () => {

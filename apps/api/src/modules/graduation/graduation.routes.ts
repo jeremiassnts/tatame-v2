@@ -26,6 +26,9 @@ import { PostgresNotificationRepository } from "../notification/notification.rep
 import { NotificationService } from "../notification/notification.service.js";
 import { PostgresPushTokenRepository } from "../push-token/push-token.repository.postgres.js";
 import { PostgresUserRepository } from "../user/user.repository.postgres.js";
+import { PostgresDependentRepository } from "../dependent/dependent.repository.postgres.js";
+import { PostgresStudentSubscriptionRepository } from "../subscription/subscription.repository.postgres.js";
+import { DependentService } from "../dependent/dependent.service.js";
 import { PostgresGraduationRepository } from "./graduation.repository.postgres.js";
 import { GraduationService } from "./graduation.service.js";
 
@@ -47,6 +50,13 @@ function buildDispatcher(db: ReturnType<typeof getDb>) {
 }
 
 const db = getDb();
+const dependentService = new DependentService(
+  new PostgresDependentRepository(db),
+  new PostgresMembershipRepository(db),
+  new PostgresGraduationRepository(db),
+  new PostgresStudentSubscriptionRepository(db),
+);
+
 const graduationService = new GraduationService(
   new PostgresGraduationRepository(db),
   new PostgresMembershipRepository(db),
@@ -126,7 +136,7 @@ graduationRouter.post(
 
 graduationRouter.get(
   "/",
-  authorize(Role.Manager, Role.Instructor),
+  authorize(Role.Manager, Role.Instructor, Role.Guardian),
   attachActiveAcademyContext,
   requireActiveAcademy,
   async (req, res, next) => {
@@ -144,10 +154,13 @@ graduationRouter.get(
         academyId,
         query.data.userId,
       );
-      const items = await graduationService.listForUserInAcademy(
-        query.data.userId,
-        academyId,
-      );
+      const dependentId = query.data.dependentId ?? null;
+      if (dependentId) {
+        await dependentService.getById(actorId, actorRole, dependentId, academyId);
+      }
+      const items = dependentId
+        ? await graduationService.listForDependentInAcademy(dependentId, academyId)
+        : await graduationService.listForUserInAcademy(query.data.userId, academyId);
       res.json({ items: items.map(formatPromotion) });
     } catch (e) {
       next(e);
@@ -172,6 +185,7 @@ graduationRouter.post(
         belt: body.belt,
         stripes: body.stripes,
         notes: body.notes ?? null,
+        dependentId: body.dependentId ?? null,
       });
       res.status(201).json(formatPromotion(row));
     } catch (e) {

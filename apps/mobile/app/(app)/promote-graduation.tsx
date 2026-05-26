@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { BELT_ORDER, MAX_STRIPES_BY_BELT } from "@tatame/config";
+import { BELT_ORDER, KIDS_BELT_ORDER, MAX_STRIPES_BY_BELT } from "@tatame/config";
 import type { Belt } from "@tatame/types";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowUpRight, ChevronLeft } from "lucide-react-native";
@@ -24,6 +24,7 @@ import {
   useGraduationHistory,
   usePromoteGraduation,
 } from "@/lib/hooks/use-graduation";
+import { useDependent } from "@/lib/hooks/use-dependents";
 import { useMemberDetail } from "@/lib/hooks/use-membership";
 
 const BELT_LABELS: Record<string, string> = {
@@ -32,6 +33,18 @@ const BELT_LABELS: Record<string, string> = {
   purple: "Faixa roxa",
   brown: "Faixa marrom",
   black: "Faixa preta",
+  grey_white: "Cinza e branca",
+  grey: "Cinza",
+  grey_black: "Cinza e preta",
+  yellow_white: "Amarela e branca",
+  yellow: "Amarela",
+  yellow_black: "Amarela e preta",
+  orange_white: "Laranja e branca",
+  orange: "Laranja",
+  orange_black: "Laranja e preta",
+  green_white: "Verde e branca",
+  green: "Verde",
+  green_black: "Verde e preta",
 };
 
 const BELT_LABELS_SHORT: Record<string, string> = {
@@ -40,6 +53,18 @@ const BELT_LABELS_SHORT: Record<string, string> = {
   purple: "Roxa",
   brown: "Marrom",
   black: "Preta",
+  grey_white: "Cinza/Branca",
+  grey: "Cinza",
+  grey_black: "Cinza/Preta",
+  yellow_white: "Amarela/Branca",
+  yellow: "Amarela",
+  yellow_black: "Amarela/Preta",
+  orange_white: "Laranja/Branca",
+  orange: "Laranja",
+  orange_black: "Laranja/Preta",
+  green_white: "Verde/Branca",
+  green: "Verde",
+  green_black: "Verde/Preta",
 };
 
 const ROLE_TITLE: Record<string, string> = {
@@ -61,27 +86,30 @@ function useRouteParam(value: string | string[] | undefined): string | undefined
 }
 
 export default function PromoteGraduationScreen() {
-  const raw = useLocalSearchParams<{ userId?: string; membershipId?: string }>();
+  const raw = useLocalSearchParams<{
+    userId?: string;
+    membershipId?: string;
+    dependentId?: string;
+    dependentName?: string;
+  }>();
   const userId = useRouteParam(raw.userId);
   const membershipId = useRouteParam(raw.membershipId);
+  const dependentId = useRouteParam(raw.dependentId);
+  const dependentName = useRouteParam(raw.dependentName);
   const router = useRouter();
 
+  const isDependent = !!dependentId;
   const { data: member, isPending: memberPending } =
     useMemberDetail(membershipId);
+  const { data: dependent } = useDependent(dependentId ?? null);
   const { data: graduationData, isPending: gradPending } =
-    useGraduationHistory(userId);
+    useGraduationHistory(userId, dependentId);
   const promoteMutation = usePromoteGraduation();
 
   const history = graduationData?.items ?? [];
   const currentBelt = history.find((g) => g.isCurrent);
 
-  // Determine next logical belt
-  const nextBelt = useMemo(() => {
-    if (!currentBelt) return "";
-    const idx = BELT_ORDER.indexOf(currentBelt.belt as Belt);
-    if (idx < BELT_ORDER.length - 1) return BELT_ORDER[idx + 1]!;
-    return currentBelt.belt;
-  }, [currentBelt]);
+  const beltOrder = isDependent ? KIDS_BELT_ORDER : BELT_ORDER;
 
   const {
     control,
@@ -94,25 +122,28 @@ export default function PromoteGraduationScreen() {
     defaultValues: { belt: "", stripes: 0, notes: null },
   });
 
-  // Set default belt once data loads
+  // Pre-fill with current belt and stripes once data loads
   useEffect(() => {
-    if (nextBelt) {
-      setValue("belt", nextBelt);
+    if (currentBelt) {
+      setValue("belt", currentBelt.belt);
+      setValue("stripes", currentBelt.stripes);
     }
-  }, [nextBelt, setValue]);
+  }, [currentBelt, setValue]);
 
   const selectedBelt = watch("belt");
+  const selectedStripes = watch("stripes");
 
-  // Reset stripes when belt changes
-  useEffect(() => {
-    setValue("stripes", 0);
-  }, [selectedBelt, setValue]);
+  // Whether the selected values differ from current (actual promotion)
+  const hasChanged =
+    !!currentBelt &&
+    (selectedBelt !== currentBelt.belt ||
+      selectedStripes !== currentBelt.stripes);
 
   const maxStripes = selectedBelt
     ? MAX_STRIPES_BY_BELT[selectedBelt as Belt] ?? 4
     : 4;
 
-  const beltOptions = BELT_ORDER.map((b: Belt) => ({
+  const beltOptions = beltOrder.map((b: Belt) => ({
     value: b,
     label: BELT_LABELS[b] ?? b,
   }));
@@ -130,6 +161,7 @@ export default function PromoteGraduationScreen() {
         belt: data.belt,
         stripes: data.stripes,
         notes: data.notes || null,
+        dependentId: dependentId ?? null,
       },
       { onSuccess: () => router.back() },
     );
@@ -157,8 +189,13 @@ export default function PromoteGraduationScreen() {
 
   if (!member) return null;
 
-  const title = ROLE_TITLE[member.role] ?? "Promover membro";
-  const avatarLetter = (member.userName?.charAt(0) || "?").toUpperCase();
+  const displayName = isDependent
+    ? (dependent?.name ?? dependentName ?? "Dependente")
+    : member.userName;
+  const title = isDependent
+    ? "Promover dependente"
+    : (ROLE_TITLE[member.role] ?? "Promover membro");
+  const avatarLetter = (displayName?.charAt(0) || "?").toUpperCase();
   const currentBeltLabel = currentBelt
     ? `Faixa ${BELT_LABELS_SHORT[currentBelt.belt]?.toLowerCase() ?? currentBelt.belt} · ${currentBelt.stripes} graus atuais`
     : "Nenhuma graduação registrada";
@@ -197,13 +234,13 @@ export default function PromoteGraduationScreen() {
               <View className="flex-row items-center" style={{ gap: 12 }}>
                 <Avatar
                   variant="user"
-                  imageUrl={member.userProfileImageUrl}
+                  imageUrl={isDependent ? null : member.userProfileImageUrl}
                   fallbackLetter={avatarLetter}
                   size={42}
                 />
                 <View className="min-w-0 flex-1" style={{ gap: 2 }}>
                   <Text className="font-poppins-semibold text-base text-primary">
-                    {member.userName}
+                    {displayName}
                   </Text>
                   <Text className="font-poppins-medium text-xs text-muted">
                     {currentBeltLabel}
@@ -310,11 +347,11 @@ export default function PromoteGraduationScreen() {
 
                 <Pressable
                   onPress={onSubmit}
-                  disabled={!isValid || promoteMutation.isPending}
+                  disabled={!isValid || !hasChanged || promoteMutation.isPending}
                   className="flex-row items-center justify-center rounded-xl"
                   style={{
                     backgroundColor:
-                      !isValid || promoteMutation.isPending
+                      !isValid || !hasChanged || promoteMutation.isPending
                         ? "#3A3A3A"
                         : "#A078E8",
                     height: 56,

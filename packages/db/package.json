@@ -21,6 +21,7 @@
     "migrate": "drizzle-kit migrate",
     "studio": "drizzle-kit studio",
     "push": "drizzle-kit push",
+    "typecheck": "tsc --noEmit",
     "lint": "echo \"no lint configured\""
   },
   "dependencies": {

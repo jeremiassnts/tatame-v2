@@ -68,7 +68,7 @@ const membershipService = new MembershipService(
 
 membershipRouter.get(
   "/",
-  authorize(Role.Manager, Role.Instructor, Role.Student),
+  authorize(Role.Manager, Role.Instructor, Role.Student, Role.Guardian),
   attachActiveAcademyContext,
   async (req, res, next) => {
     try {
@@ -82,7 +82,7 @@ membershipRouter.get(
       const members = await membershipService.listMembers(
         academyId,
         req.appAuth!.userId,
-        req.appAuth!.role as "manager" | "instructor" | "student",
+        req.appAuth!.role as "manager" | "instructor" | "student" | "guardian",
         { role, status, q },
       );
       res.json(members);
@@ -94,7 +94,7 @@ membershipRouter.get(
 
 membershipRouter.post(
   "/requests",
-  authorize(Role.Instructor, Role.Student),
+  authorize(Role.Instructor, Role.Student, Role.Guardian),
   attachActiveAcademyContext,
   validateBody(requestMembershipBodySchema),
   async (req, res, next) => {
@@ -104,7 +104,7 @@ membershipRouter.post(
       const role = req.appAuth!.role;
       const created = await membershipService.request(
         userId,
-        role as "instructor" | "student",
+        role as "instructor" | "student" | "guardian",
         academyId,
       );
       res.status(201).json(created);
@@ -292,7 +292,7 @@ membershipRouter.patch(
 
 membershipRouter.post(
   "/leave",
-  authorize(Role.Instructor, Role.Student),
+  authorize(Role.Instructor, Role.Student, Role.Guardian),
   attachActiveAcademyContext,
   async (req, res, next) => {
     try {

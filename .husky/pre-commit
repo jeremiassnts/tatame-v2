@@ -1,0 +1,3 @@
+pnpm exec lint-staged
+pnpm turbo run typecheck
+pnpm turbo run test:unit

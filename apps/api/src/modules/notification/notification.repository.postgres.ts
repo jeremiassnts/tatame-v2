@@ -1,5 +1,5 @@
 import { and, count, eq, gte, inArray, isNull, lt, or, sql } from "drizzle-orm";
-import { notifications, type Database } from "@tatame/db";
+import { notifications, customNotificationSends, type Database } from "@tatame/db";
 import type {
   INotificationRepository,
   NotificationRow,
@@ -172,5 +172,30 @@ export class PostgresNotificationRepository implements INotificationRepository {
         ),
       );
     return Number(row?.c ?? 0);
+  }
+
+  async countCustomSendsToday(academyId: string): Promise<number> {
+    const todayStart = new Date();
+    todayStart.setUTCHours(0, 0, 0, 0);
+    const [row] = await this.db
+      .select({ c: count() })
+      .from(customNotificationSends)
+      .where(
+        and(
+          eq(customNotificationSends.academyId, academyId),
+          gte(customNotificationSends.createdAt, todayStart),
+        ),
+      );
+    return Number(row?.c ?? 0);
+  }
+
+  async createCustomSend(data: {
+    academyId: string;
+    senderId: string;
+  }): Promise<void> {
+    await this.db.insert(customNotificationSends).values({
+      academyId: data.academyId,
+      senderId: data.senderId,
+    });
   }
 }
