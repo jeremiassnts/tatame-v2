@@ -37,6 +37,12 @@ export function Header() {
           >
             Preços
           </a>
+          <a
+            href="/#duvidas"
+            className="text-[15px] font-medium text-text-secondary transition-colors hover:text-white"
+          >
+            Dúvidas
+          </a>
         </nav>
 
         {/* Mobile hamburger */}
@@ -70,6 +76,13 @@ export function Header() {
               className="text-[15px] font-medium text-text-secondary"
             >
               Preços
+            </a>
+            <a
+              href="#duvidas"
+              onClick={() => setMenuOpen(false)}
+              className="text-[15px] font-medium text-text-secondary"
+            >
+              Dúvidas
             </a>
           </nav>
         </div>
