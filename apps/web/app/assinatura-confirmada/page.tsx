@@ -157,6 +157,7 @@ export default function AssinaturaConfirmadaPage() {
               "Baixe o app na App Store ou Google Play",
               "Faça login com a conta que você acabou de criar",
               "Cadastre sua academia e comece a usar",
+              "Acesse os Tutoriais no menu Mais para aprender a usar todas as funcionalidades",
             ].map((step, index) => (
               <li key={index} className="flex items-start gap-3">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">

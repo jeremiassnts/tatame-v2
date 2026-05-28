@@ -37,6 +37,10 @@ export function ProActivated({
       <Text style={text}>
         <strong>3.</strong> Cadastre sua academia e comece a usar
       </Text>
+      <Text style={text}>
+        <strong>4.</strong> Acesse os <strong>Tutoriais</strong> no menu Mais do
+        app para aprender a usar todas as funcionalidades
+      </Text>
 
       <Hr style={divider} />
 
