@@ -16,6 +16,7 @@ import { managerSubscriptionRouter } from "./modules/manager-subscription/manage
 import { paymentRouter } from "./modules/payment/payment.routes.js";
 import { subscriptionRouter } from "./modules/subscription/subscription.routes.js";
 import { announcementRouter } from "./modules/announcement/announcement.routes.js";
+import { tutorialRouter } from "./modules/tutorial/tutorial.routes.js";
 import { dependentRouter } from "./modules/dependent/dependent.routes.js";
 import { notificationRouter } from "./modules/notification/notification.routes.js";
 import { pushTokenRouter } from "./modules/push-token/push-token.routes.js";
@@ -87,3 +88,4 @@ apiRouter.use("/notifications", notificationRouter);
 apiRouter.use("/push-tokens", pushTokenRouter);
 apiRouter.use("/uploads", uploadRouter);
 apiRouter.use("/admin", adminRouter);
+apiRouter.use("/tutorials", tutorialRouter);
