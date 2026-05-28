@@ -134,6 +134,13 @@
       "when": 1779737415861,
       "tag": "0018_salty_wolfpack",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1780200000000,
+      "tag": "0019_tutorials",
+      "breakpoints": true
     }
   ]
 }

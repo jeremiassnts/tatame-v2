@@ -593,3 +593,5 @@ export const notifications = pgTable(
     ),
   }),
 );
+
+export { tutorials } from "./tutorials.js";
