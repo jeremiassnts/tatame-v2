@@ -38199,6 +38199,386 @@
         },
         {
           "type": "frame",
+          "id": "CPbOH",
+          "name": "Testimonials Section",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 64,
+          "padding": [
+            100,
+            80
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "O6p5Kx",
+              "name": "Testimonials Header",
+              "width": 700,
+              "layout": "vertical",
+              "gap": 16,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Y7ayyQ",
+                  "name": "testimonialsBadge",
+                  "fill": "$--accent-soft",
+                  "cornerRadius": 100,
+                  "gap": 6,
+                  "padding": [
+                    6,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "cldMK",
+                      "name": "testimonialsBadgeText",
+                      "fill": "$--accent-primary",
+                      "content": "DEPOIMENTOS",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "700",
+                      "letterSpacing": 2
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "MLe2m",
+                  "name": "testimonialsTitle",
+                  "fill": "$--text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Quem usa, aprova",
+                  "textAlign": "center",
+                  "fontFamily": "Sora",
+                  "fontSize": 44,
+                  "fontWeight": "800",
+                  "letterSpacing": -1.5
+                },
+                {
+                  "type": "text",
+                  "id": "Xy4PD",
+                  "name": "testimonialsSub",
+                  "fill": "$--text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Veja o que gestores de academias estão falando sobre o Tatame.",
+                  "lineHeight": 1.6,
+                  "textAlign": "center",
+                  "fontFamily": "Inter",
+                  "fontSize": 18,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "RhQxM",
+              "name": "Testimonials Cards",
+              "width": "fill_container",
+              "gap": 24,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "NjjYP",
+                  "name": "Testimonial Card Rafael",
+                  "width": "fill_container",
+                  "fill": "$--bg-card",
+                  "cornerRadius": 16,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "$--border-default"
+                  },
+                  "layout": "vertical",
+                  "gap": 24,
+                  "padding": 32,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "hTNbm",
+                      "name": "Quote Icon Rafael",
+                      "fill": "$--accent-primary",
+                      "content": "“",
+                      "lineHeight": 0.6,
+                      "fontFamily": "Sora",
+                      "fontSize": 48,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "OjAEi",
+                      "name": "Quote Rafael",
+                      "fill": "$--text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "\"O Tatame simplificou toda a gestão da minha academia. Antes eu perdia horas com planilhas, agora tudo fica organizado em um só lugar.\"",
+                      "lineHeight": 1.7,
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "ovZ7t",
+                      "name": "Divider Rafael",
+                      "fill": "$--border-default",
+                      "width": "fill_container",
+                      "height": 1
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Qbe3P",
+                      "name": "Person Rafael",
+                      "width": "fill_container",
+                      "gap": 12,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "ellipse",
+                          "id": "fEh8i",
+                          "name": "Avatar Rafael",
+                          "fill": "$--bg-elevated",
+                          "width": 44,
+                          "height": 44
+                        },
+                        {
+                          "type": "frame",
+                          "id": "EIpyy",
+                          "name": "Person Info Rafael",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "BFMs7",
+                              "name": "Name Rafael",
+                              "fill": "$--text-primary",
+                              "content": "Rafael Mendes",
+                              "fontFamily": "Inter",
+                              "fontSize": 15,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "ikY1M",
+                              "name": "Role Rafael",
+                              "fill": "$--text-secondary",
+                              "content": "Proprietário · Alliance BJJ — São Paulo",
+                              "fontFamily": "Inter",
+                              "fontSize": 13,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "nA2SB",
+                  "name": "Testimonial Card Carla",
+                  "width": "fill_container",
+                  "fill": "$--bg-card",
+                  "cornerRadius": 16,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "$--border-default"
+                  },
+                  "layout": "vertical",
+                  "gap": 24,
+                  "padding": 32,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "rKaMz",
+                      "name": "Quote Icon Carla",
+                      "fill": "$--accent-primary",
+                      "content": "“",
+                      "lineHeight": 0.6,
+                      "fontFamily": "Sora",
+                      "fontSize": 48,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "KLjaX",
+                      "name": "Quote Carla",
+                      "fill": "$--text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "\"Meus alunos adoraram o app. Eles acompanham a evolução, veem os treinos e isso aumentou demais o engajamento nas aulas.\"",
+                      "lineHeight": 1.7,
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "kerxO",
+                      "name": "Divider Carla",
+                      "fill": "$--border-default",
+                      "width": "fill_container",
+                      "height": 1
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ApHmr",
+                      "name": "Person Carla",
+                      "width": "fill_container",
+                      "gap": 12,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "ellipse",
+                          "id": "au6En",
+                          "name": "Avatar Carla",
+                          "fill": "$--bg-elevated",
+                          "width": 44,
+                          "height": 44
+                        },
+                        {
+                          "type": "frame",
+                          "id": "c7fYcD",
+                          "name": "Person Info Carla",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "VAouV",
+                              "name": "Name Carla",
+                              "fill": "$--text-primary",
+                              "content": "Carla Oliveira",
+                              "fontFamily": "Inter",
+                              "fontSize": 15,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "z2Kqyw",
+                              "name": "Role Carla",
+                              "fill": "$--text-secondary",
+                              "content": "Gestora · Nova União — Rio de Janeiro",
+                              "fontFamily": "Inter",
+                              "fontSize": 13,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "IqhQ2",
+                  "name": "Testimonial Card Thiago",
+                  "width": "fill_container",
+                  "fill": "$--bg-card",
+                  "cornerRadius": 16,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "$--border-default"
+                  },
+                  "layout": "vertical",
+                  "gap": 24,
+                  "padding": 32,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "JWX9f",
+                      "name": "Quote Icon Thiago",
+                      "fill": "$--accent-primary",
+                      "content": "“",
+                      "lineHeight": 0.6,
+                      "fontFamily": "Sora",
+                      "fontSize": 48,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "fdVgc",
+                      "name": "Quote Thiago",
+                      "fill": "$--text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "\"Finalmente um sistema feito pra quem é do tatame. O controle financeiro e a gestão de graduações mudaram a rotina da academia.\"",
+                      "lineHeight": 1.7,
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "VAFJr",
+                      "name": "Divider Thiago",
+                      "fill": "$--border-default",
+                      "width": "fill_container",
+                      "height": 1
+                    },
+                    {
+                      "type": "frame",
+                      "id": "cVHaI",
+                      "name": "Person Thiago",
+                      "width": "fill_container",
+                      "gap": 12,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "ellipse",
+                          "id": "N2NiVE",
+                          "name": "Avatar Thiago",
+                          "fill": "$--bg-elevated",
+                          "width": 44,
+                          "height": 44
+                        },
+                        {
+                          "type": "frame",
+                          "id": "a2ouIS",
+                          "name": "Person Info Thiago",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "t9V7FB",
+                              "name": "Name Thiago",
+                              "fill": "$--text-primary",
+                              "content": "Thiago Souza",
+                              "fontFamily": "Inter",
+                              "fontSize": 15,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "haB4g",
+                              "name": "Role Thiago",
+                              "fill": "$--text-secondary",
+                              "content": "Professor e Proprietário · Gracie Barra — Curitiba",
+                              "fontFamily": "Inter",
+                              "fontSize": 13,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
           "id": "ctrPa",
           "name": "FAQ Section",
           "width": "fill_container",
@@ -67355,20 +67735,20 @@
     {
       "type": "frame",
       "id": "QXTf9",
-      "x": -983,
-      "y": 20890,
+      "x": -1511,
+      "y": 23643,
       "name": "APP-STORE-01: Agenda de Aulas",
       "clip": true,
-      "width": 430,
-      "height": 932,
+      "width": 1284,
+      "height": 2778,
       "fill": "$--bg-page",
       "layout": "vertical",
-      "gap": 28,
+      "gap": 84,
       "padding": [
-        80,
-        36,
+        239,
+        107,
         0,
-        36
+        107
       ],
       "alignItems": "center",
       "children": [
@@ -67376,21 +67756,21 @@
           "type": "frame",
           "id": "uiLxg",
           "name": "Logo",
-          "gap": 8,
+          "gap": 24,
           "alignItems": "center",
           "children": [
             {
               "type": "frame",
               "id": "aDUYY",
-              "width": 28,
-              "height": 28,
+              "width": 84,
+              "height": 84,
               "fill": {
                 "type": "image",
                 "enabled": true,
                 "url": "apps/mobile/assets/images/icon.png",
                 "mode": "fill"
               },
-              "cornerRadius": 6
+              "cornerRadius": 18
             },
             {
               "type": "text",
@@ -67398,9 +67778,9 @@
               "fill": "#FFFFFF",
               "content": "TATAME",
               "fontFamily": "Sora",
-              "fontSize": 14,
+              "fontSize": 42,
               "fontWeight": "700",
-              "letterSpacing": -0.3
+              "letterSpacing": -0.9
             }
           ]
         },
@@ -67410,7 +67790,7 @@
           "name": "ts1",
           "width": "fill_container",
           "layout": "vertical",
-          "gap": 16,
+          "gap": 48,
           "alignItems": "center",
           "children": [
             {
@@ -67423,9 +67803,9 @@
               "lineHeight": 1.1,
               "textAlign": "center",
               "fontFamily": "Sora",
-              "fontSize": 40,
+              "fontSize": 119,
               "fontWeight": "800",
-              "letterSpacing": -1.5
+              "letterSpacing": -4.5
             },
             {
               "type": "text",
@@ -67437,7 +67817,7 @@
               "lineHeight": 1.5,
               "textAlign": "center",
               "fontFamily": "Inter",
-              "fontSize": 16,
+              "fontSize": 48,
               "fontWeight": "normal"
             }
           ]
@@ -67446,13 +67826,22 @@
           "type": "frame",
           "id": "KXock",
           "name": "Phone Mockup",
-          "width": 300,
-          "height": 700,
-          "fill": "$--bg-card",
-          "cornerRadius": 36,
+          "clip": true,
+          "width": 896,
+          "height": "fill_container",
+          "fill": [
+            "$--bg-card",
+            {
+              "type": "image",
+              "enabled": true,
+              "url": "Captura%20de%20Tela%202026-05-26%20a%CC%80s%2011.23.41.png",
+              "mode": "fill"
+            }
+          ],
+          "cornerRadius": 107,
           "stroke": {
             "align": "inside",
-            "thickness": 1,
+            "thickness": 3,
             "fill": "$--border-default"
           },
           "effect": {
@@ -67461,9 +67850,9 @@
             "color": "#A078E830",
             "offset": {
               "x": 0,
-              "y": 20
+              "y": 60
             },
-            "blur": 60
+            "blur": 179
           }
         }
       ]
@@ -67471,12 +67860,12 @@
     {
       "type": "frame",
       "id": "j5oBB",
-      "x": -493,
-      "y": 20890,
+      "x": -177,
+      "y": 23643,
       "name": "APP-STORE-02: Pagamentos",
       "clip": true,
-      "width": 430,
-      "height": 932,
+      "width": 1284,
+      "height": 2778,
       "fill": {
         "type": "gradient",
         "gradientType": "linear",
@@ -67497,12 +67886,12 @@
         ]
       },
       "layout": "vertical",
-      "gap": 28,
+      "gap": 84,
       "padding": [
-        80,
-        36,
+        239,
+        107,
         0,
-        36
+        107
       ],
       "alignItems": "center",
       "children": [
@@ -67510,14 +67899,14 @@
           "type": "frame",
           "id": "KeDRo",
           "name": "Logo",
-          "gap": 8,
+          "gap": 24,
           "alignItems": "center",
           "children": [
             {
               "type": "frame",
               "id": "IaATy",
-              "width": 28,
-              "height": 28,
+              "width": 84,
+              "height": 84,
               "fill": [
                 "#FFFFFF",
                 {
@@ -67527,7 +67916,7 @@
                   "mode": "fill"
                 }
               ],
-              "cornerRadius": 6
+              "cornerRadius": 18
             },
             {
               "type": "text",
@@ -67535,9 +67924,9 @@
               "fill": "#FFFFFF",
               "content": "TATAME",
               "fontFamily": "Sora",
-              "fontSize": 14,
+              "fontSize": 42,
               "fontWeight": "700",
-              "letterSpacing": -0.3
+              "letterSpacing": -0.9
             }
           ]
         },
@@ -67547,7 +67936,7 @@
           "name": "ts2",
           "width": "fill_container",
           "layout": "vertical",
-          "gap": 16,
+          "gap": 48,
           "alignItems": "center",
           "children": [
             {
@@ -67560,9 +67949,9 @@
               "lineHeight": 1.1,
               "textAlign": "center",
               "fontFamily": "Sora",
-              "fontSize": 40,
+              "fontSize": 119,
               "fontWeight": "800",
-              "letterSpacing": -1.5
+              "letterSpacing": -4.5
             },
             {
               "type": "text",
@@ -67574,7 +67963,7 @@
               "lineHeight": 1.5,
               "textAlign": "center",
               "fontFamily": "Inter",
-              "fontSize": 16,
+              "fontSize": 48,
               "fontWeight": "normal"
             }
           ]
@@ -67583,13 +67972,22 @@
           "type": "frame",
           "id": "zD5i5",
           "name": "Phone Mockup",
-          "width": 300,
-          "height": 700,
-          "fill": "$--bg-page",
-          "cornerRadius": 36,
+          "clip": true,
+          "width": 896,
+          "height": "fill_container",
+          "fill": [
+            "$--bg-page",
+            {
+              "type": "image",
+              "enabled": true,
+              "url": "Captura%20de%20Tela%202026-05-26%20a%CC%80s%2011.35.04.png",
+              "mode": "fill"
+            }
+          ],
+          "cornerRadius": 107,
           "stroke": {
             "align": "inside",
-            "thickness": 1,
+            "thickness": 3,
             "fill": "#FFFFFF20"
           },
           "effect": {
@@ -67598,9 +67996,9 @@
             "color": "#00000040",
             "offset": {
               "x": 0,
-              "y": 20
+              "y": 60
             },
-            "blur": 60
+            "blur": 179
           }
         }
       ]
@@ -67608,20 +68006,20 @@
     {
       "type": "frame",
       "id": "mheBc",
-      "x": -3,
-      "y": 20890,
+      "x": 1157,
+      "y": 23643,
       "name": "APP-STORE-03: Gestao de Membros",
       "clip": true,
-      "width": 430,
-      "height": 932,
+      "width": 1284,
+      "height": 2778,
       "fill": "$--bg-page",
       "layout": "vertical",
-      "gap": 28,
+      "gap": 84,
       "padding": [
-        80,
-        36,
+        239,
+        107,
         0,
-        36
+        107
       ],
       "alignItems": "center",
       "children": [
@@ -67629,21 +68027,21 @@
           "type": "frame",
           "id": "no31j",
           "name": "Logo",
-          "gap": 8,
+          "gap": 24,
           "alignItems": "center",
           "children": [
             {
               "type": "frame",
               "id": "kIEbH",
-              "width": 28,
-              "height": 28,
+              "width": 84,
+              "height": 84,
               "fill": {
                 "type": "image",
                 "enabled": true,
                 "url": "apps/mobile/assets/images/icon.png",
                 "mode": "fill"
               },
-              "cornerRadius": 6
+              "cornerRadius": 18
             },
             {
               "type": "text",
@@ -67651,9 +68049,9 @@
               "fill": "#FFFFFF",
               "content": "TATAME",
               "fontFamily": "Sora",
-              "fontSize": 14,
+              "fontSize": 42,
               "fontWeight": "700",
-              "letterSpacing": -0.3
+              "letterSpacing": -0.9
             }
           ]
         },
@@ -67663,7 +68061,7 @@
           "name": "ts3",
           "width": "fill_container",
           "layout": "vertical",
-          "gap": 16,
+          "gap": 48,
           "alignItems": "center",
           "children": [
             {
@@ -67676,9 +68074,9 @@
               "lineHeight": 1.1,
               "textAlign": "center",
               "fontFamily": "Sora",
-              "fontSize": 40,
+              "fontSize": 119,
               "fontWeight": "800",
-              "letterSpacing": -1.5
+              "letterSpacing": -4.5
             },
             {
               "type": "text",
@@ -67690,7 +68088,7 @@
               "lineHeight": 1.5,
               "textAlign": "center",
               "fontFamily": "Inter",
-              "fontSize": 16,
+              "fontSize": 48,
               "fontWeight": "normal"
             }
           ]
@@ -67699,13 +68097,22 @@
           "type": "frame",
           "id": "W60TFj",
           "name": "Phone Mockup",
-          "width": 300,
-          "height": 700,
-          "fill": "$--bg-card",
-          "cornerRadius": 36,
+          "clip": true,
+          "width": 896,
+          "height": "fill_container",
+          "fill": [
+            "$--bg-card",
+            {
+              "type": "image",
+              "enabled": true,
+              "url": "Captura%20de%20Tela%202026-05-26%20a%CC%80s%2011.38.58.png",
+              "mode": "fill"
+            }
+          ],
+          "cornerRadius": 107,
           "stroke": {
             "align": "inside",
-            "thickness": 1,
+            "thickness": 3,
             "fill": "$--border-default"
           },
           "effect": {
@@ -67714,9 +68121,9 @@
             "color": "#A078E830",
             "offset": {
               "x": 0,
-              "y": 20
+              "y": 60
             },
-            "blur": 60
+            "blur": 179
           }
         }
       ]
@@ -67724,12 +68131,12 @@
     {
       "type": "frame",
       "id": "yi2Y8",
-      "x": 487,
-      "y": 20890,
+      "x": 2491,
+      "y": 23643,
       "name": "APP-STORE-04: Gestao Financeira",
       "clip": true,
-      "width": 430,
-      "height": 932,
+      "width": 1284,
+      "height": 2778,
       "fill": {
         "type": "gradient",
         "gradientType": "linear",
@@ -67750,12 +68157,12 @@
         ]
       },
       "layout": "vertical",
-      "gap": 28,
+      "gap": 84,
       "padding": [
-        80,
-        36,
+        239,
+        107,
         0,
-        36
+        107
       ],
       "alignItems": "center",
       "children": [
@@ -67763,14 +68170,14 @@
           "type": "frame",
           "id": "gFBB5",
           "name": "Logo",
-          "gap": 8,
+          "gap": 24,
           "alignItems": "center",
           "children": [
             {
               "type": "frame",
               "id": "hzVPr",
-              "width": 28,
-              "height": 28,
+              "width": 84,
+              "height": 84,
               "fill": [
                 "#FFFFFF",
                 {
@@ -67780,7 +68187,7 @@
                   "mode": "fill"
                 }
               ],
-              "cornerRadius": 6
+              "cornerRadius": 18
             },
             {
               "type": "text",
@@ -67788,9 +68195,9 @@
               "fill": "#FFFFFF",
               "content": "TATAME",
               "fontFamily": "Sora",
-              "fontSize": 14,
+              "fontSize": 42,
               "fontWeight": "700",
-              "letterSpacing": -0.3
+              "letterSpacing": -0.9
             }
           ]
         },
@@ -67800,7 +68207,7 @@
           "name": "ts4",
           "width": "fill_container",
           "layout": "vertical",
-          "gap": 16,
+          "gap": 48,
           "alignItems": "center",
           "children": [
             {
@@ -67813,9 +68220,9 @@
               "lineHeight": 1.1,
               "textAlign": "center",
               "fontFamily": "Sora",
-              "fontSize": 40,
+              "fontSize": 119,
               "fontWeight": "800",
-              "letterSpacing": -1.5
+              "letterSpacing": -4.5
             },
             {
               "type": "text",
@@ -67827,7 +68234,7 @@
               "lineHeight": 1.5,
               "textAlign": "center",
               "fontFamily": "Inter",
-              "fontSize": 16,
+              "fontSize": 48,
               "fontWeight": "normal"
             }
           ]
@@ -67836,13 +68243,13 @@
           "type": "frame",
           "id": "RXW6g",
           "name": "Phone Mockup",
-          "width": 300,
+          "width": 896,
           "height": 700,
           "fill": "$--bg-page",
-          "cornerRadius": 36,
+          "cornerRadius": 107,
           "stroke": {
             "align": "inside",
-            "thickness": 1,
+            "thickness": 3,
             "fill": "#FFFFFF20"
           },
           "effect": {
@@ -67851,9 +68258,9 @@
             "color": "#00000040",
             "offset": {
               "x": 0,
-              "y": 20
+              "y": 60
             },
-            "blur": 60
+            "blur": 179
           }
         }
       ]
@@ -67861,20 +68268,20 @@
     {
       "type": "frame",
       "id": "EEKl6",
-      "x": 977,
-      "y": 20890,
+      "x": 3825,
+      "y": 23643,
       "name": "APP-STORE-05: Check-in",
       "clip": true,
-      "width": 430,
-      "height": 932,
+      "width": 1284,
+      "height": 2778,
       "fill": "$--bg-page",
       "layout": "vertical",
-      "gap": 28,
+      "gap": 84,
       "padding": [
-        80,
-        36,
+        239,
+        107,
         0,
-        36
+        107
       ],
       "alignItems": "center",
       "children": [
@@ -67882,21 +68289,21 @@
           "type": "frame",
           "id": "f5Ucg",
           "name": "Logo",
-          "gap": 8,
+          "gap": 24,
           "alignItems": "center",
           "children": [
             {
               "type": "frame",
               "id": "P90Lg",
-              "width": 28,
-              "height": 28,
+              "width": 84,
+              "height": 84,
               "fill": {
                 "type": "image",
                 "enabled": true,
                 "url": "apps/mobile/assets/images/icon.png",
                 "mode": "fill"
               },
-              "cornerRadius": 6
+              "cornerRadius": 18
             },
             {
               "type": "text",
@@ -67904,9 +68311,9 @@
               "fill": "#FFFFFF",
               "content": "TATAME",
               "fontFamily": "Sora",
-              "fontSize": 14,
+              "fontSize": 42,
               "fontWeight": "700",
-              "letterSpacing": -0.3
+              "letterSpacing": -0.9
             }
           ]
         },
@@ -67916,7 +68323,7 @@
           "name": "ts5",
           "width": "fill_container",
           "layout": "vertical",
-          "gap": 16,
+          "gap": 48,
           "alignItems": "center",
           "children": [
             {
@@ -67929,9 +68336,9 @@
               "lineHeight": 1.1,
               "textAlign": "center",
               "fontFamily": "Sora",
-              "fontSize": 40,
+              "fontSize": 119,
               "fontWeight": "800",
-              "letterSpacing": -1.5
+              "letterSpacing": -4.5
             },
             {
               "type": "text",
@@ -67943,7 +68350,7 @@
               "lineHeight": 1.5,
               "textAlign": "center",
               "fontFamily": "Inter",
-              "fontSize": 16,
+              "fontSize": 48,
               "fontWeight": "normal"
             }
           ]
@@ -67952,13 +68359,22 @@
           "type": "frame",
           "id": "On6Cy",
           "name": "Phone Mockup",
-          "width": 300,
-          "height": 700,
-          "fill": "$--bg-card",
-          "cornerRadius": 36,
+          "clip": true,
+          "width": 896,
+          "height": "fill_container",
+          "fill": [
+            "$--bg-card",
+            {
+              "type": "image",
+              "enabled": true,
+              "url": "Captura%20de%20Tela%202026-05-26%20a%CC%80s%2011.40.27.png",
+              "mode": "fill"
+            }
+          ],
+          "cornerRadius": 107,
           "stroke": {
             "align": "inside",
-            "thickness": 1,
+            "thickness": 3,
             "fill": "$--border-default"
           },
           "effect": {
@@ -67967,9 +68383,9 @@
             "color": "#A078E830",
             "offset": {
               "x": 0,
-              "y": 20
+              "y": 60
             },
-            "blur": 60
+            "blur": 179
           }
         }
       ]
@@ -67977,12 +68393,12 @@
     {
       "type": "frame",
       "id": "ly93Z",
-      "x": 1467,
-      "y": 20890,
+      "x": 5159,
+      "y": 23643,
       "name": "APP-STORE-06: Trial 30 dias",
       "clip": true,
-      "width": 430,
-      "height": 932,
+      "width": 1284,
+      "height": 2778,
       "fill": {
         "type": "gradient",
         "gradientType": "linear",
@@ -68003,12 +68419,12 @@
         ]
       },
       "layout": "vertical",
-      "gap": 28,
+      "gap": 84,
       "padding": [
-        80,
-        36,
+        239,
+        107,
         0,
-        36
+        107
       ],
       "alignItems": "center",
       "children": [
@@ -68016,14 +68432,14 @@
           "type": "frame",
           "id": "j1hV8",
           "name": "Logo",
-          "gap": 8,
+          "gap": 24,
           "alignItems": "center",
           "children": [
             {
               "type": "frame",
               "id": "qZY7r",
-              "width": 28,
-              "height": 28,
+              "width": 84,
+              "height": 84,
               "fill": [
                 "#FFFFFF",
                 {
@@ -68033,7 +68449,7 @@
                   "mode": "fill"
                 }
               ],
-              "cornerRadius": 6
+              "cornerRadius": 18
             },
             {
               "type": "text",
@@ -68041,9 +68457,9 @@
               "fill": "#FFFFFF",
               "content": "TATAME",
               "fontFamily": "Sora",
-              "fontSize": 14,
+              "fontSize": 42,
               "fontWeight": "700",
-              "letterSpacing": -0.3
+              "letterSpacing": -0.9
             }
           ]
         },
@@ -68053,7 +68469,7 @@
           "name": "ts6",
           "width": "fill_container",
           "layout": "vertical",
-          "gap": 16,
+          "gap": 48,
           "alignItems": "center",
           "children": [
             {
@@ -68066,9 +68482,9 @@
               "lineHeight": 1.1,
               "textAlign": "center",
               "fontFamily": "Sora",
-              "fontSize": 40,
+              "fontSize": 119,
               "fontWeight": "800",
-              "letterSpacing": -1.5
+              "letterSpacing": -4.5
             },
             {
               "type": "text",
@@ -68080,7 +68496,7 @@
               "lineHeight": 1.5,
               "textAlign": "center",
               "fontFamily": "Inter",
-              "fontSize": 16,
+              "fontSize": 48,
               "fontWeight": "normal"
             }
           ]
@@ -68089,13 +68505,22 @@
           "type": "frame",
           "id": "zhroU",
           "name": "Phone Mockup",
-          "width": 300,
-          "height": 700,
-          "fill": "$--bg-page",
-          "cornerRadius": 36,
+          "clip": true,
+          "width": 896,
+          "height": "fill_container",
+          "fill": [
+            "$--bg-page",
+            {
+              "type": "image",
+              "enabled": true,
+              "url": "Captura%20de%20Tela%202026-05-26%20a%CC%80s%2011.40.04.png",
+              "mode": "fill"
+            }
+          ],
+          "cornerRadius": 107,
           "stroke": {
             "align": "inside",
-            "thickness": 1,
+            "thickness": 3,
             "fill": "#FFFFFF20"
           },
           "effect": {
@@ -68104,9 +68529,9 @@
             "color": "#00000040",
             "offset": {
               "x": 0,
-              "y": 20
+              "y": 60
             },
-            "blur": 60
+            "blur": 179
           }
         }
       ]
@@ -81300,6 +81725,76 @@
           ]
         }
       ]
+    },
+    {
+      "type": "rectangle",
+      "id": "EBffr",
+      "x": -2862,
+      "y": 21258,
+      "fill": {
+        "type": "image",
+        "enabled": true,
+        "url": "Captura%20de%20Tela%202026-05-26%20a%CC%80s%2011.23.41.png",
+        "mode": "fill"
+      },
+      "width": 387,
+      "height": 777
+    },
+    {
+      "type": "rectangle",
+      "id": "AfGMW",
+      "x": -2440,
+      "y": 21258,
+      "fill": {
+        "type": "image",
+        "enabled": true,
+        "url": "Captura%20de%20Tela%202026-05-26%20a%CC%80s%2011.35.04.png",
+        "mode": "fill"
+      },
+      "width": 387,
+      "height": 777
+    },
+    {
+      "type": "rectangle",
+      "id": "ZdShB",
+      "x": -2020,
+      "y": 21258,
+      "fill": {
+        "type": "image",
+        "enabled": true,
+        "url": "Captura%20de%20Tela%202026-05-26%20a%CC%80s%2011.38.58.png",
+        "mode": "fill"
+      },
+      "width": 387,
+      "height": 777
+    },
+    {
+      "type": "rectangle",
+      "id": "oG01S",
+      "x": -2862,
+      "y": 22100,
+      "fill": {
+        "type": "image",
+        "enabled": true,
+        "url": "Captura%20de%20Tela%202026-05-26%20a%CC%80s%2011.40.04.png",
+        "mode": "fill"
+      },
+      "width": 387,
+      "height": 777
+    },
+    {
+      "type": "rectangle",
+      "id": "SamiM",
+      "x": -2440,
+      "y": 22100,
+      "fill": {
+        "type": "image",
+        "enabled": true,
+        "url": "Captura%20de%20Tela%202026-05-26%20a%CC%80s%2011.40.27.png",
+        "mode": "fill"
+      },
+      "width": 387,
+      "height": 777
     }
   ],
   "variables": {
