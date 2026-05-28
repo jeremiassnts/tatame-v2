@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Megaphone,
   UserCheck,
+  Youtube,
 } from "lucide-react-native";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -132,6 +133,12 @@ export default function MoreMenuScreen() {
             title="Notificações"
             subtitle="Gerencie suas notificações"
             onPress={() => router.push("/(app)/notification-preferences")}
+          />
+          <MenuItem
+            icon={<Youtube size={18} color={ACCENT} />}
+            title="Tutoriais"
+            subtitle="Vídeos de ajuda e suporte"
+            onPress={() => router.push("/(app)/(manager)/(more)/tutorials")}
           />
         </View>
 

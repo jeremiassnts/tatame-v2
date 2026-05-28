@@ -7,6 +7,7 @@ export default function MoreLayout() {
       <Stack.Screen name="announcements" />
       <Stack.Screen name="create-announcement" />
       <Stack.Screen name="announcement/[id]" />
+      <Stack.Screen name="tutorials" />
     </Stack>
   );
 }
