@@ -5,6 +5,7 @@ import {
   CreditCard,
   Users,
   BarChart3,
+  Baby,
   Rocket,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -40,6 +41,12 @@ const features: { icon: LucideIcon; title: string; description: string }[] = [
     title: "Gestão de membros",
     description:
       "Aprovação de novos membros, perfis detalhados e controle de instrutores e alunos.",
+  },
+  {
+    icon: Baby,
+    title: "Dependentes e responsáveis",
+    description:
+      "Pais e responsáveis acompanham seus filhos pelo app, com check-in, graduações e assinatura vinculados.",
   },
   {
     icon: BarChart3,
