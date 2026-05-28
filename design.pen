@@ -70715,6 +70715,87 @@
                       "fill": "#525252"
                     }
                   ]
+                },
+                {
+                  "type": "rectangle",
+                  "id": "UzwOq",
+                  "name": "divider",
+                  "fill": "#2A2A2A",
+                  "width": "fill_container",
+                  "height": 1
+                },
+                {
+                  "type": "frame",
+                  "id": "KZHFy",
+                  "name": "MenuItem Tutoriais",
+                  "width": "fill_container",
+                  "gap": 14,
+                  "padding": 16,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "S3L1Xv",
+                      "name": "Icon Wrap",
+                      "width": 42,
+                      "height": 42,
+                      "fill": "#A078E820",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon_font",
+                          "id": "k6JBE",
+                          "width": 20,
+                          "height": 20,
+                          "iconFontName": "youtube",
+                          "iconFontFamily": "lucide",
+                          "fill": "#A078E8"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "nieJO",
+                      "name": "Text Wrap",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 2,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "dXVIn",
+                          "name": "Title",
+                          "fill": "#FFFFFF",
+                          "content": "Tutoriais",
+                          "fontFamily": "Inter",
+                          "fontSize": 15,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "nYCHP",
+                          "name": "Subtitle",
+                          "fill": "#8A8A8A",
+                          "content": "Vídeos de ajuda e suporte",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "icon_font",
+                      "id": "PfzWZ",
+                      "width": 18,
+                      "height": 18,
+                      "iconFontName": "chevron-right",
+                      "iconFontFamily": "lucide",
+                      "fill": "#525252"
+                    }
+                  ]
                 }
               ]
             },
@@ -81795,6 +81876,706 @@
       },
       "width": 387,
       "height": 777
+    },
+    {
+      "type": "frame",
+      "id": "ArS5l",
+      "x": 12272,
+      "y": 3324,
+      "name": "M-MGR-23: Tutorials List",
+      "clip": true,
+      "width": 402,
+      "height": 874,
+      "fill": "#0C0C0C",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "FjLny",
+          "name": "Status Bar",
+          "width": "fill_container",
+          "height": 62,
+          "padding": [
+            0,
+            24
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "gR9p4",
+              "fill": "#FFFFFF",
+              "content": "9:41",
+              "fontFamily": "Inter",
+              "fontSize": 16,
+              "fontWeight": "600"
+            },
+            {
+              "type": "frame",
+              "id": "l1V2YZ",
+              "name": "ri",
+              "gap": 6,
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "FUIX2",
+                  "width": 16,
+                  "height": 16,
+                  "iconFontName": "signal",
+                  "iconFontFamily": "lucide",
+                  "fill": "#FFFFFF"
+                },
+                {
+                  "type": "icon_font",
+                  "id": "NbQbN",
+                  "width": 16,
+                  "height": 16,
+                  "iconFontName": "wifi",
+                  "iconFontFamily": "lucide",
+                  "fill": "#FFFFFF"
+                },
+                {
+                  "type": "icon_font",
+                  "id": "ZNO2B",
+                  "width": 16,
+                  "height": 16,
+                  "iconFontName": "battery-full",
+                  "iconFontFamily": "lucide",
+                  "fill": "#FFFFFF"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "LRnnK",
+          "name": "Content Wrapper",
+          "width": "fill_container",
+          "height": "fill_container",
+          "layout": "vertical",
+          "gap": 20,
+          "padding": [
+            8,
+            24,
+            24,
+            24
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "NlRXy",
+              "name": "Nav Row",
+              "width": "fill_container",
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "egxa7",
+                  "name": "backBtn",
+                  "width": 40,
+                  "height": 40,
+                  "fill": "#1A1A1A",
+                  "cornerRadius": 12,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#2A2A2A"
+                  },
+                  "layout": "vertical",
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "lszAM",
+                      "width": 20,
+                      "height": 20,
+                      "iconFontName": "arrow-left",
+                      "iconFontFamily": "lucide",
+                      "fill": "#FFFFFF"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "iRtnZ",
+                  "fill": "#FFFFFF",
+                  "content": "Tutoriais",
+                  "fontFamily": "Sora",
+                  "fontSize": 18,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "frame",
+                  "id": "ztlLs",
+                  "name": "navSpacer",
+                  "width": 40,
+                  "height": 40
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "c3V637",
+              "name": "Counter",
+              "fill": "#ABABAB",
+              "content": "4 vídeos disponíveis",
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "500"
+            },
+            {
+              "type": "frame",
+              "id": "V0vrV6",
+              "name": "Tutorial List",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 12,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "IzqAw",
+                  "name": "Tutorial Card",
+                  "clip": true,
+                  "width": "fill_container",
+                  "fill": "#1A1A1A",
+                  "cornerRadius": 16,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#2A2A2A"
+                  },
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "lAR13",
+                      "name": "Thumbnail",
+                      "width": "fill_container",
+                      "height": 180,
+                      "fill": {
+                        "type": "gradient",
+                        "gradientType": "linear",
+                        "enabled": true,
+                        "rotation": 135,
+                        "size": {
+                          "height": 1
+                        },
+                        "colors": [
+                          {
+                            "color": "#2A2A2A",
+                            "position": 0
+                          },
+                          {
+                            "color": "#1A1A1A",
+                            "position": 1
+                          }
+                        ]
+                      },
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "IERHH",
+                          "layoutPosition": "absolute",
+                          "x": 152,
+                          "y": 66,
+                          "name": "Play Button",
+                          "width": 48,
+                          "height": 48,
+                          "fill": "#A078E8",
+                          "cornerRadius": 24,
+                          "layout": "vertical",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon_font",
+                              "id": "NvwC2",
+                              "width": 22,
+                              "height": 22,
+                              "iconFontName": "play",
+                              "iconFontFamily": "lucide",
+                              "fill": "#FFFFFF"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "gZvZA",
+                          "layoutPosition": "absolute",
+                          "x": 296,
+                          "y": 148,
+                          "name": "Duration Badge",
+                          "fill": "#000000CC",
+                          "cornerRadius": 6,
+                          "padding": [
+                            4,
+                            8
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "tATBe",
+                              "name": "Duration",
+                              "fill": "#FFFFFF",
+                              "content": "3:42",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "U4zHm",
+                      "name": "Card Body",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 16,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "k7bB1",
+                          "name": "Title",
+                          "fill": "#FFFFFF",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Como cadastrar novos alunos",
+                          "fontFamily": "Sora",
+                          "fontSize": 15,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "Q8S4Mx",
+                          "name": "Description",
+                          "fill": "#8A8A8A",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Aprenda o passo a passo para adicionar alunos, preencher dados e ativar matrículas...",
+                          "lineHeight": 1.4,
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "P7ZB4j",
+                  "name": "Tutorial Card",
+                  "clip": true,
+                  "width": "fill_container",
+                  "fill": "#1A1A1A",
+                  "cornerRadius": 16,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#2A2A2A"
+                  },
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "WQ2om",
+                      "name": "Thumbnail",
+                      "width": "fill_container",
+                      "height": 180,
+                      "fill": {
+                        "type": "gradient",
+                        "gradientType": "linear",
+                        "enabled": true,
+                        "rotation": 135,
+                        "size": {
+                          "height": 1
+                        },
+                        "colors": [
+                          {
+                            "color": "#2A2A2A",
+                            "position": 0
+                          },
+                          {
+                            "color": "#1A1A1A",
+                            "position": 1
+                          }
+                        ]
+                      },
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "j9yVx",
+                          "layoutPosition": "absolute",
+                          "x": 152,
+                          "y": 66,
+                          "name": "Play Button",
+                          "width": 48,
+                          "height": 48,
+                          "fill": "#A078E8",
+                          "cornerRadius": 24,
+                          "layout": "vertical",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon_font",
+                              "id": "sCjNT",
+                              "width": 22,
+                              "height": 22,
+                              "iconFontName": "play",
+                              "iconFontFamily": "lucide",
+                              "fill": "#FFFFFF"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "VOYFL",
+                          "layoutPosition": "absolute",
+                          "x": 296,
+                          "y": 148,
+                          "name": "Duration Badge",
+                          "fill": "#000000CC",
+                          "cornerRadius": 6,
+                          "padding": [
+                            4,
+                            8
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "yZlAx",
+                              "name": "Duration",
+                              "fill": "#FFFFFF",
+                              "content": "5:18",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "KhM1H",
+                      "name": "Card Body",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 16,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "awzc9",
+                          "name": "Title",
+                          "fill": "#FFFFFF",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Gerenciando planos e mensalidades",
+                          "fontFamily": "Sora",
+                          "fontSize": 15,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "odnOo",
+                          "name": "Description",
+                          "fill": "#8A8A8A",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Veja como criar planos, configurar valores e acompanhar pagamentos dos alunos...",
+                          "lineHeight": 1.4,
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ojGvM",
+                  "name": "Tutorial Card",
+                  "clip": true,
+                  "width": "fill_container",
+                  "fill": "#1A1A1A",
+                  "cornerRadius": 16,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#2A2A2A"
+                  },
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "lFp8b",
+                      "name": "Thumbnail",
+                      "width": "fill_container",
+                      "height": 180,
+                      "fill": {
+                        "type": "gradient",
+                        "gradientType": "linear",
+                        "enabled": true,
+                        "rotation": 135,
+                        "size": {
+                          "height": 1
+                        },
+                        "colors": [
+                          {
+                            "color": "#2A2A2A",
+                            "position": 0
+                          },
+                          {
+                            "color": "#1A1A1A",
+                            "position": 1
+                          }
+                        ]
+                      },
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "c4Nqq",
+                          "layoutPosition": "absolute",
+                          "x": 152,
+                          "y": 66,
+                          "name": "Play Button",
+                          "width": 48,
+                          "height": 48,
+                          "fill": "#A078E8",
+                          "cornerRadius": 24,
+                          "layout": "vertical",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon_font",
+                              "id": "vQFBB",
+                              "width": 22,
+                              "height": 22,
+                              "iconFontName": "play",
+                              "iconFontFamily": "lucide",
+                              "fill": "#FFFFFF"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "PSjfR",
+                          "layoutPosition": "absolute",
+                          "x": 296,
+                          "y": 148,
+                          "name": "Duration Badge",
+                          "fill": "#000000CC",
+                          "cornerRadius": 6,
+                          "padding": [
+                            4,
+                            8
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "NMIi4",
+                              "name": "Duration",
+                              "fill": "#FFFFFF",
+                              "content": "4:55",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "S2zse",
+                      "name": "Card Body",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 16,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "euHhM",
+                          "name": "Title",
+                          "fill": "#FFFFFF",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Criando e editando aulas na agenda",
+                          "fontFamily": "Sora",
+                          "fontSize": 15,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "UdhMu",
+                          "name": "Description",
+                          "fill": "#8A8A8A",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Entenda como montar sua grade de horários, criar aulas recorrentes e gerenciar turmas...",
+                          "lineHeight": 1.4,
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "uVUaZ",
+                  "name": "Tutorial Card",
+                  "clip": true,
+                  "width": "fill_container",
+                  "fill": "#1A1A1A",
+                  "cornerRadius": 16,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#2A2A2A"
+                  },
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "L3ZYT",
+                      "name": "Thumbnail",
+                      "width": "fill_container",
+                      "height": 180,
+                      "fill": {
+                        "type": "gradient",
+                        "gradientType": "linear",
+                        "enabled": true,
+                        "rotation": 135,
+                        "size": {
+                          "height": 1
+                        },
+                        "colors": [
+                          {
+                            "color": "#2A2A2A",
+                            "position": 0
+                          },
+                          {
+                            "color": "#1A1A1A",
+                            "position": 1
+                          }
+                        ]
+                      },
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "MPJmr",
+                          "layoutPosition": "absolute",
+                          "x": 152,
+                          "y": 66,
+                          "name": "Play Button",
+                          "width": 48,
+                          "height": 48,
+                          "fill": "#A078E8",
+                          "cornerRadius": 24,
+                          "layout": "vertical",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon_font",
+                              "id": "BGtJc",
+                              "width": 22,
+                              "height": 22,
+                              "iconFontName": "play",
+                              "iconFontFamily": "lucide",
+                              "fill": "#FFFFFF"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "o8Ve3T",
+                          "layoutPosition": "absolute",
+                          "x": 296,
+                          "y": 148,
+                          "name": "Duration Badge",
+                          "fill": "#000000CC",
+                          "cornerRadius": 6,
+                          "padding": [
+                            4,
+                            8
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "qLNVo",
+                              "name": "Duration",
+                              "fill": "#FFFFFF",
+                              "content": "6:30",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "pHbgn",
+                      "name": "Card Body",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 16,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "wZgSL",
+                          "name": "Title",
+                          "fill": "#FFFFFF",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Relatórios financeiros e métricas",
+                          "fontFamily": "Sora",
+                          "fontSize": 15,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "Vcuu6",
+                          "name": "Description",
+                          "fill": "#8A8A8A",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Saiba como acessar relatórios de receita, inadimplência e indicadores do seu negócio...",
+                          "lineHeight": 1.4,
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "variables": {
