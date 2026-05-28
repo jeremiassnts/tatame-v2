@@ -1,13 +1,13 @@
 import type { Belt, Role } from "@tatame/types";
-import { BELT_ORDER, MAX_STRIPES_BY_BELT } from "@tatame/config";
+import { BELT_ORDER, KIDS_BELT_ORDER, MAX_STRIPES_BY_BELT } from "@tatame/config";
 import { HttpError } from "../../lib/http-error.js";
 import type { IAcademyRepository } from "../academy/academy.repository.js";
 import type { IMembershipRepository } from "../membership/membership.repository.js";
 import type { NotificationDispatcher } from "../notification/notification-dispatcher.js";
 import type { BeltPromotionRow, IGraduationRepository } from "./graduation.repository.js";
 
-function beltIndex(belt: Belt): number {
-  return BELT_ORDER.indexOf(belt);
+function beltIndex(belt: Belt, order: readonly Belt[] = BELT_ORDER): number {
+  return order.indexOf(belt);
 }
 
 /** Valid (belt, stripes) ranges (Zod also enforces). */
@@ -24,10 +24,12 @@ export function assertValidBeltRank(belt: Belt, stripes: number): void {
 export function assertValidPromotion(
   from: { belt: Belt; stripes: number },
   to: { belt: Belt; stripes: number },
+  isDependent = false,
 ): void {
   assertValidBeltRank(to.belt, to.stripes);
-  const ib = beltIndex(from.belt);
-  const jb = beltIndex(to.belt);
+  const order = isDependent ? KIDS_BELT_ORDER : BELT_ORDER;
+  const ib = beltIndex(from.belt, order);
+  const jb = beltIndex(to.belt, order);
   if (jb > ib) {
     return;
   }
@@ -219,6 +221,7 @@ export class GraduationService {
     assertValidPromotion(
       { belt: current.belt as Belt, stripes: current.stripes },
       { belt: opts.belt, stripes: opts.stripes },
+      !!opts.dependentId,
     );
 
     const result = await this.graduationRepo.replaceCurrentPromotion({

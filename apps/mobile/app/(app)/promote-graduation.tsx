@@ -8,7 +8,6 @@ import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   Text,
@@ -202,29 +201,29 @@ export default function PromoteGraduationScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background pt-4" edges={["top", "bottom"]}>
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
+      <View style={{ paddingHorizontal: 24, paddingTop: 8 }}>
+        {/* Nav Row */}
+        <View className="flex-row items-center justify-between">
+          <Pressable
+            onPress={() => router.back()}
+            className="h-10 w-10 items-center justify-center rounded-xl border border-surface-border bg-surface"
+          >
+            <ChevronLeft size={20} color="#FFFFFF" />
+          </Pressable>
+          <Text className="font-poppins-bold text-lg text-primary">
+            {title}
+          </Text>
+          <View className="h-10 w-10" />
+        </View>
+      </View>
+      <KeyboardAvoidingView behavior="padding" className="flex-1">
         <ScrollView
           className="flex-1"
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingBottom: 24 }}
         >
-          <View style={{ paddingHorizontal: 24, paddingTop: 8, gap: 20 }}>
-            {/* Nav Row */}
-            <View className="flex-row items-center justify-between">
-              <Pressable
-                onPress={() => router.back()}
-                className="h-10 w-10 items-center justify-center rounded-xl border border-surface-border bg-surface"
-              >
-                <ChevronLeft size={20} color="#FFFFFF" />
-              </Pressable>
-              <Text className="font-poppins-bold text-lg text-primary">
-                {title}
-              </Text>
-              <View className="h-10 w-10" />
-            </View>
+          <View style={{ paddingHorizontal: 24, paddingTop: 20, gap: 20 }}>
 
             {/* Member Card */}
             <View

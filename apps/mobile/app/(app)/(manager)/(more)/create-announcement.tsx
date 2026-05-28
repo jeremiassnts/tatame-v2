@@ -15,7 +15,6 @@ import {
   Alert,
   Image,
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   Text,
@@ -114,28 +113,27 @@ export default function CreateAnnouncementScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
+      <View style={{ paddingHorizontal: 24, paddingTop: 24 }}>
+        {/* Header */}
+        <View className="flex-row items-center justify-between">
+          <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace("/(app)/(manager)/(more)/announcements")}>
+            <Text className="font-poppins text-sm" style={{ color: ACCENT }}>
+              ← Voltar
+            </Text>
+          </Pressable>
+          <Text className="font-poppins-semibold text-base text-primary">
+            {isEditing ? "Editar aviso" : "Novo aviso"}
+          </Text>
+          <View style={{ width: 60 }} />
+        </View>
+      </View>
+      <KeyboardAvoidingView behavior="padding" className="flex-1">
         <ScrollView
           className="flex-1"
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 32, gap: 24 }}>
-            {/* Header */}
-            <View className="flex-row items-center justify-between">
-              <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace("/(app)/(manager)/(more)/announcements")}>
-                <Text className="font-poppins text-sm" style={{ color: ACCENT }}>
-                  ← Voltar
-                </Text>
-              </Pressable>
-              <Text className="font-poppins-semibold text-base text-primary">
-                {isEditing ? "Editar aviso" : "Novo aviso"}
-              </Text>
-              <View style={{ width: 60 }} />
-            </View>
+          <View style={{ paddingHorizontal: 24, paddingTop: 20, paddingBottom: 32, gap: 24 }}>
 
             {/* Cover image */}
             <Pressable
