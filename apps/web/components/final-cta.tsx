@@ -18,10 +18,10 @@ export function FinalCta() {
             {/* Store icons */}
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/20 bg-white/10">
-                <Image src="/apple.svg" alt="iOS" width={20} height={20} />
+                <Image src="/apple.svg" alt="iOS" width={20} height={20} className="brightness-0 invert" />
               </div>
               <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/20 bg-white/10">
-                <Image src="/google.svg" alt="Android" width={20} height={20} />
+                <Image src="/google.svg" alt="Android" width={20} height={20} className="brightness-0 invert" />
               </div>
             </div>
 
