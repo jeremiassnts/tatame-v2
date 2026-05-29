@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { adminFetch } from "@/lib/api";
 
 export async function confirmTransfer(paymentIds: string[]): Promise<void> {
@@ -5,4 +6,5 @@ export async function confirmTransfer(paymentIds: string[]): Promise<void> {
     method: "PATCH",
     body: JSON.stringify({ paymentIds }),
   });
+  revalidatePath("/admin");
 }
