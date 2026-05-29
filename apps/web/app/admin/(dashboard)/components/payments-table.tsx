@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronDown, ChevronUp, ChevronsUpDown } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { confirmTransfer } from "../actions";
 
@@ -98,6 +99,7 @@ export function PaymentsTable({
   limit: number;
   offset: number;
 }) {
+  const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
 
@@ -174,6 +176,7 @@ export function PaymentsTable({
     startTransition(async () => {
       await confirmTransfer(ids);
       setSelected(new Set());
+      router.refresh();
     });
   }
 
@@ -185,6 +188,7 @@ export function PaymentsTable({
         next.delete(id);
         return next;
       });
+      router.refresh();
     });
   }
 
