@@ -10,8 +10,10 @@ import {
   ChevronRight,
   Megaphone,
   UserCheck,
+  MessageCircle,
+  Youtube,
 } from "lucide-react-native";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Linking, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const TEXT_SECONDARY = "#8A8A8A";
@@ -132,6 +134,22 @@ export default function MoreMenuScreen() {
             title="Notificações"
             subtitle="Gerencie suas notificações"
             onPress={() => router.push("/(app)/notification-preferences")}
+          />
+          <MenuItem
+            icon={<Youtube size={18} color={ACCENT} />}
+            title="Tutoriais"
+            subtitle="Vídeos de ajuda e suporte"
+            onPress={() => router.push("/(app)/(manager)/(more)/tutorials")}
+          />
+          <MenuItem
+            icon={<MessageCircle size={18} color={ACCENT} />}
+            title="Suporte"
+            subtitle="Fale conosco pelo WhatsApp"
+            onPress={() =>
+              Linking.openURL(
+                "https://wa.me/5579988566945?text=Ol%C3%A1!%20Preciso%20de%20ajuda%20com%20o%20app%20Tatame."
+              )
+            }
           />
         </View>
 

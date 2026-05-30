@@ -1,18 +1,6 @@
+import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import { AnimateOnScroll } from "./animate-on-scroll";
-
-function PlayStoreIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.199l2.302 2.302a1 1 0 0 1 0 1.38l-2.302 2.302L15.396 13l2.302-2.492zM5.864 3.458L16.8 9.79l-2.302 2.303-8.635-8.635z" />
-    </svg>
-  );
-}
 
 export function FinalCta() {
   return (
@@ -27,36 +15,24 @@ export function FinalCta() {
               Comece gratuitamente e veja a diferença em poucos dias. Sem cartão
               de crédito.
             </p>
-            <div className="flex flex-col gap-4 sm:flex-row">
-              <a
-                target="_blank"
-                href="https://ios.apptatame.com.br"
-                className="flex items-center gap-3 rounded-xl bg-white px-7 py-3.5 text-background transition-opacity hover:opacity-90"
-              >
-                <Image src="/apple.svg" alt="Apple" width={20} height={20} />
-                <div className="flex flex-col">
-                  <span className="text-[10px] leading-none">Baixar na</span>
-                  <span className="text-sm font-semibold leading-tight">
-                    App Store
-                  </span>
-                </div>
-              </a>
-              <a
-                target="_blank"
-                href="https://android.apptatame.com.br"
-                className="flex items-center gap-3 rounded-xl bg-white px-7 py-3.5 text-background transition-opacity hover:opacity-90"
-              >
-                <Image src="/google.svg" alt="Google Play" width={20} height={20} />
-                <div className="flex flex-col">
-                  <span className="text-[10px] leading-none">
-                    Disponível no
-                  </span>
-                  <span className="text-sm font-semibold leading-tight">
-                    Google Play
-                  </span>
-                </div>
-              </a>
+            {/* Store icons */}
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/20 bg-white/10">
+                <Image src="/apple.svg" alt="iOS" width={20} height={20} className="brightness-0 invert" />
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/20 bg-white/10">
+                <Image src="/google.svg" alt="Android" width={20} height={20} className="brightness-0 invert" />
+              </div>
             </div>
+
+            {/* CTA */}
+            <a
+              href="#precos"
+              className="flex items-center gap-2.5 rounded-xl bg-gradient-to-b from-primary to-primary-dark px-8 py-4 text-base font-semibold text-white transition-opacity hover:opacity-90"
+            >
+              Começar grátis
+              <ArrowRight className="h-5 w-5" />
+            </a>
           </div>
         </AnimateOnScroll>
       </div>

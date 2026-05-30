@@ -5,6 +5,9 @@ import {
   CreditCard,
   Users,
   BarChart3,
+  Baby,
+  Megaphone,
+  Smartphone,
   Rocket,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -40,6 +43,24 @@ const features: { icon: LucideIcon; title: string; description: string }[] = [
     title: "Gestão de membros",
     description:
       "Aprovação de novos membros, perfis detalhados e controle de instrutores e alunos.",
+  },
+  {
+    icon: Baby,
+    title: "Dependentes e responsáveis",
+    description:
+      "Pais e responsáveis acompanham seus filhos pelo app, com check-in, graduações e assinatura vinculados.",
+  },
+  {
+    icon: Megaphone,
+    title: "Painel de avisos",
+    description:
+      "Envie comunicados e avisos diretamente para alunos e instrutores pelo app, sem depender de grupos externos.",
+  },
+  {
+    icon: Smartphone,
+    title: "App para todos",
+    description:
+      "Disponível para iPhone e Android, com acesso dedicado para gestores, instrutores e alunos.",
   },
   {
     icon: BarChart3,

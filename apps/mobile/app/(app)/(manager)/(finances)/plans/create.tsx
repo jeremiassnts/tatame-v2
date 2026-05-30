@@ -247,9 +247,10 @@ export default function CreatePlanScreen() {
               ℹ️ Taxas de pagamento
             </Text>
             <Text className="font-poppins text-[11px] text-muted" style={{ lineHeight: 16 }}>
-              Pagamentos via cartão possuem uma taxa de 3,99% + R$0,39 por transação,
-              cobrada pela plataforma de pagamento (Stripe). Essa taxa não é do Tatame —
-              cobramos apenas a mensalidade da assinatura.
+              Pagamentos via cartão possuem uma taxa de 3,99% + R$0,39 por transação.
+              Pagamentos via Pix possuem uma taxa de R$0,80 por transação. Essas taxas
+              são cobradas pelo processador de pagamento, não pelo Tatame — cobramos
+              apenas a mensalidade da assinatura.
             </Text>
           </View>
         )}

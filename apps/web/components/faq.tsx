@@ -81,7 +81,7 @@ export function Faq() {
   const [openIndex, setOpenIndex] = useState(0);
 
   return (
-    <section className="px-6 py-16 md:px-20 md:py-[100px]">
+    <section id="duvidas" className="px-6 py-16 md:px-20 md:py-[100px]">
       <div className="mx-auto max-w-[1440px]">
         <AnimateOnScroll className="flex flex-col items-center gap-16">
           {/* Header */}

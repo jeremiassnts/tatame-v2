@@ -37,6 +37,12 @@ export function Header() {
           >
             Preços
           </a>
+          <a
+            href="/#duvidas"
+            className="text-[15px] font-medium text-text-secondary transition-colors hover:text-white"
+          >
+            Dúvidas
+          </a>
         </nav>
 
         {/* Mobile hamburger */}
@@ -58,18 +64,25 @@ export function Header() {
         <div className="border-t border-border bg-background px-6 pb-6 pt-4 md:hidden">
           <nav className="flex flex-col gap-4">
             <a
-              href="#recursos"
+              href="/#recursos"
               onClick={() => setMenuOpen(false)}
               className="text-[15px] font-medium text-text-secondary"
             >
               Recursos
             </a>
             <a
-              href="#precos"
+              href="/#precos"
               onClick={() => setMenuOpen(false)}
               className="text-[15px] font-medium text-text-secondary"
             >
               Preços
+            </a>
+            <a
+              href="/#duvidas"
+              onClick={() => setMenuOpen(false)}
+              className="text-[15px] font-medium text-text-secondary"
+            >
+              Dúvidas
             </a>
           </nav>
         </div>

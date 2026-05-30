@@ -2,7 +2,7 @@
   "expo": {
     "name": "Tatame",
     "slug": "tatame",
-    "version": "2.1.1",
+    "version": "2.1.2",
     "orientation": "portrait",
     "scheme": "tatame",
     "userInterfaceStyle": "dark",

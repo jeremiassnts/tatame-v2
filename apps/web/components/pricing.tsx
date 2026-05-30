@@ -11,6 +11,7 @@ const proPlan = {
     "Controle financeiro completo",
     "Receba pagamentos dos alunos no app (Pix e cartão)",
     "Acesso ilimitado de instrutores",
+    "Gestão de dependentes e responsáveis",
   ],
 };
 
@@ -77,7 +78,7 @@ export function Pricing() {
                 Começar teste grátis
               </a>
 
-              <p className="text-center text-sm text-text-muted">
+              <p className="text-center text-sm text-text-secondary">
                 Cancele a qualquer momento
               </p>
             </div>

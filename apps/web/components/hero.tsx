@@ -32,7 +32,7 @@ export function Hero() {
             href="#precos"
             className="flex items-center gap-2.5 rounded-xl bg-gradient-to-b from-primary to-primary-dark px-8 py-4 text-base font-semibold text-white transition-opacity hover:opacity-90"
           >
-            Assinar agora
+            Começar grátis
             <ArrowRight className="h-5 w-5" />
           </a>
         </AnimateOnScroll>
