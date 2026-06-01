@@ -1,33 +1,17 @@
 "use client";
 
 import { managerFetch } from "@/lib/manager-api";
-import { SignOutButton, useAuth, useClerk, useSignIn, useSignUp, useUser } from "@clerk/nextjs";
-import { ArrowRight, CheckCircle, Eye, EyeOff } from "lucide-react";
+import { SignOutButton, useAuth, useSignIn, useUser } from "@clerk/nextjs";
+import { ArrowRight, CheckCircle } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 
-type Stage = "form" | "verify" | "authenticated";
-
 export default function CadastroPage() {
-  const { signUp } = useSignUp();
   const { signIn } = useSignIn();
   const { user, isLoaded: userLoaded } = useUser();
   const { getToken } = useAuth();
-  const clerk = useClerk();
-
-  // Form fields
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-
-  // Verification
-  const [verificationCode, setVerificationCode] = useState("");
 
   // UI state
-  const [stage, setStage] = useState<Stage>("form");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const isLoaded = userLoaded;
@@ -56,105 +40,10 @@ export default function CadastroPage() {
     }
   }
 
-  // --- Email/password signup ---
-  async function handleCreateAccount(e: React.FormEvent) {
-    e.preventDefault();
-    if (!signUp) return;
-    setError("");
-    setLoading(true);
-
-    try {
-      await signUp.create({
-        firstName,
-        lastName,
-        emailAddress: email,
-        password,
-      });
-
-      await signUp.verifications.sendEmailCode();
-      setStage("verify");
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Erro ao criar conta");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // --- Email verification ---
-  async function handleVerify(e: React.FormEvent) {
-    e.preventDefault();
-    if (!signUp) return;
-    setError("");
-    setLoading(true);
-
-    try {
-      await signUp.verifications.verifyEmailCode({ code: verificationCode });
-
-      if (signUp.status === "complete") {
-        // Clerk will update the session; page will re-render with user present
-        window.location.reload();
-      } else {
-        setError("Verificação incompleta. Tente novamente.");
-      }
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Código inválido");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   if (!isLoaded) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      </div>
-    );
-  }
-
-  // --- Verification step ---
-  if (stage === "verify") {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <form
-          onSubmit={handleVerify}
-          className="flex w-full max-w-md flex-col items-center gap-8 rounded-[20px] border border-border bg-surface p-8 md:p-10"
-        >
-          {/* Logo */}
-          <LogoHeader subtitle="Verifique seu e-mail" />
-
-          <p className="text-center text-sm text-text-secondary">
-            Enviamos um código de verificação para{" "}
-            <span className="font-medium text-white">{email}</span>.
-          </p>
-
-          {/* Code input */}
-          <div className="flex w-full flex-col gap-1.5">
-            <label className="text-[13px] font-medium text-text-secondary">
-              Código de verificação
-            </label>
-            <input
-              type="text"
-              placeholder="000000"
-              value={verificationCode}
-              onChange={(e) => setVerificationCode(e.target.value)}
-              maxLength={6}
-              autoComplete="one-time-code"
-              className="h-[52px] w-full rounded-xl border border-border bg-background px-4 text-center text-lg tracking-[0.5em] text-text-primary placeholder:text-text-muted outline-none focus:border-primary"
-            />
-          </div>
-
-          {error && (
-            <p className="w-full text-center text-sm text-red-400">{error}</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading || verificationCode.length < 6}
-            className="h-[52px] w-full rounded-xl bg-gradient-to-b from-primary to-primary-dark text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-          >
-            {loading ? "Verificando..." : "Verificar e-mail"}
-          </button>
-        </form>
       </div>
     );
   }
@@ -189,100 +78,9 @@ export default function CadastroPage() {
         {/* Clerk bot protection captcha */}
         <div id="clerk-captcha" />
 
-        {/* Divider */}
-        <div className="flex w-full items-center gap-3">
-          <div className="h-px flex-1 bg-border" />
-          <span className="text-[13px] text-text-muted">ou</span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
-
-        {/* Email/password form */}
-        <form onSubmit={handleCreateAccount} className="flex w-full flex-col gap-4">
-          {/* Name row */}
-          <div className="flex gap-3">
-            <div className="flex flex-1 flex-col gap-1.5">
-              <label className="text-[13px] font-medium text-text-secondary">
-                Nome
-              </label>
-              <input
-                type="text"
-                placeholder="João"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                autoComplete="given-name"
-                className="h-[52px] w-full rounded-xl border border-border bg-background px-4 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-primary"
-              />
-            </div>
-            <div className="flex flex-1 flex-col gap-1.5">
-              <label className="text-[13px] font-medium text-text-secondary">
-                Sobrenome
-              </label>
-              <input
-                type="text"
-                placeholder="Silva"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                autoComplete="family-name"
-                className="h-[52px] w-full rounded-xl border border-border bg-background px-4 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-primary"
-              />
-            </div>
-          </div>
-
-          {/* Email */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[13px] font-medium text-text-secondary">
-              E-mail
-            </label>
-            <input
-              type="email"
-              placeholder="seu@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-              className="h-[52px] w-full rounded-xl border border-border bg-background px-4 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-primary"
-            />
-          </div>
-
-          {/* Password */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[13px] font-medium text-text-secondary">
-              Senha
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Mínimo 8 caracteres"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="new-password"
-                className="h-[52px] w-full rounded-xl border border-border bg-background px-4 pr-12 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-primary"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary"
-              >
-                {showPassword ? (
-                  <EyeOff className="h-5 w-5" />
-                ) : (
-                  <Eye className="h-5 w-5" />
-                )}
-              </button>
-            </div>
-          </div>
-
-          {error && (
-            <p className="text-center text-sm text-red-400">{error}</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading || !firstName || !email || !password}
-            className="mt-2 h-[52px] w-full rounded-xl bg-gradient-to-b from-primary to-primary-dark text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-          >
-            {loading ? "Criando conta..." : "Criar conta e assinar"}
-          </button>
-        </form>
+        {error && (
+          <p className="text-center text-sm text-red-400">{error}</p>
+        )}
 
         <p className="text-center text-[13px] text-text-muted">
           Ao criar sua conta, você concorda com nossos{" "}
