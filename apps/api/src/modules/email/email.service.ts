@@ -117,4 +117,15 @@ export class EmailService {
       `student-payment-received-${paymentId}`,
     );
   }
+
+  async sendAdminNewManager(
+    data: EmailJobMap["admin-new-manager"],
+    stripeSubscriptionId: string,
+  ) {
+    await this.enqueue(
+      "admin-new-manager",
+      data,
+      `admin-new-manager-${stripeSubscriptionId}`,
+    );
+  }
 }

@@ -16,3 +16,4 @@ export { MemberApproved, type MemberApprovedProps } from "./templates/member-app
 export { ManagerNewMember, type ManagerNewMemberProps } from "./templates/manager-new-member.js";
 export { StudentPaymentReceived, type StudentPaymentReceivedProps } from "./templates/student-payment-received.js";
 export { TrialEnding, type TrialEndingProps } from "./templates/trial-ending.js";
+export { AdminNewManager, type AdminNewManagerProps } from "./templates/admin-new-manager.js";

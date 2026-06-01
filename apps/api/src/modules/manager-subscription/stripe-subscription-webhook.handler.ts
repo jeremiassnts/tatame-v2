@@ -1,4 +1,5 @@
 import type Stripe from "stripe";
+import { loadEnv } from "@tatame/config";
 import { logger } from "../../lib/logger.js";
 import type { IManagerSubscriptionRepository } from "./manager-subscription.repository.js";
 import type { IAcademyRepository } from "../academy/academy.repository.js";
@@ -39,29 +40,29 @@ export class StripeSubscriptionWebhookHandler {
     switch (event.type) {
       case "customer.subscription.created":
         await this.onSubscriptionChange(
-          event.data.object as Stripe.Subscription,
+          event.data.object,
           true,
         );
         break;
       case "customer.subscription.updated":
         await this.onSubscriptionChange(
-          event.data.object as Stripe.Subscription,
+          event.data.object,
           false,
         );
         break;
       case "customer.subscription.deleted":
         await this.onSubscriptionDeleted(
-          event.data.object as Stripe.Subscription,
+          event.data.object,
         );
         break;
       case "invoice.paid":
-        await this.onInvoicePaid(event.data.object as Stripe.Invoice);
+        await this.onInvoicePaid(event.data.object);
         break;
       case "invoice.payment_failed":
-        await this.onPaymentFailed(event.data.object as Stripe.Invoice);
+        await this.onPaymentFailed(event.data.object);
         break;
       case "invoice.upcoming":
-        await this.onInvoiceUpcoming(event.data.object as Stripe.Invoice);
+        await this.onInvoiceUpcoming(event.data.object);
         break;
       default:
         logger.info(
@@ -169,6 +170,7 @@ export class StripeSubscriptionWebhookHandler {
           },
           sub.id,
         );
+        await this.notifyAdminNewManager(user.name, user.email, academy.name, sub.id);
       }
       return;
     }
@@ -193,11 +195,27 @@ export class StripeSubscriptionWebhookHandler {
         },
         sub.id,
       );
+      await this.notifyAdminNewManager(user.name, user.email, user.name, sub.id);
       logger.info(
         { userId: user.id },
         "[stripe-sub-webhook] pro-activated email sent",
       );
     }
+  }
+
+  private async notifyAdminNewManager(
+    managerName: string,
+    managerEmail: string,
+    academyName: string,
+    stripeSubscriptionId: string,
+  ): Promise<void> {
+    const adminEmail = loadEnv().ADMIN_EMAIL;
+    if (!adminEmail || !this.emailService) return;
+
+    await this.emailService.sendAdminNewManager(
+      { managerName, managerEmail, academyName, email: adminEmail },
+      stripeSubscriptionId,
+    );
   }
 
   private async onSubscriptionDeleted(

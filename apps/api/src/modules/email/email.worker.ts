@@ -1,4 +1,5 @@
 import {
+  AdminNewManager,
   InvoicePaid,
   ManagerNewMember,
   MemberApproved,
@@ -24,12 +25,13 @@ const subjectMap: Record<EmailJobName, (data: Record<string, unknown>) => string
   "payment-failed": () => "Falha no pagamento da sua assinatura",
   "pro-activated": () => "Bem-vindo ao plano Pro!",
   "subscription-canceled": () => "Assinatura cancelada",
-  "plan-enrolled": (d) => `Inscrição realizada — ${d.planName}`,
+  "plan-enrolled": (d) => `Inscrição realizada — ${String(d.planName)}`,
   "payment-confirmed": () => "Pagamento confirmado",
-  "member-approved": (d) => `Aprovado na ${d.academyName}!`,
+  "member-approved": (d) => `Aprovado na ${String(d.academyName)}!`,
   "manager-new-member": () => "Novo membro aprovado",
   "student-payment-received": () => "Pagamento de aluno recebido",
   "trial-ending": () => "Seu período de teste termina em breve",
+  "admin-new-manager": () => "Novo manager cadastrado",
 };
 
 type TemplateComponent = (props: Record<string, unknown>) => React.ReactElement;
@@ -45,6 +47,7 @@ const templateMap: Record<EmailJobName, TemplateComponent> = {
   "manager-new-member": ManagerNewMember as unknown as TemplateComponent,
   "student-payment-received": StudentPaymentReceived as unknown as TemplateComponent,
   "trial-ending": TrialEnding as unknown as TemplateComponent,
+  "admin-new-manager": AdminNewManager as unknown as TemplateComponent,
 };
 
 async function processEmailJob(job: Job): Promise<void> {
@@ -67,7 +70,7 @@ async function processEmailJob(job: Job): Promise<void> {
   }
 
   const html = await renderEmail(createElement(Template, templateProps));
-  const subject = subjectMap[jobName](job.data);
+  const subject = subjectMap[jobName](job.data as Record<string, unknown>);
 
   const { error } = await resend.emails.send({
     from: FROM,
