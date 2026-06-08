@@ -11,27 +11,27 @@ const faqItems = [
   {
     question: "Como funciona o período de teste?",
     answer:
-      "Você pode utilizar o plano Pro por 30 dias de forma gratuita, podendo cancelar a qualquer momento sem custos adicionais.",
+      "Você usa o plano Pro completo por 30 dias, sem pagar nada. Se não gostar, é só cancelar — sem multa, sem burocracia.",
   },
   {
     question: "O app funciona no celular?",
     answer:
-      "Sim, o app foi feito com foco em dispositivos móveis. Você pode baixar o app no Google Play ou na App Store.",
+      "Sim. O Tatame é um app nativo, feito para funcionar direto no celular. Disponível no Google Play e na App Store.",
   },
   {
     question: "Posso migrar dados de outro sistema?",
     answer:
-      "A princípio não temos essa funcionalidade, mas entre em contato conosco para avaliar a possibilidade de implementação.",
+      "Ainda não temos migração automática, mas nosso time pode ajudar caso a caso. Fale conosco pelo WhatsApp e a gente resolve junto.",
   },
   {
     question: "Preciso de conhecimento técnico para usar?",
     answer:
-      "Não, a plataforma é extremamente intuitiva e não requer conhecimento técnico para ser utilizada.",
+      "Não. Se você sabe usar WhatsApp, sabe usar o Tatame. A interface foi feita para ser simples desde o primeiro acesso.",
   },
   {
     question: "Meus alunos podem pagar diretamente no app?",
     answer:
-      "Sim. O aluno pode pagar diretamente pelo app via Pix ou cartão. O valor é repassado para a conta do gestor através de uma chave Pix que ele cadastra.",
+      "Sim. O aluno paga pelo app via Pix ou cartão, e o valor cai direto na sua conta através da chave Pix cadastrada.",
   }
 ];
 
@@ -93,8 +93,7 @@ export function Faq() {
               Perguntas frequentes
             </h2>
             <p className="text-center text-base leading-relaxed text-text-secondary md:text-lg md:leading-relaxed">
-              Tire suas dúvidas sobre o Tatame e como ele pode ajudar sua
-              academia.
+              O que donos de academia perguntam antes de começar.
             </p>
           </div>
 

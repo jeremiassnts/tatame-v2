@@ -20,8 +20,7 @@ export function Footer() {
               </span>
             </div>
             <p className="text-sm leading-relaxed text-text-secondary">
-              A plataforma completa para gestão de academias de Jiu-Jitsu
-              brasileiro.
+              Gestão simples para academias de Jiu-Jitsu.
             </p>
           </div>
 

@@ -4,15 +4,15 @@ import { TrackedLink } from "./tracked-link";
 
 const proPlan = {
   name: "Pro",
-  description: "Para academias que querem crescer",
+  description: "Tudo que você precisa para gerenciar sua academia sem dor de cabeça.",
   price: "R$ 49",
   features: [
-    "Alunos ilimitados",
-    "Agenda ilimitada",
-    "Controle financeiro completo",
-    "Receba pagamentos dos alunos no app (Pix e cartão)",
-    "Acesso ilimitado de instrutores",
-    "Gestão de dependentes e responsáveis",
+    "Cadastre quantos alunos quiser",
+    "Monte quantas turmas precisar",
+    "Saiba quanto entra e quanto sai",
+    "Receba pagamentos via Pix e cartão direto no app",
+    "Adicione todos os seus instrutores",
+    "Gerencie dependentes e responsáveis",
   ],
 };
 
@@ -30,10 +30,10 @@ export function Pricing() {
               PREÇOS
             </span>
             <h2 className="text-center font-[family-name:var(--font-sora)] text-[30px] font-extrabold tracking-[-1.5px] text-white md:text-[44px]">
-              Simples e transparente
+              Um plano. Tudo incluso.
             </h2>
             <p className="text-center text-base leading-relaxed text-text-secondary md:text-lg md:leading-relaxed">
-              Experimente grátis por 30 dias. Sem compromisso.
+              Teste grátis por 30 dias. Cancele quando quiser, sem perguntas.
             </p>
           </div>
 
@@ -79,11 +79,11 @@ export function Pricing() {
                 eventLabel="pricing_comecar_teste_gratis"
                 className="flex items-center justify-center rounded-xl py-3.5 text-[15px] font-semibold text-white transition-opacity hover:opacity-90 bg-gradient-to-b from-primary to-primary-dark"
               >
-                Começar teste grátis
+                Começar meu teste grátis
               </TrackedLink>
 
               <p className="text-center text-sm text-text-secondary">
-                Cancele a qualquer momento
+                Cancele quando quiser, sem burocracia
               </p>
             </div>
           </div>

@@ -20,34 +20,34 @@ const siteUrl = "https://apptatame.com.br";
 
 export const metadata: Metadata = {
   title: {
-    default: "Tatame — Gestão completa para academias de Jiu-Jitsu",
+    default: "Tatame — O app de gestão para academias de Jiu-Jitsu",
     template: "%s — Tatame",
   },
   description:
-    "Gerencie turmas, controle presenças, acompanhe graduações e pagamentos da sua academia de Jiu-Jitsu. App para gestores, instrutores e alunos.",
+    "Controle turmas, presenças, graduações e pagamentos da sua academia de Jiu-Jitsu em um único app. Teste grátis por 30 dias.",
   metadataBase: new URL(siteUrl),
   openGraph: {
     type: "website",
     locale: "pt_BR",
     url: siteUrl,
     siteName: "Tatame",
-    title: "Tatame — Gestão completa para academias de Jiu-Jitsu",
+    title: "Tatame — O app de gestão para academias de Jiu-Jitsu",
     description:
-      "Gerencie turmas, controle presenças, acompanhe graduações e pagamentos da sua academia de Jiu-Jitsu. App para gestores, instrutores e alunos.",
+      "Controle turmas, presenças, graduações e pagamentos da sua academia de Jiu-Jitsu em um único app. Teste grátis por 30 dias.",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Tatame — Gestão completa para academias de Jiu-Jitsu",
+        alt: "Tatame — O app de gestão para academias de Jiu-Jitsu",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Tatame — Gestão completa para academias de Jiu-Jitsu",
+    title: "Tatame — O app de gestão para academias de Jiu-Jitsu",
     description:
-      "Gerencie turmas, controle presenças, acompanhe graduações e pagamentos da sua academia de Jiu-Jitsu.",
+      "Controle turmas, presenças, graduações e pagamentos da sua academia de Jiu-Jitsu em um único app. Teste grátis por 30 dias.",
     images: ["/og-image.png"],
   },
   alternates: {

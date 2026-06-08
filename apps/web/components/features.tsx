@@ -18,55 +18,55 @@ const features: { icon: LucideIcon; title: string; description: string }[] = [
     icon: Calendar,
     title: "Agenda de aulas",
     description:
-      "Monte sua grade semanal com turmas recorrentes, instrutores e controle de capacidade por aula.",
+      "Crie sua grade uma vez e ela se repete toda semana. Defina instrutores, horários e capacidade por turma.",
   },
   {
     icon: UserCheck,
     title: "Check-in inteligente",
     description:
-      "Presenças com controle de capacidade, limite semanal e janela de horário automáticos.",
+      "Saiba exatamente quem treinou, quando e em qual turma. O app controla capacidade e limite semanal automaticamente.",
   },
   {
     icon: Award,
     title: "Graduações",
     description:
-      "Registre faixas e graus de cada aluno com histórico completo de promoções e observações.",
+      "Acompanhe a evolução de cada aluno com histórico completo de faixas, graus e observações de promoção.",
   },
   {
     icon: CreditCard,
     title: "Pagamentos",
     description:
-      "Controle de mensalidades, recebimento de pagamentos no app (Pix e cartão) e histórico financeiro completo.",
+      "Receba mensalidades diretamente no app via Pix ou cartão. Veja quem pagou, quem está atrasado e seu histórico financeiro completo.",
   },
   {
     icon: Users,
     title: "Gestão de membros",
     description:
-      "Aprovação de novos membros, perfis detalhados e controle de instrutores e alunos.",
+      "Aprove novos alunos, veja perfis detalhados e mantenha o controle de quem treina na sua academia.",
   },
   {
     icon: Baby,
     title: "Dependentes e responsáveis",
     description:
-      "Pais e responsáveis acompanham seus filhos pelo app, com check-in, graduações e assinatura vinculados.",
+      "Pais acompanham presenças e graduações dos filhos pelo próprio celular, com assinatura e check-in vinculados.",
   },
   {
     icon: Megaphone,
     title: "Painel de avisos",
     description:
-      "Envie comunicados e avisos diretamente para alunos e instrutores pelo app, sem depender de grupos externos.",
+      "Comunique-se com alunos e instrutores direto pelo app — sem depender de WhatsApp ou grupos externos.",
   },
   {
     icon: Smartphone,
     title: "App para todos",
     description:
-      "Disponível para iPhone e Android, com acesso dedicado para gestores, instrutores e alunos.",
+      "Cada perfil vê o que precisa: gestores administram, instrutores ensinam, alunos acompanham. iPhone e Android.",
   },
   {
     icon: BarChart3,
     title: "Relatórios",
     description:
-      "Acompanhe frequência, receita e crescimento da academia com dashboards visuais.",
+      "Veja a saúde da sua academia em números: frequência, receita e crescimento em dashboards visuais.",
   },
 ];
 
@@ -101,11 +101,11 @@ export function Features() {
               RECURSOS
             </span>
             <h2 className="text-center font-[family-name:var(--font-sora)] text-[30px] font-extrabold tracking-[-1.5px] text-white md:text-[44px]">
-              Tudo que sua academia precisa
+              Gerencie em minutos o que antes levava horas
             </h2>
             <p className="text-center text-base leading-relaxed text-text-secondary md:text-lg md:leading-relaxed">
-              Simplifique a gestão da sua academia com ferramentas pensadas para
-              o dia a dia do Jiu-Jitsu.
+              Cada recurso foi pensado para a rotina real de quem vive o
+              Jiu-Jitsu.
             </p>
           </div>
 
@@ -120,7 +120,7 @@ export function Features() {
           <div className="flex items-center gap-2.5 rounded-full border border-border-light bg-surface px-6 py-3">
             <Rocket className="h-4 w-4 text-primary" />
             <span className="text-[13px] font-medium text-text-secondary">
-              E tem muito mais a caminho — fique ligado!
+              Novos recursos toda semana — e quem é Pro pede o que quiser.
             </span>
           </div>
         </AnimateOnScroll>

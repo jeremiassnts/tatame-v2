@@ -10,11 +10,11 @@ export function FinalCta() {
         <AnimateOnScroll>
           <div className="flex flex-col items-center gap-8 rounded-3xl border border-primary/20 bg-gradient-to-b from-[#1A1030] to-[#2D1B4E] px-6 py-12 md:p-20">
             <h2 className="max-w-[700px] text-center font-[family-name:var(--font-sora)] text-[30px] font-extrabold leading-[1.2] tracking-[-1.5px] text-white md:text-[40px]">
-              Pronto para transformar sua academia?
+              Sua academia merece sair da planilha
             </h2>
             <p className="max-w-[600px] text-center text-base leading-relaxed text-text-secondary md:text-lg md:leading-relaxed">
-              Comece gratuitamente e veja a diferença em poucos dias. Sem cartão
-              de crédito.
+              Teste o Tatame por 30 dias, sem pagar nada e sem cartão de
+              crédito. Cancele quando quiser.
             </p>
             {/* Store icons */}
             <div className="flex items-center gap-4">
@@ -34,7 +34,7 @@ export function FinalCta() {
               eventLabel="final_cta_comecar_gratis"
               className="flex items-center gap-2.5 rounded-xl bg-gradient-to-b from-primary to-primary-dark px-8 py-4 text-base font-semibold text-white transition-opacity hover:opacity-90"
             >
-              Começar grátis
+              Criar minha academia grátis
               <ArrowRight className="h-5 w-5" />
             </TrackedLink>
           </div>
