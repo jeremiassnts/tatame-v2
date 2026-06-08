@@ -1,5 +1,6 @@
 import { Check } from "lucide-react";
 import { AnimateOnScroll } from "./animate-on-scroll";
+import { TrackedLink } from "./tracked-link";
 
 const proPlan = {
   name: "Pro",
@@ -71,12 +72,15 @@ export function Pricing() {
                 ))}
               </div>
 
-              <a
+              <TrackedLink
                 href="/cadastro"
+                eventAction="cta_click"
+                eventCategory="conversion"
+                eventLabel="pricing_comecar_teste_gratis"
                 className="flex items-center justify-center rounded-xl py-3.5 text-[15px] font-semibold text-white transition-opacity hover:opacity-90 bg-gradient-to-b from-primary to-primary-dark"
               >
                 Começar teste grátis
-              </a>
+              </TrackedLink>
 
               <p className="text-center text-sm text-text-secondary">
                 Cancele a qualquer momento

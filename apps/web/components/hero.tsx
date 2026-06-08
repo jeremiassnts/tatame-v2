@@ -1,6 +1,7 @@
 import { ArrowRight, Sparkles } from "lucide-react";
 import { AnimateOnScroll } from "./animate-on-scroll";
 import { HeroMockups } from "./hero-mockups";
+import { TrackedLink } from "./tracked-link";
 
 export function Hero() {
   return (
@@ -28,13 +29,16 @@ export function Hero() {
           </div>
 
           {/* CTA */}
-          <a
+          <TrackedLink
             href="#precos"
+            eventAction="cta_click"
+            eventCategory="engagement"
+            eventLabel="hero_comecar_gratis"
             className="flex items-center gap-2.5 rounded-xl bg-gradient-to-b from-primary to-primary-dark px-8 py-4 text-base font-semibold text-white transition-opacity hover:opacity-90"
           >
             Começar grátis
             <ArrowRight className="h-5 w-5" />
-          </a>
+          </TrackedLink>
         </AnimateOnScroll>
 
         <AnimateOnScroll className="flex w-full items-center justify-center">

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Sora, Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
+import { GoogleAnalytics } from "@/components/google-analytics";
 import "./globals.css";
 
 const sora = Sora({
@@ -30,6 +31,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="pt-BR" className={`${sora.variable} ${inter.variable}`}>
         <body className="font-[family-name:var(--font-inter)] antialiased">
+          <GoogleAnalytics />
           {children}
         </body>
       </html>
