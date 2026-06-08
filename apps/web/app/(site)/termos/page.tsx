@@ -3,8 +3,10 @@ import { Footer } from "@/components/footer";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Termos de Uso — Tatame",
-  description: "Termos de Uso da plataforma Tatame.",
+  title: "Termos de Uso",
+  description:
+    "Termos de Uso da plataforma Tatame — gestão para academias de Jiu-Jitsu.",
+  alternates: { canonical: "/termos" },
 };
 
 const sections = [

@@ -16,10 +16,43 @@ const inter = Inter({
   display: "swap",
 });
 
+const siteUrl = "https://apptatame.com.br";
+
 export const metadata: Metadata = {
-  title: "Tatame — Sua academia na palma da mão",
+  title: {
+    default: "Tatame — Gestão completa para academias de Jiu-Jitsu",
+    template: "%s — Tatame",
+  },
   description:
-    "Gerencie turmas, controle presenças, acompanhe graduações e pagamentos — tudo em um só lugar.",
+    "Gerencie turmas, controle presenças, acompanhe graduações e pagamentos da sua academia de Jiu-Jitsu. App para gestores, instrutores e alunos.",
+  metadataBase: new URL(siteUrl),
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    url: siteUrl,
+    siteName: "Tatame",
+    title: "Tatame — Gestão completa para academias de Jiu-Jitsu",
+    description:
+      "Gerencie turmas, controle presenças, acompanhe graduações e pagamentos da sua academia de Jiu-Jitsu. App para gestores, instrutores e alunos.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Tatame — Gestão completa para academias de Jiu-Jitsu",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Tatame — Gestão completa para academias de Jiu-Jitsu",
+    description:
+      "Gerencie turmas, controle presenças, acompanhe graduações e pagamentos da sua academia de Jiu-Jitsu.",
+    images: ["/og-image.png"],
+  },
+  alternates: {
+    canonical: siteUrl,
+  },
 };
 
 export default function RootLayout({
