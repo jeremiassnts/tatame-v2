@@ -3,8 +3,10 @@ import { Footer } from "@/components/footer";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Política de Privacidade — Tatame",
-  description: "Política de Privacidade da plataforma Tatame.",
+  title: "Política de Privacidade",
+  description:
+    "Política de Privacidade da plataforma Tatame — como coletamos, usamos e protegemos seus dados.",
+  alternates: { canonical: "/privacidade" },
 };
 
 const sections = [

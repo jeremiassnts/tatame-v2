@@ -4,6 +4,7 @@ import { ChevronDown } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import { AnimateOnScroll } from "./animate-on-scroll";
+import { FaqJsonLd } from "./json-ld";
 import { event as trackEvent } from "@/lib/gtag";
 
 const faqItems = [
@@ -83,6 +84,7 @@ export function Faq() {
 
   return (
     <section id="duvidas" className="px-6 py-16 md:px-20 md:py-[100px]">
+      <FaqJsonLd items={faqItems} />
       <div className="mx-auto max-w-[1440px]">
         <AnimateOnScroll className="flex flex-col items-center gap-16">
           {/* Header */}
