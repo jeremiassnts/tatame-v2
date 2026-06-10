@@ -31,9 +31,7 @@ export function Hero() {
           {/* CTA */}
           <TrackedLink
             href="#precos"
-            eventAction="cta_click"
-            eventCategory="engagement"
-            eventLabel="hero_comecar_gratis"
+            eventName="cta_hero_click"
             className="flex items-center gap-2.5 rounded-xl bg-gradient-to-b from-primary to-primary-dark px-8 py-4 text-base font-semibold text-white transition-opacity hover:opacity-90"
           >
             Começar meu teste grátis

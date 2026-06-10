@@ -74,9 +74,7 @@ export function Pricing() {
 
               <TrackedLink
                 href="/cadastro"
-                eventAction="cta_click"
-                eventCategory="conversion"
-                eventLabel="pricing_comecar_teste_gratis"
+                eventName="cta_pricing_click"
                 className="flex items-center justify-center rounded-xl py-3.5 text-[15px] font-semibold text-white transition-opacity hover:opacity-90 bg-gradient-to-b from-primary to-primary-dark"
               >
                 Começar meu teste grátis

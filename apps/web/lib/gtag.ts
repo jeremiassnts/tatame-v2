@@ -7,18 +7,7 @@ export function pageview(url: string) {
   });
 }
 
-type GTagEvent = {
-  action: string;
-  category: string;
-  label: string;
-  value?: number;
-};
-
-export function event({ action, category, label, value }: GTagEvent) {
+export function event(eventName: string) {
   if (!GA_MEASUREMENT_ID) return;
-  window.gtag("event", action, {
-    event_category: category,
-    event_label: label,
-    value,
-  });
+  window.gtag("event", eventName);
 }

@@ -29,9 +29,7 @@ export function FinalCta() {
             {/* CTA */}
             <TrackedLink
               href="#precos"
-              eventAction="cta_click"
-              eventCategory="engagement"
-              eventLabel="final_cta_comecar_gratis"
+              eventName="cta_final_click"
               className="flex items-center gap-2.5 rounded-xl bg-gradient-to-b from-primary to-primary-dark px-8 py-4 text-base font-semibold text-white transition-opacity hover:opacity-90"
             >
               Criar minha academia grátis

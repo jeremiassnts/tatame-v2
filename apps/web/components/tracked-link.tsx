@@ -3,15 +3,11 @@
 import { event } from "@/lib/gtag";
 
 type TrackedLinkProps = React.AnchorHTMLAttributes<HTMLAnchorElement> & {
-  eventAction: string;
-  eventCategory: string;
-  eventLabel: string;
+  eventName: string;
 };
 
 export function TrackedLink({
-  eventAction,
-  eventCategory,
-  eventLabel,
+  eventName,
   onClick,
   children,
   ...props
@@ -20,7 +16,7 @@ export function TrackedLink({
     <a
       {...props}
       onClick={(e) => {
-        event({ action: eventAction, category: eventCategory, label: eventLabel });
+        event(eventName);
         onClick?.(e);
       }}
     >

@@ -120,7 +120,7 @@ export function Faq() {
               href="https://wa.me/5579988566945?text=Ol%C3%A1%2C%20gostaria%20de%20saber%20mais%20sobre%20o%20app%20Tatame"
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => trackEvent({ action: "cta_click", category: "engagement", label: "faq_whatsapp" })}
+              onClick={() => trackEvent("cta_whatsapp_click")}
               className="flex items-center gap-2.5 rounded-[14px] bg-whatsapp px-7 py-3.5 text-base font-semibold text-white transition-opacity hover:opacity-90"
             >
               <Image src="/whatsapp.svg" alt="WhatsApp" width={20} height={20} />
