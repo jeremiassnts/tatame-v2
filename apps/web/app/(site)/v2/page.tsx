@@ -10,6 +10,7 @@ import { PricingV2 } from "@/components/v2/pricing-v2";
 import { FaqV2 } from "@/components/v2/faq-v2";
 import { FinalCtaV2 } from "@/components/v2/final-cta-v2";
 import { FooterV2 } from "@/components/v2/footer-v2";
+import { BeamsBackground } from "@/components/ui/beams-background";
 import {
   OrganizationJsonLd,
   SoftwareApplicationJsonLd,
@@ -26,20 +27,23 @@ export const metadata: Metadata = {
 
 export default function LandingPageV2() {
   return (
-    <main className="flex min-h-screen flex-col bg-background">
-      <OrganizationJsonLd />
-      <SoftwareApplicationJsonLd />
-      <HeaderV2 />
-      <HeroV2 />
-      <SocialProof />
-      <FeaturesV2 />
-      <Advantages />
-      <HowToStart />
-      <BannerCta />
-      <PricingV2 />
-      <FaqV2 />
-      <FinalCtaV2 />
-      <FooterV2 />
-    </main>
+    <>
+      <BeamsBackground intensity="subtle" />
+      <main className="relative z-10 flex min-h-screen flex-col">
+        <OrganizationJsonLd />
+        <SoftwareApplicationJsonLd />
+        <HeaderV2 />
+        <HeroV2 />
+        <SocialProof />
+        <FeaturesV2 />
+        <Advantages />
+        <HowToStart />
+        <BannerCta />
+        <PricingV2 />
+        <FaqV2 />
+        <FinalCtaV2 />
+        <FooterV2 />
+      </main>
+    </>
   );
 }
