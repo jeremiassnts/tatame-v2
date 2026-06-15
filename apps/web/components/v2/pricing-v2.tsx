@@ -1,5 +1,5 @@
 import { Check } from "lucide-react";
-import { TrackedLink } from "../tracked-link";
+import { ButtonColorful } from "../ui/button-colorful";
 
 const proPlan = {
   name: "Pro",
@@ -69,13 +69,12 @@ export function PricingV2() {
                 ))}
               </div>
 
-              <TrackedLink
+              <ButtonColorful
                 href="/cadastro"
                 eventName="cta_pricing_click"
-                className="flex items-center justify-center rounded-xl bg-gradient-to-b from-primary to-primary-dark py-3.5 text-[15px] font-semibold text-white transition-opacity hover:opacity-90"
-              >
-                Começar meu teste grátis
-              </TrackedLink>
+                label="Começar meu teste grátis"
+                className="w-full"
+              />
 
               <p className="text-center text-sm text-text-secondary">
                 Cancele quando quiser, sem burocracia

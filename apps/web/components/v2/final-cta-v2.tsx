@@ -1,6 +1,5 @@
-import { ArrowRight } from "lucide-react";
 import Image from "next/image";
-import { TrackedLink } from "../tracked-link";
+import { ButtonColorful } from "../ui/button-colorful";
 
 export function FinalCtaV2() {
   return (
@@ -22,14 +21,11 @@ export function FinalCtaV2() {
               <Image src="/google.svg" alt="Android" width={20} height={20} className="brightness-0 invert" />
             </div>
           </div>
-          <TrackedLink
+          <ButtonColorful
             href="#precos"
             eventName="cta_final_click"
-            className="flex items-center gap-2.5 rounded-xl bg-gradient-to-b from-primary to-primary-dark px-8 py-4 text-base font-semibold text-white transition-opacity hover:opacity-90"
-          >
-            Criar minha academia grátis
-            <ArrowRight className="h-5 w-5" />
-          </TrackedLink>
+            label="Criar minha academia grátis"
+          />
         </div>
       </div>
     </section>
