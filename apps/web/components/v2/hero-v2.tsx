@@ -1,11 +1,11 @@
 import { ArrowRight, Sparkles } from "lucide-react";
-import Image from "next/image";
 import { TrackedLink } from "../tracked-link";
+import { HeroMockups } from "../hero-mockups";
 
 export function HeroV2() {
   return (
     <section className="relative overflow-hidden px-6 pb-[60px] pt-12 md:px-20 md:pb-[80px] md:pt-20">
-      {/* Subtle radial gradient behind phone */}
+      {/* Subtle radial gradient behind mockups */}
       <div className="pointer-events-none absolute right-0 top-0 h-full w-1/2 bg-[radial-gradient(ellipse_at_70%_50%,_#A078E815_0%,_transparent_60%)]" />
 
       <div className="mx-auto flex max-w-[1440px] flex-col items-center gap-12 md:flex-row md:items-center md:justify-between md:gap-8">
@@ -40,16 +40,9 @@ export function HeroV2() {
           </TrackedLink>
         </div>
 
-        {/* Right — phone mockup */}
-        <div className="relative flex w-full max-w-[480px] items-center justify-center md:w-auto">
-          <Image
-            src="/hero-mockup-v2.png"
-            alt="App Tatame - Gestão de academia de Jiu-Jitsu"
-            width={480}
-            height={580}
-            className="h-auto w-full max-w-[400px] object-contain md:max-w-[480px]"
-            priority
-          />
+        {/* Right — app mockups */}
+        <div className="flex w-full items-center justify-center md:w-auto">
+          <HeroMockups />
         </div>
       </div>
     </section>
