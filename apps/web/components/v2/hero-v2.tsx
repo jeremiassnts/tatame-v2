@@ -8,9 +8,9 @@ export function HeroV2() {
       {/* Subtle radial gradient behind mockups */}
       <div className="pointer-events-none absolute right-0 top-0 h-full w-1/2 bg-[radial-gradient(ellipse_at_70%_50%,_#A078E815_0%,_transparent_60%)]" />
 
-      <div className="mx-auto flex max-w-[1440px] flex-col items-center gap-12 md:flex-row md:items-center md:justify-between md:gap-8">
+      <div className="mx-auto flex max-w-[1440px] flex-col items-center gap-10 md:flex-row md:items-center md:justify-between md:gap-8">
         {/* Left — text content */}
-        <div className="flex max-w-[560px] flex-col items-center gap-8 md:items-start">
+        <div className="flex max-w-[640px] flex-col items-center gap-5 md:items-start">
           {/* Badge */}
           <div className="flex items-center gap-2 rounded-full bg-primary/[0.125] px-4 py-1.5">
             <Sparkles className="h-3.5 w-3.5 text-primary" />
