@@ -1,8 +1,9 @@
 "use client";
 
+import React, { useRef, useState } from "react";
+import { motion } from "motion/react";
 import { Menu, X } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
 import { TrackedLink } from "../tracked-link";
 
 const navLinks = [
@@ -11,6 +12,78 @@ const navLinks = [
   { label: "Como funciona", href: "#como-funciona" },
   { label: "Dúvidas", href: "#duvidas" },
 ];
+
+function NavPill() {
+  const [position, setPosition] = useState({
+    left: 0,
+    width: 0,
+    opacity: 0,
+  });
+
+  return (
+    <ul
+      className="relative mx-auto hidden w-fit rounded-full border border-border bg-surface p-1 md:flex"
+      onMouseLeave={() => setPosition((pv) => ({ ...pv, opacity: 0 }))}
+    >
+      {navLinks.map((link) => (
+        <Tab key={link.href} setPosition={setPosition} href={link.href}>
+          {link.label}
+        </Tab>
+      ))}
+      <Cursor position={position} />
+    </ul>
+  );
+}
+
+function Tab({
+  children,
+  setPosition,
+  href,
+}: {
+  children: React.ReactNode;
+  setPosition: React.Dispatch<
+    React.SetStateAction<{ left: number; width: number; opacity: number }>
+  >;
+  href: string;
+}) {
+  const ref = useRef<HTMLLIElement>(null);
+  return (
+    <li
+      ref={ref}
+      onMouseEnter={() => {
+        if (!ref.current) return;
+        const { width } = ref.current.getBoundingClientRect();
+        setPosition({
+          width,
+          opacity: 1,
+          left: ref.current.offsetLeft,
+        });
+      }}
+      className="relative z-10 block cursor-pointer"
+    >
+      <a
+        href={href}
+        className="block px-4 py-2 text-[14px] font-medium text-white mix-blend-difference"
+      >
+        {children}
+      </a>
+    </li>
+  );
+}
+
+function Cursor({
+  position,
+}: {
+  position: { left: number; width: number; opacity: number };
+}) {
+  return (
+    <motion.li
+      animate={position}
+      transition={{ type: "spring", stiffness: 500, damping: 35 }}
+      className="absolute z-0 h-[36px] rounded-full bg-primary"
+    />
+  );
+}
 
 export function HeaderV2() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -26,18 +99,8 @@ export function HeaderV2() {
           </span>
         </a>
 
-        {/* Desktop nav — centered */}
-        <nav className="hidden items-center gap-10 md:flex">
-          {navLinks.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="text-[15px] font-medium text-text-secondary transition-colors hover:text-white"
-            >
-              {link.label}
-            </a>
-          ))}
-        </nav>
+        {/* Desktop nav — pill with sliding cursor */}
+        <NavPill />
 
         {/* Desktop CTA */}
         <TrackedLink
