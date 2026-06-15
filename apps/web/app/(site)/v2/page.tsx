@@ -34,7 +34,7 @@ export default function LandingPageV2() {
         <SoftwareApplicationJsonLd />
         <HeaderV2 />
         <HeroV2 />
-        <SocialProof />
+        {/* <SocialProof /> */}
         <FeaturesV2 />
         <Advantages />
         <HowToStart />
