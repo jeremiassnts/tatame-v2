@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { ButtonColorful } from "../ui/button-colorful";
 
 export function FinalCtaV2() {
@@ -8,9 +9,9 @@ export function FinalCtaV2() {
           {/* Purple glow on the right */}
           <div className="pointer-events-none absolute -right-20 -top-20 h-[500px] w-[500px] rounded-full bg-primary/25 blur-[120px]" />
 
-          <div className="relative flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
+          <div className="relative flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
             {/* Left: text + CTA */}
-            <div className="flex flex-col gap-6 md:max-w-[50%]">
+            <div className="flex flex-col gap-6 pb-0 md:max-w-[50%] md:pb-0">
               <h2 className="font-[family-name:var(--font-sora)] text-[30px] font-extrabold leading-[1.2] tracking-[-1.5px] text-white md:text-[40px]">
                 Sua academia merece mais do que uma planilha
               </h2>
@@ -25,9 +26,15 @@ export function FinalCtaV2() {
               />
             </div>
 
-            {/* Right: placeholder for app screenshot */}
-            <div className="hidden md:block md:w-[45%]">
-              <div className="aspect-[3/4] w-full max-w-[320px] ml-auto rounded-2xl" />
+            {/* Right: app screenshots — flush to bottom */}
+            <div className="w-full -mb-12 md:w-[45%] md:-mb-20">
+              <Image
+                src="/cta-criar-financeiro.png"
+                alt="Tatame app — criar academia e financeiro"
+                width={560}
+                height={380}
+                className="ml-auto"
+              />
             </div>
           </div>
         </div>

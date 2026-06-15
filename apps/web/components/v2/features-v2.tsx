@@ -9,6 +9,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import Image from "next/image";
 
 type Feature = {
   icon: LucideIcon;
@@ -114,7 +115,13 @@ export function FeaturesV2() {
         {/* Block 1: Image LEFT + 4 features RIGHT */}
         <div className="mb-20 flex flex-col items-center gap-12 md:flex-row md:gap-16">
           <div className="w-full md:w-1/2">
-            <ImagePlaceholder label="Screenshot do app — Bloco 1" />
+            <Image
+              src="/feature-1-agenda-assinatura.png"
+              alt="Tatame app — agenda e assinatura"
+              width={490}
+              height={368}
+              className="mx-auto rounded-[20px]"
+            />
           </div>
           <div className="grid w-full grid-cols-1 gap-10 sm:grid-cols-2 md:w-1/2">
             {featuresBlock1.map((feature) => (
@@ -131,7 +138,13 @@ export function FeaturesV2() {
             ))}
           </div>
           <div className="w-full md:w-1/2">
-            <ImagePlaceholder label="Screenshot do app — Bloco 2" />
+            <Image
+              src="/feature-2-membros-aluno.png"
+              alt="Tatame app — membros e visão do aluno"
+              width={490}
+              height={368}
+              className="mx-auto rounded-[20px]"
+            />
           </div>
         </div>
       </div>
