@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import { motion } from "motion/react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ArrowUpRight } from "lucide-react";
 import Image from "next/image";
 import { TrackedLink } from "../tracked-link";
 
@@ -113,9 +113,10 @@ export function HeaderV2() {
         <TrackedLink
           href="#precos"
           eventName="cta_header_click"
-          className="hidden rounded-xl bg-primary/70 px-6 py-2.5 text-[14px] font-semibold text-white transition-opacity hover:opacity-90 md:block"
+          className="hidden items-center gap-2 rounded-xl bg-primary/70 px-6 py-2.5 text-[14px] font-semibold text-white transition-opacity hover:opacity-90 md:flex"
         >
           Começar grátis
+          <ArrowUpRight className="h-4 w-4" />
         </TrackedLink>
 
         {/* Mobile hamburger */}
