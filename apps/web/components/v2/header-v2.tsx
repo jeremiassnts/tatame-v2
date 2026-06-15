@@ -2,9 +2,9 @@
 
 import React, { useRef, useState } from "react";
 import { motion } from "motion/react";
-import { Menu, X, ArrowUpRight } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import Image from "next/image";
-import { TrackedLink } from "../tracked-link";
+import { ButtonPrimary } from "../ui/button-primary";
 
 const navLinks = [
   { label: "Recursos", href: "#recursos" },
@@ -110,14 +110,12 @@ export function HeaderV2() {
         <NavPill />
 
         {/* Desktop CTA */}
-        <TrackedLink
+        <ButtonPrimary
           href="#precos"
           eventName="cta_header_click"
-          className="hidden items-center gap-2 rounded-xl bg-primary/70 px-6 py-2.5 text-[14px] font-semibold text-white transition-opacity hover:opacity-90 md:flex"
-        >
-          Começar grátis
-          <ArrowUpRight className="h-4 w-4" />
-        </TrackedLink>
+          label="Começar grátis"
+          className="hidden md:inline-flex"
+        />
 
         {/* Mobile hamburger */}
         <button
@@ -143,14 +141,13 @@ export function HeaderV2() {
                 {link.label}
               </a>
             ))}
-            <TrackedLink
+            <ButtonPrimary
               href="#precos"
               eventName="cta_header_click"
+              label="Começar grátis"
               onClick={() => setMenuOpen(false)}
-              className="mt-2 flex items-center justify-center rounded-xl bg-gradient-to-b from-primary to-primary-dark px-6 py-3 text-[15px] font-semibold text-white"
-            >
-              Começar grátis
-            </TrackedLink>
+              className="mt-2 justify-center py-3"
+            />
           </nav>
         </div>
       )}

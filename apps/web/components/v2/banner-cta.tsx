@@ -1,5 +1,4 @@
-import { ArrowRight } from "lucide-react";
-import { TrackedLink } from "../tracked-link";
+import { ButtonPrimary } from "../ui/button-primary";
 
 export function BannerCta() {
   return (
@@ -12,14 +11,12 @@ export function BannerCta() {
           <p className="max-w-[560px] text-center text-base leading-relaxed text-text-secondary md:text-lg">
             Pare de perder tempo com planilhas e comece a focar no que importa: seus alunos no tatame.
           </p>
-          <TrackedLink
+          <ButtonPrimary
             href="#precos"
             eventName="cta_banner_click"
-            className="flex items-center gap-2.5 rounded-xl bg-gradient-to-b from-primary to-primary-dark px-8 py-4 text-base font-semibold text-white transition-opacity hover:opacity-90"
-          >
-            Começar meu teste grátis
-            <ArrowRight className="h-5 w-5" />
-          </TrackedLink>
+            label="Começar meu teste grátis"
+            className="px-8 py-3"
+          />
         </div>
       </div>
     </section>
