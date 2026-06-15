@@ -12,9 +12,9 @@ export function HeroV2() {
         {/* Left — text content */}
         <div className="flex max-w-[560px] flex-col items-center gap-8 md:items-start">
           {/* Badge */}
-          <div className="flex items-center gap-2 rounded-full border border-primary/25 bg-primary/[0.125] px-5 py-2">
+          <div className="flex items-center gap-2 rounded-full bg-primary/[0.125] px-4 py-1.5">
             <Sparkles className="h-3.5 w-3.5 text-primary" />
-            <span className="text-[13px] font-medium text-primary">
+            <span className="text-[11px] font-bold uppercase tracking-[2px] text-primary">
               Gestão de academias de Jiu-Jitsu
             </span>
           </div>
