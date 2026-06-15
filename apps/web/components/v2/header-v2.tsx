@@ -113,7 +113,7 @@ export function HeaderV2() {
         <TrackedLink
           href="#precos"
           eventName="cta_header_click"
-          className="hidden rounded-xl bg-gradient-to-b from-primary to-primary-dark px-6 py-2.5 text-[14px] font-semibold text-white transition-opacity hover:opacity-90 md:block"
+          className="hidden rounded-xl bg-primary/70 px-6 py-2.5 text-[14px] font-semibold text-white transition-opacity hover:opacity-90 md:block"
         >
           Começar grátis
         </TrackedLink>
