@@ -87,9 +87,16 @@ function Cursor({
 
 export function HeaderV2() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  React.useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
-    <header className="sticky top-0 z-50 bg-surface/60 backdrop-blur-lg border-b border-border-light/30">
+    <header className={`sticky top-0 z-50 transition-all duration-300 ${scrolled ? "bg-surface/60 backdrop-blur-lg border-b border-border-light/30" : "bg-transparent"}`}>
       <div className="mx-auto flex h-20 max-w-[1440px] items-center justify-between px-6 md:px-20">
         {/* Logo */}
         <a href="/v2" className="flex items-center gap-3">
