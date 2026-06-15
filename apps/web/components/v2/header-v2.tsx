@@ -22,7 +22,7 @@ function NavPill() {
 
   return (
     <ul
-      className="relative mx-auto hidden w-fit rounded-full border border-border bg-surface p-1 md:flex"
+      className="relative mx-auto hidden w-fit rounded-full border border-border-light/50 bg-white/10 p-1 md:flex"
       onMouseLeave={() => setPosition((pv) => ({ ...pv, opacity: 0 }))}
     >
       {navLinks.map((link) => (
@@ -89,7 +89,7 @@ export function HeaderV2() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg">
+    <header className="sticky top-0 z-50 bg-surface/60 backdrop-blur-lg border-b border-border-light/30">
       <div className="mx-auto flex h-20 max-w-[1440px] items-center justify-between px-6 md:px-20">
         {/* Logo */}
         <a href="/v2" className="flex items-center gap-3">
