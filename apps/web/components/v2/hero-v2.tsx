@@ -1,6 +1,6 @@
 import { ArrowRight, Sparkles } from "lucide-react";
 import { TrackedLink } from "../tracked-link";
-import { HeroMockups } from "../hero-mockups";
+import { HeroMockupsV2 } from "./hero-mockups-v2";
 
 export function HeroV2() {
   return (
@@ -42,7 +42,7 @@ export function HeroV2() {
 
         {/* Right — app mockups */}
         <div className="flex w-full items-center justify-center md:w-auto">
-          <HeroMockups />
+          <HeroMockupsV2 />
         </div>
       </div>
     </section>
