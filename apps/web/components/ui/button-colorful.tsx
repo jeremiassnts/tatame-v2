@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import React from "react";
 import { cn } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
 import { event } from "@/lib/gtag";
@@ -9,46 +9,38 @@ interface ButtonColorfulProps
   extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
   label: string;
   eventName?: string;
-  glowClassName?: string;
 }
 
 export function ButtonColorful({
   className,
   label,
   eventName,
-  glowClassName,
   onClick,
   ...props
 }: ButtonColorfulProps) {
   return (
-    <div className="relative group">
-      {/* Gradient glow */}
-      <div
-        className={cn(
-          "absolute -inset-[2px] rounded-xl bg-gradient-to-r from-purple-400 via-violet-500 to-blue-500 opacity-75 blur-lg transition-all",
-          "group-hover:opacity-100 group-hover:blur-xl",
-          glowClassName
-        )}
-      />
+    <a
+      className={cn(
+        "relative group border border-primary/20 bg-primary/5 hover:bg-primary/0",
+        "inline-flex items-center justify-center gap-2.5 rounded-full px-8 py-3",
+        "text-base font-semibold text-white cursor-pointer",
+        "mx-auto text-center",
+        className
+      )}
+      onClick={(e) => {
+        if (eventName) event(eventName);
+        onClick?.(e);
+      }}
+      {...props}
+    >
+      {/* Top neon line */}
+      <span className="absolute h-px opacity-0 group-hover:opacity-100 transition-all duration-500 ease-in-out inset-x-0 inset-y-0 bg-gradient-to-r w-3/4 mx-auto from-transparent via-primary to-transparent" />
 
-      {/* Button */}
-      <a
-        className={cn(
-          "relative flex items-center justify-center gap-2.5 rounded-xl px-8 py-4",
-          "bg-background/90 text-white shadow-xl",
-          "transition-all hover:bg-background/70",
-          "border border-border-light cursor-pointer",
-          className
-        )}
-        onClick={(e) => {
-          if (eventName) event(eventName);
-          onClick?.(e);
-        }}
-        {...props}
-      >
-        <span className="text-base font-semibold">{label}</span>
-        <ArrowRight className="h-5 w-5 text-white/90" />
-      </a>
-    </div>
+      {label}
+      <ArrowRight className="h-5 w-5 text-white/90" />
+
+      {/* Bottom neon line */}
+      <span className="absolute group-hover:opacity-30 transition-all duration-500 ease-in-out inset-x-0 h-px -bottom-px bg-gradient-to-r w-3/4 mx-auto from-transparent via-primary to-transparent" />
+    </a>
   );
 }
