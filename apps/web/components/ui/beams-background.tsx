@@ -181,7 +181,7 @@ export function BeamsBackground({
             />
 
             <motion.div
-                className="absolute inset-0 bg-neutral-950/5"
+                className="absolute inset-0 bg-neutral-950/30"
                 animate={{
                     opacity: [0.05, 0.15, 0.05],
                 }}

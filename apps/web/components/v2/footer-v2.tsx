@@ -23,14 +23,20 @@ export function FooterV2() {
           <div className="flex gap-20">
             <div className="flex flex-col gap-4">
               <span className="text-[13px] font-bold text-white">Produto</span>
-              <a href="/v2" className="text-[13px] text-text-secondary hover:text-white">
+              <a href="#" className="text-[13px] text-text-secondary hover:text-white">
                 Início
               </a>
               <a href="#recursos" className="text-[13px] text-text-secondary hover:text-white">
                 Recursos
               </a>
+              <a href="#como-funciona" className="text-[13px] text-text-secondary hover:text-white">
+                Como funciona
+              </a>
               <a href="#precos" className="text-[13px] text-text-secondary hover:text-white">
                 Preços
+              </a>
+              <a href="#duvidas" className="text-[13px] text-text-secondary hover:text-white">
+                Dúvidas
               </a>
             </div>
             <div className="flex flex-col gap-4">

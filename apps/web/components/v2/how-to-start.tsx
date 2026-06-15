@@ -7,7 +7,7 @@ const steps: { icon: LucideIcon; number: string; title: string; description: str
     number: "1",
     title: "Crie sua conta grátis",
     description:
-      "Cadastre-se em segundos — sem cartão de crédito, sem compromisso.",
+      "Cadastre-se em segundos e comece a usar imediatamente.",
   },
   {
     icon: Settings,
@@ -27,7 +27,7 @@ const steps: { icon: LucideIcon; number: string; title: string; description: str
 
 export function HowToStart() {
   return (
-    <section id="como-funciona" className="bg-surface px-6 py-16 md:px-20 md:py-[100px]">
+    <section id="como-funciona" className="px-6 py-16 md:px-20 md:py-[100px]">
       <div className="mx-auto max-w-[1440px]">
         {/* Section header */}
         <div className="mb-16 flex flex-col items-center gap-4">

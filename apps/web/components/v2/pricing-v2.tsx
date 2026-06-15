@@ -18,7 +18,7 @@ const proPlan = {
 
 export function PricingV2() {
   return (
-    <section id="precos" className="bg-surface px-6 py-16 md:px-20 md:py-[100px]">
+    <section id="precos" className="px-6 py-16 md:px-20 md:py-[100px]">
       <div className="mx-auto max-w-[1440px]">
         <div className="flex flex-col items-center gap-16">
           {/* Header */}
@@ -51,9 +51,12 @@ export function PricingV2() {
                 </p>
               </div>
 
-              <div className="flex items-end gap-1">
+              <div className="flex items-baseline gap-1">
                 <span className="font-[family-name:var(--font-sora)] text-5xl font-extrabold tracking-[-2px] text-white">
-                  {proPlan.price}
+                  R$ 49
+                </span>
+                <span className="font-[family-name:var(--font-sora)] text-2xl font-extrabold tracking-[-1px] text-white">
+                  ,90
                 </span>
                 <span className="text-base text-text-muted">/mês</span>
               </div>

@@ -7,9 +7,10 @@ import Image from "next/image";
 import { ButtonPrimary } from "../ui/button-primary";
 
 const navLinks = [
+  { label: "Início", href: "#" },
   { label: "Recursos", href: "#recursos" },
-  { label: "Preços", href: "#precos" },
   { label: "Como funciona", href: "#como-funciona" },
+  { label: "Preços", href: "#precos" },
   { label: "Dúvidas", href: "#duvidas" },
 ];
 

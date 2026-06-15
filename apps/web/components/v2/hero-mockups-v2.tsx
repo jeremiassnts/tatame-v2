@@ -4,16 +4,16 @@ import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 
 const SLIDES = [
-  { src: "/mockup-1.png", alt: "Tatame app — início" },
-  { src: "/mockup-3.png", alt: "Tatame app — financeiro" },
+  { src: "/mockup-iphone.png", alt: "Tatame app — tela inicial" },
+  { src: "/mockup-iphone-2.png", alt: "Tatame app — financeiro" },
 ] as const;
 
 const AUTO_MS = 4500;
 
 function MockupFrame({ src, alt }: { src: string; alt: string }) {
   return (
-    <div className="relative h-[400px] w-[200px] overflow-hidden rounded-[32px] border border-border bg-surface shadow-[0_20px_60px_#A078E830] md:h-[560px] md:w-[280px]">
-      <Image src={src} alt={alt} fill className="object-cover" sizes="(max-width: 768px) 200px, 280px" />
+    <div className="relative h-[420px] w-[210px] md:h-[580px] md:w-[290px]">
+      <Image src={src} alt={alt} fill className="object-contain" sizes="(max-width: 768px) 210px, 290px" priority />
     </div>
   );
 }
@@ -38,7 +38,7 @@ export function HeroMockupsV2() {
     <>
       {/* Mobile: single mockup + auto carousel */}
       <div className="flex w-full flex-col items-center md:hidden">
-        <div className="relative h-[400px] w-[200px]">
+        <div className="relative h-[420px] w-[210px]">
           {SLIDES.map((slide, i) => (
             <div
               key={slide.src}

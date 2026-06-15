@@ -3,9 +3,7 @@ import { HeaderV2 } from "@/components/v2/header-v2";
 import { HeroV2 } from "@/components/v2/hero-v2";
 import { SocialProof } from "@/components/v2/social-proof";
 import { FeaturesV2 } from "@/components/v2/features-v2";
-import { Advantages } from "@/components/v2/advantages";
 import { HowToStart } from "@/components/v2/how-to-start";
-import { BannerCta } from "@/components/v2/banner-cta";
 import { PricingV2 } from "@/components/v2/pricing-v2";
 import { FaqV2 } from "@/components/v2/faq-v2";
 import { FinalCtaV2 } from "@/components/v2/final-cta-v2";
@@ -36,9 +34,7 @@ export default function LandingPageV2() {
         <HeroV2 />
         {/* <SocialProof /> */}
         <FeaturesV2 />
-        <Advantages />
         <HowToStart />
-        <BannerCta />
         <PricingV2 />
         <FaqV2 />
         <FinalCtaV2 />
