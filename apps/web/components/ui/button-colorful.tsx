@@ -21,10 +21,10 @@ export function ButtonColorful({
   return (
     <a
       className={cn(
-        "relative group border border-primary/20 bg-primary/5 hover:bg-primary/0",
+        "relative group border border-primary/20 bg-primary/15 hover:bg-primary/10",
         "inline-flex items-center justify-center gap-2.5 rounded-full px-8 py-3",
         "text-base font-semibold text-white cursor-pointer",
-        "mx-auto text-center",
+        "text-center",
         className
       )}
       onClick={(e) => {
