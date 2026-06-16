@@ -28,7 +28,7 @@ export function FinalCtaV2() {
 
           <div className="relative flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
             {/* Left: text + CTA */}
-            <div className="flex flex-col gap-6 pb-0 md:max-w-[50%] md:pb-0">
+            <div className="flex flex-col gap-6 md:max-w-[50%]">
               <h2 className="font-[family-name:var(--font-sora)] text-[30px] font-extrabold leading-[1.2] tracking-[-1.5px] text-white md:text-[40px]">
                 Sua academia merece mais do que uma planilha
               </h2>
