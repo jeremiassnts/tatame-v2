@@ -6,10 +6,8 @@ import {
   SoftwareApplicationJsonLd,
 } from "@/components/json-ld";
 
-const BeamsBackground = dynamic(
-  () =>
-    import("@/components/ui/beams-background").then((m) => m.BeamsBackground),
-  { ssr: false }
+const BeamsBackground = dynamic(() =>
+  import("@/components/ui/beams-background").then((m) => m.BeamsBackground)
 );
 const FeaturesV2 = dynamic(() =>
   import("@/components/v2/features-v2").then((m) => m.FeaturesV2)
