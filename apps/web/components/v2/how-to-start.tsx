@@ -1,6 +1,16 @@
+"use client";
+
 import { UserPlus, Settings, Rocket } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import * as motion from "motion/react-client";
 import { HowToJsonLd } from "../json-ld";
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 32 },
+  visible: { opacity: 1, y: 0 },
+} as const;
+
+const transition = { duration: 0.6, ease: [0.25, 0.1, 0.25, 1] } as const;
 
 const steps: { icon: LucideIcon; number: string; title: string; description: string }[] = [
   {
@@ -34,19 +44,34 @@ export function HowToStart() {
       />
       <div className="mx-auto max-w-[1440px]">
         {/* Section header */}
-        <div className="mb-16 flex flex-col items-center gap-4">
+        <motion.div
+          className="mb-16 flex flex-col items-center gap-4"
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ margin: "-80px" }}
+          transition={transition}
+        >
           <h2 className="text-center font-[family-name:var(--font-sora)] text-[30px] font-extrabold tracking-[-1.5px] text-white md:text-[44px]">
             Comece em 3 passos
           </h2>
           <p className="max-w-[500px] text-center text-base leading-relaxed text-text-secondary md:text-lg">
             Do cadastro à primeira aula gerenciada em minutos.
           </p>
-        </div>
+        </motion.div>
 
         {/* Steps */}
         <div className="relative flex flex-col items-center gap-8 md:flex-row md:items-start md:justify-center md:gap-0">
           {steps.map((step, index) => (
-            <div key={step.number} className="flex flex-col items-center md:flex-1">
+            <motion.div
+              key={step.number}
+              className="flex flex-col items-center md:flex-1"
+              variants={fadeUp}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ margin: "-80px" }}
+              transition={{ ...transition, delay: index * 0.15 }}
+            >
               {/* Connector line (desktop only, between steps) */}
               {index < steps.length - 1 && (
                 <div className="absolute top-[36px] hidden h-px bg-border-light md:block" style={{
@@ -70,7 +95,7 @@ export function HowToStart() {
                   {step.description}
                 </p>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>
