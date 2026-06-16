@@ -1,4 +1,8 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
 
 @theme {
   --color-background: #0C0C0C;
@@ -11,10 +15,14 @@
   --color-text-secondary: #ABABAB;
   --color-text-muted: #525252;
   --color-success: #32D74B;
-  --color-whatsapp: #25D366;
+  --color-whatsapp: #1DA851;
 
   --font-family-sora: "Sora", sans-serif;
   --font-family-inter: "Inter", sans-serif;
+}
+
+.font-sora {
+  font-family: var(--font-sora);
 }
 
 html {
@@ -26,21 +34,18 @@ body {
   color: var(--color-text-primary);
 }
 
-@keyframes fade-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: var(--font-sans);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-.animate-fade-in-up {
-  animation: fade-in-up 0.6s ease-out forwards;
-}
-
-.animate-hidden {
-  opacity: 0;
+:root {
+  --radius: 0.625rem;
 }

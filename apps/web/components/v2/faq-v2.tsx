@@ -2,10 +2,11 @@
 
 import { ChevronDown } from "lucide-react";
 import Image from "next/image";
+import * as motion from "motion/react-client";
 import { useState } from "react";
-import { AnimateOnScroll } from "./animate-on-scroll";
-import { FaqJsonLd } from "./json-ld";
+import { FaqJsonLd } from "../json-ld";
 import { event as trackEvent } from "@/lib/gtag";
+import { fadeUp, transition } from "@/lib/animations";
 
 const faqItems = [
   {
@@ -32,7 +33,7 @@ const faqItems = [
     question: "Meus alunos podem pagar diretamente no app?",
     answer:
       "Sim. O aluno paga pelo app via Pix ou cartão, e o valor cai direto na sua conta através da chave Pix cadastrada.",
-  }
+  },
 ];
 
 function FaqItem({
@@ -40,11 +41,13 @@ function FaqItem({
   answer,
   isOpen,
   onToggle,
+  id,
 }: {
   question: string;
   answer: string;
   isOpen: boolean;
   onToggle: () => void;
+  id: string;
 }) {
   return (
     <>
@@ -52,21 +55,28 @@ function FaqItem({
       <div className="py-6">
         <button
           onClick={onToggle}
+          aria-expanded={isOpen}
+          aria-controls={`faq-panel-${id}`}
           className="flex w-full items-center justify-between text-left"
         >
           <span className="text-base font-semibold text-white md:text-lg">
             {question}
           </span>
           <ChevronDown
-            className={`h-5 w-5 shrink-0 transition-transform duration-300 ${isOpen ? "rotate-180 text-primary" : "text-text-muted"
-              }`}
+            aria-hidden="true"
+            className={`h-5 w-5 shrink-0 transition-transform duration-300 ${
+              isOpen ? "rotate-180 text-primary" : "text-text-muted"
+            }`}
           />
         </button>
         <div
-          className={`grid transition-all duration-300 ease-out ${isOpen
-            ? "mt-4 grid-rows-[1fr] opacity-100"
-            : "grid-rows-[0fr] opacity-0"
-            }`}
+          id={`faq-panel-${id}`}
+          role="region"
+          className={`grid transition-all duration-300 ease-out ${
+            isOpen
+              ? "mt-4 grid-rows-[1fr] opacity-100"
+              : "grid-rows-[0fr] opacity-0"
+          }`}
         >
           <div className="overflow-hidden">
             <p className="text-base leading-[1.7] text-text-secondary">
@@ -79,29 +89,44 @@ function FaqItem({
   );
 }
 
-export function Faq() {
+export function FaqV2() {
   const [openIndex, setOpenIndex] = useState(0);
 
   return (
     <section id="duvidas" className="px-6 py-16 md:px-20 md:py-[100px]">
       <FaqJsonLd items={faqItems} />
       <div className="mx-auto max-w-[1440px]">
-        <AnimateOnScroll className="flex flex-col items-center gap-16">
+        <div className="flex flex-col items-center gap-16">
           {/* Header */}
-          <div className="flex max-w-[700px] flex-col items-center gap-4">
-            <h2 className="text-center font-[family-name:var(--font-sora)] text-[30px] font-extrabold tracking-[-1.5px] text-white md:text-[40px]">
+          <motion.div
+            className="flex max-w-[700px] flex-col items-center gap-4"
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ margin: "-80px" }}
+            transition={transition}
+          >
+            <h2 className="text-center font-sora text-[30px] font-extrabold tracking-[-1.5px] text-white md:text-[40px]">
               Perguntas frequentes
             </h2>
             <p className="text-center text-base leading-relaxed text-text-secondary md:text-lg md:leading-relaxed">
               O que donos de academia perguntam antes de começar.
             </p>
-          </div>
+          </motion.div>
 
           {/* FAQ List */}
-          <div className="w-full max-w-[800px]">
+          <motion.div
+            className="w-full max-w-[800px]"
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ margin: "-80px" }}
+            transition={{ ...transition, delay: 0.15 }}
+          >
             {faqItems.map((item, index) => (
               <FaqItem
                 key={item.question}
+                id={String(index)}
                 question={item.question}
                 answer={item.answer}
                 isOpen={openIndex === index}
@@ -111,10 +136,17 @@ export function Faq() {
               />
             ))}
             <div className="h-px w-full bg-border" />
-          </div>
+          </motion.div>
 
           {/* WhatsApp CTA */}
-          <div className="flex flex-col items-center gap-5">
+          <motion.div
+            className="flex flex-col items-center gap-5"
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ margin: "-80px" }}
+            transition={{ ...transition, delay: 0.3 }}
+          >
             <p className="text-base text-text-secondary">Ainda tem dúvidas?</p>
             <a
               href="https://wa.me/5579988566945?text=Ol%C3%A1%2C%20gostaria%20de%20saber%20mais%20sobre%20o%20app%20Tatame"
@@ -126,8 +158,8 @@ export function Faq() {
               <Image src="/whatsapp.svg" alt="WhatsApp" width={20} height={20} />
               Fale conosco pelo WhatsApp
             </a>
-          </div>
-        </AnimateOnScroll>
+          </motion.div>
+        </div>
       </div>
     </section>
   );
