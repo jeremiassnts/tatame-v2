@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 
-interface AnimatedGradientBackgroundProps {
+interface BeamsBackgroundProps {
     className?: string;
-    children?: React.ReactNode;
     intensity?: "subtle" | "medium" | "strong";
 }
 
@@ -36,7 +34,7 @@ function createBeam(width: number, height: number): Beam {
         y: Math.random() * height * 1.5 - height * 0.25,
         width: 30 + Math.random() * 60,
         length: height * 2.5,
-        angle: angle,
+        angle,
         speed: 0.6 + Math.random() * 1.2,
         opacity: 0.12 + Math.random() * 0.16,
         hue: 255 + Math.random() * 25,
@@ -48,11 +46,10 @@ function createBeam(width: number, height: number): Beam {
 export function BeamsBackground({
     className,
     intensity = "strong",
-}: AnimatedGradientBackgroundProps) {
+}: BeamsBackgroundProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const beamsRef = useRef<Beam[]>([]);
     const animationFrameRef = useRef<number>(0);
-    const MINIMUM_BEAMS = 20;
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -64,6 +61,9 @@ export function BeamsBackground({
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
 
+        const isMobile = window.innerWidth < 768;
+        const beamCount = isMobile ? 8 : 20;
+
         const updateCanvasSize = () => {
             const dpr = window.devicePixelRatio || 1;
             canvas.width = window.innerWidth * dpr;
@@ -72,8 +72,7 @@ export function BeamsBackground({
             canvas.style.height = `${window.innerHeight}px`;
             ctx.scale(dpr, dpr);
 
-            const totalBeams = MINIMUM_BEAMS * 1.5;
-            beamsRef.current = Array.from({ length: totalBeams }, () =>
+            beamsRef.current = Array.from({ length: beamCount }, () =>
                 createBeam(canvas.width, canvas.height)
             );
         };
@@ -83,7 +82,7 @@ export function BeamsBackground({
 
         function resetBeam(beam: Beam, index: number, totalBeams: number) {
             if (!canvas) return beam;
-            
+
             const column = index % 3;
             const spacing = canvas.width / 3;
 
@@ -104,32 +103,17 @@ export function BeamsBackground({
             ctx.translate(beam.x, beam.y);
             ctx.rotate((beam.angle * Math.PI) / 180);
 
-            // Calculate pulsing opacity
             const pulsingOpacity =
                 beam.opacity *
                 (0.8 + Math.sin(beam.pulse) * 0.2) *
                 OPACITY_MAP[intensity];
 
             const gradient = ctx.createLinearGradient(0, 0, 0, beam.length);
-
-            // Enhanced gradient with multiple color stops
             gradient.addColorStop(0, `hsla(${beam.hue}, 85%, 65%, 0)`);
-            gradient.addColorStop(
-                0.1,
-                `hsla(${beam.hue}, 85%, 65%, ${pulsingOpacity * 0.5})`
-            );
-            gradient.addColorStop(
-                0.4,
-                `hsla(${beam.hue}, 85%, 65%, ${pulsingOpacity})`
-            );
-            gradient.addColorStop(
-                0.6,
-                `hsla(${beam.hue}, 85%, 65%, ${pulsingOpacity})`
-            );
-            gradient.addColorStop(
-                0.9,
-                `hsla(${beam.hue}, 85%, 65%, ${pulsingOpacity * 0.5})`
-            );
+            gradient.addColorStop(0.1, `hsla(${beam.hue}, 85%, 65%, ${pulsingOpacity * 0.5})`);
+            gradient.addColorStop(0.4, `hsla(${beam.hue}, 85%, 65%, ${pulsingOpacity})`);
+            gradient.addColorStop(0.6, `hsla(${beam.hue}, 85%, 65%, ${pulsingOpacity})`);
+            gradient.addColorStop(0.9, `hsla(${beam.hue}, 85%, 65%, ${pulsingOpacity * 0.5})`);
             gradient.addColorStop(1, `hsla(${beam.hue}, 85%, 65%, 0)`);
 
             ctx.fillStyle = gradient;
@@ -148,7 +132,6 @@ export function BeamsBackground({
                 beam.y -= beam.speed;
                 beam.pulse += beam.pulseSpeed;
 
-                // Reset beam when it goes off screen
                 if (beam.y + beam.length < -100) {
                     resetBeam(beam, index, totalBeams);
                 }
@@ -159,7 +142,8 @@ export function BeamsBackground({
             animationFrameRef.current = requestAnimationFrame(animate);
         }
 
-        animate();
+        // Defer animation start so it doesn't compete with FCP/LCP
+        const startId = setTimeout(animate, 1500);
 
         const onVisibilityChange = () => {
             if (document.hidden) {
@@ -171,6 +155,7 @@ export function BeamsBackground({
         document.addEventListener("visibilitychange", onVisibilityChange);
 
         return () => {
+            clearTimeout(startId);
             window.removeEventListener("resize", updateCanvasSize);
             document.removeEventListener("visibilitychange", onVisibilityChange);
             if (animationFrameRef.current) {
@@ -190,22 +175,6 @@ export function BeamsBackground({
             <canvas
                 ref={canvasRef}
                 className="absolute inset-0"
-                style={{ filter: "blur(15px)" }}
-            />
-
-            <motion.div
-                className="absolute inset-0 bg-neutral-950/30"
-                animate={{
-                    opacity: [0.05, 0.15, 0.05],
-                }}
-                transition={{
-                    duration: 10,
-                    ease: "easeInOut",
-                    repeat: Number.POSITIVE_INFINITY,
-                }}
-                style={{
-                    backdropFilter: "blur(50px)",
-                }}
             />
         </div>
     );
