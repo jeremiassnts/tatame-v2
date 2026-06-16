@@ -2,9 +2,17 @@
 
 import { ChevronDown } from "lucide-react";
 import Image from "next/image";
+import * as motion from "motion/react-client";
 import { useState } from "react";
 import { FaqJsonLd } from "../json-ld";
 import { event as trackEvent } from "@/lib/gtag";
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 32 },
+  visible: { opacity: 1, y: 0 },
+} as const;
+
+const transition = { duration: 0.6, ease: [0.25, 0.1, 0.25, 1] } as const;
 
 const faqItems = [
   {
@@ -96,17 +104,31 @@ export function FaqV2() {
       <div className="mx-auto max-w-[1440px]">
         <div className="flex flex-col items-center gap-16">
           {/* Header */}
-          <div className="flex max-w-[700px] flex-col items-center gap-4">
+          <motion.div
+            className="flex max-w-[700px] flex-col items-center gap-4"
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ margin: "-80px" }}
+            transition={transition}
+          >
             <h2 className="text-center font-[family-name:var(--font-sora)] text-[30px] font-extrabold tracking-[-1.5px] text-white md:text-[40px]">
               Perguntas frequentes
             </h2>
             <p className="text-center text-base leading-relaxed text-text-secondary md:text-lg md:leading-relaxed">
               O que donos de academia perguntam antes de começar.
             </p>
-          </div>
+          </motion.div>
 
           {/* FAQ List */}
-          <div className="w-full max-w-[800px]">
+          <motion.div
+            className="w-full max-w-[800px]"
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ margin: "-80px" }}
+            transition={{ ...transition, delay: 0.15 }}
+          >
             {faqItems.map((item, index) => (
               <FaqItem
                 key={item.question}
@@ -120,10 +142,17 @@ export function FaqV2() {
               />
             ))}
             <div className="h-px w-full bg-border" />
-          </div>
+          </motion.div>
 
           {/* WhatsApp CTA */}
-          <div className="flex flex-col items-center gap-5">
+          <motion.div
+            className="flex flex-col items-center gap-5"
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ margin: "-80px" }}
+            transition={{ ...transition, delay: 0.3 }}
+          >
             <p className="text-base text-text-secondary">Ainda tem dúvidas?</p>
             <a
               href="https://wa.me/5579988566945?text=Ol%C3%A1%2C%20gostaria%20de%20saber%20mais%20sobre%20o%20app%20Tatame"
@@ -135,7 +164,7 @@ export function FaqV2() {
               <Image src="/whatsapp.svg" alt="WhatsApp" width={20} height={20} />
               Fale conosco pelo WhatsApp
             </a>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>

@@ -1,11 +1,28 @@
+"use client";
+
 import Image from "next/image";
+import * as motion from "motion/react-client";
 import { ButtonColorful } from "../ui/button-colorful";
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 32 },
+  visible: { opacity: 1, y: 0 },
+} as const;
+
+const transition = { duration: 0.6, ease: [0.25, 0.1, 0.25, 1] } as const;
 
 export function FinalCtaV2() {
   return (
     <section className="px-6 py-16 md:px-20 md:py-[100px]">
       <div className="mx-auto max-w-[1440px]">
-        <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-[#110B1E] px-6 py-12 md:px-20 md:py-20">
+        <motion.div
+          className="relative overflow-hidden rounded-3xl border border-primary/20 bg-[#110B1E] px-6 py-12 md:px-20 md:py-20"
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ margin: "-80px" }}
+          transition={transition}
+        >
           {/* Purple glow on the right */}
           <div className="pointer-events-none absolute -right-20 -top-20 h-[500px] w-[500px] rounded-full bg-primary/25 blur-[120px]" />
 
@@ -38,7 +55,7 @@ export function FinalCtaV2() {
               />
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

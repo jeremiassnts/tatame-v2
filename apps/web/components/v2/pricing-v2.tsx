@@ -1,5 +1,15 @@
+"use client";
+
 import { Check } from "lucide-react";
+import * as motion from "motion/react-client";
 import { ButtonColorful } from "../ui/button-colorful";
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 32 },
+  visible: { opacity: 1, y: 0 },
+} as const;
+
+const transition = { duration: 0.6, ease: [0.25, 0.1, 0.25, 1] } as const;
 
 const proPlan = {
   name: "Pro",
@@ -22,7 +32,14 @@ export function PricingV2() {
       <div className="mx-auto max-w-[1440px]">
         <div className="flex flex-col items-center gap-16">
           {/* Header */}
-          <div className="flex max-w-[700px] flex-col items-center gap-4">
+          <motion.div
+            className="flex max-w-[700px] flex-col items-center gap-4"
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ margin: "-80px" }}
+            transition={transition}
+          >
             <span className="rounded-full bg-primary/[0.125] px-4 py-1.5 text-[11px] font-bold uppercase tracking-[2px] text-primary">
               PREÇOS
             </span>
@@ -32,10 +49,17 @@ export function PricingV2() {
             <p className="text-center text-base leading-relaxed text-text-secondary md:text-lg md:leading-relaxed">
               Teste grátis por 30 dias. Cancele quando quiser, sem perguntas.
             </p>
-          </div>
+          </motion.div>
 
           {/* Card */}
-          <div className="w-full max-w-[480px]">
+          <motion.div
+            className="w-full max-w-[480px]"
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ margin: "-80px" }}
+            transition={{ ...transition, delay: 0.15 }}
+          >
             <div className="flex flex-col gap-8 rounded-[20px] border-2 border-primary bg-background p-8 md:p-10">
               {/* Trial badge */}
               <span className="w-fit rounded-full bg-gradient-to-b from-primary to-primary-dark px-3 py-1 text-[16px] font-bold uppercase tracking-[1.5px] text-white">
@@ -83,7 +107,7 @@ export function PricingV2() {
                 Cancele quando quiser, sem burocracia
               </p>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>
