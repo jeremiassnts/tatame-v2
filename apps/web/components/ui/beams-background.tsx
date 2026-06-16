@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface BeamsBackgroundProps {
@@ -43,10 +43,7 @@ function createBeam(width: number, height: number): Beam {
     };
 }
 
-export function BeamsBackground({
-    className,
-    intensity = "strong",
-}: BeamsBackgroundProps) {
+function CanvasBeams({ intensity }: { intensity: "subtle" | "medium" | "strong" }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const beamsRef = useRef<Beam[]>([]);
     const animationFrameRef = useRef<number>(0);
@@ -61,9 +58,6 @@ export function BeamsBackground({
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
 
-        const isMobile = window.innerWidth < 768;
-        const beamCount = isMobile ? 8 : 20;
-
         const updateCanvasSize = () => {
             const dpr = window.devicePixelRatio || 1;
             canvas.width = window.innerWidth * dpr;
@@ -72,7 +66,7 @@ export function BeamsBackground({
             canvas.style.height = `${window.innerHeight}px`;
             ctx.scale(dpr, dpr);
 
-            beamsRef.current = Array.from({ length: beamCount }, () =>
+            beamsRef.current = Array.from({ length: 20 }, () =>
                 createBeam(canvas.width, canvas.height)
             );
         };
@@ -142,7 +136,6 @@ export function BeamsBackground({
             animationFrameRef.current = requestAnimationFrame(animate);
         }
 
-        // Defer animation start so it doesn't compete with FCP/LCP
         const startId = setTimeout(animate, 1500);
 
         const onVisibilityChange = () => {
@@ -164,6 +157,20 @@ export function BeamsBackground({
         };
     }, [intensity]);
 
+    return <canvas ref={canvasRef} className="absolute inset-0" />;
+}
+
+export function BeamsBackground({
+    className,
+    intensity = "strong",
+}: BeamsBackgroundProps) {
+    const [isDesktop, setIsDesktop] = useState(false);
+
+    useEffect(() => {
+        const mq = window.matchMedia("(min-width: 768px)");
+        setIsDesktop(mq.matches);
+    }, []);
+
     return (
         <div
             className={cn(
@@ -172,10 +179,11 @@ export function BeamsBackground({
             )}
             style={{ zIndex: 0 }}
         >
-            <canvas
-                ref={canvasRef}
-                className="absolute inset-0"
-            />
+            {/* Mobile: static CSS gradient, no canvas */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,_hsla(265,60%,50%,0.15)_0%,_transparent_60%)] md:hidden" />
+
+            {/* Desktop: animated canvas beams */}
+            {isDesktop && <CanvasBeams intensity={intensity} />}
         </div>
     );
 }

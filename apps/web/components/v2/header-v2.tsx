@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import { motion } from "motion/react";
 import { Menu, X } from "lucide-react";
 import Image from "next/image";
 import { ButtonPrimary } from "../ui/button-primary";
@@ -32,7 +31,15 @@ function NavPill() {
             {link.label}
           </Tab>
         ))}
-        <Cursor position={position} />
+        <li
+          aria-hidden="true"
+          className="absolute z-0 h-[36px] rounded-full bg-primary transition-all duration-200 ease-out"
+          style={{
+            left: position.left,
+            width: position.width,
+            opacity: position.opacity,
+          }}
+        />
       </ul>
     </nav>
   );
@@ -71,21 +78,6 @@ function Tab({
         {children}
       </a>
     </li>
-  );
-}
-
-function Cursor({
-  position,
-}: {
-  position: { left: number; width: number; opacity: number };
-}) {
-  return (
-    <motion.li
-      aria-hidden="true"
-      animate={position}
-      transition={{ type: "spring", stiffness: 500, damping: 35 }}
-      className="absolute z-0 h-[36px] rounded-full bg-primary"
-    />
   );
 }
 
