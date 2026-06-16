@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ClerkProviderWrapper } from "@/components/clerk-provider-wrapper";
 
 export const metadata: Metadata = {
   title: "Assinatura Confirmada — Tatame",
@@ -10,5 +11,5 @@ export default function AssinaturaConfirmadaLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return <ClerkProviderWrapper>{children}</ClerkProviderWrapper>;
 }

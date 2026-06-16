@@ -2,7 +2,7 @@
 
 import Script from "next/script";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, Suspense } from "react";
+import { useEffect, useState, Suspense, useCallback } from "react";
 import { GA_MEASUREMENT_ID, pageview } from "@/lib/gtag";
 
 function GoogleAnalyticsInner() {
@@ -11,7 +11,8 @@ function GoogleAnalyticsInner() {
 
   useEffect(() => {
     if (!GA_MEASUREMENT_ID) return;
-    const url = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : "");
+    const url =
+      pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : "");
     pageview(url);
   }, [pathname, searchParams]);
 
@@ -19,7 +20,24 @@ function GoogleAnalyticsInner() {
 }
 
 export function GoogleAnalytics() {
-  if (!GA_MEASUREMENT_ID) return null;
+  const [activated, setActivated] = useState(false);
+
+  const activate = useCallback(() => {
+    setActivated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!GA_MEASUREMENT_ID) return;
+
+    const events = ["scroll", "click", "touchstart", "keydown"] as const;
+    events.forEach((e) => window.addEventListener(e, activate, { once: true, passive: true }));
+
+    return () => {
+      events.forEach((e) => window.removeEventListener(e, activate));
+    };
+  }, [activate]);
+
+  if (!GA_MEASUREMENT_ID || !activated) return null;
 
   return (
     <>
