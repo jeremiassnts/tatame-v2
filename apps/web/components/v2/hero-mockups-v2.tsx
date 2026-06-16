@@ -10,14 +10,6 @@ const SLIDES = [
 
 const AUTO_MS = 4500;
 
-function MockupFrame({ src, alt, priority = false }: { src: string; alt: string; priority?: boolean }) {
-  return (
-    <div className="relative h-[420px] w-[210px] md:h-[580px] md:w-[290px]">
-      <Image src={src} alt={alt} fill className="object-contain" sizes="(max-width: 768px) 210px, 290px" priority={priority} />
-    </div>
-  );
-}
-
 export function HeroMockupsV2() {
   const [active, setActive] = useState(0);
 
@@ -47,7 +39,16 @@ export function HeroMockupsV2() {
               }`}
               aria-hidden={i !== active}
             >
-              <MockupFrame src={slide.src} alt={slide.alt} priority={i === 0} />
+              <Image
+                src={slide.src}
+                alt={slide.alt}
+                width={210}
+                height={420}
+                className="h-full w-full object-contain"
+                sizes="210px"
+                priority={i === 0}
+                fetchPriority={i === 0 ? "high" : "low"}
+              />
             </div>
           ))}
         </div>
@@ -75,7 +76,18 @@ export function HeroMockupsV2() {
       {/* Desktop: two mockups side by side */}
       <div className="hidden w-full items-center justify-center gap-6 md:flex md:gap-10">
         {SLIDES.map((slide, i) => (
-          <MockupFrame key={slide.src} src={slide.src} alt={slide.alt} priority={i === 0} />
+          <div key={slide.src} className="relative h-[580px] w-[290px]">
+            <Image
+              src={slide.src}
+              alt={slide.alt}
+              width={290}
+              height={580}
+              className="h-full w-full object-contain"
+              sizes="290px"
+              priority={i === 0}
+              fetchPriority={i === 0 ? "high" : "low"}
+            />
+          </div>
         ))}
       </div>
     </>
