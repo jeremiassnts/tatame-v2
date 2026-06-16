@@ -10,7 +10,7 @@ export function FooterV2() {
           <div className="flex max-w-[320px] flex-col gap-4">
             <div className="flex items-center gap-2.5">
               <Image src="/icon.png" alt="Tatame" width={20} height={20} />
-              <span className="font-[family-name:var(--font-sora)] text-lg font-bold text-white">
+              <span className="font-sora text-lg font-bold text-white">
                 TATAME
               </span>
             </div>
@@ -22,7 +22,7 @@ export function FooterV2() {
           {/* Links */}
           <div className="flex gap-20">
             <nav aria-label="Produto" className="flex flex-col gap-4">
-              <span className="text-[13px] font-bold text-white">Produto</span>
+              <h3 className="text-[13px] font-bold text-white">Produto</h3>
               <a href="/" className="text-[13px] text-text-secondary hover:text-white">
                 Início
               </a>
@@ -40,7 +40,7 @@ export function FooterV2() {
               </a>
             </nav>
             <nav aria-label="Legal" className="flex flex-col gap-4">
-              <span className="text-[13px] font-bold text-white">Legal</span>
+              <h3 className="text-[13px] font-bold text-white">Legal</h3>
               <a href="/privacidade" className="text-[13px] text-text-secondary hover:text-white">
                 Privacidade
               </a>

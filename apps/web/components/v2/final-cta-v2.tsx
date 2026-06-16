@@ -3,13 +3,7 @@
 import Image from "next/image";
 import * as motion from "motion/react-client";
 import { ButtonColorful } from "../ui/button-colorful";
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 32 },
-  visible: { opacity: 1, y: 0 },
-} as const;
-
-const transition = { duration: 0.6, ease: [0.25, 0.1, 0.25, 1] } as const;
+import { fadeUp, transition } from "@/lib/animations";
 
 export function FinalCtaV2() {
   return (
@@ -29,7 +23,7 @@ export function FinalCtaV2() {
           <div className="relative flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
             {/* Left: text + CTA */}
             <div className="flex flex-col gap-6 md:max-w-[50%]">
-              <h2 className="font-[family-name:var(--font-sora)] text-[30px] font-extrabold leading-[1.2] tracking-[-1.5px] text-white md:text-[40px]">
+              <h2 className="font-sora text-[30px] font-extrabold leading-[1.2] tracking-[-1.5px] text-white md:text-[40px]">
                 Sua academia merece mais do que uma planilha
               </h2>
               <p className="max-w-[480px] text-base leading-relaxed text-[#d6d6d6] md:text-lg md:leading-relaxed">

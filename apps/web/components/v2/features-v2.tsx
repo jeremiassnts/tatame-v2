@@ -13,28 +13,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import Image from "next/image";
 import * as motion from "motion/react-client";
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 32 },
-  visible: { opacity: 1, y: 0 },
-} as const;
-
-const fadeDown = {
-  hidden: { opacity: 0, y: -32 },
-  visible: { opacity: 1, y: 0 },
-} as const;
-
-const fadeLeft = {
-  hidden: { opacity: 0, x: 40 },
-  visible: { opacity: 1, x: 0 },
-} as const;
-
-const fadeRight = {
-  hidden: { opacity: 0, x: -40 },
-  visible: { opacity: 1, x: 0 },
-} as const;
-
-const transition = { duration: 0.6, ease: [0.25, 0.1, 0.25, 1] } as const;
+import { fadeUp, fadeDown, fadeLeft, fadeRight, transition } from "@/lib/animations";
 
 type Feature = {
   icon: LucideIcon;
@@ -102,7 +81,7 @@ function FeatureItem({ icon: Icon, title, description }: Feature) {
       <div className="flex h-[48px] w-[48px] items-center justify-center rounded-[14px] bg-primary/[0.125]">
         <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
       </div>
-      <h3 className="font-[family-name:var(--font-sora)] text-lg font-bold text-white">
+      <h3 className="font-sora text-lg font-bold text-white">
         {title}
       </h3>
       <p className="text-[15px] leading-relaxed text-text-secondary">
@@ -128,7 +107,7 @@ export function FeaturesV2() {
           <span className="rounded-full bg-primary/[0.125] px-4 py-1.5 text-[11px] font-bold uppercase tracking-[2px] text-primary">
             RECURSOS
           </span>
-          <h2 className="text-center font-[family-name:var(--font-sora)] text-[30px] font-extrabold tracking-[-1.5px] text-white md:text-[44px]">
+          <h2 className="text-center font-sora text-[30px] font-extrabold tracking-[-1.5px] text-white md:text-[44px]">
             O que o app oferece
           </h2>
           <p className="max-w-[600px] text-center text-base leading-relaxed text-text-secondary md:text-lg">

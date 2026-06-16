@@ -4,13 +4,7 @@ import { UserPlus, Settings, Rocket } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import * as motion from "motion/react-client";
 import { HowToJsonLd } from "../json-ld";
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 32 },
-  visible: { opacity: 1, y: 0 },
-} as const;
-
-const transition = { duration: 0.6, ease: [0.25, 0.1, 0.25, 1] } as const;
+import { fadeUp, transition } from "@/lib/animations";
 
 const steps: { icon: LucideIcon; number: string; title: string; description: string }[] = [
   {
@@ -52,7 +46,7 @@ export function HowToStart() {
           viewport={{ margin: "-80px" }}
           transition={transition}
         >
-          <h2 className="text-center font-[family-name:var(--font-sora)] text-[30px] font-extrabold tracking-[-1.5px] text-white md:text-[44px]">
+          <h2 className="text-center font-sora text-[30px] font-extrabold tracking-[-1.5px] text-white md:text-[44px]">
             Comece em 3 passos
           </h2>
           <p className="max-w-[500px] text-center text-base leading-relaxed text-text-secondary md:text-lg">
@@ -88,7 +82,7 @@ export function HowToStart() {
               {/* Text */}
               <div className="mt-6 flex max-w-[280px] flex-col items-center gap-2 text-center">
                 <span className="text-sm font-bold text-primary">Passo {step.number}</span>
-                <h3 className="font-[family-name:var(--font-sora)] text-lg font-bold text-white">
+                <h3 className="font-sora text-lg font-bold text-white">
                   {step.title}
                 </h3>
                 <p className="text-[15px] leading-relaxed text-text-secondary">

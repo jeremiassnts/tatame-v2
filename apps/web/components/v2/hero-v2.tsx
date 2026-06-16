@@ -20,7 +20,7 @@ export function HeroV2() {
           </div>
 
           {/* Headline */}
-          <h1 className="text-center font-[family-name:var(--font-sora)] text-[36px] font-extrabold leading-[1.1] tracking-[-2px] text-white md:text-left md:text-[52px]">
+          <h1 className="text-center font-sora text-[36px] font-extrabold leading-[1.1] tracking-[-2px] text-white md:text-left md:text-[52px]">
             Sua academia inteira na palma da sua mão
           </h1>
 

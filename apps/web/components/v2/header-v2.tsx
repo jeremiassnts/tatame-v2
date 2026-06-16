@@ -105,7 +105,7 @@ export function HeaderV2() {
         {/* Logo */}
         <a href="/" className="flex items-center gap-3">
           <Image src="/icon.png" alt="Tatame" width={25} height={25} />
-          <span className="font-[family-name:var(--font-sora)] text-[22px] font-bold tracking-tight text-white">
+          <span className="font-sora text-[22px] font-bold tracking-tight text-white">
             TATAME
           </span>
         </a>

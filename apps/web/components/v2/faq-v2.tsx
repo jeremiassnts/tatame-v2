@@ -6,13 +6,7 @@ import * as motion from "motion/react-client";
 import { useState } from "react";
 import { FaqJsonLd } from "../json-ld";
 import { event as trackEvent } from "@/lib/gtag";
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 32 },
-  visible: { opacity: 1, y: 0 },
-} as const;
-
-const transition = { duration: 0.6, ease: [0.25, 0.1, 0.25, 1] } as const;
+import { fadeUp, transition } from "@/lib/animations";
 
 const faqItems = [
   {
@@ -112,7 +106,7 @@ export function FaqV2() {
             viewport={{ margin: "-80px" }}
             transition={transition}
           >
-            <h2 className="text-center font-[family-name:var(--font-sora)] text-[30px] font-extrabold tracking-[-1.5px] text-white md:text-[40px]">
+            <h2 className="text-center font-sora text-[30px] font-extrabold tracking-[-1.5px] text-white md:text-[40px]">
               Perguntas frequentes
             </h2>
             <p className="text-center text-base leading-relaxed text-text-secondary md:text-lg md:leading-relaxed">

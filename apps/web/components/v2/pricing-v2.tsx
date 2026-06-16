@@ -3,13 +3,7 @@
 import { Check } from "lucide-react";
 import * as motion from "motion/react-client";
 import { ButtonColorful } from "../ui/button-colorful";
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 32 },
-  visible: { opacity: 1, y: 0 },
-} as const;
-
-const transition = { duration: 0.6, ease: [0.25, 0.1, 0.25, 1] } as const;
+import { fadeUp, transition } from "@/lib/animations";
 
 const proPlan = {
   name: "Pro",
@@ -42,7 +36,7 @@ export function PricingV2() {
             <span className="rounded-full bg-primary/[0.125] px-4 py-1.5 text-[11px] font-bold uppercase tracking-[2px] text-primary">
               PREÇOS
             </span>
-            <h2 className="text-center font-[family-name:var(--font-sora)] text-[30px] font-extrabold tracking-[-1.5px] text-white md:text-[44px]">
+            <h2 className="text-center font-sora text-[30px] font-extrabold tracking-[-1.5px] text-white md:text-[44px]">
               Um plano. Tudo incluso.
             </h2>
             <p className="text-center text-base leading-relaxed text-text-secondary md:text-lg md:leading-relaxed">
@@ -66,7 +60,7 @@ export function PricingV2() {
               </span>
 
               <div className="flex flex-col gap-2">
-                <h3 className="font-[family-name:var(--font-sora)] text-[22px] font-bold text-white">
+                <h3 className="font-sora text-[22px] font-bold text-white">
                   {proPlan.name}
                 </h3>
                 <p className="text-sm leading-normal text-text-secondary">
@@ -75,10 +69,10 @@ export function PricingV2() {
               </div>
 
               <div className="flex items-baseline gap-1">
-                <span className="font-[family-name:var(--font-sora)] text-5xl font-extrabold tracking-[-2px] text-white">
+                <span className="font-sora text-5xl font-extrabold tracking-[-2px] text-white">
                   R$ 49
                 </span>
-                <span className="font-[family-name:var(--font-sora)] text-2xl font-extrabold tracking-[-1px] text-white">
+                <span className="font-sora text-2xl font-extrabold tracking-[-1px] text-white">
                   ,90
                 </span>
                 <span className="text-base text-text-muted">/mês</span>
