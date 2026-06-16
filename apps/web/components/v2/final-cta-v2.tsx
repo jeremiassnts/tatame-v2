@@ -33,6 +33,7 @@ export function FinalCtaV2() {
                 alt="Tatame app — criar academia e financeiro"
                 width={560}
                 height={380}
+                sizes="(max-width: 768px) 100vw, 45vw"
                 className="ml-auto"
               />
             </div>

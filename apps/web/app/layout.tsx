@@ -20,7 +20,7 @@ const siteUrl = "https://apptatame.com.br";
 
 export const metadata: Metadata = {
   title: {
-    default: "Tatame — O app de gestão para academias de Jiu-Jitsu",
+    default: "Gestão para Academias de Jiu-Jitsu — Tatame",
     template: "%s — Tatame",
   },
   description:
@@ -31,23 +31,23 @@ export const metadata: Metadata = {
     locale: "pt_BR",
     url: siteUrl,
     siteName: "Tatame",
-    title: "Tatame — O app de gestão para academias de Jiu-Jitsu",
+    title: "Gestão para Academias de Jiu-Jitsu — Tatame",
     description:
-      "Controle turmas, presenças, graduações e pagamentos da sua academia de Jiu-Jitsu em um único app. Teste grátis por 30 dias.",
+      "O app que simplifica a gestão da sua academia de Jiu-Jitsu. Turmas, presenças, graduações e pagamentos em um só lugar. Teste grátis!",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Tatame — O app de gestão para academias de Jiu-Jitsu",
+        alt: "Gestão para Academias de Jiu-Jitsu — Tatame",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Tatame — O app de gestão para academias de Jiu-Jitsu",
+    title: "Gestão para Academias de Jiu-Jitsu — Tatame",
     description:
-      "Controle turmas, presenças, graduações e pagamentos da sua academia de Jiu-Jitsu em um único app. Teste grátis por 30 dias.",
+      "O app que simplifica a gestão da sua academia de Jiu-Jitsu. Turmas, presenças, graduações e pagamentos em um só lugar. Teste grátis!",
     images: ["/og-image.png"],
   },
   alternates: {

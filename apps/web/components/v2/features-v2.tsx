@@ -120,6 +120,7 @@ export function FeaturesV2() {
               alt="Tatame app — agenda e assinatura"
               width={490}
               height={368}
+              sizes="(max-width: 768px) 100vw, 50vw"
               className="mx-auto rounded-[20px]"
             />
           </div>
@@ -143,6 +144,7 @@ export function FeaturesV2() {
               alt="Tatame app — membros e visão do aluno"
               width={490}
               height={368}
+              sizes="(max-width: 768px) 100vw, 50vw"
               className="mx-auto rounded-[20px]"
             />
           </div>

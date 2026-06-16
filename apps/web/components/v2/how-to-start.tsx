@@ -1,5 +1,6 @@
 import { UserPlus, Settings, Rocket } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { HowToJsonLd } from "../json-ld";
 
 const steps: { icon: LucideIcon; number: string; title: string; description: string }[] = [
   {
@@ -28,6 +29,9 @@ const steps: { icon: LucideIcon; number: string; title: string; description: str
 export function HowToStart() {
   return (
     <section id="como-funciona" className="px-6 py-16 md:px-20 md:py-[100px]">
+      <HowToJsonLd
+        steps={steps.map((s) => ({ name: s.title, text: s.description }))}
+      />
       <div className="mx-auto max-w-[1440px]">
         {/* Section header */}
         <div className="mb-16 flex flex-col items-center gap-4">

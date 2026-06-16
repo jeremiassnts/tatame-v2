@@ -32,10 +32,37 @@ export function SoftwareApplicationJsonLd() {
       "Plataforma de gestão para academias de Jiu-Jitsu. Gerencie turmas, presenças, graduações e pagamentos.",
     offers: {
       "@type": "Offer",
-      price: "49.00",
+      price: "49.90",
       priceCurrency: "BRL",
       description: "Plano Pro — 30 dias grátis",
     },
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+    />
+  );
+}
+
+export function HowToJsonLd({
+  steps,
+}: {
+  steps: { name: string; text: string }[];
+}) {
+  const data = {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: "Como começar a usar o Tatame",
+    description:
+      "Do cadastro à primeira aula gerenciada em minutos.",
+    step: steps.map((step, i) => ({
+      "@type": "HowToStep",
+      position: i + 1,
+      name: step.name,
+      text: step.text,
+    })),
   };
 
   return (
