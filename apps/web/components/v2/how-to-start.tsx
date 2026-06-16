@@ -57,7 +57,7 @@ export function HowToStart() {
 
               {/* Icon circle */}
               <div className="relative z-10 flex h-[72px] w-[72px] items-center justify-center rounded-full border-2 border-primary bg-background">
-                <step.icon className="h-7 w-7 text-primary" />
+                <step.icon className="h-7 w-7 text-primary" aria-hidden="true" />
               </div>
 
               {/* Text */}

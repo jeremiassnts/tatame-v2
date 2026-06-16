@@ -66,7 +66,7 @@ export function PricingV2() {
               <div className="flex flex-col gap-4">
                 {proPlan.features.map((feature) => (
                   <div key={feature} className="flex items-center gap-3">
-                    <Check className="h-[18px] w-[18px] text-primary" />
+                    <Check className="h-[18px] w-[18px] text-primary" aria-hidden="true" />
                     <span className="text-sm text-white">{feature}</span>
                   </div>
                 ))}

@@ -37,7 +37,7 @@ export function ButtonColorful({
       <span className="absolute h-px opacity-0 group-hover:opacity-100 transition-all duration-500 ease-in-out inset-x-0 inset-y-0 bg-gradient-to-r w-3/4 mx-auto from-transparent via-primary to-transparent" />
 
       {label}
-      <ArrowRight className="h-5 w-5 text-white/90" />
+      <ArrowRight className="h-5 w-5 text-white/90" aria-hidden="true" />
 
       {/* Bottom neon line */}
       <span className="absolute group-hover:opacity-30 transition-all duration-500 ease-in-out inset-x-0 h-px -bottom-px bg-gradient-to-r w-3/4 mx-auto from-transparent via-primary to-transparent" />

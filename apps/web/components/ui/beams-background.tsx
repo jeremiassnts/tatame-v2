@@ -58,6 +58,9 @@ export function BeamsBackground({
         const canvas = canvasRef.current;
         if (!canvas) return;
 
+        const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+        if (reducedMotion.matches) return;
+
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
 

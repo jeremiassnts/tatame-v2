@@ -22,17 +22,19 @@ function NavPill() {
   });
 
   return (
-    <ul
-      className="relative mx-auto hidden w-fit rounded-full border border-border-light/50 bg-white/10 p-1 md:flex"
-      onMouseLeave={() => setPosition((pv) => ({ ...pv, opacity: 0 }))}
-    >
-      {navLinks.map((link) => (
-        <Tab key={link.href} setPosition={setPosition} href={link.href}>
-          {link.label}
-        </Tab>
-      ))}
-      <Cursor position={position} />
-    </ul>
+    <nav aria-label="Principal" className="hidden md:block">
+      <ul
+        className="relative mx-auto w-fit rounded-full border border-border-light/50 bg-white/10 p-1 flex"
+        onMouseLeave={() => setPosition((pv) => ({ ...pv, opacity: 0 }))}
+      >
+        {navLinks.map((link) => (
+          <Tab key={link.href} setPosition={setPosition} href={link.href}>
+            {link.label}
+          </Tab>
+        ))}
+        <Cursor position={position} />
+      </ul>
+    </nav>
   );
 }
 
@@ -79,6 +81,7 @@ function Cursor({
 }) {
   return (
     <motion.li
+      aria-hidden="true"
       animate={position}
       transition={{ type: "spring", stiffness: 500, damping: 35 }}
       className="absolute z-0 h-[36px] rounded-full bg-primary"
@@ -122,16 +125,17 @@ export function HeaderV2() {
         <button
           onClick={() => setMenuOpen(!menuOpen)}
           className="text-white md:hidden"
-          aria-label="Menu"
+          aria-expanded={menuOpen}
+          aria-label={menuOpen ? "Fechar menu" : "Abrir menu"}
         >
-          {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          {menuOpen ? <X className="h-6 w-6" aria-hidden="true" /> : <Menu className="h-6 w-6" aria-hidden="true" />}
         </button>
       </div>
 
       {/* Mobile dropdown */}
       {menuOpen && (
         <div className="border-t border-border bg-background px-6 pb-6 pt-4 md:hidden">
-          <nav className="flex flex-col gap-4">
+          <nav aria-label="Menu mobile" className="flex flex-col gap-4">
             {navLinks.map((link) => (
               <a
                 key={link.href}

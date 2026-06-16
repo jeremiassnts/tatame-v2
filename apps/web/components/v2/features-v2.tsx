@@ -75,7 +75,7 @@ function FeatureItem({ icon: Icon, title, description }: Feature) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex h-[48px] w-[48px] items-center justify-center rounded-[14px] bg-primary/[0.125]">
-        <Icon className="h-5 w-5 text-primary" />
+        <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
       </div>
       <h3 className="font-[family-name:var(--font-sora)] text-lg font-bold text-white">
         {title}

@@ -21,7 +21,7 @@ export function FooterV2() {
 
           {/* Links */}
           <div className="flex gap-20">
-            <div className="flex flex-col gap-4">
+            <nav aria-label="Produto" className="flex flex-col gap-4">
               <span className="text-[13px] font-bold text-white">Produto</span>
               <a href="/" className="text-[13px] text-text-secondary hover:text-white">
                 Início
@@ -38,8 +38,8 @@ export function FooterV2() {
               <a href="#duvidas" className="text-[13px] text-text-secondary hover:text-white">
                 Dúvidas
               </a>
-            </div>
-            <div className="flex flex-col gap-4">
+            </nav>
+            <nav aria-label="Legal" className="flex flex-col gap-4">
               <span className="text-[13px] font-bold text-white">Legal</span>
               <a href="/privacidade" className="text-[13px] text-text-secondary hover:text-white">
                 Privacidade
@@ -47,7 +47,7 @@ export function FooterV2() {
               <a href="/termos" className="text-[13px] text-text-secondary hover:text-white">
                 Termos de uso
               </a>
-            </div>
+            </nav>
           </div>
         </div>
 

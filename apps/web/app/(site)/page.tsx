@@ -16,7 +16,10 @@ export default function Home() {
   return (
     <>
       <BeamsBackground intensity="subtle" />
-      <main className="relative z-10 flex min-h-screen flex-col">
+      <a href="#conteudo-principal" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-white">
+        Pular para o conteúdo principal
+      </a>
+      <main id="conteudo-principal" className="relative z-10 flex min-h-screen flex-col">
         <OrganizationJsonLd />
         <SoftwareApplicationJsonLd />
         <HeaderV2 />

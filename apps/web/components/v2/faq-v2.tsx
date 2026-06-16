@@ -39,11 +39,13 @@ function FaqItem({
   answer,
   isOpen,
   onToggle,
+  id,
 }: {
   question: string;
   answer: string;
   isOpen: boolean;
   onToggle: () => void;
+  id: string;
 }) {
   return (
     <>
@@ -51,18 +53,23 @@ function FaqItem({
       <div className="py-6">
         <button
           onClick={onToggle}
+          aria-expanded={isOpen}
+          aria-controls={`faq-panel-${id}`}
           className="flex w-full items-center justify-between text-left"
         >
           <span className="text-base font-semibold text-white md:text-lg">
             {question}
           </span>
           <ChevronDown
+            aria-hidden="true"
             className={`h-5 w-5 shrink-0 transition-transform duration-300 ${
               isOpen ? "rotate-180 text-primary" : "text-text-muted"
             }`}
           />
         </button>
         <div
+          id={`faq-panel-${id}`}
+          role="region"
           className={`grid transition-all duration-300 ease-out ${
             isOpen
               ? "mt-4 grid-rows-[1fr] opacity-100"
@@ -103,6 +110,7 @@ export function FaqV2() {
             {faqItems.map((item, index) => (
               <FaqItem
                 key={item.question}
+                id={String(index)}
                 question={item.question}
                 answer={item.answer}
                 isOpen={openIndex === index}
