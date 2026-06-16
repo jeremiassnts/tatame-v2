@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Calendar,
   UserCheck,
@@ -10,6 +12,29 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import Image from "next/image";
+import * as motion from "motion/react-client";
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 32 },
+  visible: { opacity: 1, y: 0 },
+} as const;
+
+const fadeDown = {
+  hidden: { opacity: 0, y: -32 },
+  visible: { opacity: 1, y: 0 },
+} as const;
+
+const fadeLeft = {
+  hidden: { opacity: 0, x: 40 },
+  visible: { opacity: 1, x: 0 },
+} as const;
+
+const fadeRight = {
+  hidden: { opacity: 0, x: -40 },
+  visible: { opacity: 1, x: 0 },
+} as const;
+
+const transition = { duration: 0.6, ease: [0.25, 0.1, 0.25, 1] } as const;
 
 type Feature = {
   icon: LucideIcon;
@@ -100,7 +125,14 @@ export function FeaturesV2() {
     <section id="recursos" className="px-6 py-16 md:px-20 md:py-[100px]">
       <div className="mx-auto max-w-[1440px]">
         {/* Section header */}
-        <div className="mb-16 flex flex-col items-center gap-4">
+        <motion.div
+          className="mb-16 flex flex-col items-center gap-4"
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ margin: "-80px" }}
+          transition={transition}
+        >
           <span className="rounded-full bg-primary/[0.125] px-4 py-1.5 text-[11px] font-bold uppercase tracking-[2px] text-primary">
             RECURSOS
           </span>
@@ -110,11 +142,18 @@ export function FeaturesV2() {
           <p className="max-w-[600px] text-center text-base leading-relaxed text-text-secondary md:text-lg">
             Cada recurso foi pensado para a rotina real de quem vive o Jiu-Jitsu.
           </p>
-        </div>
+        </motion.div>
 
         {/* Block 1: Image LEFT + 4 features RIGHT */}
         <div className="mb-20 flex flex-col items-center gap-12 md:flex-row md:gap-16">
-          <div className="w-full md:w-1/2">
+          <motion.div
+            className="w-full md:w-1/2"
+            variants={fadeDown}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ margin: "-80px" }}
+            transition={transition}
+          >
             <Image
               src="/feature-1-agenda-assinatura.png"
               alt="Tatame app — agenda e assinatura"
@@ -123,22 +162,43 @@ export function FeaturesV2() {
               sizes="(max-width: 768px) 100vw, 50vw"
               className="mx-auto rounded-[20px]"
             />
-          </div>
-          <div className="grid w-full grid-cols-1 gap-10 sm:grid-cols-2 md:w-1/2">
+          </motion.div>
+          <motion.div
+            className="grid w-full grid-cols-1 gap-10 sm:grid-cols-2 md:w-1/2"
+            variants={fadeLeft}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ margin: "-80px" }}
+            transition={transition}
+          >
             {featuresBlock1.map((feature) => (
               <FeatureItem key={feature.title} {...feature} />
             ))}
-          </div>
+          </motion.div>
         </div>
 
         {/* Block 2: 4 features LEFT + Image RIGHT */}
         <div className="flex flex-col-reverse items-center gap-12 md:flex-row md:gap-16">
-          <div className="grid w-full grid-cols-1 gap-10 sm:grid-cols-2 md:w-1/2">
+          <motion.div
+            className="grid w-full grid-cols-1 gap-10 sm:grid-cols-2 md:w-1/2"
+            variants={fadeRight}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ margin: "-80px" }}
+            transition={transition}
+          >
             {featuresBlock2.map((feature) => (
               <FeatureItem key={feature.title} {...feature} />
             ))}
-          </div>
-          <div className="w-full md:w-1/2">
+          </motion.div>
+          <motion.div
+            className="w-full md:w-1/2"
+            variants={fadeDown}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ margin: "-80px" }}
+            transition={transition}
+          >
             <Image
               src="/feature-2-membros-aluno.png"
               alt="Tatame app — membros e visão do aluno"
@@ -147,7 +207,7 @@ export function FeaturesV2() {
               sizes="(max-width: 768px) 100vw, 50vw"
               className="mx-auto rounded-[20px]"
             />
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>
