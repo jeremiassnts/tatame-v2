@@ -15,7 +15,6 @@ const proPlan = {
   name: "Pro",
   description:
     "Tudo que você precisa para gerenciar sua academia sem dor de cabeça.",
-  price: "R$ 49",
   features: [
     "Cadastre quantos alunos quiser",
     "Monte quantas turmas precisar",

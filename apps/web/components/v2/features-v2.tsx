@@ -112,14 +112,6 @@ function FeatureItem({ icon: Icon, title, description }: Feature) {
   );
 }
 
-function ImagePlaceholder({ label }: { label: string }) {
-  return (
-    <div className="flex aspect-[4/3] w-full items-center justify-center rounded-[20px] border-2 border-dashed border-border-light bg-surface">
-      <span className="text-sm text-text-muted">{label}</span>
-    </div>
-  );
-}
-
 export function FeaturesV2() {
   return (
     <section id="recursos" className="px-6 py-16 md:px-20 md:py-[100px]">
