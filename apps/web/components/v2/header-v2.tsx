@@ -100,7 +100,7 @@ export function HeaderV2() {
     <header className={`sticky top-0 z-50 border-b transition-all duration-300 ${scrolled ? "bg-surface/60 backdrop-blur-lg border-border-light/30" : "bg-transparent border-transparent"}`}>
       <div className="mx-auto flex h-20 max-w-[1440px] items-center justify-between px-6 md:px-20">
         {/* Logo */}
-        <a href="/v2" className="flex items-center gap-3">
+        <a href="/" className="flex items-center gap-3">
           <Image src="/icon.png" alt="Tatame" width={25} height={25} />
           <span className="font-[family-name:var(--font-sora)] text-[22px] font-bold tracking-tight text-white">
             TATAME

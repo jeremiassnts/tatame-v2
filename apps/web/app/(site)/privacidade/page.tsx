@@ -1,5 +1,5 @@
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
+import { HeaderV2 } from "@/components/v2/header-v2";
+import { FooterV2 } from "@/components/v2/footer-v2";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -50,7 +50,7 @@ const sections = [
 export default function Privacidade() {
   return (
     <>
-    <Header />
+    <HeaderV2 />
     <main className="px-6 py-16 md:px-20 md:py-20">
       <div className="mx-auto max-w-[800px]">
         {/* Header */}
@@ -81,7 +81,7 @@ export default function Privacidade() {
         </div>
       </div>
     </main>
-    <Footer />
+    <FooterV2 />
     </>
   );
 }
