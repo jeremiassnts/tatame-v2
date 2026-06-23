@@ -136,7 +136,7 @@ function AuthenticatedView({
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="flex w-full max-w-md flex-col items-center gap-8 rounded-[20px] border border-border bg-surface p-8 md:p-10">
-        <LogoHeader subtitle="Conta criada com sucesso" />
+        <LogoHeader subtitle="Conta criada com sucesso!" />
 
         {/* Logged-in indicator */}
         <div className="flex w-full items-center gap-3 rounded-xl border border-success/25 bg-success/10 px-4 py-3">
@@ -149,8 +149,8 @@ function AuthenticatedView({
 
         <div className="flex w-full flex-col gap-3">
           <p className="text-center text-sm text-text-secondary">
-            Sua conta está pronta. Clique abaixo para escolher seu plano e
-            ativar o acesso completo à plataforma.
+            Falta só um passo: ativar seus 30 dias grátis. Você não será
+            cobrado agora — o pagamento só começa após o período de teste.
           </p>
 
           {error && (
@@ -163,7 +163,7 @@ function AuthenticatedView({
             disabled={loading}
             className="flex h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-primary to-primary-dark text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
           >
-            {loading ? "Redirecionando..." : "Ir para pagamento"}
+            {loading ? "Redirecionando..." : "Ativar meus 30 dias grátis"}
             {!loading && <ArrowRight className="h-5 w-5" />}
           </button>
 
