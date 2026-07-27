@@ -14,3 +14,4 @@ apps/mobile/android
 apps/mobile/**/*.pem
 .windsurf
 .cursor.superpowers/
+insights/
