@@ -110,6 +110,20 @@ export class PostgresUserRepository implements IUserRepository {
     return !!row;
   }
 
+  async hasActiveOrPendingMembership(userId: string): Promise<boolean> {
+    const [row] = await this.db
+      .select({ id: academyMemberships.id })
+      .from(academyMemberships)
+      .where(
+        and(
+          eq(academyMemberships.userId, userId),
+          inArray(academyMemberships.status, ["pending", "active"]),
+        ),
+      )
+      .limit(1);
+    return !!row;
+  }
+
   async insertRole(data: {
     userId: string;
     role: string;
@@ -124,6 +138,13 @@ export class PostgresUserRepository implements IUserRepository {
       startedAt: data.startedAt,
       endedAt: data.endedAt,
     });
+  }
+
+  async updateActiveRole(userId: string, role: string): Promise<void> {
+    await this.db
+      .update(userRoles)
+      .set({ role: role as "manager" | "instructor" | "student" })
+      .where(and(eq(userRoles.userId, userId), eq(userRoles.isActive, true)));
   }
 
   async findClerkIdByInternalId(userId: string): Promise<string | undefined> {

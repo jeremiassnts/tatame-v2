@@ -39,6 +39,59 @@ describe("UserService", () => {
     expect(await svc.getActiveRole(randomUUID())).toBeNull();
   });
 
+  // ─── ensureManagerRole (Pro checkout role reconciliation) ────
+
+  async function makeUser(svc: UserService, clerkUserId: string) {
+    await svc.upsertFromClerk({
+      clerkUserId,
+      email: `${clerkUserId}@example.com`,
+      name: clerkUserId,
+      profileImageUrl: null,
+    });
+    return (await svc.getByClerkId(clerkUserId))!;
+  }
+
+  it("ensureManagerRole assigns manager when user has no active role", async () => {
+    const repo = new InMemoryUserRepository();
+    const svc = new UserService(repo);
+    const u = await makeUser(svc, "no_role");
+
+    expect(await svc.ensureManagerRole(u.id)).toBe("assigned");
+    expect(await svc.getActiveRole(u.id)).toBe("manager");
+  });
+
+  it("ensureManagerRole is a no-op when user is already a manager", async () => {
+    const repo = new InMemoryUserRepository();
+    const svc = new UserService(repo);
+    const u = await makeUser(svc, "already_mgr");
+    await svc.assignInitialRole(u.id, "manager");
+
+    expect(await svc.ensureManagerRole(u.id)).toBe("unchanged");
+    expect(await svc.getActiveRole(u.id)).toBe("manager");
+  });
+
+  it("ensureManagerRole promotes an orphan non-manager role to manager", async () => {
+    const repo = new InMemoryUserRepository();
+    const svc = new UserService(repo);
+    const u = await makeUser(svc, "orphan_student");
+    await svc.assignInitialRole(u.id, "student");
+
+    // No academy membership → orphan → promote
+    expect(await svc.ensureManagerRole(u.id)).toBe("promoted");
+    expect(await svc.getActiveRole(u.id)).toBe("manager");
+  });
+
+  it("ensureManagerRole does NOT touch a real member (has academy membership)", async () => {
+    const repo = new InMemoryUserRepository();
+    const svc = new UserService(repo);
+    const u = await makeUser(svc, "real_student");
+    await svc.assignInitialRole(u.id, "student");
+    repo.seedActiveOrPendingMembership(u.id);
+
+    expect(await svc.ensureManagerRole(u.id)).toBe("skipped-member");
+    expect(await svc.getActiveRole(u.id)).toBe("student");
+  });
+
   // ─── Webhook idempotency ────────────────────────────────────
 
   it("upsert is idempotent — calling twice with same clerkUserId updates instead of duplicating", async () => {

@@ -36,6 +36,43 @@ export class UserService {
     return true;
   }
 
+  /**
+   * Reconcile a user's active role to "manager" when they pay for Pro.
+   *
+   * Paying for Pro is a clear declaration of manager intent, so:
+   * - no active role      → assign manager
+   * - already manager     → nothing (unchanged)
+   * - orphan non-manager  → promote to manager (e.g. picked "student" in the
+   *                         app by mistake but never joined an academy)
+   * - real member         → leave untouched (they belong to an academy); we
+   *                         return "skipped-member" so the caller can flag it.
+   */
+  async ensureManagerRole(
+    userId: string,
+  ): Promise<"assigned" | "unchanged" | "promoted" | "skipped-member"> {
+    const active = await this.userRepo.findActiveRole(userId);
+
+    if (active === "manager") return "unchanged";
+
+    if (!active) {
+      await this.userRepo.insertRole({
+        userId,
+        role: "manager",
+        isActive: true,
+        startedAt: new Date(),
+        endedAt: null,
+      });
+      return "assigned";
+    }
+
+    const isRealMember =
+      await this.userRepo.hasActiveOrPendingMembership(userId);
+    if (isRealMember) return "skipped-member";
+
+    await this.userRepo.updateActiveRole(userId, "manager");
+    return "promoted";
+  }
+
   async getActiveAcademyForManager(userId: string) {
     return (await this.userRepo.findActiveAcademyForManager(userId)) ?? null;
   }

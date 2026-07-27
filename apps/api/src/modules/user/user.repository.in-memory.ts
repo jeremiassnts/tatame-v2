@@ -8,9 +8,15 @@ type UserRoleRow = InferSelectModel<typeof userRoles>;
 export class InMemoryUserRepository implements IUserRepository {
   private readonly users: UserRow[];
   private readonly roles: UserRoleRow[] = [];
+  private readonly membershipUserIds = new Set<string>();
 
   constructor(initialUsers: UserRow[] = []) {
     this.users = [...initialUsers];
+  }
+
+  /** Test helper: mark a user as having an active/pending academy membership. */
+  seedActiveOrPendingMembership(userId: string): void {
+    this.membershipUserIds.add(userId);
   }
 
   /** For membership / other in-memory repos that need name + email by id. */
@@ -89,6 +95,15 @@ export class InMemoryUserRepository implements IUserRepository {
 
   async hasActiveRole(userId: string): Promise<boolean> {
     return this.roles.some((r) => r.userId === userId && r.isActive);
+  }
+
+  async hasActiveOrPendingMembership(userId: string): Promise<boolean> {
+    return this.membershipUserIds.has(userId);
+  }
+
+  async updateActiveRole(userId: string, role: string): Promise<void> {
+    const row = this.roles.find((r) => r.userId === userId && r.isActive);
+    if (row) row.role = role as UserRoleRow["role"];
   }
 
   async insertRole(data: {

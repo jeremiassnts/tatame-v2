@@ -31,6 +31,9 @@ export interface IUserRepository {
 
   hasActiveRole(userId: string): Promise<boolean>;
 
+  /** True if the user has any academy membership with status active or pending. */
+  hasActiveOrPendingMembership(userId: string): Promise<boolean>;
+
   insertRole(data: {
     userId: string;
     role: string;
@@ -38,6 +41,9 @@ export interface IUserRepository {
     startedAt: Date;
     endedAt: Date | null;
   }): Promise<void>;
+
+  /** Change the role of the user's currently-active user_roles row in place. */
+  updateActiveRole(userId: string, role: string): Promise<void>;
 
   findActiveAcademyForManager(userId: string): Promise<{
     id: string;

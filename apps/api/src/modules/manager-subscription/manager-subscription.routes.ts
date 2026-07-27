@@ -3,6 +3,7 @@ import { Role } from "@tatame/types";
 import { Router } from "express";
 import { getDb } from "../../lib/db.js";
 import { HttpError } from "../../lib/http-error.js";
+import { logger } from "../../lib/logger.js";
 import { getStripe } from "../../lib/stripe.js";
 import {
   attachActiveAcademyContext,
@@ -168,10 +169,21 @@ managerSubscriptionRouter.post(
         });
         user = await userRepo.findByClerkId(clerkUserId);
         if (!user) throw new HttpError(500, "Failed to provision user");
-        // Assign manager role
-        await userService.assignInitialRole(user.id, Role.Manager);
       }
       const email = user.email;
+
+      // Paying for Pro declares manager intent. Reconcile the role for every
+      // user (not just freshly-provisioned ones): a user who signed up in the
+      // mobile app first and picked a non-manager role would otherwise stay
+      // stuck in the student flow after paying. Real academy members are left
+      // untouched — we only flag them for follow-up.
+      const roleOutcome = await userService.ensureManagerRole(user.id);
+      if (roleOutcome === "skipped-member") {
+        logger.warn(
+          { userId: user.id },
+          "[checkout] user paying Pro has an active academy membership; role not auto-promoted to manager",
+        );
+      }
 
       const url = await getService().createCheckoutSession(
         clerkUserId,
