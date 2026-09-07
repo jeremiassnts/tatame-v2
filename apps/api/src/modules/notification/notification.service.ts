@@ -1,4 +1,3 @@
-import { logger } from "../../lib/logger.js";
 import { HttpError } from "../../lib/http-error.js";
 import type { INotificationRepository, NotificationRow } from "./notification.repository.js";
 import type { IPushTokenRepository } from "../push-token/push-token.repository.js";
@@ -44,7 +43,7 @@ export class NotificationService {
 
         for (const tokenRow of tokens) {
           if (!this.queue) {
-            logger.warn("[notification] No queue available, skipping push delivery");
+            console.warn("[notification] No queue available, skipping push delivery");
             continue;
           }
           await this.queue.add("push-send", {
@@ -59,7 +58,7 @@ export class NotificationService {
 
         await this.notificationRepo.updateStatus(row.id, "queued");
       } catch (err) {
-        logger.error({ err, notificationId: row.id }, "[notification] Failed to enqueue push");
+        console.error("[notification] Failed to enqueue push", { err, notificationId: row.id });
       }
     }
 

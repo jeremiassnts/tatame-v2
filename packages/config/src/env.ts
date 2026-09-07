@@ -33,7 +33,6 @@ const envSchema = z.object({
   MANAGER_CLERK_ID: z.string().optional(),
   BULL_BOARD_USER: z.string().optional(),
   BULL_BOARD_PASS: z.string().optional(),
-  OTEL_COLLECTOR_URL: z.string().url().optional(),
   ADMIN_EMAIL: z.string().email().optional(),
   ADMIN_PASSWORD: z.string().optional(),
   ADMIN_JWT_SECRET: z.string().optional(),

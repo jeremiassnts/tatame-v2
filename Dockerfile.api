@@ -54,4 +54,4 @@ ENV NODE_ENV=production
 
 USER appuser
 
-CMD ["node", "--import", "./dist/instrumentation.js", "dist/server.js"]
+CMD ["node", "dist/server.js"]

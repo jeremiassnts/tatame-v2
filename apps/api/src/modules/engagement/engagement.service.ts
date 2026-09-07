@@ -1,4 +1,3 @@
-import { logger } from "../../lib/logger.js";
 import type { NotificationService } from "../notification/notification.service.js";
 import type { INotificationRepository } from "../notification/notification.repository.js";
 import type { ICheckinRepository } from "../checkin/checkin.repository.js";
@@ -41,10 +40,10 @@ export class EngagementService {
         });
         sent++;
       } catch (err) {
-        logger.error({ err, userId }, "[engagement] Failed to send weekly summary");
+        console.error("[engagement] Failed to send weekly summary", { err, userId });
       }
     }
-    logger.info({ sent, total: summaries.length }, "[engagement] Weekly summary processed");
+    console.log("[engagement] Weekly summary processed", { sent, total: summaries.length });
     return sent;
   }
 
@@ -74,10 +73,10 @@ export class EngagementService {
         });
         sent++;
       } catch (err) {
-        logger.error({ err, userId }, "[engagement] Failed to send inactivity nudge");
+        console.error("[engagement] Failed to send inactivity nudge", { err, userId });
       }
     }
-    logger.info({ sent, total: inactiveUserIds.length }, "[engagement] Inactivity nudge processed");
+    console.log("[engagement] Inactivity nudge processed", { sent, total: inactiveUserIds.length });
     return sent;
   }
 
@@ -102,14 +101,14 @@ export class EngagementService {
       });
       await this.milestoneRepo.record(userId, totalCheckins);
     } catch (err) {
-      logger.error({ err, userId }, "[engagement] Failed to check milestone");
+      console.error("[engagement] Failed to check milestone", { err, userId });
     }
   }
 
   private async isRateLimited(clerkId: string): Promise<boolean> {
     const todayCount = await this.notificationRepo.countTodayByRecipientAndCategories(
       clerkId,
-      [...ENGAGEMENT_CATEGORIES] as any,
+      [...ENGAGEMENT_CATEGORIES],
     );
     return todayCount >= MAX_ENGAGEMENT_PER_DAY;
   }

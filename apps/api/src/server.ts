@@ -1,6 +1,6 @@
 import "./env-bootstrap.js";
+import type { RequestHandler } from "express";
 import { loadEnv } from "@tatame/config";
-import { logger } from "./lib/logger.js";
 import { createApp } from "./app.js";
 import { runMigrations } from "./migrate.js";
 import { closeEmailQueue, getEmailQueue } from "./modules/email/email.queue.js";
@@ -26,7 +26,7 @@ import basicAuth from "express-basic-auth";
 const env = loadEnv();
 
 if (env.NODE_ENV === "production") {
-  logger.info("Running database migrations...");
+  console.log("Running database migrations...");
   await runMigrations(env.DATABASE_URL, "./drizzle");
 }
 
@@ -35,12 +35,12 @@ const app = createApp();
 // Start email worker if Redis is available
 if (env.REDIS_URL) {
   startEmailWorker(env.REDIS_URL);
-  logger.info("[email] Worker started");
+  console.log("[email] Worker started");
   startNotificationWorker(env.REDIS_URL);
-  logger.info("[push] Notification worker started");
+  console.log("[push] Notification worker started");
   startEngagementWorker(env.REDIS_URL);
   await registerEngagementJobs(env.REDIS_URL);
-  logger.info("[engagement] Worker started, cron jobs registered");
+  console.log("[engagement] Worker started, cron jobs registered");
 
   const serverAdapter = new ExpressAdapter();
   serverAdapter.setBasePath("/admin/queues");
@@ -58,21 +58,21 @@ if (env.REDIS_URL) {
     app.use(
       "/admin/queues",
       basicAuth({ users: { [bullUser]: bullPass }, challenge: true }),
-      serverAdapter.getRouter(),
+      serverAdapter.getRouter() as RequestHandler,
     );
   } else {
-    logger.warn("[bull-board] BULL_BOARD_USER/BULL_BOARD_PASS not set — dashboard disabled");
+    console.warn("[bull-board] BULL_BOARD_USER/BULL_BOARD_PASS not set — dashboard disabled");
   }
-  logger.info("[bull-board] Dashboard at /admin/queues");
+  console.log("[bull-board] Dashboard at /admin/queues");
 }
 
 const server = app.listen(env.API_PORT, () => {
-  logger.info({ port: env.API_PORT }, "API listening");
+  console.log("API listening", { port: env.API_PORT });
 });
 
 // Graceful shutdown
 async function shutdown() {
-  logger.info("Shutting down...");
+  console.log("Shutting down...");
   server.close();
   await closeEmailWorker();
   await closeEmailQueue();

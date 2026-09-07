@@ -1,5 +1,4 @@
 import { Worker, type Job } from "bullmq";
-import { logger } from "../../lib/logger.js";
 import { getDb } from "../../lib/db.js";
 import { loadEnv } from "@tatame/config";
 import { PostgresNotificationRepository } from "../notification/notification.repository.postgres.js";
@@ -33,7 +32,7 @@ async function processEngagementJob(job: Job): Promise<void> {
   switch (jobName) {
     case "weekly-summary": await service.processWeeklySummary(); break;
     case "inactivity-nudge": await service.processInactivityNudge(); break;
-    default: logger.warn({ jobName }, "[engagement] Unknown job name");
+    default: console.warn("[engagement] Unknown job name", { jobName });
   }
 }
 
@@ -45,7 +44,11 @@ export function startEngagementWorker(redisUrl: string): Worker {
     connection: { url: redisUrl }, concurrency: 1,
   });
   engagementWorker.on("failed", (job, err) => {
-    logger.error({ jobName: job?.name, jobId: job?.id, err: err.message }, "[engagement] Job failed");
+    console.error("[engagement] Job failed", {
+      jobName: job?.name,
+      jobId: job?.id,
+      err: err.message,
+    });
   });
   return engagementWorker;
 }

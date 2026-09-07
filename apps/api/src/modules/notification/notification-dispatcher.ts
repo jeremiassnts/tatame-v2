@@ -1,4 +1,3 @@
-import { logger } from "../../lib/logger.js";
 import type { NotificationService } from "./notification.service.js";
 import type { IUserRepository } from "../user/user.repository.js";
 import type { IMembershipRepository } from "../membership/membership.repository.js";
@@ -20,7 +19,7 @@ export class NotificationDispatcher {
     try {
       const template = getTemplate(templateKey);
       if (!template) {
-        logger.warn({ templateKey }, "[dispatcher] Unknown template key");
+        console.warn("[dispatcher] Unknown template key", { templateKey });
         return;
       }
       const clerkIdMap = await this.userRepo.findClerkIdsByInternalIds(userIds);
@@ -37,7 +36,7 @@ export class NotificationDispatcher {
         data: opts?.data,
       });
     } catch (err) {
-      logger.error({ err, templateKey }, "[dispatcher] Failed to send notification");
+      console.error("[dispatcher] Failed to send notification", { err, templateKey });
     }
   }
 
@@ -50,7 +49,7 @@ export class NotificationDispatcher {
     try {
       const template = getTemplate(templateKey);
       if (!template) {
-        logger.warn({ templateKey }, "[dispatcher] Unknown template key");
+        console.warn("[dispatcher] Unknown template key", { templateKey });
         return;
       }
       const recipientIds = await this.membershipRepo.findManagerClerkIdsByAcademy(academyId);
@@ -64,7 +63,7 @@ export class NotificationDispatcher {
         data: opts?.data,
       });
     } catch (err) {
-      logger.error({ err, templateKey }, "[dispatcher] Failed to send notification to managers");
+      console.error("[dispatcher] Failed to send notification to managers", { err, templateKey });
     }
   }
 
@@ -77,7 +76,7 @@ export class NotificationDispatcher {
     try {
       const template = getTemplate(templateKey);
       if (!template) {
-        logger.warn({ templateKey }, "[dispatcher] Unknown template key");
+        console.warn("[dispatcher] Unknown template key", { templateKey });
         return;
       }
       const recipientIds = await this.membershipRepo.findActiveStudentClerkIdsByAcademy(academyId);
@@ -91,7 +90,7 @@ export class NotificationDispatcher {
         data: opts?.data,
       });
     } catch (err) {
-      logger.error({ err, templateKey }, "[dispatcher] Failed to send notification to students");
+      console.error("[dispatcher] Failed to send notification to students", { err, templateKey });
     }
   }
 }

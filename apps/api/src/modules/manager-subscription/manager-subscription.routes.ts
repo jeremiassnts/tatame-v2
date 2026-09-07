@@ -3,7 +3,6 @@ import { Role } from "@tatame/types";
 import { Router } from "express";
 import { getDb } from "../../lib/db.js";
 import { HttpError } from "../../lib/http-error.js";
-import { logger } from "../../lib/logger.js";
 import { getStripe } from "../../lib/stripe.js";
 import {
   attachActiveAcademyContext,
@@ -179,10 +178,9 @@ managerSubscriptionRouter.post(
       // untouched — we only flag them for follow-up.
       const roleOutcome = await userService.ensureManagerRole(user.id);
       if (roleOutcome === "skipped-member") {
-        logger.warn(
-          { userId: user.id },
-          "[checkout] user paying Pro has an active academy membership; role not auto-promoted to manager",
-        );
+        console.warn("[checkout] user paying Pro has an active academy membership; role not auto-promoted to manager", {
+          userId: user.id,
+        });
       }
 
       const url = await getService().createCheckoutSession(

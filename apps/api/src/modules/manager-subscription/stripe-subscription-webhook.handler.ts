@@ -1,6 +1,5 @@
 import type Stripe from "stripe";
 import { loadEnv } from "@tatame/config";
-import { logger } from "../../lib/logger.js";
 import type { IManagerSubscriptionRepository } from "./manager-subscription.repository.js";
 import type { IAcademyRepository } from "../academy/academy.repository.js";
 import type { IUserRepository } from "../user/user.repository.js";
@@ -65,10 +64,7 @@ export class StripeSubscriptionWebhookHandler {
         await this.onInvoiceUpcoming(event.data.object);
         break;
       default:
-        logger.info(
-          { type: event.type },
-          "[stripe-sub-webhook] unhandled event type",
-        );
+        console.log("[stripe-sub-webhook] unhandled event type", { type: event.type });
     }
   }
 
@@ -116,28 +112,24 @@ export class StripeSubscriptionWebhookHandler {
         trialEndsAt: sub.trial_end ? new Date(sub.trial_end * 1000) : null,
         canceledAt: sub.cancel_at ? new Date(sub.cancel_at * 1000) : null,
       });
-      logger.info(
-        { subscriptionId: existing.id, status },
-        "[stripe-sub-webhook] subscription updated",
-      );
+      console.log("[stripe-sub-webhook] subscription updated", {
+        subscriptionId: existing.id,
+        status,
+      });
       return;
     }
 
     // Case 2: No academy yet — store as pending on user record
     if (!clerkUserId) {
-      logger.warn(
-        { stripeSubscriptionId: sub.id },
-        "[stripe-sub-webhook] no academy and no clerkUserId in metadata",
-      );
+      console.warn("[stripe-sub-webhook] no academy and no clerkUserId in metadata", {
+        stripeSubscriptionId: sub.id,
+      });
       return;
     }
 
     const user = await this.userRepo.findByClerkId(clerkUserId);
     if (!user) {
-      logger.warn(
-        { clerkUserId },
-        "[stripe-sub-webhook] user not found for clerkUserId",
-      );
+      console.warn("[stripe-sub-webhook] user not found for clerkUserId", { clerkUserId });
       return;
     }
 
@@ -156,10 +148,9 @@ export class StripeSubscriptionWebhookHandler {
         currentPeriodEnd: new Date(s.current_period_end * 1000),
         trialEndsAt: sub.trial_end ? new Date(sub.trial_end * 1000) : null,
       });
-      logger.info(
-        { academyId: academy.id },
-        "[stripe-sub-webhook] subscription linked to existing academy",
-      );
+      console.log("[stripe-sub-webhook] subscription linked to existing academy", {
+        academyId: academy.id,
+      });
 
       if (isNew && this.emailService) {
         await this.emailService.sendProActivated(
@@ -180,10 +171,9 @@ export class StripeSubscriptionWebhookHandler {
       pendingStripeCustomerId: stripeCustomerId,
       pendingStripeSubscriptionId: sub.id,
     });
-    logger.info(
-      { userId: user.id },
-      "[stripe-sub-webhook] stored pending Stripe data on user (no academy yet)",
-    );
+    console.log("[stripe-sub-webhook] stored pending Stripe data on user (no academy yet)", {
+      userId: user.id,
+    });
 
     // Send welcome email on new subscription
     if (isNew && this.emailService) {
@@ -196,10 +186,7 @@ export class StripeSubscriptionWebhookHandler {
         sub.id,
       );
       await this.notifyAdminNewManager(user.name, user.email, user.name, sub.id);
-      logger.info(
-        { userId: user.id },
-        "[stripe-sub-webhook] pro-activated email sent",
-      );
+      console.log("[stripe-sub-webhook] pro-activated email sent", { userId: user.id });
     }
   }
 
@@ -223,10 +210,9 @@ export class StripeSubscriptionWebhookHandler {
   ): Promise<void> {
     const existing = await this.subRepo.findByStripeSubscriptionId(sub.id);
     if (!existing) {
-      logger.warn(
-        { stripeSubscriptionId: sub.id },
-        "[stripe-sub-webhook] subscription.deleted — no record found",
-      );
+      console.warn("[stripe-sub-webhook] subscription.deleted — no record found", {
+        stripeSubscriptionId: sub.id,
+      });
       return;
     }
 
@@ -252,10 +238,7 @@ export class StripeSubscriptionWebhookHandler {
       }
     }
 
-    logger.info(
-      { subscriptionId: existing.id },
-      "[stripe-sub-webhook] subscription canceled",
-    );
+    console.log("[stripe-sub-webhook] subscription canceled", { subscriptionId: existing.id });
   }
 
   private async onInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
@@ -285,10 +268,10 @@ export class StripeSubscriptionWebhookHandler {
       invoice.id,
     );
 
-    logger.info(
-      { subscriptionId: existing.id, invoiceId: invoice.id },
-      "[stripe-sub-webhook] invoice paid email sent",
-    );
+    console.log("[stripe-sub-webhook] invoice paid email sent", {
+      subscriptionId: existing.id,
+      invoiceId: invoice.id,
+    });
   }
 
   private async onInvoiceUpcoming(invoice: Stripe.Invoice): Promise<void> {
@@ -321,10 +304,7 @@ export class StripeSubscriptionWebhookHandler {
       subId,
     );
 
-    logger.info(
-      { subscriptionId: existing.id },
-      "[stripe-sub-webhook] trial ending email sent",
-    );
+    console.log("[stripe-sub-webhook] trial ending email sent", { subscriptionId: existing.id });
   }
 
   private async onPaymentFailed(invoice: Stripe.Invoice): Promise<void> {
@@ -336,9 +316,8 @@ export class StripeSubscriptionWebhookHandler {
 
     await this.subRepo.update(existing.id, { status: "past_due" });
 
-    logger.info(
-      { subscriptionId: existing.id },
-      "[stripe-sub-webhook] payment failed — marked past_due",
-    );
+    console.log("[stripe-sub-webhook] payment failed — marked past_due", {
+      subscriptionId: existing.id,
+    });
   }
 }

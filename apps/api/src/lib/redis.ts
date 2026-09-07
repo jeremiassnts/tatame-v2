@@ -1,6 +1,5 @@
 import { createClient, type RedisClientType } from "redis";
 import { loadEnv } from "@tatame/config";
-import { logger } from "./logger.js";
 
 let client: RedisClientType | undefined;
 
@@ -22,7 +21,7 @@ export async function getRedis(): Promise<RedisClientType | null> {
     client = createClient({ url: REDIS_URL });
     client.on("error", (err: unknown) => {
       const msg = err instanceof Error ? err.message : String(err);
-      logger.error({ err: msg }, "[redis] connection error");
+      console.error("[redis] connection error", { err: msg });
     });
   }
   if (!client.isOpen) await client.connect();

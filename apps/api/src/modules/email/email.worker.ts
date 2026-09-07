@@ -15,7 +15,6 @@ import {
 import { Worker, type Job } from "bullmq";
 import { createElement } from "react";
 import { getResend } from "../../lib/resend.js";
-import { logger } from "../../lib/logger.js";
 import type { EmailJobName } from "./email.queue.js";
 
 const FROM = "Tatame <noreply@apptatame.com.br>";
@@ -53,7 +52,10 @@ const templateMap: Record<EmailJobName, TemplateComponent> = {
 async function processEmailJob(job: Job): Promise<void> {
   const resend = getResend();
   if (!resend) {
-    logger.info({ jobName: job.name, jobId: job.id }, "[email] RESEND_API_KEY not set, skipping job");
+    console.log("[email] RESEND_API_KEY not set, skipping job", {
+      jobName: job.name,
+      jobId: job.id,
+    });
     return;
   }
 
@@ -65,7 +67,7 @@ async function processEmailJob(job: Job): Promise<void> {
 
   const Template = templateMap[jobName];
   if (!Template) {
-    logger.error({ jobName }, "[email] Unknown job name");
+    console.error("[email] Unknown job name", { jobName });
     return;
   }
 
@@ -98,7 +100,7 @@ export function startEmailWorker(redisUrl: string): Worker {
   });
 
   emailWorker.on("failed", (job, err) => {
-    logger.error({ jobName: job?.name, jobId: job?.id, err: err.message }, "[email] Job failed");
+    console.error("[email] Job failed", { jobName: job?.name, jobId: job?.id, err: err.message });
   });
 
   return emailWorker;

@@ -1,7 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { CheckinLockBusyError } from "../lib/lock.js";
 import { HttpError } from "../lib/http-error.js";
-import { logger } from "../lib/logger.js";
 import { RedisUnavailableError } from "../lib/redis.js";
 
 export function errorHandler(
@@ -25,7 +24,7 @@ export function errorHandler(
     res.status(429).json({ error: err.message });
     return;
   }
-  logger.error({ err }, "Unhandled error");
+  console.error("Unhandled error", { err });
   const message = err instanceof Error ? err.message : "Internal Server Error";
   res.status(500).json({ error: message });
 }

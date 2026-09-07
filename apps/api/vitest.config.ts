@@ -18,7 +18,6 @@ export default defineConfig({
         "src/**/upload.config.ts",
         "src/**/upload.service.ts",
         "src/server.ts",
-        "src/instrumentation.ts",
         "src/seed.ts",
         "src/migrate.ts",
         "src/env-bootstrap.ts",

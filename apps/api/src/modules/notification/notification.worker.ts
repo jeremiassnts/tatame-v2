@@ -1,6 +1,5 @@
 import { Expo } from "expo-server-sdk";
 import { Worker, type Job } from "bullmq";
-import { logger } from "../../lib/logger.js";
 import { getDb } from "../../lib/db.js";
 import { PostgresNotificationRepository } from "./notification.repository.postgres.js";
 import { PostgresPushTokenRepository } from "../push-token/push-token.repository.postgres.js";
@@ -12,7 +11,7 @@ async function processNotificationJob(job: Job<NotificationJobData>): Promise<vo
   const { notificationId, expoPushToken, title, body, data } = job.data;
 
   if (!Expo.isExpoPushToken(expoPushToken)) {
-    logger.warn({ expoPushToken, notificationId }, "[push] Invalid Expo push token, removing");
+    console.warn("[push] Invalid Expo push token, removing", { expoPushToken, notificationId });
     const db = getDb();
     const pushTokenRepo = new PostgresPushTokenRepository(db);
     await pushTokenRepo.deleteByToken(expoPushToken);
@@ -47,15 +46,16 @@ async function processNotificationJob(job: Job<NotificationJobData>): Promise<vo
     message: string;
     details?: { error?: string };
   };
-  logger.error(
-    { notificationId, error: errorTicket.message, details: errorTicket.details },
-    "[push] Expo push error",
-  );
+  console.error("[push] Expo push error", {
+    notificationId,
+    error: errorTicket.message,
+    details: errorTicket.details,
+  });
 
   if (errorTicket.details?.error === "DeviceNotRegistered") {
     const pushTokenRepo = new PostgresPushTokenRepository(db);
     await pushTokenRepo.deleteByToken(expoPushToken);
-    logger.info({ expoPushToken }, "[push] Removed stale token (DeviceNotRegistered)");
+    console.log("[push] Removed stale token (DeviceNotRegistered)", { expoPushToken });
   }
 
   await notificationRepo.updateStatus(notificationId, "failed");
@@ -73,10 +73,11 @@ export function startNotificationWorker(redisUrl: string): Worker {
   });
 
   notificationWorker.on("failed", (job, err) => {
-    logger.error(
-      { jobName: job?.name, jobId: job?.id, err: err.message },
-      "[push] Job failed",
-    );
+    console.error("[push] Job failed", {
+      jobName: job?.name,
+      jobId: job?.id,
+      err: err.message,
+    });
   });
 
   return notificationWorker;
