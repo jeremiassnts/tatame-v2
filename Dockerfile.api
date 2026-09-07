@@ -50,8 +50,12 @@ COPY --from=build /app/apps/api/public ./public
 # Copy migration SQL files and meta
 COPY --from=build /app/packages/db/drizzle ./drizzle
 
+# OpenTelemetry ESM loader hook — see docs/observability.md. Inert unless
+# OTEL_COLLECTOR_URL is set, so it costs nothing when telemetry is off.
+COPY --from=build /app/apps/api/otel-esm-hook.mjs ./
+
 ENV NODE_ENV=production
 
 USER appuser
 
-CMD ["node", "dist/server.js"]
+CMD ["node", "--import", "./otel-esm-hook.mjs", "dist/server.js"]

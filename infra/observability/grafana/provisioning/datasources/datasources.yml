@@ -1,0 +1,16 @@
+# Provisioned at startup so there is nothing to click through in the UI.
+# The `uid` is fixed because dashboard JSON references it by uid — a mismatch
+# here is the classic reason a provisioned dashboard shows "No data".
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+    jsonData:
+      # Matches Prometheus' scrape_interval so $__rate_interval behaves.
+      timeInterval: 5s

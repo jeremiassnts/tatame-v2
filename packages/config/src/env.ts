@@ -38,6 +38,20 @@ const envSchema = z.object({
   ADMIN_JWT_SECRET: z.string().optional(),
   /** Comma-separated allowed CORS origins (e.g. "https://app.tatame.com,https://admin.tatame.com") */
   CORS_ORIGINS: z.string().optional(),
+  /**
+   * OTLP/gRPC endpoint of the OpenTelemetry Collector. When unset, the API skips
+   * SDK initialisation entirely — observability is strictly opt-in.
+   * Host: http://localhost:4317 — container: http://otel-collector:4317
+   */
+  OTEL_COLLECTOR_URL: z.string().url().optional(),
+  /**
+   * How often metrics are pushed to the Collector, in ms (default 10000).
+   * Declared here for documentation; `instrumentation.ts` owns the default because
+   * it runs before this schema is validated.
+   */
+  OTEL_METRIC_EXPORT_INTERVAL: z.coerce.number().int().positive().optional(),
+  /** `service.name` resource attribute — becomes the `service_name` label in Prometheus. */
+  OTEL_SERVICE_NAME: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

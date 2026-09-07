@@ -1,4 +1,7 @@
 import "./env-bootstrap.js";
+// Must stay right after env-bootstrap and before every other import: the OTel
+// auto-instrumentations patch express/pg/redis as they load.
+import { flushTelemetry } from "./instrumentation.js";
 import type { RequestHandler } from "express";
 import { loadEnv } from "@tatame/config";
 import { createApp } from "./app.js";
@@ -80,6 +83,7 @@ async function shutdown() {
   await closeNotificationQueue();
   await closeEngagementWorker();
   await closeEngagementQueue();
+  await flushTelemetry();
   process.exit(0);
 }
 

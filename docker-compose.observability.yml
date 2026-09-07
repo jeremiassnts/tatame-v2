@@ -1,0 +1,56 @@
+# Local observability stack — opt-in, no auth, dev only.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.observability.yml up -d
+#
+# Data path: apps/api --OTLP/gRPC--> otel-collector --scrape--> prometheus --> grafana
+# See docs/observability.md.
+
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.160.0
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    volumes:
+      - ./infra/observability/otel-collector-config.yml:/etc/otelcol-contrib/config.yaml:ro
+    ports:
+      - "4317:4317" # OTLP gRPC — where the API pushes
+      - "4318:4318" # OTLP HTTP — for manual pokes
+      - "8889:8889" # Prometheus scrape endpoint — curl this to debug
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.13.3
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=7d"
+      - "--web.enable-lifecycle" # POST /-/reload picks up config changes
+    volumes:
+      - ./infra/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - tatame_prom_data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - otel-collector
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:13.0.8
+    environment:
+      # No login for local dev. Never do this in production.
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_USERS_DEFAULT_THEME: dark
+    volumes:
+      - ./infra/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - tatame_grafana_data:/var/lib/grafana
+    ports:
+      - "3300:3000" # 3000 on the host belongs to `next dev` (apps/web)
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  tatame_prom_data:
+  tatame_grafana_data:

@@ -1,0 +1,15 @@
+# Loads every dashboard JSON found in /var/lib/grafana/dashboards into the
+# "Tatame" folder. Edit the JSON on disk and Grafana picks it up in ~10s.
+apiVersion: 1
+
+providers:
+  - name: tatame
+    orgId: 1
+    folder: Tatame
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

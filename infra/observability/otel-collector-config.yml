@@ -1,0 +1,54 @@
+# OpenTelemetry Collector — the single entry point for all telemetry.
+# Apps push here over OTLP; the Collector decides where each signal is stored.
+# Today only metrics are wired; traces/logs pipelines get added here later,
+# without touching the applications again.
+
+receivers:
+  otlp:
+    protocols:
+      # gRPC is the fast binary path used by the API SDK.
+      grpc:
+        endpoint: 0.0.0.0:4317
+      # HTTP is kept open so you can poke the Collector with curl/Postman.
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  # Drops data instead of OOM-killing the Collector under a traffic spike.
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 256
+    spike_limit_mib: 64
+  # Groups points before export — fewer, larger writes.
+  batch:
+    timeout: 5s
+    send_batch_size: 1024
+
+exporters:
+  # Exposes everything received as a Prometheus scrape target on :8889/metrics.
+  # This endpoint is deliberately published in docker-compose so you can curl it
+  # and see exactly what the API is producing, one hop before Prometheus.
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    # Copies a few resource attributes onto every series as labels, so dashboards
+    # can filter by service and environment. Deliberately an explicit list —
+    # `["*"]` also drags in process.command_args, host.id, executable paths and
+    # friends, which bloat every series for no benefit.
+    resource_constant_labels:
+      included:
+        - service.name
+        - service.instance.id
+        - deployment.environment.name
+  # Prints a one-line summary per batch to `docker compose logs otel-collector`.
+  debug:
+    verbosity: basic
+
+service:
+  telemetry:
+    logs:
+      level: info
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [prometheus, debug]

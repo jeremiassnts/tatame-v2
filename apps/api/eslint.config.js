@@ -20,6 +20,13 @@ export default tseslint.config(
   },
   ...tseslint.configs.recommendedTypeChecked,
   {
+    // otel-esm-hook.mjs is plain ESM JavaScript loaded by `node --import`, so it is
+    // outside the TS project and type-aware rules have no type information to use.
+    ...tseslint.configs.disableTypeChecked,
+    files: ["**/*.mjs"],
+    languageOptions: { globals: globals.node },
+  },
+  {
     files: ["**/*.ts"],
     rules: {
       // Express passes async route handlers where the framework ignores the returned Promise.
