@@ -36,6 +36,21 @@ services:
       - observability
     restart: unless-stopped
 
+  node-exporter:
+    image: prom/node-exporter:latest
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--path.rootfs=/host/root"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host/root:ro,rslave
+    pid: host
+    networks:
+      - observability
+    restart: unless-stopped
+
   loki:
     image: grafana/loki:latest
     command: ["-config.file=/etc/loki/loki.yml"]
