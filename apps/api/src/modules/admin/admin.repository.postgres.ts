@@ -5,7 +5,6 @@ import {
   checkins,
   managerSubscriptions,
   payments,
-  studentSubscriptions,
   users,
   type Database,
 } from "@tatame/db";

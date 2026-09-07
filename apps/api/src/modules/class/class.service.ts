@@ -118,7 +118,7 @@ export class ClassService {
       const dayNames = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
       const dayName = dayNames[body.dayOfWeek] ?? "";
       const timeFormatted = startTime.slice(0, 5);
-      this.dispatcher.notifyAcademyStudents(
+      void this.dispatcher.notifyAcademyStudents(
         "class_created",
         ctx.activeAcademyId,
         [body.name, dayName, timeFormatted],
@@ -174,7 +174,7 @@ export class ClassService {
     }
 
     if (this.dispatcher && (body.startTime !== undefined || body.endTime !== undefined || body.dayOfWeek !== undefined)) {
-      this.dispatcher.notifyAcademyStudents(
+      void this.dispatcher.notifyAcademyStudents(
         "class_updated",
         ctx.activeAcademyId,
         [updated.name],
@@ -193,7 +193,7 @@ export class ClassService {
     }
 
     if (this.dispatcher) {
-      this.dispatcher.notifyAcademyStudents(
+      void this.dispatcher.notifyAcademyStudents(
         "class_deactivated",
         ctx.activeAcademyId,
         [existing.name],

@@ -1,12 +1,12 @@
 import AbacatePaySdk from "abacatepay-nodejs-sdk";
 import { loadEnv } from "@tatame/config";
 
-type AbacatePayClient = {
-  billing: {
-    create: (data: any) => Promise<any>;
-    list: () => Promise<any>;
-  };
-};
+/**
+ * The SDK is CJS, so under `NodeNext` the default import resolves to the module
+ * namespace rather than the factory itself; the callable lives on `.default`.
+ */
+type AbacatePayFactory = typeof AbacatePaySdk.default;
+type AbacatePayClient = ReturnType<AbacatePayFactory>;
 
 let client: AbacatePayClient | null = null;
 
@@ -16,8 +16,9 @@ export function getAbacatePay(): AbacatePayClient {
     if (!env.ABACATEPAY_API_KEY) {
       throw new Error("ABACATEPAY_API_KEY is not configured");
     }
-    const factory = (AbacatePaySdk as any).default ?? AbacatePaySdk;
+    const factory: AbacatePayFactory =
+      AbacatePaySdk.default ?? (AbacatePaySdk as unknown as AbacatePayFactory);
     client = factory(env.ABACATEPAY_API_KEY);
   }
-  return client!;
+  return client;
 }

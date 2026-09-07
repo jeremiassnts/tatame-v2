@@ -307,7 +307,7 @@ export function createWebhookRouter() {
         return;
       }
       const event = stripeInstance.webhooks.constructEvent(
-        (req as unknown as { rawBody: string | Buffer }).rawBody,
+        req.rawBody!,
         sig,
         env.STRIPE_WEBHOOK_SECRET,
       );

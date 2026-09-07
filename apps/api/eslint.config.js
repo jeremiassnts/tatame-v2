@@ -4,7 +4,7 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    ignores: ["dist/**", "node_modules/**", "eslint.config.js"],
+    ignores: ["dist/**", "coverage/**", "node_modules/**", "eslint.config.js"],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
@@ -42,8 +42,14 @@ export default tseslint.config(
     },
   },
   {
-    files: ["**/*.integration.test.ts"],
+    // Tests build partial mocks and cast them to the collaborator interfaces they
+    // stand in for; requiring full structural types here would make the mocks
+    // noisier than the assertions they support.
+    files: ["**/*.test.ts"],
     rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unsafe-argument": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
       "@typescript-eslint/no-unsafe-member-access": "off",
       "@typescript-eslint/no-unsafe-call": "off",
     },

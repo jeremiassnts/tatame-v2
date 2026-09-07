@@ -1,19 +1,10 @@
 import type Stripe from "stripe";
 import { loadEnv } from "@tatame/config";
+import type { SubscriptionWithPeriod } from "../../lib/stripe.js";
 import type { IManagerSubscriptionRepository } from "./manager-subscription.repository.js";
 import type { IAcademyRepository } from "../academy/academy.repository.js";
 import type { IUserRepository } from "../user/user.repository.js";
 import type { EmailService } from "../email/email.service.js";
-
-/**
- * Stripe v21 removed `current_period_end` from the Subscription type (new billing
- * mode), but the field is still present in webhook payloads for subscriptions that
- * use the legacy/fixed billing mode.  We cast to an intersection type to keep strict
- * typing everywhere else while still being able to read it here.
- */
-type SubscriptionWithPeriod = Stripe.Subscription & {
-  current_period_end: number;
-};
 
 /**
  * Returns the subscription ID referenced by a Stripe Invoice.

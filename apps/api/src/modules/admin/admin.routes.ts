@@ -88,7 +88,7 @@ adminRouter.get("/dashboard/academies", async (_req, res, next) => {
 
 adminRouter.get("/academies/:id", async (req, res, next) => {
   try {
-    const data = await adminService.getAcademyDetail(req.params.id!);
+    const data = await adminService.getAcademyDetail(req.params.id);
     res.json(data);
   } catch (e) {
     next(e);
@@ -106,7 +106,7 @@ adminRouter.get("/academies/:id/payments", async (req, res, next) => {
     if (!query.success) {
       throw new HttpError(400, "Invalid query");
     }
-    const data = await adminService.listAcademyPayments(req.params.id!, {
+    const data = await adminService.listAcademyPayments(req.params.id, {
       limit: query.data.limit,
       offset: query.data.offset,
     });
@@ -135,7 +135,7 @@ adminRouter.patch("/payments/transfer", async (req, res, next) => {
 
 adminRouter.patch("/payments/:id/transfer", async (req, res, next) => {
   try {
-    const updated = await adminService.confirmTransfer([req.params.id!]);
+    const updated = await adminService.confirmTransfer([req.params.id]);
     res.json({ updated });
   } catch (e) {
     next(e);

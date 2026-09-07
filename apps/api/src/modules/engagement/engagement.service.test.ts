@@ -59,7 +59,7 @@ describe("EngagementService", () => {
     });
 
     it("skips users without active membership", async () => {
-      const { service, checkinRepo, membershipRepo, notificationService } = setup();
+      const { service, checkinRepo, membershipRepo } = setup();
       checkinRepo.findInactiveUserIds.mockResolvedValue(["u1"]);
       membershipRepo.findActiveByUser.mockResolvedValue(null);
       expect(await service.processInactivityNudge()).toBe(0);

@@ -2,6 +2,8 @@ import { loadEnv } from "@tatame/config";
 import type { NextFunction, Request, Response } from "express";
 import { createHmac, timingSafeEqual } from "node:crypto";
 
+type AdminTokenPayload = { role?: string; exp?: number };
+
 function verifyAdminToken(token: string, secret: string): boolean {
   try {
     const [headerB64, payloadB64, signatureB64] = token.split(".");
@@ -14,7 +16,9 @@ function verifyAdminToken(token: string, secret: string): boolean {
     if (expected.length !== signatureB64.length) return false;
     if (!timingSafeEqual(Buffer.from(expected), Buffer.from(signatureB64))) return false;
 
-    const payload = JSON.parse(Buffer.from(payloadB64, "base64url").toString());
+    const payload = JSON.parse(
+      Buffer.from(payloadB64, "base64url").toString(),
+    ) as AdminTokenPayload;
     if (payload.role !== "admin") return false;
     if (payload.exp && Date.now() / 1000 > payload.exp) return false;
 

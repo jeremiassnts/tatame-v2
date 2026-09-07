@@ -6,6 +6,7 @@ import express from "express";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { RedisStore } from "rate-limit-redis";
+import { createClient } from "redis";
 import { clerkMiddleware } from "@clerk/express";
 import { clerkAuthorizedParties, loadEnv } from "@tatame/config";
 import { apiRouter } from "./router.js";
@@ -15,7 +16,6 @@ import { createWebhookRouter } from "./modules/manager-subscription/manager-subs
 function buildRateLimitStore(redisUrl: string | undefined): RedisStore | undefined {
   if (!redisUrl) return undefined;
   try {
-    const { createClient } = require("redis") as typeof import("redis");
     const client = createClient({ url: redisUrl });
     client.connect().catch(() => {});
     return new RedisStore({
@@ -52,8 +52,9 @@ export function createApp(): express.Express {
     "/v1/webhooks",
     express.raw({ type: "application/json" }),
     (req, _res, next) => {
-      (req as any).rawBody = req.body;
-      req.body = JSON.parse(req.body.toString());
+      const raw = req.body as Buffer;
+      req.rawBody = raw;
+      req.body = JSON.parse(raw.toString()) as unknown;
       next();
     },
   );

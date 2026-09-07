@@ -15,6 +15,8 @@ declare global {
         managerSubscriptionStatus?: "active" | "trialing" | "past_due" | "canceled" | "incomplete";
       };
       validatedBody?: unknown;
+      /** Raw webhook payload, captured before the JSON parser replaces `body`. */
+      rawBody?: Buffer;
     }
   }
 }

@@ -70,8 +70,8 @@ export class InMemoryAcademyRepository implements IAcademyRepository {
   }
 
   async updatePixKey(
-    academyId: string,
-    data: { pixKey: string | null; pixKeyType: string | null },
+    _academyId: string,
+    _data: { pixKey: string | null; pixKeyType: string | null },
   ): Promise<AcademyRow | undefined> {
     throw new Error("Not implemented");
   }

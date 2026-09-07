@@ -9,6 +9,13 @@ import type {
   ManagerSubscriptionRow,
 } from "./manager-subscription.repository.js";
 import { FREE_PLAN_LIMITS } from "./plan-limits.js";
+import type { SubscriptionWithPeriod } from "../../lib/stripe.js";
+
+/** Only the pending-Stripe fields `linkPendingSubscription` reads off a user row. */
+type PendingStripeUser = {
+  pendingStripeCustomerId?: string | null;
+  pendingStripeSubscriptionId?: string | null;
+};
 
 export class ManagerSubscriptionService {
   constructor(
@@ -72,7 +79,10 @@ export class ManagerSubscriptionService {
   async linkPendingSubscription(
     userId: string,
     academyId: string,
-    userRepo: { findById(id: string): Promise<any>; clearPendingStripe(id: string): Promise<void> },
+    userRepo: {
+      findById(id: string): Promise<PendingStripeUser | undefined>;
+      clearPendingStripe(id: string): Promise<void>;
+    },
   ): Promise<void> {
     if (!this.stripe) return;
 
@@ -83,7 +93,7 @@ export class ManagerSubscriptionService {
       user.pendingStripeSubscriptionId,
     );
 
-    const currentPeriodEnd = (stripeSub as any).current_period_end;
+    const currentPeriodEnd = (stripeSub as unknown as SubscriptionWithPeriod).current_period_end;
     const trialEnd = stripeSub.trial_end;
 
     await this.subRepo.upsertByAcademy({
