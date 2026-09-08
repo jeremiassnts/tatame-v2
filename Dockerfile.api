@@ -50,8 +50,8 @@ COPY --from=build /app/apps/api/public ./public
 # Copy migration SQL files and meta
 COPY --from=build /app/packages/db/drizzle ./drizzle
 
-# OpenTelemetry ESM loader hook — see docs/observability.md. Inert unless
-# OTEL_COLLECTOR_URL is set, so it costs nothing when telemetry is off.
+# OpenTelemetry ESM loader hook — see docs/observability.md. Wraps only the
+# `express` module at startup; telemetry itself stays gated on OTEL_COLLECTOR_URL.
 COPY --from=build /app/apps/api/otel-esm-hook.mjs ./
 
 ENV NODE_ENV=production

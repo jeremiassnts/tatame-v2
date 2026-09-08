@@ -148,7 +148,18 @@ the app's own modules and drizzle-orm's re-export barrels, which crashes at boot
 When you add an instrumentation for another ESM-imported library, add that package
 name to the `include` list.
 
-The hook no-ops when `OTEL_COLLECTOR_URL` is unset.
+The hook registers unconditionally. It used to be guarded on `OTEL_COLLECTOR_URL`,
+which was wrong: `--import` runs before `env-bootstrap.js` loads the root `.env`, so
+the variable is still empty at that point whenever it is configured the documented
+way — and the guard silently cost every request its `http_route` label while
+everything else looked healthy. Registering always is cheap (it wraps one module at
+startup); `instrumentation.ts` still decides whether any telemetry is produced.
+
+If `http_route` disappears from your series, this hook is the first thing to check:
+
+```bash
+curl -s localhost:8889/metrics | grep -o 'http_route="[^"]*"' | sort -u
+```
 
 ## Files
 

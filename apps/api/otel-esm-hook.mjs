@@ -14,12 +14,15 @@
  * which breaks on drizzle-orm ("conflicting star exports"). Add a module name
  * here only when you also add its instrumentation.
  *
- * No-ops when telemetry is off, so nothing changes for a plain `pnpm api:dev`.
+ * Deliberately unconditional: this runs at `--import` time, before
+ * `env-bootstrap.js` has loaded the root `.env`, so `process.env.OTEL_COLLECTOR_URL`
+ * is still empty here whenever it is configured the documented way. Guarding on it
+ * silently cost every request its `http.route` label. Registering always is cheap —
+ * it wraps one module at startup, and `instrumentation.ts` still decides whether any
+ * telemetry is produced at all.
  */
 import { register } from "node:module";
 
-if (process.env.OTEL_COLLECTOR_URL && process.env.NODE_ENV !== "test") {
-  register("@opentelemetry/instrumentation/hook.mjs", import.meta.url, {
-    data: { include: ["express"] },
-  });
-}
+register("@opentelemetry/instrumentation/hook.mjs", import.meta.url, {
+  data: { include: ["express"] },
+});
