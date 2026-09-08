@@ -13,17 +13,35 @@ import { apiRouter } from "./router.js";
 import { errorHandler } from "./middleware/error-handler.js";
 import { createWebhookRouter } from "./modules/manager-subscription/manager-subscription.routes.js";
 
-function buildRateLimitStore(redisUrl: string | undefined): RedisStore | undefined {
+type RedisClient = ReturnType<typeof createClient>;
+
+function createRateLimitClient(redisUrl: string | undefined): RedisClient | undefined {
   if (!redisUrl) return undefined;
   try {
     const client = createClient({ url: redisUrl });
     client.connect().catch(() => {});
-    return new RedisStore({
-      sendCommand: (...args: string[]) => client.sendCommand(args),
-    });
+    return client;
   } catch {
     return undefined;
   }
+}
+
+/**
+ * One store per limiter, each with its own key prefix. Sharing a single store
+ * makes every limiter increment the same Redis keys, so the strict 10/min auth
+ * bucket ends up counting all `/v1` traffic — and `express-rate-limit` rejects
+ * the reuse outright (ERR_ERL_STORE_REUSE). The Redis connection is still
+ * shared; only the keyspace is split.
+ */
+function buildRateLimitStore(
+  client: RedisClient | undefined,
+  prefix: string,
+): RedisStore | undefined {
+  if (!client) return undefined;
+  return new RedisStore({
+    prefix,
+    sendCommand: (...args: string[]) => client.sendCommand(args),
+  });
 }
 
 /** Express app without `listen` — used by `server.ts` and tests. */
@@ -73,14 +91,14 @@ export function createApp(): express.Express {
 
   // 6. Rate limiting (skip in test to avoid false failures)
   if (env.NODE_ENV !== "test") {
-    const store = buildRateLimitStore(env.REDIS_URL);
+    const rateLimitClient = createRateLimitClient(env.REDIS_URL);
 
     const globalLimiter = rateLimit({
       windowMs: 60 * 1000,
       limit: 100,
       standardHeaders: "draft-7",
       legacyHeaders: false,
-      store,
+      store: buildRateLimitStore(rateLimitClient, "rl:global:"),
       message: { error: "Too many requests, please try again later" },
     });
 
@@ -89,7 +107,7 @@ export function createApp(): express.Express {
       limit: 10,
       standardHeaders: "draft-7",
       legacyHeaders: false,
-      store,
+      store: buildRateLimitStore(rateLimitClient, "rl:auth:"),
       message: { error: "Too many requests, please try again later" },
     });
 
