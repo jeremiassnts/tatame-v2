@@ -10,6 +10,29 @@ scrape_configs:
   - job_name: otel-collector
     static_configs:
       - targets: ["otel-collector:8889"]
+    # `target_info` is the one series that does not carry service_name /
+    # service_namespace. The Collector's prometheus exporter follows the
+    # OTLP-to-Prometheus spec and collapses service.namespace + service.name into
+    # `job` there (and service.instance.id into `instance`); Prometheus then
+    # renames both, because its own scrape labels already own those names. So it
+    # arrives as `exported_job="tatame/tatame-api"` with no service labels, while
+    # every other series gets them from `resource_constant_labels`.
+    #
+    # These rules put the two labels back. `target_info` exists whether or not the
+    # service is handling traffic, which is what makes it the right source for a
+    # dashboard's service picker — a picker built on request metrics empties out
+    # the moment the service goes idle.
+    metric_relabel_configs:
+      # The namespace group is optional: a service with no service.namespace
+      # exposes `job="<name>"`, and an empty replacement drops the label.
+      - source_labels: [__name__, exported_job]
+        regex: "target_info;(?:([^/]+)/)?(.+)"
+        target_label: service_namespace
+        replacement: "${1}"
+      - source_labels: [__name__, exported_job]
+        regex: "target_info;(?:([^/]+)/)?(.+)"
+        target_label: service_name
+        replacement: "${2}"
 
   # Prometheus scraping itself — handy to confirm the server is alive.
   - job_name: prometheus

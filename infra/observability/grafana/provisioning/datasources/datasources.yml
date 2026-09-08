@@ -14,3 +14,22 @@ datasources:
     jsonData:
       # Matches Prometheus' scrape_interval so $__rate_interval behaves.
       timeInterval: 5s
+
+  - name: Tempo
+    uid: tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    editable: true
+    jsonData:
+      # Streams partial TraceQL results instead of blocking on the full query.
+      # Requires `stream_over_http_enabled: true` in infra/observability/tempo.yml.
+      streamingEnabled:
+        search: true
+      # Turns the trace's span attributes into links back into Prometheus, so a
+      # slow span is one click from the RED panels for the same service.
+      tracesToMetrics:
+        datasourceUid: prometheus
+        tags:
+          - key: service.name
+            value: service_name

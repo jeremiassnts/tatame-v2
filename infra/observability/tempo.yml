@@ -1,0 +1,45 @@
+# Tempo in monolithic mode — every component in one process, traces on local disk.
+# Dev only: no auth, no object storage, no replication.
+
+# Grafana's TraceQL editor streams partial results over HTTP; without this the
+# search panel waits for the whole query before showing anything.
+stream_over_http_enabled: true
+
+server:
+  http_listen_port: 3200
+
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        # Only the Collector talks to Tempo, and it talks gRPC. This port is not
+        # published on the host — 4317 there already belongs to the Collector.
+        grpc:
+          endpoint: 0.0.0.0:4317
+
+storage:
+  trace:
+    backend: local
+    wal:
+      path: /var/tempo/wal
+    local:
+      path: /var/tempo/blocks
+
+query_frontend:
+  metrics:
+    # TraceQL metrics queries (the `| count_over_time()` on the APM dashboard's
+    # "Latest traces received" stat) are refused above this range, and Grafana
+    # asks for a wider window than the dashboard's own time picker shows — the
+    # 24h default made that panel a permanent 400. Match the retention instead.
+    max_duration: 168h
+
+# Tempo 3.0 removed the `compactor` component; compaction is scheduled by the
+# backend worker now.
+backend_worker:
+  compaction:
+    # Matches Prometheus' 7d retention, so both signals age out together.
+    block_retention: 168h
+
+# Off by default here: this is a local stack, it does not need to phone home.
+usage_report:
+  reporting_enabled: false

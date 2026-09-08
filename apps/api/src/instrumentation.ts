@@ -1,5 +1,5 @@
 /**
- * OpenTelemetry bootstrap — metrics only.
+ * OpenTelemetry bootstrap — metrics and traces.
  *
  * Must be imported before `express`, `pg` and `redis` are loaded: the auto
  * instrumentations work by patching those modules as they are required, so
@@ -15,17 +15,20 @@
 import { hostname } from "node:os";
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
 import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-grpc";
+import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-grpc";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import { PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
 import { NodeSDK } from "@opentelemetry/sdk-node";
 import {
   ATTR_SERVICE_NAME,
   ATTR_SERVICE_INSTANCE_ID,
+  ATTR_SERVICE_NAMESPACE,
 } from "@opentelemetry/semantic-conventions";
 import { ATTR_DEPLOYMENT_ENVIRONMENT_NAME } from "@opentelemetry/semantic-conventions/incubating";
 
 const DEFAULT_EXPORT_INTERVAL_MS = 10_000;
 const DEFAULT_SERVICE_NAME = "tatame-api";
+const DEFAULT_SERVICE_NAMESPACE = "tatame";
 
 const collectorUrl = process.env.OTEL_COLLECTOR_URL;
 const nodeEnv = process.env.NODE_ENV ?? "development";
@@ -40,10 +43,21 @@ if (!collectorUrl) {
   const exportIntervalMillis =
     Number(process.env.OTEL_METRIC_EXPORT_INTERVAL) || DEFAULT_EXPORT_INTERVAL_MS;
   const serviceName = process.env.OTEL_SERVICE_NAME ?? DEFAULT_SERVICE_NAME;
+  const serviceNamespace =
+    process.env.OTEL_SERVICE_NAMESPACE ?? DEFAULT_SERVICE_NAMESPACE;
+  // Traces ride the same collector URL as metrics, but can be switched off on
+  // their own — they are far noisier, and one signal at a time is often what you
+  // want while debugging.
+  const tracesEnabled = process.env.OTEL_TRACES_ENABLED !== "false";
 
   sdk = new NodeSDK({
     resource: resourceFromAttributes({
       [ATTR_SERVICE_NAME]: serviceName,
+      // Groups every service of this product under one name. The APM dashboard
+      // navigates namespace -> service, and its variable chain comes back empty
+      // without this attribute. Also listed in the Collector's
+      // `resource_constant_labels` so it lands on `target_info`.
+      [ATTR_SERVICE_NAMESPACE]: serviceNamespace,
       // Distinguishes several processes of the same service (e.g. `pnpm api:dev`
       // running next to a container) within the same Prometheus series.
       [ATTR_SERVICE_INSTANCE_ID]: `${hostname()}-${process.pid}`,
@@ -55,10 +69,13 @@ if (!collectorUrl) {
         exportIntervalMillis,
       }),
     ],
-    // Explicitly empty: without this the SDK falls back to `OTEL_TRACES_EXPORTER`,
-    // whose default is OTLP — it would ship spans to localhost:4318 and log export
-    // errors. Traces are a separate, later iteration.
-    spanProcessors: [],
+    // `traceExporter` makes the SDK wrap it in a BatchSpanProcessor. When traces
+    // are off, `spanProcessors: []` is required rather than merely omitted:
+    // without it the SDK falls back to `OTEL_TRACES_EXPORTER`, whose default is
+    // OTLP, and it would ship spans to localhost:4318 and log export errors.
+    ...(tracesEnabled
+      ? { traceExporter: new OTLPTraceExporter({ url: collectorUrl }) }
+      : { spanProcessors: [] }),
     instrumentations: [
       getNodeAutoInstrumentations({
         // Every fs call becomes telemetry otherwise. Enormous volume, no value here.
@@ -69,12 +86,18 @@ if (!collectorUrl) {
 
   sdk.start();
   console.log(
-    `[otel] metrics exporting to ${collectorUrl} every ${exportIntervalMillis}ms (service=${serviceName})`,
+    `[otel] metrics exporting to ${collectorUrl} every ${exportIntervalMillis}ms ` +
+      `(service=${serviceNamespace}/${serviceName})`,
+  );
+  console.log(
+    tracesEnabled
+      ? `[otel] traces exporting to ${collectorUrl}`
+      : "[otel] OTEL_TRACES_ENABLED=false — traces disabled",
   );
 }
 
 /**
- * Flushes pending metrics and stops the SDK. Safe to call when telemetry is off.
+ * Flushes pending telemetry and stops the SDK. Safe to call when telemetry is off.
  * Called from the API's graceful shutdown before `process.exit`, so the last
  * export window is not lost.
  */
