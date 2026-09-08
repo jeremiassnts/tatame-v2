@@ -58,6 +58,39 @@ under `NODE_ENV=test`.
 | `OTEL_METRIC_EXPORT_INTERVAL` | `10000` | How often metrics are pushed, in ms. Lower it for demos |
 | `OTEL_SERVICE_NAME` | `tatame-api` | Becomes the `service_name` label |
 
+## Generating traffic
+
+An empty dashboard proves nothing. `scripts/load-test.mjs` sends a weighted mix of
+public endpoints so several routes and status codes show up at once:
+
+```bash
+pnpm load-test                                  # 20 req/s for 60s, 40 simulated clients
+pnpm load-test -- --rps 50 --duration 120       # heavier
+pnpm load-test -- --clients 1                   # watch the rate limiter trip
+pnpm load-test -- --url http://localhost:3099   # a different port
+```
+
+| Route | Expected | Why it is in the mix |
+| --- | --- | --- |
+| `GET /v1/health` | 200 | The fast path — baseline latency |
+| `GET /v1/version` | 200 | Another 200, so "by route" is not a single line |
+| `GET /v1/users/me` | 401 | Auth rejection, exercises the Clerk middleware |
+| `GET /v1/does-not-exist` | 404 | Unmatched route |
+| `GET /v1/ready` | 200 | The slow one: `select 1` on Postgres plus a Redis ping. Low weight — do not hammer a shared database |
+
+Each virtual client sends its own `X-Forwarded-For`. The API runs with
+`trust proxy = 1`, so `express-rate-limit` buckets per forwarded IP: 40 clients
+means 40 separate 100 req/min budgets. Without that, anything above ~1.6 req/s
+would be 429s within a minute and the dashboard would show nothing but rejections.
+
+Which is exactly what `--clients 1` gives you on purpose — all traffic in one
+bucket, 429s climbing in the "by status code" panel. A good way to see a real
+incident shape without breaking anything.
+
+The script prints its own summary (status breakdown, p50/p95/p99). Comparing that
+with the dashboard is a decent sanity check: the client-side p95 should sit just
+above the server-side p95, the difference being network and client overhead.
+
 ## Verifying each hop
 
 When a panel is empty, walk the path from the source — one curl per hop tells you
@@ -123,6 +156,7 @@ The hook no-ops when `OTEL_COLLECTOR_URL` is unset.
 | --- | --- |
 | `apps/api/src/instrumentation.ts` | Starts the SDK; imported first in `server.ts` |
 | `apps/api/otel-esm-hook.mjs` | ESM loader hook (see above) |
+| `scripts/load-test.mjs` | Traffic generator (`pnpm load-test`) |
 | `docker-compose.observability.yml` | Collector + Prometheus + Grafana |
 | `infra/observability/otel-collector-config.yml` | Receivers, processors, exporters |
 | `infra/observability/prometheus.yml` | Scrape targets |
