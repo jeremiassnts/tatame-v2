@@ -128,6 +128,43 @@ verified against a live run.
   rather than deleting it under D2/R10: this is a gap to close, not a signal this
   service cannot produce, and hiding the panel would hide the gap.
 
+## Follow-up: error detail on spans (2026-09-08)
+
+A trace showed *that* a request failed, never why — the span carried a status code and
+nothing else. Added `error.type`, `app.error.body` and an `exception` event.
+
+| ID | Requirement |
+| --- | --- |
+| R13 | An error response leaves its body on the HTTP **server** span, redacted and size-capped. |
+| R14 | Works for every error path, including the ones that never reach `errorHandler`. |
+| R15 | 5xx that reached `errorHandler` also carry a stack, as a span exception event. |
+| R16 | Span status stays semconv-correct: 5xx `ERROR`, 4xx `unset`. 4xx is findable via `error.type`. |
+| R17 | Request bodies are never captured; sensitive keys in error bodies are redacted. |
+
+- **D7 — wrap `res.json`, not `errorHandler` (R14).** Only thrown errors reach
+  `errorHandler`. `requireSession` writes its own 401, `validateBody` its own 400,
+  `express-rate-limit` its own 429 — all by calling `res.json` directly. One wrapper
+  catches every path. Express' built-in 404 is the exception: finalhandler writes HTML
+  without `res.json`, so it has no body. Accepted — status code and `http.route`
+  already say everything about a 404.
+
+- **D8 — `applyCustomAttributesOnSpan`, not `responseHook`.** Found the hard way:
+  `responseHook` is only invoked on the outgoing/client path. The incoming path calls
+  `applyCustomAttributesOnSpan` from `_onServerResponseFinish`, after the response is
+  written — which is also what makes the stashed body available by then.
+
+- **D9 — `error.type` cardinality (R16).** Promoted from the envelope's `error` field
+  only when it looks like a code (`^[A-Z][A-Z0-9_]*$`); a free-form message would be
+  unbounded cardinality. Everything else falls back to the status code, which is the
+  semconv default anyway.
+
+- **D10 — redaction shape (R17).** Long unambiguous words match anywhere in a key;
+  short ones (`key`, `auth`, `pin`) only on whole name segments. A unit test pins both
+  directions — `apiKey` redacted, `monkey` not — because the first attempt dropped
+  `key` from the list entirely to protect `monkey` and silently stopped redacting
+  `apiKey`. Residual risk, accepted and documented: a few Zod validation messages echo
+  the value they rejected.
+
 ## Out of scope
 
 - Loki / log correlation (R9 keeps the door open)

@@ -170,6 +170,71 @@ Spans come from the same instrumentations, no extra configuration:
 | `redis-PING`, `redis-EVALSHA`, `redis-connect` | `instrumentation-redis` |
 | `tcp.connect` | `instrumentation-net` |
 
+### Investigating a failed request
+
+Out of the box a failed request leaves only a status code on the span — you learn it
+was a 401, never why. Two attributes and one event close that gap:
+
+| On the span | What it is |
+| --- | --- |
+| `error.type` | The application error code when the envelope carries one (`CHECKIN_WINDOW_CLOSED`), otherwise the status code as a string |
+| `app.error.body` | The error response body the API actually sent, redacted and truncated to 2 KB |
+| `exception` event | Type, message and **stack trace** — only for errors that reached `errorHandler`, i.e. real 5xx failures |
+
+```
+SPAN 'GET /v1/users/me'          status = unset
+  http.response.status_code = 401
+  error.type                = 401
+  app.error.body            = {"error":"Unauthorized"}
+
+SPAN 'POST /v1/checkin'          status = ERROR
+  http.response.status_code = 500
+  error.type                = 500
+  app.error.body            = {"error":"Expected property name or '}' ..."}
+  EVENT exception
+    exception.type       = SyntaxError
+    exception.stacktrace = SyntaxError: ... at JSON.parse (<anonymous>) ...
+```
+
+Useful TraceQL:
+
+```
+{span.error.type != nil}                       # every failed request
+{status = error}                               # only real server failures (5xx)
+{span.error.type = "CHECKIN_WINDOW_CLOSED"}    # one business error
+{span.http.response.status_code >= 400}        # by status
+```
+
+Span **status** is deliberately left as the instrumentation sets it: 5xx is `ERROR`,
+4xx is `unset`. That is what the HTTP semantic conventions ask for on a server span —
+a 4xx is the caller's fault — and it keeps `{status = error}` meaning "my service
+broke" instead of drowning in expired-token 401s. Use `error.type` to find 4xx.
+
+**How it works.** `apps/api/src/telemetry/error-capture.ts` wraps `res.json` and
+stashes the body on the response when the status is >= 400;
+`applyCustomAttributesOnSpan` in `instrumentation.ts` reads it and writes the
+attributes onto the server span.
+
+Two things worth knowing if you go editing it:
+
+- Enriching `errorHandler` alone would have covered almost nothing. Most error
+  responses never reach it — `requireSession` writes its own 401, `validateBody` its
+  own 400, `express-rate-limit` its own 429. Wrapping `res.json` catches all of them.
+- The hook is `applyCustomAttributesOnSpan`, **not** `responseHook`. Despite the name,
+  `responseHook` only fires on the outgoing/client path; the incoming path calls
+  `applyCustomAttributesOnSpan` from `_onServerResponseFinish`.
+
+**What is not captured**: request bodies, ever. Successful responses. And Express'
+built-in 404, which finalhandler writes as HTML without going through `res.json` — for
+those the status code and `http.route` already tell the whole story.
+
+**Redaction** replaces values whose key looks sensitive. Long unambiguous words
+(`password`, `secret`, `token`, `authorization`, `cookie`, `credential`, `signature`)
+match anywhere in the key; short ones (`key`, `auth`, `pin`, `otp`, `salt`, `hash`)
+match only whole name segments, so `apiKey` is redacted and `monkey` is not. One
+residual to keep in mind: a 400 from `validateBody` carries `parsed.error.flatten()`,
+and a few Zod messages echo the value they rejected.
+
 ### Postgres is not traced
 
 `packages/db` uses **`postgres`** (postgres.js), and `@opentelemetry/instrumentation-pg`

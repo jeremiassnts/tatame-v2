@@ -12,6 +12,7 @@
  * Nothing is exported to the app except `flushTelemetry()`; the SDK is started
  * as an import side effect.
  */
+import type { ServerResponse } from "node:http";
 import { hostname } from "node:os";
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
 import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-grpc";
@@ -25,6 +26,7 @@ import {
   ATTR_SERVICE_NAMESPACE,
 } from "@opentelemetry/semantic-conventions";
 import { ATTR_DEPLOYMENT_ENVIRONMENT_NAME } from "@opentelemetry/semantic-conventions/incubating";
+import { CAPTURED_ERROR, type CapturedError } from "./telemetry/error-capture.js";
 
 const DEFAULT_EXPORT_INTERVAL_MS = 10_000;
 const DEFAULT_SERVICE_NAME = "tatame-api";
@@ -80,6 +82,40 @@ if (!collectorUrl) {
       getNodeAutoInstrumentations({
         // Every fs call becomes telemetry otherwise. Enormous volume, no value here.
         "@opentelemetry/instrumentation-fs": { enabled: false },
+        "@opentelemetry/instrumentation-http": {
+          // Out of the box a failed request leaves only a status code on the
+          // span — you learn that it was a 401, never why. This copies the
+          // error envelope the app already wrote onto the server span, which is
+          // the span you click on in Grafana.
+          //
+          // Span *status* is deliberately left alone: the instrumentation
+          // already marks 5xx as ERROR and leaves 4xx unset, which is what the
+          // HTTP semantic conventions ask for on a server span — a 4xx is the
+          // caller's fault. Use `{span.error.type != nil}` to find those.
+          //
+          // `applyCustomAttributesOnSpan`, not `responseHook`: despite the
+          // name, `responseHook` only runs on the outgoing/client path. The
+          // incoming path calls this one, from `_onServerResponseFinish` —
+          // after the response is written, so `res.json` has already stashed
+          // the body.
+          applyCustomAttributesOnSpan: (span, _request, response) => {
+            // Also fires for client spans, where `response` is the
+            // IncomingMessage of an outgoing call. Only a ServerResponse has
+            // `setHeader`, and only a ServerResponse carries our capture.
+            if (!("setHeader" in response)) return;
+            const serverResponse = response as ServerResponse & {
+              [CAPTURED_ERROR]?: CapturedError;
+            };
+            const status = serverResponse.statusCode;
+            if (status < 400) return;
+
+            const captured = serverResponse[CAPTURED_ERROR];
+            span.setAttribute("error.type", captured?.code ?? String(status));
+            if (captured?.body) span.setAttribute("app.error.body", captured.body);
+            // Gives the trace a stack trace, as a span event.
+            if (captured?.error) span.recordException(captured.error);
+          },
+        },
       }),
     ],
   });

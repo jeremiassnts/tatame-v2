@@ -11,6 +11,7 @@ import { clerkMiddleware } from "@clerk/express";
 import { clerkAuthorizedParties, loadEnv } from "@tatame/config";
 import { apiRouter } from "./router.js";
 import { errorHandler } from "./middleware/error-handler.js";
+import { captureErrorBody } from "./telemetry/error-capture.js";
 import { createWebhookRouter } from "./modules/manager-subscription/manager-subscription.routes.js";
 
 type RedisClient = ReturnType<typeof createClient>;
@@ -51,6 +52,10 @@ export function createApp(): express.Express {
 
   // Trust proxy (Coolify/Traefik/Caddy sets X-Forwarded-For)
   app.set("trust proxy", 1);
+
+  // 0. Telemetry: wrap `res.json` so error bodies reach the HTTP server span.
+  //    Has to come before anything that can respond.
+  app.use(captureErrorBody);
 
   // 0. Static assets (email logo, etc.)
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
