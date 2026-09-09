@@ -31,6 +31,7 @@ import { PostgresStudentSubscriptionRepository } from "../subscription/subscript
 import { DependentService } from "../dependent/dependent.service.js";
 import { PostgresGraduationRepository } from "./graduation.repository.postgres.js";
 import { GraduationService } from "./graduation.service.js";
+import { emitEvent } from "../../telemetry/events.js";
 
 export const graduationRouter = Router();
 
@@ -127,6 +128,12 @@ graduationRouter.post(
         notes: body.notes ?? null,
         globalRole: req.appAuth!.role,
       });
+      emitEvent("graduation.initial_set", {
+        userId: req.appAuth!.userId,
+        academyId: req.appAuth!.activeAcademyId!,
+        graduationId: row.id,
+        extra: { belt: body.belt, stripes: body.stripes },
+      });
       res.status(201).json(formatPromotion(row));
     } catch (e) {
       next(e);
@@ -186,6 +193,14 @@ graduationRouter.post(
         stripes: body.stripes,
         notes: body.notes ?? null,
         dependentId: body.dependentId ?? null,
+      });
+      emitEvent("graduation.promoted", {
+        userId: body.userId,
+        actorRole: req.appAuth!.role,
+        academyId: req.appAuth!.activeAcademyId!,
+        graduationId: row.id,
+        ...(body.dependentId ? { dependentId: body.dependentId } : {}),
+        extra: { belt: body.belt, stripes: body.stripes, by: req.appAuth!.userId },
       });
       res.status(201).json(formatPromotion(row));
     } catch (e) {

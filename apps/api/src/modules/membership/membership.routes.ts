@@ -11,6 +11,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { getDb } from "../../lib/db.js";
 import { HttpError } from "../../lib/http-error.js";
+import { emitEvent } from "../../telemetry/events.js";
 import {
   attachActiveAcademyContext,
   requireActiveAcademy,
@@ -107,6 +108,12 @@ membershipRouter.post(
         role as "instructor" | "student" | "guardian",
         academyId,
       );
+      emitEvent("membership.requested", {
+        userId,
+        actorRole: role,
+        academyId,
+        membershipId: created.id,
+      });
       res.status(201).json(created);
     } catch (e) {
       next(e);
@@ -214,6 +221,11 @@ membershipRouter.patch(
         }
       }
 
+      emitEvent("membership.approved", {
+        userId: req.appAuth!.userId,
+        membershipId: updated.id,
+        academyId: updated.academyId,
+      });
       res.json(updated);
     } catch (e) {
       next(e);
@@ -237,6 +249,11 @@ membershipRouter.patch(
         params.data.membershipId,
         req.appAuth!.userId,
       );
+      emitEvent("membership.rejected", {
+        userId: req.appAuth!.userId,
+        membershipId: updated.id,
+        academyId: updated.academyId,
+      });
       res.json(updated);
     } catch (e) {
       next(e);
@@ -260,6 +277,11 @@ membershipRouter.patch(
         params.data.membershipId,
         req.appAuth!.userId,
       );
+      emitEvent("membership.blocked", {
+        userId: req.appAuth!.userId,
+        membershipId: updated.id,
+        academyId: updated.academyId,
+      });
       res.json(updated);
     } catch (e) {
       next(e);
@@ -283,6 +305,10 @@ membershipRouter.patch(
         params.data.membershipId,
         req.appAuth!.userId,
       );
+      emitEvent("membership.unblocked", {
+        userId: req.appAuth!.userId,
+        membershipId: params.data.membershipId,
+      });
       res.status(204).send();
     } catch (e) {
       next(e);
@@ -297,6 +323,13 @@ membershipRouter.post(
   async (req, res, next) => {
     try {
       const updated = await membershipService.leave(req.appAuth!.userId);
+      emitEvent("membership.left", {
+        userId: req.appAuth!.userId,
+        membershipId: updated.id,
+        // `leave` deletes a merely-pending membership instead of updating it,
+        // and that branch returns `{ id, deleted }` with no academy.
+        ...("deleted" in updated ? {} : { academyId: updated.academyId }),
+      });
       res.json(updated);
     } catch (e) {
       next(e);

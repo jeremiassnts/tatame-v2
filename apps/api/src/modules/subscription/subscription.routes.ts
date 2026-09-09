@@ -16,6 +16,7 @@ import {
 } from "@tatame/validators";
 import { getDb } from "../../lib/db.js";
 import { HttpError } from "../../lib/http-error.js";
+import { emitEvent } from "../../telemetry/events.js";
 import {
   attachActiveAcademyContext,
   requireActiveAcademy,
@@ -102,6 +103,11 @@ subscriptionRouter.post(
       const academyId = req.appAuth!.activeAcademyId!;
 
       const created = await subscriptionService.createPlan(userId, academyId, body);
+      emitEvent("subscription.plan_created", {
+        userId,
+        academyId,
+        planId: created.id,
+      });
       res.status(201).json(created);
     } catch (e) {
       next(e);
@@ -154,6 +160,12 @@ subscriptionRouter.patch(
         params.data.planId,
         body,
       );
+      emitEvent("subscription.plan_updated", {
+        userId,
+        academyId,
+        planId: params.data.planId,
+        extra: { fields: Object.keys(body).sort().join(",") },
+      });
       res.json(updated);
     } catch (e) {
       next(e);
@@ -302,6 +314,13 @@ subscriptionRouter.post(
         }
       }
 
+      emitEvent("subscription.plan_assigned", {
+        userId,
+        academyId,
+        planId,
+        subscriptionId: result.subscription.id,
+        ...(dependentId ? { dependentId } : {}),
+      });
       res.status(201).json(result);
     } catch (e) {
       next(e);

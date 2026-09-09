@@ -1,7 +1,8 @@
 import type { Role } from "@tatame/types";
 import type { RedisClientType } from "redis";
 import { HttpError } from "../../lib/http-error.js";
-import { withCheckinLock } from "../../lib/lock.js";
+import { CheckinLockBusyError, withCheckinLock } from "../../lib/lock.js";
+import { emitEvent, type EventFields, type EventReason } from "../../telemetry/events.js";
 import { requireRedisForCheckin } from "../../lib/redis.js";
 import type { ClassRow, IClassRepository } from "../class/class.repository.js";
 import type { IMembershipRepository } from "../membership/membership.repository.js";
@@ -121,6 +122,21 @@ function isPostgresUniqueViolation(err: unknown): boolean {
   return e?.code === "23505" || e?.cause?.code === "23505";
 }
 
+/**
+ * Emits `checkin.rejected` and throws. Every refusal in `checkIn` goes through
+ * here, so the reason code lives next to the condition that produced it rather
+ * than being reverse-engineered from an error message later.
+ */
+function reject(
+  reason: EventReason<"checkin.rejected">,
+  status: number,
+  message: string,
+  fields: EventFields,
+): never {
+  emitEvent("checkin.rejected", { ...fields, reason });
+  throw new HttpError(status, message);
+}
+
 export type CheckinWarnings = {
   subscriptionGrace?: true;
   paymentOverdue?: true;
@@ -152,13 +168,27 @@ export class CheckinService {
     now?: Date;
     redis?: RedisClientType;
   }): Promise<CheckinSuccess> {
+    // Every event from this method carries the same subject; build it once.
+    const actor: EventFields = {
+      userId: opts.userId,
+      actorRole: opts.academyRole,
+      academyId: opts.academyId,
+      classId: opts.classId,
+      ...(opts.dependentId ? { dependentId: opts.dependentId } : {}),
+    };
+
     const allowedRoles: Role[] = ["student", "guardian"];
     if (!allowedRoles.includes(opts.academyRole)) {
-      throw new HttpError(403, "Apenas alunos podem fazer check-in");
+      reject("NOT_A_STUDENT", 403, "Apenas alunos podem fazer check-in", actor);
     }
 
     if (opts.academyRole === "guardian" && !opts.dependentId) {
-      throw new HttpError(400, "Responsável deve informar o dependente para check-in");
+      reject(
+        "MISSING_DEPENDENT",
+        400,
+        "Responsável deve informar o dependente para check-in",
+        actor,
+      );
     }
 
     const membership = await this.membershipRepo.findActiveByUserAndAcademy(
@@ -166,29 +196,38 @@ export class CheckinService {
       opts.academyId,
     );
     if (!membership || membership.status !== "active") {
-      throw new HttpError(403, "Você não possui matrícula ativa nesta academia");
+      reject(
+        "NO_ACTIVE_MEMBERSHIP",
+        403,
+        "Você não possui matrícula ativa nesta academia",
+        actor,
+      );
     }
     if (membership.role !== "student" && membership.role !== "guardian") {
-      throw new HttpError(403, "Apenas alunos podem fazer check-in");
+      reject("NOT_A_STUDENT", 403, "Apenas alunos podem fazer check-in", actor);
     }
     const classRow = await this.classRepo.findById(
       opts.classId,
       opts.academyId,
     );
     if (!classRow?.isActive) {
-      throw new HttpError(404, "Aula não encontrada");
+      reject("CLASS_NOT_FOUND", 404, "Aula não encontrada", actor);
     }
     if (utcDayOfWeek(opts.sessionDate) !== classRow.dayOfWeek) {
-      throw new HttpError(
+      reject(
+        "WRONG_WEEKDAY",
         400,
         "Session date does not match this class weekday",
+        actor,
       );
     }
     const now = opts.now ?? new Date();
     if (!isWithinCheckinWindow(now, opts.sessionDate, classRow)) {
-      throw new HttpError(
+      reject(
+        "WINDOW_CLOSED",
         400,
         "O check-in abre 12 horas antes do início da aula e encerra ao fim da aula",
+        actor,
       );
     }
     const { plan, warnings } = opts.dependentId
@@ -196,7 +235,7 @@ export class CheckinService {
       : await this.resolveSubscriptionAndWarnings(opts.userId, opts.academyId);
     const weekReference = mondayOfWeekContaining(opts.sessionDate);
     const redis = opts.redis ?? (await requireRedisForCheckin());
-    return withCheckinLock(redis, opts.classId, opts.sessionDate, async () => {
+    return await withCheckinLock(redis, opts.classId, opts.sessionDate, async () => {
       const classCount = await this.checkinRepo.countByClassAndDate(
         opts.classId,
         opts.sessionDate,
@@ -205,7 +244,12 @@ export class CheckinService {
         classRow.capacity !== null &&
         classCount >= classRow.capacity
       ) {
-        throw new HttpError(409, "Aula lotada — não há mais vagas para esta sessão");
+        reject(
+          "CLASS_FULL",
+          409,
+          "Aula lotada — não há mais vagas para esta sessão",
+          actor,
+        );
       }
       const userWeekCount = opts.dependentId
         ? await this.checkinRepo.countByDependentAndWeek(opts.dependentId, weekReference)
@@ -214,7 +258,7 @@ export class CheckinService {
         plan.weeklyCheckinLimit !== null &&
         userWeekCount >= plan.weeklyCheckinLimit
       ) {
-        throw new HttpError(409, "Limite semanal de check-ins atingido");
+        reject("WEEKLY_LIMIT_REACHED", 409, "Limite semanal de check-ins atingido", actor);
       }
       try {
         const checkin = await this.checkinRepo.insert({
@@ -238,16 +282,21 @@ export class CheckinService {
           void this.engagementService.checkMilestone(opts.userId);
         }
 
+        emitEvent("checkin.created", { ...actor, checkinId: checkin.id });
         return { checkin, warnings };
       } catch (e) {
         if (isPostgresUniqueViolation(e)) {
-          throw new HttpError(
-            409,
-            "Você já fez check-in nesta aula hoje",
-          );
+          reject("DUPLICATE", 409, "Você já fez check-in nesta aula hoje", actor);
         }
         throw e;
       }
+    }).catch((error: unknown) => {
+      // Every other refusal emitted on its way out. Contention is the one that
+      // never reaches the callback above, so it is caught here instead.
+      if (error instanceof CheckinLockBusyError) {
+        emitEvent("checkin.rejected", { ...actor, reason: "LOCK_BUSY" });
+      }
+      throw error;
     });
   }
 

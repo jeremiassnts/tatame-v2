@@ -5,6 +5,7 @@ import cors from "cors";
 import express from "express";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
+import type { RateLimitExceededEventHandler } from "express-rate-limit";
 import { RedisStore } from "rate-limit-redis";
 import { createClient } from "redis";
 import { clerkMiddleware } from "@clerk/express";
@@ -12,6 +13,7 @@ import { clerkAuthorizedParties, loadEnv } from "@tatame/config";
 import { apiRouter } from "./router.js";
 import { errorHandler } from "./middleware/error-handler.js";
 import { captureErrorBody } from "./telemetry/error-capture.js";
+import { emitEvent } from "./telemetry/events.js";
 import { createWebhookRouter } from "./modules/manager-subscription/manager-subscription.routes.js";
 
 type RedisClient = ReturnType<typeof createClient>;
@@ -98,6 +100,22 @@ export function createApp(): express.Express {
   if (env.NODE_ENV !== "test") {
     const rateLimitClient = createRateLimitClient(env.REDIS_URL);
 
+    /**
+     * `express-rate-limit` writes its own 429 without passing through any of
+     * our middleware, so a rejection is invisible unless the limiter itself
+     * reports it. Overriding `handler` keeps the default response byte for byte
+     * — status, headers and body all come from `options` — and adds the event.
+     */
+    const limiterHandler =
+      (bucket: string): RateLimitExceededEventHandler =>
+      (req, res, _next, options) => {
+        emitEvent("access.denied", {
+          reason: "RATE_LIMITED",
+          extra: { path: req.path, bucket, limit: options.limit },
+        });
+        res.status(options.statusCode).json(options.message);
+      };
+
     const globalLimiter = rateLimit({
       windowMs: 60 * 1000,
       limit: 100,
@@ -105,6 +123,7 @@ export function createApp(): express.Express {
       legacyHeaders: false,
       store: buildRateLimitStore(rateLimitClient, "rl:global:"),
       message: { error: "Too many requests, please try again later" },
+      handler: limiterHandler("global"),
     });
 
     const authLimiter = rateLimit({
@@ -114,6 +133,7 @@ export function createApp(): express.Express {
       legacyHeaders: false,
       store: buildRateLimitStore(rateLimitClient, "rl:auth:"),
       message: { error: "Too many requests, please try again later" },
+      handler: limiterHandler("auth"),
     });
 
     app.use("/v1", globalLimiter);

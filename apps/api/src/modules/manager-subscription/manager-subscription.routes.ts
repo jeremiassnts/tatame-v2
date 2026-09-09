@@ -29,6 +29,8 @@ import { UserService } from "../user/user.service.js";
 import { PostgresManagerSubscriptionRepository } from "./manager-subscription.repository.postgres.js";
 import { ManagerSubscriptionService } from "./manager-subscription.service.js";
 import { StripeSubscriptionWebhookHandler } from "./stripe-subscription-webhook.handler.js";
+import { emitEvent } from "../../telemetry/events.js";
+import { log } from "../../telemetry/logger.js";
 
 const db = getDb();
 const env = loadEnv();
@@ -178,9 +180,10 @@ managerSubscriptionRouter.post(
       // untouched — we only flag them for follow-up.
       const roleOutcome = await userService.ensureManagerRole(user.id);
       if (roleOutcome === "skipped-member") {
-        console.warn("[checkout] user paying Pro has an active academy membership; role not auto-promoted to manager", {
-          userId: user.id,
-        });
+        log.warn(
+          "user paying Pro has an active academy membership; role not auto-promoted to manager",
+          { component: "checkout", userId: user.id },
+        );
       }
 
       const url = await getService().createCheckoutSession(
@@ -191,6 +194,7 @@ managerSubscriptionRouter.post(
         cancelUrl,
       );
 
+      emitEvent("manager_subscription.checkout_started", { clerkUserId });
       res.json({ url });
     } catch (e) {
       next(e);
@@ -207,6 +211,11 @@ managerSubscriptionRouter.post(
   async (req, res, next) => {
     try {
       await getService().cancelSubscription(req.appAuth!.activeAcademyId!);
+      emitEvent("manager_subscription.canceled", {
+        userId: req.appAuth!.userId,
+        academyId: req.appAuth!.activeAcademyId!,
+        extra: { cause: "requested_by_manager" },
+      });
       res.json({ canceled: true });
     } catch (e) {
       next(e);

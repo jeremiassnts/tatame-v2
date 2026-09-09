@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import { getDb } from "../lib/db.js";
 import { PostgresManagerSubscriptionRepository } from "../modules/manager-subscription/manager-subscription.repository.postgres.js";
+import { emitEvent } from "../telemetry/events.js";
 
 const subRepo = new PostgresManagerSubscriptionRepository(getDb());
 
@@ -24,6 +25,11 @@ export function requireActivePlan(
     try {
       const sub = await subRepo.findByAcademyId(academyId);
       if (!sub) {
+        emitEvent("access.denied", {
+          reason: "PLAN_REQUIRED",
+          academyId,
+          extra: { path: req.path, cause: "no_subscription" },
+        });
         res.status(403).json({
           error: "NO_SUBSCRIPTION",
           message: "Nenhuma conta encontrada.",
@@ -45,6 +51,11 @@ export function requireActivePlan(
         return;
       }
 
+      emitEvent("access.denied", {
+        reason: "PLAN_REQUIRED",
+        academyId,
+        extra: { path: req.path, cause: "subscription_blocked", status: sub.status },
+      });
       res.status(403).json({
         error: "SUBSCRIPTION_BLOCKED",
         message: "Sua conta não tem acesso no momento.",

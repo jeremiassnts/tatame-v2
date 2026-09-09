@@ -5,6 +5,7 @@ import type { IAcademyRepository } from "../academy/academy.repository.js";
 import type { IMembershipRepository } from "../membership/membership.repository.js";
 import type { NotificationDispatcher } from "../notification/notification-dispatcher.js";
 import type { BeltPromotionRow, IGraduationRepository } from "./graduation.repository.js";
+import { emitEvent } from "../../telemetry/events.js";
 
 function beltIndex(belt: Belt, order: readonly Belt[] = BELT_ORDER): number {
   return order.indexOf(belt);
@@ -14,6 +15,10 @@ function beltIndex(belt: Belt, order: readonly Belt[] = BELT_ORDER): number {
 export function assertValidBeltRank(belt: Belt, stripes: number): void {
   const max = MAX_STRIPES_BY_BELT[belt];
   if (stripes < 0 || stripes > max) {
+    emitEvent("graduation.rejected", {
+      reason: "INVALID_BELT_RANK",
+      extra: { belt, stripes },
+    });
     throw new HttpError(400, `Invalid stripe count for ${belt} belt`);
   }
 }
@@ -36,6 +41,10 @@ export function assertValidPromotion(
   if (jb === ib && to.stripes > from.stripes) {
     return;
   }
+  emitEvent("graduation.rejected", {
+    reason: "INVALID_PROMOTION",
+    extra: { from: `${from.belt}/${from.stripes}`, to: `${to.belt}/${to.stripes}` },
+  });
   throw new HttpError(
     400,
     "Invalid belt progression (must move to a higher belt or gain stripes on the same belt)",

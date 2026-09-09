@@ -19,7 +19,11 @@ import {
 import type { CheckinRow } from "./checkin.repository.js";
 import { CheckinService } from "./checkin.service.js";
 
-vi.mock("../../lib/lock.js", () => ({
+// Only `withCheckinLock` is stubbed. The rest of the module comes through for
+// real, because `CheckinLockBusyError` is compared with `instanceof` in the
+// service — a stand-in class would silently never match.
+vi.mock("../../lib/lock.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../lib/lock.js")>()),
   withCheckinLock: (
     _redis: unknown,
     _classId: unknown,

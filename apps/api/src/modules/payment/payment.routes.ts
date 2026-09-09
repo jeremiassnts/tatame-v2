@@ -10,6 +10,7 @@ import {
 import { Router } from "express";
 import { getDb } from "../../lib/db.js";
 import { HttpError } from "../../lib/http-error.js";
+import { emitEvent } from "../../telemetry/events.js";
 import { getStripe } from "../../lib/stripe.js";
 import {
   attachActiveAcademyContext,
@@ -114,6 +115,13 @@ paymentRouter.post(
         }
       }
 
+      emitEvent("payment.created", {
+        userId: created.userId,
+        academyId,
+        paymentId: created.id,
+        subscriptionId: created.subscriptionId,
+        extra: { method: "manual", amountCents: created.amountCents },
+      });
       res.status(201).json(created);
     } catch (e) {
       next(e);
@@ -153,6 +161,12 @@ paymentRouter.post(
         { subscriptionId: body.subscriptionId },
       );
 
+      emitEvent("payment.checkout_started", {
+        userId: studentUserId,
+        academyId,
+        subscriptionId: body.subscriptionId,
+        extra: { method: "stripe" },
+      });
       res.json(result);
     } catch (e) {
       next(e);
@@ -184,6 +198,12 @@ paymentRouter.post(
         { subscriptionId: body.subscriptionId },
       );
 
+      emitEvent("payment.checkout_started", {
+        userId: studentUserId,
+        academyId,
+        subscriptionId: body.subscriptionId,
+        extra: { method: "pix" },
+      });
       res.json(result);
     } catch (e) {
       next(e);

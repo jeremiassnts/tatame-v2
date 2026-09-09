@@ -1,6 +1,7 @@
 import { getAuth } from "@clerk/express";
 import { loadEnv } from "@tatame/config";
 import type { NextFunction, Request, Response } from "express";
+import { emitEvent } from "../telemetry/events.js";
 
 /** JSON 401 when there is no Clerk session (API-friendly; no browser redirects). */
 export function requireSession(
@@ -14,6 +15,7 @@ export function requireSession(
   }
   const { userId } = getAuth(req);
   if (!userId) {
+    emitEvent("access.denied", { reason: "NO_SESSION", extra: { path: req.path } });
     res.status(401).json({ error: "Unauthorized" });
     return;
   }

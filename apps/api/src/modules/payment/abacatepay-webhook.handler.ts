@@ -4,6 +4,7 @@ import type { IAcademyRepository } from "../academy/academy.repository.js";
 import type { IStudentSubscriptionRepository } from "../subscription/subscription.repository.js";
 import type { EmailService } from "../email/email.service.js";
 import type { NotificationDispatcher } from "../notification/notification-dispatcher.js";
+import { emitEvent } from "../../telemetry/events.js";
 
 type AbacatePayWebhookEvent = {
   event: string;
@@ -65,6 +66,14 @@ export class AbacatePayWebhookHandler {
       notes: null,
       paidAt: new Date(),
       dependentId,
+    });
+
+    emitEvent("payment.confirmed", {
+      userId: payment.userId,
+      academyId: payment.academyId,
+      paymentId: payment.id,
+      subscriptionId: payment.subscriptionId,
+      extra: { method: "pix", amountCents: payment.amountCents },
     });
 
     // Clean up pending record

@@ -5,6 +5,7 @@ import type { NotificationDispatcher } from "../notification/notification-dispat
 import type { IStudentSubscriptionRepository } from "../subscription/subscription.repository.js";
 import type { IUserRepository } from "../user/user.repository.js";
 import type { IPaymentRepository } from "./payment.repository.js";
+import { emitEvent } from "../../telemetry/events.js";
 
 export class StripeCheckoutWebhookHandler {
   constructor(
@@ -67,6 +68,14 @@ export class StripeCheckoutWebhookHandler {
       notes: null,
       paidAt: new Date(),
       dependentId,
+    });
+
+    emitEvent("payment.confirmed", {
+      userId: payment.userId,
+      academyId: payment.academyId,
+      paymentId: payment.id,
+      subscriptionId: payment.subscriptionId,
+      extra: { method: "stripe", amountCents: payment.amountCents },
     });
 
     // Push notifications
