@@ -1,0 +1,53 @@
+# Loki in single-binary mode — every component in one process, logs on local disk.
+# Dev only: no auth, no object storage, no replication.
+
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+  grpc_listen_port: 9096
+  # Loki logs one line per flush at info; the Collector's `debug` exporter already
+  # tells us whether batches are arriving.
+  log_level: warn
+
+common:
+  instance_addr: 127.0.0.1
+  path_prefix: /loki
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+
+schema_config:
+  configs:
+    - from: 2024-04-01
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
+limits_config:
+  # Required for OTLP ingestion, not optional: everything that is not one of the
+  # handful of resource attributes Loki promotes to an index label arrives as
+  # structured metadata, and Loki rejects the whole push when that is disabled.
+  allow_structured_metadata: true
+  # Powers Grafana's log-volume histogram above the results.
+  volume_enabled: true
+  # Matches Prometheus and Tempo, so all three signals age out together.
+  retention_period: 168h
+
+compactor:
+  working_directory: /loki/compactor
+  # `retention_period` alone deletes nothing — the compactor is what enforces it.
+  retention_enabled: true
+  delete_request_store: filesystem
+
+# Off by default here: this is a local stack, it does not need to phone home.
+analytics:
+  reporting_enabled: false

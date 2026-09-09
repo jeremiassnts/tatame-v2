@@ -1,7 +1,7 @@
 # OpenTelemetry Collector — the single entry point for all telemetry.
 # Apps push here over OTLP; the Collector decides where each signal is stored.
-# Metrics go to Prometheus (pull) and traces go to Tempo (push). Logs get their
-# own pipeline here later, without touching the applications again.
+# Metrics go to Prometheus (pull); traces go to Tempo and logs go to Loki (both
+# push). The applications only ever know this Collector.
 
 receivers:
   otlp:
@@ -47,6 +47,16 @@ exporters:
     tls:
       # Plaintext inside the compose network; there is no CA to verify against.
       insecure: true
+  # Logs are pushed to Loki's *native OTLP* endpoint. There is no `loki` exporter
+  # to use instead: this distribution ships `loki` only as a receiver, which is
+  # what `docker run --entrypoint /otelcol-contrib <image> components` reports.
+  # The path suffix matters — `/otlp` is the base, and the exporter appends
+  # `/v1/logs` to it.
+  otlp_http/loki:
+    endpoint: http://loki:3100/otlp
+    tls:
+      # Plaintext inside the compose network; there is no CA to verify against.
+      insecure: true
   # Prints a one-line summary per batch to `docker compose logs otel-collector`.
   debug:
     verbosity: basic
@@ -64,3 +74,7 @@ service:
       receivers: [otlp]
       processors: [memory_limiter, batch]
       exporters: [otlp_grpc/tempo, debug]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp_http/loki, debug]

@@ -33,3 +33,38 @@ datasources:
         tags:
           - key: service.name
             value: service_name
+      # The other half of the correlation: from a span, jump to the logs written
+      # while it was open. `filterByTraceID` makes Grafana add the span's trace id
+      # to the generated LogQL, and `tags` scopes it to the same service so the
+      # query does not scan every stream in Loki.
+      tracesToLogsV2:
+        datasourceUid: loki
+        spanStartTimeShift: "-1h"
+        spanEndTimeShift: "1h"
+        filterByTraceID: true
+        filterBySpanID: false
+        tags:
+          - key: service.name
+            value: service_name
+
+  - name: Loki
+    uid: loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    editable: true
+    jsonData:
+      # Logs -> trace. This is the one the previous observability stack got wrong
+      # (see `62b4051`): it used a regex over the log line, and OTLP logs never
+      # put the trace id in the line. It arrives as a record field, which Loki
+      # stores as structured metadata — so the matcher has to be `label`, and
+      # `matcherRegex` then holds the field *name*, not a pattern.
+      derivedFields:
+        - name: TraceID
+          matcherType: label
+          matcherRegex: trace_id
+          datasourceUid: tempo
+          # `$` is escaped as `$$` — provisioning interpolates environment
+          # variables, and `${__value.raw}` is a Grafana token, not one of them.
+          url: "$${__value.raw}"
+          urlDisplayLabel: View trace

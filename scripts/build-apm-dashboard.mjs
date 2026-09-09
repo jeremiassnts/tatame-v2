@@ -54,8 +54,8 @@ dash.tags = ["tatame", "otel"];
 dash.refresh = "30s";
 dash.description =
   "Lightweight APM for OpenTelemetry (grafana.com ID 22784 rev7), adapted for " +
-  "this stack: Node runtime instead of JVM, no gRPC panels, Loki panels parked " +
-  "in a collapsed row. Rebuild with `node scripts/build-apm-dashboard.mjs`.";
+  "this stack: Node runtime instead of JVM, no gRPC panels. " +
+  "Rebuild with `node scripts/build-apm-dashboard.mjs`.";
 
 // ---------------------------------------------------------------------------
 // 2. Datasources
@@ -134,13 +134,12 @@ take(byTitle("Server RPC RED Metrics"));
 take(byTitle("RPC Operations"));
 take(byTitle("Outbound RPC Services"));
 
-// Loki is not deployed yet. Park the two log panels inside a collapsed row so
-// nothing referencing a missing datasource renders on load; the queries survive
-// intact for whenever Loki lands. `Latest logs received` lives in the header
-// row upstream, which is exactly where it would error.
+// Pull the two log panels out of the flow so the layout below can place them
+// inside the `Logs` row. `Latest logs received` sits in the header row upstream,
+// next to the metrics and traces stats; it reads better beside the log stream it
+// counts, and the header band is already full.
 const logsPanel = take((p) => p.type === "logs");
 const logsStat = take(byTitle("Latest logs received"));
-panels.find(byTitle("Logs")).panels = [logsStat, logsPanel];
 
 // The Runtime row is JVM-only. Rebuild it against the Node runtime metrics the
 // SDK already emits — the same three views as `tatame-api-overview`, re-scoped
@@ -270,15 +269,20 @@ const section = (rowTitle, children, { collapsed = false } = {}) => {
   }
   row.panels = [];
   let x = 0;
+  // Height of the band being filled, so a wrap advances past the panels already
+  // placed rather than by the height of the one that caused the wrap.
+  let band = 0;
   for (const { panel, w, h } of children) {
     if (x + w > 24) {
       x = 0;
-      y += h;
+      y += band;
+      band = 0;
     }
     place(panel, x, w, h);
     x += w;
+    band = Math.max(band, h);
   }
-  y += Math.max(...children.map((c) => c.h));
+  y += band;
 };
 
 const at = (title, w, h) => ({ panel: panels.find(byTitle(title)), w, h });
@@ -301,11 +305,10 @@ section("Traces", [
   },
 ]);
 section("Runtime", runtimePanels.map((panel) => ({ panel, w: 8, h: 7 })));
-section("Logs", [], { collapsed: true });
-
-// The collapsed Logs row keeps its own grid; give its children sane positions.
-logsStat.gridPos = { h: 2, w: 3, x: 0, y: y + 1 };
-logsPanel.gridPos = { h: 15, w: 24, x: 0, y: y + 3 };
+section("Logs", [
+  { panel: logsStat, w: 3, h: 2 },
+  { panel: logsPanel, w: 24, h: 15 },
+]);
 
 dash.panels = ordered;
 
@@ -317,11 +320,13 @@ const serialized = `${JSON.stringify(dash, null, 2)}\n`;
 if (serialized.includes("DS_GRAFANACLOUD")) {
   throw new Error("an unresolved import placeholder survived the rewrite");
 }
-const visibleLoki = ordered.some(
+const visibleLoki = ordered.filter(
   (p) => p.type !== "row" && JSON.stringify(p).includes("loki_datasource"),
 );
-if (visibleLoki) {
-  throw new Error("a Loki panel is outside the collapsed Logs row");
+if (visibleLoki.length !== 2) {
+  throw new Error(
+    `expected the 2 Loki panels to be laid out, found ${visibleLoki.length}`,
+  );
 }
 if (/jvm_|rpc_server_|rpc_client_/.test(serialized)) {
   throw new Error("a JVM or RPC query survived the rewrite");

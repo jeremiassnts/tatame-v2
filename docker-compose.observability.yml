@@ -3,7 +3,8 @@
 #   docker compose -f docker-compose.yml -f docker-compose.observability.yml up -d
 #
 # Data path: apps/api --OTLP/gRPC--> otel-collector -+- scrape -> prometheus -> grafana
-#                                                    `- OTLP ---> tempo ------> grafana
+#                                                    +- OTLP ---> tempo ------> grafana
+#                                                    `- OTLP ---> loki -------> grafana
 # See docs/observability.md.
 
 services:
@@ -18,6 +19,7 @@ services:
       - "8889:8889" # Prometheus scrape endpoint — curl this to debug
     depends_on:
       - tempo
+      - loki
     restart: unless-stopped
 
   tempo:
@@ -32,6 +34,19 @@ services:
       - tatame_tempo_data:/var/tempo
     ports:
       - "3200:3200" # Query API — `curl :3200/ready`, and where Grafana reads from
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:3.7.2
+    command: ["-config.file=/etc/loki.yml"]
+    # Same reason as Tempo above: the image runs as uid 10001 and a fresh named
+    # volume is owned by root, so Loki cannot create its chunk directories.
+    user: "0"
+    volumes:
+      - ./infra/observability/loki.yml:/etc/loki.yml:ro
+      - tatame_loki_data:/loki
+    ports:
+      - "3100:3100" # Query + OTLP ingest — `curl :3100/ready`, and where Grafana reads from
     restart: unless-stopped
 
   prometheus:
@@ -67,9 +82,11 @@ services:
     depends_on:
       - prometheus
       - tempo
+      - loki
     restart: unless-stopped
 
 volumes:
   tatame_prom_data:
   tatame_tempo_data:
+  tatame_loki_data:
   tatame_grafana_data:
