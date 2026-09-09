@@ -4,6 +4,7 @@ import { getDb } from "../../lib/db.js";
 import { PostgresNotificationRepository } from "./notification.repository.postgres.js";
 import { PostgresPushTokenRepository } from "../push-token/push-token.repository.postgres.js";
 import type { NotificationJobData } from "./notification.queue.js";
+import { log } from "../../telemetry/logger.js";
 
 const expo = new Expo();
 
@@ -11,7 +12,11 @@ async function processNotificationJob(job: Job<NotificationJobData>): Promise<vo
   const { notificationId, expoPushToken, title, body, data } = job.data;
 
   if (!Expo.isExpoPushToken(expoPushToken)) {
-    console.warn("[push] Invalid Expo push token, removing", { expoPushToken, notificationId });
+    log.warn("invalid Expo push token, removing", {
+      component: "push",
+      expoPushToken,
+      notificationId,
+    });
     const db = getDb();
     const pushTokenRepo = new PostgresPushTokenRepository(db);
     await pushTokenRepo.deleteByToken(expoPushToken);
@@ -46,7 +51,8 @@ async function processNotificationJob(job: Job<NotificationJobData>): Promise<vo
     message: string;
     details?: { error?: string };
   };
-  console.error("[push] Expo push error", {
+  log.error("Expo push error", {
+    component: "push",
     notificationId,
     error: errorTicket.message,
     details: errorTicket.details,
@@ -55,7 +61,10 @@ async function processNotificationJob(job: Job<NotificationJobData>): Promise<vo
   if (errorTicket.details?.error === "DeviceNotRegistered") {
     const pushTokenRepo = new PostgresPushTokenRepository(db);
     await pushTokenRepo.deleteByToken(expoPushToken);
-    console.log("[push] Removed stale token (DeviceNotRegistered)", { expoPushToken });
+    log.info("removed stale token (DeviceNotRegistered)", {
+      component: "push",
+      expoPushToken,
+    });
   }
 
   await notificationRepo.updateStatus(notificationId, "failed");
@@ -73,10 +82,11 @@ export function startNotificationWorker(redisUrl: string): Worker {
   });
 
   notificationWorker.on("failed", (job, err) => {
-    console.error("[push] Job failed", {
+    log.error("job failed", {
+      component: "push",
       jobName: job?.name,
       jobId: job?.id,
-      err: err.message,
+      err,
     });
   });
 

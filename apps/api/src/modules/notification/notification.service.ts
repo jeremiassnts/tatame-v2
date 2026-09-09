@@ -3,6 +3,7 @@ import type { INotificationRepository, NotificationRow } from "./notification.re
 import type { IPushTokenRepository } from "../push-token/push-token.repository.js";
 import type { INotificationPreferencesRepository } from "./notification-preferences.repository.js";
 import type { NotificationJobData } from "./notification.queue.js";
+import { log } from "../../telemetry/logger.js";
 
 export class NotificationService {
   constructor(
@@ -43,7 +44,9 @@ export class NotificationService {
 
         for (const tokenRow of tokens) {
           if (!this.queue) {
-            console.warn("[notification] No queue available, skipping push delivery");
+            log.warn("no queue available, skipping push delivery", {
+              component: "notification",
+            });
             continue;
           }
           await this.queue.add("push-send", {
@@ -58,7 +61,11 @@ export class NotificationService {
 
         await this.notificationRepo.updateStatus(row.id, "queued");
       } catch (err) {
-        console.error("[notification] Failed to enqueue push", { err, notificationId: row.id });
+        log.error("failed to enqueue push", {
+          component: "notification",
+          err,
+          notificationId: row.id,
+        });
       }
     }
 

@@ -25,11 +25,12 @@ import { createBullBoard } from "@bull-board/api";
 import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
 import { ExpressAdapter } from "@bull-board/express";
 import basicAuth from "express-basic-auth";
+import { log } from "./telemetry/logger.js";
 
 const env = loadEnv();
 
 if (env.NODE_ENV === "production") {
-  console.log("Running database migrations...");
+  log.info("running database migrations", { component: "server" });
   await runMigrations(env.DATABASE_URL, "./drizzle");
 }
 
@@ -38,12 +39,12 @@ const app = createApp();
 // Start email worker if Redis is available
 if (env.REDIS_URL) {
   startEmailWorker(env.REDIS_URL);
-  console.log("[email] Worker started");
+  log.info("worker started", { component: "email" });
   startNotificationWorker(env.REDIS_URL);
-  console.log("[push] Notification worker started");
+  log.info("notification worker started", { component: "push" });
   startEngagementWorker(env.REDIS_URL);
   await registerEngagementJobs(env.REDIS_URL);
-  console.log("[engagement] Worker started, cron jobs registered");
+  log.info("worker started, cron jobs registered", { component: "engagement" });
 
   const serverAdapter = new ExpressAdapter();
   serverAdapter.setBasePath("/admin/queues");
@@ -64,18 +65,20 @@ if (env.REDIS_URL) {
       serverAdapter.getRouter() as RequestHandler,
     );
   } else {
-    console.warn("[bull-board] BULL_BOARD_USER/BULL_BOARD_PASS not set — dashboard disabled");
+    log.warn("BULL_BOARD_USER/BULL_BOARD_PASS not set — dashboard disabled", {
+      component: "bull-board",
+    });
   }
-  console.log("[bull-board] Dashboard at /admin/queues");
+  log.info("dashboard at /admin/queues", { component: "bull-board" });
 }
 
 const server = app.listen(env.API_PORT, () => {
-  console.log("API listening", { port: env.API_PORT });
+  log.info("API listening", { component: "server", port: env.API_PORT });
 });
 
 // Graceful shutdown
 async function shutdown() {
-  console.log("Shutting down...");
+  log.info("shutting down", { component: "server" });
   server.close();
   await closeEmailWorker();
   await closeEmailQueue();

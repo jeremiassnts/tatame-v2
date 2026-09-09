@@ -46,7 +46,25 @@ export default tseslint.config(
           varsIgnorePattern: "^_",
         },
       ],
+      // Everything goes through `src/telemetry/logger.ts`, so it reaches Loki
+      // with the active span's trace id attached. A `console.log` is invisible
+      // the moment the process is not a terminal you are watching.
+      "no-console": "error",
     },
+  },
+  {
+    // `instrumentation.ts` runs before Express is loaded, and importing the
+    // logger would pull `@opentelemetry/api-logs` into that window — the exact
+    // load-order hazard the whole telemetry module is arranged to avoid. It also
+    // has no logger to use yet: it is what registers the provider.
+    files: ["src/instrumentation.ts"],
+    rules: { "no-console": "off" },
+  },
+  {
+    // `seed.ts` is a CLI. Its output is the product, not a diagnostic, and it
+    // should not depend on `LOG_LEVEL` to print what it did.
+    files: ["src/seed.ts"],
+    rules: { "no-console": "off" },
   },
   {
     // Tests build partial mocks and cast them to the collaborator interfaces they
@@ -54,6 +72,7 @@ export default tseslint.config(
     // noisier than the assertions they support.
     files: ["**/*.test.ts"],
     rules: {
+      "no-console": "off",
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-unsafe-argument": "off",
       "@typescript-eslint/no-unsafe-assignment": "off",

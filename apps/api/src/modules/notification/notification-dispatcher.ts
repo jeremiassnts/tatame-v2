@@ -2,6 +2,7 @@ import type { NotificationService } from "./notification.service.js";
 import type { IUserRepository } from "../user/user.repository.js";
 import type { IMembershipRepository } from "../membership/membership.repository.js";
 import { getTemplate, categoryForTemplateKey } from "./notification-templates.js";
+import { log } from "../../telemetry/logger.js";
 
 export class NotificationDispatcher {
   constructor(
@@ -19,7 +20,7 @@ export class NotificationDispatcher {
     try {
       const template = getTemplate(templateKey);
       if (!template) {
-        console.warn("[dispatcher] Unknown template key", { templateKey });
+        log.warn("unknown template key", { component: "dispatcher", templateKey });
         return;
       }
       const clerkIdMap = await this.userRepo.findClerkIdsByInternalIds(userIds);
@@ -36,7 +37,7 @@ export class NotificationDispatcher {
         data: opts?.data,
       });
     } catch (err) {
-      console.error("[dispatcher] Failed to send notification", { err, templateKey });
+      log.error("failed to send notification", { component: "dispatcher", err, templateKey });
     }
   }
 
@@ -49,7 +50,7 @@ export class NotificationDispatcher {
     try {
       const template = getTemplate(templateKey);
       if (!template) {
-        console.warn("[dispatcher] Unknown template key", { templateKey });
+        log.warn("unknown template key", { component: "dispatcher", templateKey });
         return;
       }
       const recipientIds = await this.membershipRepo.findManagerClerkIdsByAcademy(academyId);
@@ -63,7 +64,11 @@ export class NotificationDispatcher {
         data: opts?.data,
       });
     } catch (err) {
-      console.error("[dispatcher] Failed to send notification to managers", { err, templateKey });
+      log.error("failed to send notification to managers", {
+        component: "dispatcher",
+        err,
+        templateKey,
+      });
     }
   }
 
@@ -76,7 +81,7 @@ export class NotificationDispatcher {
     try {
       const template = getTemplate(templateKey);
       if (!template) {
-        console.warn("[dispatcher] Unknown template key", { templateKey });
+        log.warn("unknown template key", { component: "dispatcher", templateKey });
         return;
       }
       const recipientIds = await this.membershipRepo.findActiveStudentClerkIdsByAcademy(academyId);
@@ -90,7 +95,11 @@ export class NotificationDispatcher {
         data: opts?.data,
       });
     } catch (err) {
-      console.error("[dispatcher] Failed to send notification to students", { err, templateKey });
+      log.error("failed to send notification to students", {
+        component: "dispatcher",
+        err,
+        templateKey,
+      });
     }
   }
 }

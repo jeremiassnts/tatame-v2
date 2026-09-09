@@ -5,6 +5,7 @@ import type { IUserRepository } from "../user/user.repository.js";
 import type { IMembershipRepository } from "../membership/membership.repository.js";
 import type { IMilestoneRepository } from "./milestone.repository.js";
 import { getTemplate, categoryForTemplateKey } from "../notification/notification-templates.js";
+import { log } from "../../telemetry/logger.js";
 
 const ENGAGEMENT_CATEGORIES = ["weekly_summary", "inactivity", "milestone", "streak"] as const;
 const MAX_ENGAGEMENT_PER_DAY = 2;
@@ -40,10 +41,18 @@ export class EngagementService {
         });
         sent++;
       } catch (err) {
-        console.error("[engagement] Failed to send weekly summary", { err, userId });
+        log.error("failed to send weekly summary", {
+          component: "engagement",
+          err,
+          userId,
+        });
       }
     }
-    console.log("[engagement] Weekly summary processed", { sent, total: summaries.length });
+    log.info("weekly summary processed", {
+      component: "engagement",
+      sent,
+      total: summaries.length,
+    });
     return sent;
   }
 
@@ -73,10 +82,18 @@ export class EngagementService {
         });
         sent++;
       } catch (err) {
-        console.error("[engagement] Failed to send inactivity nudge", { err, userId });
+        log.error("failed to send inactivity nudge", {
+          component: "engagement",
+          err,
+          userId,
+        });
       }
     }
-    console.log("[engagement] Inactivity nudge processed", { sent, total: inactiveUserIds.length });
+    log.info("inactivity nudge processed", {
+      component: "engagement",
+      sent,
+      total: inactiveUserIds.length,
+    });
     return sent;
   }
 
@@ -101,7 +118,11 @@ export class EngagementService {
       });
       await this.milestoneRepo.record(userId, totalCheckins);
     } catch (err) {
-      console.error("[engagement] Failed to check milestone", { err, userId });
+      log.error("failed to check milestone", {
+        component: "engagement",
+        err,
+        userId,
+      });
     }
   }
 

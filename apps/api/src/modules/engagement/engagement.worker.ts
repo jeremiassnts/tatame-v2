@@ -11,6 +11,7 @@ import { PostgresMembershipRepository } from "../membership/membership.repositor
 import { PostgresMilestoneRepository } from "./milestone.repository.postgres.js";
 import { EngagementService } from "./engagement.service.js";
 import type { EngagementJobName } from "./engagement.queue.js";
+import { log } from "../../telemetry/logger.js";
 
 function buildEngagementService(): EngagementService {
   const db = getDb();
@@ -32,7 +33,8 @@ async function processEngagementJob(job: Job): Promise<void> {
   switch (jobName) {
     case "weekly-summary": await service.processWeeklySummary(); break;
     case "inactivity-nudge": await service.processInactivityNudge(); break;
-    default: console.warn("[engagement] Unknown job name", { jobName });
+    default:
+      log.warn("unknown job name", { component: "engagement", jobName });
   }
 }
 
@@ -44,10 +46,11 @@ export function startEngagementWorker(redisUrl: string): Worker {
     connection: { url: redisUrl }, concurrency: 1,
   });
   engagementWorker.on("failed", (job, err) => {
-    console.error("[engagement] Job failed", {
+    log.error("job failed", {
+      component: "engagement",
       jobName: job?.name,
       jobId: job?.id,
-      err: err.message,
+      err,
     });
   });
   return engagementWorker;

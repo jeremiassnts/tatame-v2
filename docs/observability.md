@@ -1,39 +1,41 @@
-# Observability — metrics and traces with OpenTelemetry
+# Observability — metrics, traces and logs with OpenTelemetry
 
 A local, free monitoring stack for the API: **OpenTelemetry SDK → OTel Collector →
-Prometheus (metrics) + Tempo (traces) → Grafana**. Logs are a later iteration.
+Prometheus (metrics) + Tempo (traces) + Loki (logs) → Grafana**.
 
 ## The data path
 
 ```
 apps/api (Node)                    push, OTLP/gRPC
-  └── @opentelemetry/sdk-node ──────────────────────► otel-collector :4317
-        auto-instrumentations                              │
-        (http, express, redis, node runtime)               ├── exposes /metrics
-                                                           │        │
-                                              otel-collector :8889 ◄─┴─ scrape ── prometheus :9090
-                                                           │                            │
-                                                           └── push, OTLP/gRPC ──► tempo :4317
+  ├── @opentelemetry/sdk-node ──────────────────────► otel-collector :4317
+  │     auto-instrumentations                              │
+  │     (http, express, redis, node runtime)               ├── exposes /metrics
+  │                                                        │        │
+  └── telemetry/logger.ts ──┘                 otel-collector :8889 ◄─┴─ scrape ── prometheus :9090
+        telemetry/events.ts                              │                              │
+                                                         ├── push, OTLP/gRPC ──► tempo :4317
+                                                         │                              │
+                                                         └── push, OTLP/HTTP ─► loki :3100
                                                                                         │
                                                                     grafana :3300 ◄──────┘
 ```
 
-The API only ever talks to the Collector, and both signals ride the same connection.
-Everything downstream is infrastructure config — adding Loki later means adding a
-pipeline in `infra/observability/otel-collector-config.yml`, not changing application
-code.
+The API only ever talks to the Collector, and all three signals ride the same
+connection. Everything downstream is infrastructure config.
 
 | Port | Who | What |
 | --- | --- | --- |
-| 4317 | otel-collector | OTLP **gRPC** — where the API pushes metrics *and* traces |
+| 4317 | otel-collector | OTLP **gRPC** — where the API pushes metrics, traces *and* logs |
 | 4318 | otel-collector | OTLP HTTP — for manual pokes with curl |
 | 8889 | otel-collector | Prometheus scrape endpoint (`/metrics`) |
 | 9090 | prometheus | Query API + web UI |
 | 3200 | tempo | Query API — `curl :3200/ready`, and where Grafana reads traces |
+| 3100 | loki | Query API + OTLP ingest (`/otlp/v1/logs`) — where Grafana reads logs |
 | 3300 | grafana | Dashboards (3000 on the host belongs to `next dev`) |
 
 Tempo also listens on 4317 inside the compose network, but that port is deliberately
-**not** published: on the host it belongs to the Collector.
+**not** published: on the host it belongs to the Collector. Loki is reached over
+OTLP/**HTTP** rather than gRPC — see "The log path" below for why.
 
 ## Running it
 
@@ -72,6 +74,8 @@ under `NODE_ENV=test`.
 | `OTEL_SERVICE_NAME` | `tatame-api` | Becomes the `service_name` label |
 | `OTEL_SERVICE_NAMESPACE` | `tatame` | Becomes the `service_namespace` label; groups every service of this product |
 | `OTEL_TRACES_ENABLED` | `true` | Set to `false` to keep metrics but stop exporting spans |
+| `OTEL_LOGS_ENABLED` | `true` | Set to `false` to stop exporting log records. stdout is unaffected |
+| `LOG_LEVEL` | `info` | `debug` \| `info` \| `warn` \| `error`. Also un-silences logging under `NODE_ENV=test` |
 
 ## Generating traffic
 
@@ -145,6 +149,39 @@ curl -s localhost:3200/api/v2/search/tag/name/values | jq -r '.tagValues[].value
 
 If step 7 is empty but step 2 has data, the Collector received the batch and failed to
 forward it — `docker compose logs otel-collector | grep tempo` will say so.
+
+And the log half:
+
+```bash
+# 9. is Loki up?
+curl -s localhost:3100/ready
+
+# 10. push one record straight through the Collector and read it back. This is the
+#     whole path in two commands, and it needs no API running.
+NS=$(python3 -c 'import time;print(int(time.time()*1e9))')
+curl -s -X POST localhost:4318/v1/logs -H 'Content-Type: application/json' -d "{
+  \"resourceLogs\":[{\"resource\":{\"attributes\":[
+    {\"key\":\"service.name\",\"value\":{\"stringValue\":\"probe\"}}]},
+  \"scopeLogs\":[{\"logRecords\":[{
+    \"timeUnixNano\":\"$NS\",\"severityNumber\":9,\"severityText\":\"INFO\",
+    \"body\":{\"stringValue\":\"hello\"}}]}]}]}"
+
+curl -s --get localhost:3100/loki/api/v1/query_range \
+  --data-urlencode 'query={service_name="probe"}' \
+  --data-urlencode "start=$(( $(date +%s) - 300 ))000000000" | jq '.data.result'
+
+# 11. which labels actually exist? (should be exactly the four resource attributes)
+curl -s localhost:3100/loki/api/v1/labels | jq
+
+# 12. did the API's own events arrive?
+curl -s --get localhost:3100/loki/api/v1/query_range \
+  --data-urlencode 'query={service_name="tatame-api"} | event_domain="checkin"' \
+  --data-urlencode "start=$(( $(date +%s) - 3600 ))000000000" | jq '.data.result[].values'
+```
+
+If step 10 returns nothing, `docker compose logs otel-collector | grep -i loki` shows
+whether the export failed. The usual cause is `allow_structured_metadata` being off:
+Loki rejects the whole push, not just the metadata.
 
 ## What you get for free
 
@@ -285,6 +322,11 @@ curl -s localhost:8889/metrics | grep -o 'http_route="[^"]*"' | sort -u
 | Path | Purpose |
 | --- | --- |
 | `apps/api/src/instrumentation.ts` | Starts the SDK; imported first in `server.ts` |
+| `apps/api/src/telemetry/logger.ts` | The one way anything writes a log |
+| `apps/api/src/telemetry/events.ts` | The typed domain-event catalog |
+| `apps/api/src/telemetry/redact.ts` | Shared redaction — import-free on purpose |
+| `apps/api/src/telemetry/error-capture.ts` | Puts error response bodies on the server span |
+| `apps/api/tsconfig.test.json` | Typechecks test files, which `tsconfig.json` excludes |
 | `apps/api/otel-esm-hook.mjs` | ESM loader hook (see above) |
 | `scripts/load-test.mjs` | Traffic generator (`pnpm load-test`) |
 | `scripts/build-apm-dashboard.mjs` | Adapts the upstream APM dashboard to this stack |
@@ -292,6 +334,7 @@ curl -s localhost:8889/metrics | grep -o 'http_route="[^"]*"' | sort -u
 | `infra/observability/otel-collector-config.yml` | Receivers, processors, exporters |
 | `infra/observability/prometheus.yml` | Scrape targets and `target_info` relabeling |
 | `infra/observability/tempo.yml` | Tempo, monolithic mode, traces on local disk |
+| `infra/observability/loki.yml` | Loki, single-binary mode, logs on local disk |
 | `infra/observability/upstream/` | Vendored third-party dashboards, never edited |
 | `infra/observability/grafana/provisioning/` | Datasource + dashboard provider |
 | `infra/observability/grafana/dashboards/` | Dashboard JSON (edit on disk, Grafana reloads in ~10s) |
@@ -304,23 +347,187 @@ set `OTEL_TRACES_SAMPLER=parentbased_traceidratio` and `OTEL_TRACES_SAMPLER_ARG=
 The SDK reads both natively, so it needs no code change.
 
 Traces are retained for 7 days (`backend_worker.compaction.block_retention` in
-`infra/observability/tempo.yml`), matching Prometheus.
+`infra/observability/tempo.yml`), matching Prometheus and Loki.
 
-## Adding Loki next
+## The log path
 
-The APM dashboard already contains the two log panels, parked inside the collapsed
-**Logs** row at the bottom. To light them up:
+Logs go the same way as everything else — SDK to Collector — but they need one thing
+metrics and traces do not: something in the application has to *call* the logger.
 
-1. Add a `loki` service to `docker-compose.observability.yml`.
-2. Add a `loki` exporter and a `logs` pipeline to the Collector config, plus a log
-   record processor on the SDK side.
-3. Add a Loki datasource with `uid: loki` to `datasources.yml` — the dashboard's
-   `loki_datasource` variable resolves by type, so nothing in the JSON has to change.
-4. Un-collapse the row: set `collapsed: false` for the `Logs` section in
-   `scripts/build-apm-dashboard.mjs` and re-run it.
+```
+apps/api code ──► telemetry/logger.ts ──┬──► stdout, always
+                  telemetry/events.ts   │
+                                        └──► @opentelemetry/api-logs
+                                                    │
+                                       BatchLogRecordProcessor (NodeSDK)
+                                                    │
+                                        otel-collector :4317 ──► loki :3100/otlp
+```
 
-The application-side change is one exporter — that is the point of routing everything
-through the Collector.
+**stdout is unconditional.** Export is additive: with the stack down, `pnpm api:dev`
+prints exactly what it always did. `OTEL_LOGS_ENABLED=false` stops the export and
+leaves the terminal alone.
+
+**`logger.ts` never imports the SDK.** It asks `@opentelemetry/api-logs` for the
+global provider, which `instrumentation.ts` may or may not have registered; when
+telemetry is off, that call returns a no-op. This is what makes `logger.ts` an
+ordinary module any file can import, with none of the load-order constraints
+`error-capture.ts` lives under — and it is what makes `trace_id` correlation work,
+because emission happens on the main thread, inside the active span.
+
+> The previous observability stack logged through pino with
+> `pino-opentelemetry-transport`. Pino transports run in a **worker thread**, which
+> cannot see the main thread's span context, so the transport stood up a second
+> `LoggerProvider` with its own resource attributes. That is why `62b4051`'s commit
+> message says logs went out "through two competing paths" and why the Loki derived
+> field "matched a trace_id pattern OTLP logs never emit". Both are the same bug.
+
+### Why `otlp_http/loki` and not a `loki` exporter
+
+There is no `loki` exporter. `otel/opentelemetry-collector-contrib:0.160.0` ships
+`loki` only as a *receiver* — check for yourself:
+
+```bash
+docker run --rm --entrypoint /otelcol-contrib \
+  otel/opentelemetry-collector-contrib:0.160.0 components | grep -A1 'name: loki'
+```
+
+Logs go to Loki's native OTLP endpoint instead, via `otlp_http/loki` pointed at
+`http://loki:3100/otlp`. Note the component is named `otlp_http` in this
+distribution, not `otlphttp`. Loki also requires `allow_structured_metadata: true`
+to accept OTLP at all.
+
+### Labels vs. structured metadata
+
+Loki indexes only **resource** attributes, and only the ones on its default list.
+For this service that is exactly four:
+
+```bash
+curl -s localhost:3100/loki/api/v1/labels | jq
+# service_name, service_namespace, service_instance_id, deployment_environment_name
+```
+
+Everything else — `event_domain`, `event_outcome`, `event_reason`, `user_id`,
+`trace_id`, `exception_type` — is **structured metadata**, filtered with `|` rather
+than matched inside `{}`:
+
+```logql
+{service_name="tatame-api"} | event_domain="checkin" | event_outcome="rejected"
+```
+
+This is deliberate. A label multiplies the stream count by its cardinality; Loki 3.x
+filters structured metadata efficiently and caps index labels at 15 for good reason.
+
+One trap when reading query output by hand: `query_range` merges labels and
+structured metadata into a single `stream` object per result, so it *looks* like
+everything became a label. `/loki/api/v1/labels` is the honest answer.
+
+## The event catalog
+
+Logs answer "what did the code say". Events answer "what did the business do", and
+they are the reason this iteration exists. A refused check-in used to be a 409 with
+Portuguese prose; now it is `checkin.rejected` with `WEEKLY_LIMIT_REACHED`, and the
+difference is whether "why were check-ins refused this week?" is a query or an
+afternoon of reading source.
+
+`apps/api/src/telemetry/events.ts` holds the whole catalog. Eight domains:
+
+| Domain | What it covers |
+| --- | --- |
+| `checkin` | Created, and ten distinct refusal reasons |
+| `membership` | Requested, approved, rejected, blocked, unblocked, left |
+| `subscription` | Student plans: created, updated, assigned |
+| `payment` | Created, checkout started, confirmed, transferred |
+| `manager_subscription` | The Pro plan via Stripe, including unhandled webhooks |
+| `graduation` | Initial belt, promotion, and invalid-progression refusals |
+| `access` | Who was turned away and why — no session, role, plan, rate limit |
+| `request` | Unhandled 5xx. The failures that are ours |
+
+Every record carries `event.name`, `event.domain`, `event.outcome`
+(`success` / `rejected` / `failed`) and, on a refusal, `event.reason`. Outcome maps to
+severity: success is `INFO`, rejected is `WARN`, failed is `ERROR`.
+
+### Questions it answers
+
+```logql
+# Why were check-ins refused this week, ranked?
+sum by (event_reason) (
+  count_over_time({service_name="tatame-api"} | event_domain="checkin" | event_outcome="rejected" [1w])
+)
+
+# Everything that happened to one student
+{service_name="tatame-api"} | user_id="usr_..."
+
+# The failures that are ours, with stacks
+{service_name="tatame-api"} | event_name="request.failed"
+
+# Stripe webhooks we received and did nothing with
+{service_name="tatame-api"} | event_name="manager_subscription.webhook_unhandled"
+
+# Everything written while one trace was open
+{service_name="tatame-api"} | trace_id="<id>"
+```
+
+### Adding an event
+
+One entry in the catalog, one call site.
+
+```typescript
+// 1. src/telemetry/events.ts
+"announcement.published": { domain: "announcement", outcome: "success" },
+
+// 2. the call site
+emitEvent("announcement.published", { userId, academyId, announcementId: row.id });
+```
+
+`emitEvent` is typed against the catalog: an unlisted name does not compile, `reason`
+is **required** on events that declare reasons and **forbidden** on those that do not,
+and only that event's own reasons are accepted. Four `@ts-expect-error` assertions in
+`events.test.ts` pin each rule.
+
+Two things that gate this, both learned the hard way:
+
+- `tsconfig.json` excludes `*.test.ts`, so `tsc --noEmit` never sees a test file — and
+  an unchecked `@ts-expect-error` asserts nothing. `tsconfig.test.json` exists for
+  this, and `pnpm typecheck` runs both.
+- `catalog-coverage.test.ts` scans the source for every event name and reason and
+  fails when one is declared but never emitted. An event that cannot fire reads as
+  coverage and never lights up.
+
+### What is deliberately not an event
+
+Background workers (email, push, engagement) write structured logs and reach Loki like
+everything else, but they do not define event names — this iteration scoped the
+catalog to the request path.
+
+`payment.failed` and `access.denied`/`FEATURE_LOCKED` were specified and then removed:
+both payment webhook handlers return early on any non-success event, and
+`requirePlanFeature` calls `next()` unconditionally. Neither could ever fire.
+
+Retention is **7 days**, matching Prometheus and Tempo. Loki is not an audit trail —
+if you need "who promoted this student in March", that is a table in Postgres.
+
+## Logging, without an event
+
+For everything that is not a domain action:
+
+```typescript
+import { log } from "../telemetry/logger.js";
+
+log.info("worker started", { component: "email" });
+log.warn("no queue available, skipping push delivery", { component: "notification" });
+log.error("job failed", { component: "email", jobName, jobId, err });
+```
+
+`err` is expanded into `exception.type`, `exception.message` and
+`exception.stacktrace` — pass the error itself, not `err.message`. Field values whose
+key looks sensitive are redacted by `telemetry/redact.ts`, the same list the span
+error capture uses.
+
+`console.*` is a lint error under `apps/api/src`. Three exceptions, each for a reason:
+`*.test.ts`, `seed.ts` (a CLI whose output is the product) and `instrumentation.ts`
+(it runs before the logger exists, and importing it would recreate the load-order
+hazard the telemetry module is arranged to avoid).
 
 ## The APM dashboard
 
@@ -347,7 +554,7 @@ What the script changes, and why:
 | Strips `__inputs` / `__requires` / `__elements`, rewrites `${DS_GRAFANACLOUD-*}` to the dashboard's own datasource variables | That scaffolding exists for manual import through grafana.com. Provisioning never runs an import, and Grafana errors on unresolved `${DS_*}` |
 | JVM row → Node runtime (event loop delay, V8 heap, GC time) | This is a Node service |
 | Deletes the three gRPC panels | No gRPC server or client in this project |
-| Moves the Loki panels into a collapsed row | Loki is not deployed; nothing referencing a missing datasource should render on load |
+| Moves the two Loki panels into the `Logs` row | Upstream puts `Latest logs received` in the header band, which is already full; it reads better beside the log stream it counts |
 | Deletes the setup-instructions panel | It says to delete it after setup, and it documents ingesting through Prometheus' native OTLP endpoint — not how this stack is wired |
 | `Outbound Databases` error column: `http_response_status_code=~"5.."` → `error_type!=""` | Upstream copy-pasted the HTTP selector onto a database metric that has no such label, making the column a constant zero |
 
