@@ -228,7 +228,7 @@ describe("Check-in integration", () => {
     expect(week.weekReference).toBeDefined();
     expect(Array.isArray(week.checkins)).toBe(true);
     expect(week.checkins.length).toBe(1);
-    expect(week.checkins[0].className).toBe("All day open mat");
+    expect(week.checkins[0]?.className).toBe("All day open mat");
   });
 
   it("GET /v1/checkins/me/weekly-count returns zero when no check-ins exist", async () => {

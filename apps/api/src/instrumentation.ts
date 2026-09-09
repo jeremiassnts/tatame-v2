@@ -1,5 +1,5 @@
 /**
- * OpenTelemetry bootstrap — metrics and traces.
+ * OpenTelemetry bootstrap — metrics, traces and logs.
  *
  * Must be imported before `express`, `pg` and `redis` are loaded: the auto
  * instrumentations work by patching those modules as they are required, so
@@ -15,9 +15,11 @@
 import type { ServerResponse } from "node:http";
 import { hostname } from "node:os";
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
+import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-grpc";
 import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-grpc";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-grpc";
 import { resourceFromAttributes } from "@opentelemetry/resources";
+import { BatchLogRecordProcessor } from "@opentelemetry/sdk-logs";
 import { PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
 import { NodeSDK } from "@opentelemetry/sdk-node";
 import {
@@ -51,6 +53,10 @@ if (!collectorUrl) {
   // their own — they are far noisier, and one signal at a time is often what you
   // want while debugging.
   const tracesEnabled = process.env.OTEL_TRACES_ENABLED !== "false";
+  // Same switch for logs. Note this is the *export* switch only: `logger.ts`
+  // always writes to stdout, so turning this off costs visibility in Grafana,
+  // never in the terminal.
+  const logsEnabled = process.env.OTEL_LOGS_ENABLED !== "false";
 
   sdk = new NodeSDK({
     resource: resourceFromAttributes({
@@ -78,6 +84,22 @@ if (!collectorUrl) {
     ...(tracesEnabled
       ? { traceExporter: new OTLPTraceExporter({ url: collectorUrl }) }
       : { spanProcessors: [] }),
+    // Registering a processor is what makes the SDK build a LoggerProvider and
+    // publish it globally, which is the provider `telemetry/logger.ts` picks up
+    // through `@opentelemetry/api-logs`. One provider, in this process — the
+    // previous stack ran a second one inside a pino worker thread, which could
+    // not see the active span and so emitted logs no trace could be linked to.
+    //
+    // `logRecordProcessors: []` when off, for exactly the reason `spanProcessors`
+    // needs it. Omitting the key makes the SDK fall back to
+    // `configureLoggerProviderFromEnv`, which treats an empty `OTEL_LOGS_EXPORTER`
+    // as "otlp" over the default `http/protobuf` — i.e. it would quietly ship
+    // logs to localhost:4318, which in this stack is the Collector's HTTP port.
+    // Disabling logs would have kept exporting them. The empty array is truthy,
+    // so it suppresses that fallback and leaves a provider with nowhere to send.
+    logRecordProcessors: logsEnabled
+      ? [new BatchLogRecordProcessor({ exporter: new OTLPLogExporter({ url: collectorUrl }) })]
+      : [],
     instrumentations: [
       getNodeAutoInstrumentations({
         // Every fs call becomes telemetry otherwise. Enormous volume, no value here.
@@ -129,6 +151,11 @@ if (!collectorUrl) {
     tracesEnabled
       ? `[otel] traces exporting to ${collectorUrl}`
       : "[otel] OTEL_TRACES_ENABLED=false — traces disabled",
+  );
+  console.log(
+    logsEnabled
+      ? `[otel] logs exporting to ${collectorUrl}`
+      : "[otel] OTEL_LOGS_ENABLED=false — logs disabled (stdout unaffected)",
   );
 }
 

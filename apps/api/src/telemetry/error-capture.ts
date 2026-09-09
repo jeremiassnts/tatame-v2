@@ -16,10 +16,13 @@
  * anyone looks.
  *
  * This module is imported by `instrumentation.ts`, which loads before Express.
- * It must therefore stay free of runtime imports: the `express` import below is
- * type-only and disappears at compile time. Do not add a value import here.
+ * It must therefore stay free of runtime imports that could reach an
+ * instrumented library: the `express` import below is type-only and disappears
+ * at compile time, and `./redact.js` is deliberately import-free itself. Do not
+ * add any other value import here.
  */
 import type { NextFunction, Request, Response } from "express";
+import { serialize } from "./redact.js";
 
 /**
  * Registered under `Symbol.for` so the key is the same object across module
@@ -38,94 +41,6 @@ export interface CapturedError {
 }
 
 type Carrier = { [CAPTURED_ERROR]?: CapturedError };
-
-/**
- * Traces are not a place to store payloads. This is enough for an error
- * envelope — `{ error, message }`, or a flattened Zod issue list — and well
- * short of the point where span size starts to matter.
- */
-const MAX_BODY_CHARS = 2048;
-
-/** Depth guard: an error envelope is shallow, and cycles must not hang the walk. */
-const MAX_DEPTH = 6;
-
-/**
- * Words long and unambiguous enough to match anywhere in a key. `userPassword`
- * and `x-authorization-header` both need to be caught however they are spelled.
- */
-const SENSITIVE_FRAGMENTS = [
-  "password",
-  "passwd",
-  "passphrase",
-  "secret",
-  "token",
-  "authorization",
-  "cookie",
-  "credential",
-  "signature",
-];
-
-/**
- * Words too short to match as substrings — `key` would redact `monkey`, `pin`
- * would redact `pinned`. These are compared against whole name segments, so
- * `apiKey` and `api_key` are caught while `monkey` is left alone.
- */
-const SENSITIVE_SEGMENTS = new Set([
-  "key",
-  "keys",
-  "auth",
-  "pass",
-  "pin",
-  "otp",
-  "sig",
-  "jwt",
-  "bearer",
-  "salt",
-  "hash",
-]);
-
-/** `apiKey` -> ["api","key"], `access_token` -> ["access","token"]. */
-function segments(key: string): string[] {
-  return key
-    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
-    .split(/[\s_\-.]+/)
-    .filter(Boolean)
-    .map((part) => part.toLowerCase());
-}
-
-function isSensitive(key: string): boolean {
-  const lower = key.toLowerCase();
-  if (SENSITIVE_FRAGMENTS.some((fragment) => lower.includes(fragment))) return true;
-  return segments(key).some((segment) => SENSITIVE_SEGMENTS.has(segment));
-}
-
-function redact(value: unknown, depth = 0): unknown {
-  if (depth >= MAX_DEPTH) return "[max depth]";
-  if (Array.isArray(value)) return value.map((item) => redact(item, depth + 1));
-  if (value === null || typeof value !== "object") return value;
-
-  const out: Record<string, unknown> = {};
-  for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
-    out[key] = isSensitive(key) ? "[redacted]" : redact(nested, depth + 1);
-  }
-  return out;
-}
-
-function serialize(body: unknown): string {
-  let text: string;
-  try {
-    text = typeof body === "string" ? body : (JSON.stringify(redact(body)) ?? "");
-  } catch {
-    // Cycles are already handled by the depth guard in `redact`; what reaches
-    // here is a value JSON cannot express at all, such as a BigInt. The status
-    // code and route are on the span regardless, so a marker beats losing the
-    // whole attribute.
-    return "[unserializable]";
-  }
-  return text.length > MAX_BODY_CHARS
-    ? `${text.slice(0, MAX_BODY_CHARS)}…[truncated]`
-    : text;
-}
 
 /**
  * `error.type` becomes a span dimension, so it has to stay low cardinality.

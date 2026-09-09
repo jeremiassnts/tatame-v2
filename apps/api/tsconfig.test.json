@@ -1,0 +1,15 @@
+{
+  // Type gate for test files.
+  //
+  // `tsconfig.json` excludes `src/**/*.test.ts`, so `tsc --noEmit` never sees a
+  // test file. That matters beyond hygiene: the `@ts-expect-error` assertions in
+  // `src/telemetry/events.test.ts` are the only thing enforcing that an event
+  // name or reason outside the catalog does not compile, and an unchecked
+  // `@ts-expect-error` asserts nothing at all — it is silently inert.
+  //
+  // `pnpm typecheck` runs this alongside the build config.
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "noEmit": true },
+  "include": ["src/**/*.ts"],
+  "exclude": []
+}

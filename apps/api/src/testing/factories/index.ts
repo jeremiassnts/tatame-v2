@@ -175,6 +175,7 @@ export function makeCheckin(overrides: Partial<CheckinRow> = {}): CheckinRow {
     checkedInAt: t,
     date: utcIsoDate(sessionDay),
     weekReference: utcMondayOfSameWeek(sessionDay),
+    dependentId: null,
     ...overrides,
   };
 }
@@ -264,6 +265,7 @@ export function makePayment(overrides: Partial<PaymentRow> = {}): PaymentRow {
     paidAt: t,
     createdAt: t,
     transferredAt: null,
+    dependentId: null,
     ...overrides,
   };
 }
@@ -285,6 +287,7 @@ export function makeBeltPromotion(
       faker.helpers.maybe(() => faker.lorem.sentence(), {
         probability: 0.2,
       }) ?? null,
+    dependentId: null,
     ...overrides,
   };
 }

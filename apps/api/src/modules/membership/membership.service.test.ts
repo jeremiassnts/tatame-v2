@@ -341,6 +341,10 @@ describe("MembershipService", () => {
     });
     const { svc } = makeSvc([academy], [active]);
     const updated = await svc.leave(userId);
+    // `leave` returns either the updated row or `{ id, deleted: true }` when the
+    // membership was merely pending. Asserting the branch is what makes
+    // `leftAt` reachable, and it was the test's unstated assumption anyway.
+    if ("deleted" in updated) throw new Error("expected the active-membership branch");
     expect(updated.leftAt).toBeTruthy();
   });
 

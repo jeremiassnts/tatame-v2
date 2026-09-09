@@ -26,7 +26,6 @@ export default defineConfig({
         "src/lib/clerk.ts",
         "src/lib/db.ts",
         "src/lib/lock.ts",
-        "src/lib/logger.ts",
         "src/lib/redis.ts",
         "src/lib/repo-factory.ts",
         "src/lib/resend.ts",
