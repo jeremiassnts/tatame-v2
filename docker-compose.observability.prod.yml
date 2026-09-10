@@ -115,7 +115,13 @@ services:
       # password reset inside Grafana, not an edit here.
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=${SERVICE_PASSWORD_GRAFANA}
-      # The session cookie is served over HTTPS by Coolify's proxy; mark it so.
+      # Requires the Grafana domain to be `https://`. A browser drops a Secure
+      # cookie on a plain-HTTP page, so over `http://` the login form accepts the
+      # password and bounces straight back to itself, with nothing in the logs to
+      # explain it. Coolify's auto-generated sslip.io domain is `http://` until you
+      # edit it — set it to https and let the proxy issue the certificate. That is
+      # worth doing for its own sake: over HTTP the admin password crosses the
+      # network in the clear.
       - GF_SECURITY_COOKIE_SECURE=true
       - GF_SECURITY_COOKIE_SAMESITE=lax
       # Consistent with `reporting_enabled: false` in tempo.yml and loki.yml.

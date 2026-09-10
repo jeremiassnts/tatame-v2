@@ -635,22 +635,56 @@ Coolify, and both matter here:
 | Build Pack | **Docker Compose** |
 | Docker Compose Location | `/docker-compose.observability.prod.yml` |
 
-Do **not** use "Docker Compose Empty" and paste the file contents. Every service here
-mounts its config with a relative bind mount (`./infra/observability/...`), and those
-paths only exist if Coolify has cloned the repository onto the server. "Empty" has no
-repository behind it, so all five containers come up without their configuration.
+Do **not** use "Docker Compose Empty" and paste the file contents — see the next step
+for why.
 
-**2. Enable "Connect to Predefined Network"** on the stack's Service Stack page.
-Without it the stack gets a private network of its own and the API cannot resolve any
-of it. Application resources like the API are already on that network, so nothing
-changes on the API side.
+**2. Tick "Preserve Repository During Deployment"** (Configuration → General, under
+Build). Nothing works without it, and the way it fails is worth understanding once.
 
-**3. Give Grafana a domain**, and only Grafana. The compose file declares
-`SERVICE_FQDN_GRAFANA_3000`, so Coolify routes that domain to the container's port
-3000. Leave the other four without a domain — they have no ports and no route, which
-is exactly what protects them.
+Every service here mounts its config with a relative bind mount
+(`./infra/observability/...`), which Coolify resolves against
+`/data/coolify/applications/<uuid>/` on the server. By default a compose deployment
+keeps only the compose file there and discards the rest of the clone — so those four
+paths do not exist. Docker's response to a missing bind-mount source is to silently
+**create an empty directory**, and from there the five containers fail in two
+different ways:
 
-**4. Read the generated Grafana password** from the resource's Environment tab
+- **otel-collector** fails to start at all: `/etc/otelcol-contrib/config.yaml` already
+  exists as a file inside the image, and a directory cannot be mounted over a file.
+  This is the error the deploy log shows, and it is the useful one —
+  `not a directory: Are you trying to mount a directory onto a file (or vice-versa)?`
+- **tempo** and **loki** start and then crash-loop. `/etc/tempo.yml` and `/etc/loki.yml`
+  do not exist in their images, so the empty directory mounts cleanly and each process
+  discovers only at startup that its config file is a folder.
+
+One cause, two symptoms. If a redeploy still fails after ticking the box, clear the
+directories Docker left behind first — Coolify will not overwrite a directory with a
+file:
+
+```bash
+rm -rf /data/coolify/applications/<uuid>
+```
+
+**3. Enable "Connect To Predefined Network"** — Configuration → **Advanced** in the
+resource's left menu. (Coolify's own docs call this the "Service Stack page", which is
+the page name for one-click Services; this resource is an Application with the Docker
+Compose build pack, and for those it lives under Advanced.) Without it the stack gets a
+private network of its own and the API cannot resolve any of it. Application resources
+like the API are already on that network, so nothing changes on the API side.
+
+**4. Give Grafana a domain**, and only Grafana. Configuration → General lists a
+*Domains for …* field per service, one for each of the five. Fill in Grafana's and
+leave the other four **empty** — they have no ports and no route, which is exactly what
+protects them.
+
+Make the URL `https://`. Coolify's "Generate Domain" produces an `http://…sslip.io`
+address, and Grafana is configured with `GF_SECURITY_COOKIE_SECURE=true`: over plain
+HTTP the browser discards the session cookie and the login form silently bounces back
+to itself. Serving the admin login over HTTP would also put the password on the wire in
+the clear. Editing the scheme to `https://` is enough — the proxy issues the
+certificate, sslip.io addresses included.
+
+**5. Read the generated Grafana password** from the resource's Environment tab
 (`SERVICE_PASSWORD_GRAFANA`). Coolify generates it once and keeps it across deploys.
 The user is `admin`.
 
@@ -658,7 +692,7 @@ Grafana applies that password when it *creates* the admin user — that is, on t
 first boot against an empty `tatame_grafana_data` volume. Changing it afterwards is a
 password change inside Grafana, not an edit to the environment.
 
-**5. Point the API at the Collector.** Coolify suffixes compose container names with
+**6. Point the API at the Collector.** Coolify suffixes compose container names with
 the stack's uuid, so read the real name off the server rather than guessing it:
 
 ```bash
