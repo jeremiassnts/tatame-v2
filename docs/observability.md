@@ -330,7 +330,8 @@ curl -s localhost:8889/metrics | grep -o 'http_route="[^"]*"' | sort -u
 | `apps/api/otel-esm-hook.mjs` | ESM loader hook (see above) |
 | `scripts/load-test.mjs` | Traffic generator (`pnpm load-test`) |
 | `scripts/build-apm-dashboard.mjs` | Adapts the upstream APM dashboard to this stack |
-| `docker-compose.observability.yml` | Collector + Prometheus + Tempo + Grafana |
+| `docker-compose.observability.yml` | Dev stack: Collector + Prometheus + Tempo + Loki + Grafana |
+| `docker-compose.observability.prod.yml` | The same five, deployable: no published ports, Grafana behind a login |
 | `infra/observability/otel-collector-config.yml` | Receivers, processors, exporters |
 | `infra/observability/prometheus.yml` | Scrape targets and `target_info` relabeling |
 | `infra/observability/tempo.yml` | Tempo, monolithic mode, traces on local disk |
@@ -576,8 +577,137 @@ moment the service is idle.
 
 [22784]: https://grafana.com/grafana/dashboards/22784
 
-## No auth
+## No auth, locally
 
 Grafana runs with anonymous admin access and no login form. That is fine for
-`localhost`; anything exposed to a network needs `GF_AUTH_ANONYMOUS_ENABLED=false`
-and real credentials.
+`localhost`, and it is the single biggest reason `docker-compose.observability.yml`
+must never be the file you deploy. The production stack is a separate compose file;
+see below.
+
+Worth being precise about *why* it is a separate file rather than a hardened version
+of this one. Grafana is the only service here that has authentication to switch on.
+Prometheus, Tempo and the Collector ship none at all, and Loki's `auth_enabled: false`
+is its single-tenant mode — not a setting someone left off. For those four, "not
+reachable" is the only access control that exists.
+
+## Deploying to Coolify
+
+`docker-compose.observability.prod.yml` is the file to deploy. It mounts the same
+configs from `infra/observability/` — the production differences are all in the
+compose file itself, so there is nothing to keep in sync.
+
+| | Dev (`docker-compose.observability.yml`) | Prod (`docker-compose.observability.prod.yml`) |
+| --- | --- | --- |
+| Published ports | 7 | none |
+| Grafana | anonymous admin, no login form | login form, generated password, no sign-up |
+| Prometheus retention | 7d | 7d **and** 2GB, whichever comes first |
+| Healthchecks | none | Prometheus and Grafana (see below) |
+| Reachable from the internet | — | Grafana only, through Coolify's proxy |
+
+### The shape: two resources
+
+The API is already its own Coolify resource. The observability stack is a second one,
+and they talk over Coolify's predefined network:
+
+```
+Coolify resource "tatame-api"          Coolify resource "tatame-observability"
+  (Dockerfile build pack)                (Docker Compose build pack)
+
+  api ──── OTLP/gRPC ───────────────►  otel-collector ──► prometheus
+           otel-collector-<uuid>:4317        │             tempo
+                                             └──────────►  loki       ──► grafana ──► :443
+                    predefined network `coolify`                              (the only domain)
+```
+
+Keeping them separate is what lets you redeploy the API without restarting Grafana,
+and vice versa. The cost is one manual step: the Collector's hostname carries the
+stack's uuid, which only exists after the first deploy.
+
+### Steps
+
+**1. Create the resource.** New resource → Docker Compose, **from this Git
+repository**, with the compose file set to `/docker-compose.observability.prod.yml`.
+
+It has to be the Git-based build pack, not "Docker Compose Empty" where you paste the
+file contents. Every service mounts its config with a relative bind mount
+(`./infra/observability/...`), and those paths only exist if Coolify has cloned the
+repository onto the server. Pasted compose content has no repository behind it, and
+all five containers come up broken.
+
+**2. Enable "Connect to Predefined Network"** on the stack's Service Stack page.
+Without it the stack gets a private network of its own and the API cannot resolve any
+of it. Application resources like the API are already on that network, so nothing
+changes on the API side.
+
+**3. Give Grafana a domain**, and only Grafana. The compose file declares
+`SERVICE_FQDN_GRAFANA_3000`, so Coolify routes that domain to the container's port
+3000. Leave the other four without a domain — they have no ports and no route, which
+is exactly what protects them.
+
+**4. Read the generated Grafana password** from the resource's Environment tab
+(`SERVICE_PASSWORD_GRAFANA`). Coolify generates it once and keeps it across deploys.
+The user is `admin`.
+
+Grafana applies that password when it *creates* the admin user — that is, on the
+first boot against an empty `tatame_grafana_data` volume. Changing it afterwards is a
+password change inside Grafana, not an edit to the environment.
+
+**5. Point the API at the Collector.** Coolify suffixes compose container names with
+the stack's uuid, so read the real name off the server rather than guessing it:
+
+```bash
+docker ps --format '{{.Names}}' | grep otel-collector
+# otel-collector-h4s8ckw0og0sc0scg4c4wsg0
+```
+
+Then set, on the **API** resource:
+
+```
+OTEL_COLLECTOR_URL=http://otel-collector-<uuid>:4317
+OTEL_METRIC_EXPORT_INTERVAL=30000
+OTEL_TRACES_SAMPLER=parentbased_traceidratio
+OTEL_TRACES_SAMPLER_ARG=0.1
+LOG_LEVEL=info
+```
+
+The last three are the only settings that differ from local dev in kind rather than
+value. Sampling matters most: the SDK default is `parentbased_always_on`, which records
+every request — right for a dev stack, wrong for anything with real traffic. The SDK
+reads both sampler variables natively, so this needs no code change. `NODE_ENV` is
+already `production` in the image, and lands as `deployment_environment_name` on every
+signal, so dashboards can tell production from a laptop pointed at the same stack.
+
+Redeploy the API and look for `[otel] metrics exporting to http://otel-collector-...`
+in its logs.
+
+### Verifying it, with nothing published
+
+The curls in "Verifying each hop" above assume published ports. In production nothing
+is published, and the Tempo, Loki and Collector images are distroless — no shell, no
+curl, so `docker exec` into them does not work either. Run a throwaway container on
+the stack's network instead:
+
+```bash
+NET=$(docker network ls --format '{{.Name}}' | grep coolify)
+
+# each hop, from inside the network
+docker run --rm --network "$NET" curlimages/curl -s http://loki-<uuid>:3100/ready
+docker run --rm --network "$NET" curlimages/curl -s http://tempo-<uuid>:3200/ready
+docker run --rm --network "$NET" curlimages/curl -s http://prometheus-<uuid>:9090/-/healthy
+docker run --rm --network "$NET" curlimages/curl -s http://otel-collector-<uuid>:8889/metrics | head
+```
+
+Grafana's own Explore covers most of what those answer, and it is one login away.
+
+Only Prometheus and Grafana carry Docker healthchecks. That is not an oversight: the
+other three images contain their binary and nothing else, so any healthcheck command
+fails to *execute* and the container reports unhealthy forever — worse than having
+none. Coolify falls back to container state for those three.
+
+### Disk
+
+Prometheus, Tempo and Loki all write to local volumes on the same disk as Postgres and
+the API. Retention is 7 days for all three, and Prometheus additionally stops at 2GB.
+Tempo and Loki are bounded by time only — if traces or logs ever crowd the disk, lower
+`block_retention` in `infra/observability/tempo.yml` and `retention_period` in
+`infra/observability/loki.yml` together, so the three signals keep ageing out as one.

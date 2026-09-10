@@ -6,8 +6,8 @@ auth_enabled: false
 server:
   http_listen_port: 3100
   grpc_listen_port: 9096
-  # Loki logs one line per flush at info; the Collector's `debug` exporter already
-  # tells us whether batches are arriving.
+  # Loki logs one line per flush at info, which buries the lines that matter.
+  # Whether a push failed is reported by the Collector's exporter either way.
   log_level: warn
 
 common:

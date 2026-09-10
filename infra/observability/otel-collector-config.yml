@@ -57,9 +57,11 @@ exporters:
     tls:
       # Plaintext inside the compose network; there is no CA to verify against.
       insecure: true
-  # Prints a one-line summary per batch to `docker compose logs otel-collector`.
-  debug:
-    verbosity: basic
+  # There is deliberately no `debug` exporter. It printed a line per batch into the
+  # container log, which is noise in production and tells you nothing the other
+  # hops do not — export *failures* are logged by the exporters themselves, so
+  # `docker logs <collector> | grep -i loki` still works without it. Add it back
+  # to a pipeline temporarily when you need to see what is arriving.
 
 service:
   telemetry:
@@ -69,12 +71,12 @@ service:
     metrics:
       receivers: [otlp]
       processors: [memory_limiter, batch]
-      exporters: [prometheus, debug]
+      exporters: [prometheus]
     traces:
       receivers: [otlp]
       processors: [memory_limiter, batch]
-      exporters: [otlp_grpc/tempo, debug]
+      exporters: [otlp_grpc/tempo]
     logs:
       receivers: [otlp]
       processors: [memory_limiter, batch]
-      exporters: [otlp_http/loki, debug]
+      exporters: [otlp_http/loki]

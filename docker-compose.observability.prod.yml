@@ -1,0 +1,145 @@
+# Production observability stack — deployed on Coolify as its own resource.
+#
+# The dev stack (docker-compose.observability.yml) publishes seven ports and runs
+# Grafana with anonymous admin. On a VPS that means Prometheus, Tempo, Loki and the
+# OTLP ingestion endpoint reachable from the internet, none of which has any
+# authentication of its own. So this file is a separate, standalone compose rather
+# than an override: Coolify deploys one file, there is no `-f a -f b`.
+#
+# Two rules shape everything below:
+#
+#   1. Nothing publishes a port. Grafana is the only service with a domain, routed
+#      by Coolify's proxy. The other four are reachable only from inside the stack's
+#      network — which is the only protection they can have, since Prometheus, Tempo
+#      and the Collector ship no auth, and Loki's `auth_enabled: false` is its
+#      single-tenant mode, not a setting left switched off.
+#   2. The config files are the same ones the dev stack mounts. Duplicating them
+#      would only produce drift; the handful of production differences live here,
+#      in this file.
+#
+# Deploying it, and how the API reaches the Collector: docs/observability.md,
+# "Deploying to Coolify".
+
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.160.0
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    volumes:
+      - ./infra/observability/otel-collector-config.yml:/etc/otelcol-contrib/config.yaml:ro
+    # No healthcheck — see the note above `tempo`.
+    depends_on:
+      - tempo
+      - loki
+    restart: unless-stopped
+
+  tempo:
+    image: grafana/tempo:3.0.3
+    command: ["-config.file=/etc/tempo.yml"]
+    # No healthcheck, and the same goes for `loki` and `otel-collector`: all three
+    # images are distroless. They contain the binary and nothing else — no shell,
+    # no wget, no curl — so every form of Docker healthcheck fails to execute, and
+    # a healthcheck that cannot run reports unhealthy forever, which is strictly
+    # worse than having none. (Verified against the pinned tags; `docker run
+    # --entrypoint sh <image>` exits with "executable file not found".) The
+    # Collector's own `health_check` extension does not help either: nothing inside
+    # the container could query it. Coolify falls back to container state for these
+    # three, and `docs/observability.md` shows how to check readiness by hand.
+    #
+    # The image runs as uid 10001 and a freshly created named volume is owned by
+    # root, so Tempo cannot write its WAL. Running as root is the workaround, kept
+    # here deliberately: this container publishes no port and has no domain, so the
+    # blast radius of the extra privilege is a container nothing can reach. The
+    # alternative — an init container that chowns the volume — buys little.
+    user: "0"
+    volumes:
+      - ./infra/observability/tempo.yml:/etc/tempo.yml:ro
+      - tatame_tempo_data:/var/tempo
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:3.7.2
+    command: ["-config.file=/etc/loki.yml"]
+    # Same volume-ownership reason as Tempo above, and the same reasoning for
+    # leaving it that way.
+    user: "0"
+    volumes:
+      - ./infra/observability/loki.yml:/etc/loki.yml:ro
+      - tatame_loki_data:/loki
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.13.3
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=7d"
+      # The dev stack bounds retention by time alone. On a VPS the TSDB shares a
+      # disk with Postgres and the API, so bound it by size too — whichever limit
+      # is hit first wins, and this one cannot be exceeded by a traffic spike.
+      - "--storage.tsdb.retention.size=2GB"
+      - "--web.enable-lifecycle"
+    volumes:
+      - ./infra/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - tatame_prom_data:/prometheus
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    depends_on:
+      - otel-collector
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:13.0.8
+    # List syntax, not the map the dev stack uses: Coolify's magic variables are
+    # declared by naming them bare, which map syntax cannot express.
+    environment:
+      # Declares the route. Coolify points the domain you set on this service in
+      # the UI at container port 3000, and fills the variable in with the FQDN.
+      - SERVICE_FQDN_GRAFANA_3000
+      # The same domain with its scheme. Grafana builds absolute URLs (invite
+      # links, OAuth redirects, rendered panel images) from this; left unset it
+      # guesses http://localhost:3000 and every generated link is wrong.
+      - GF_SERVER_ROOT_URL=${SERVICE_URL_GRAFANA}
+      # The dev stack's anonymous admin, undone. All three matter: anonymous access
+      # off, the login form back, and no self-service accounts on a public URL.
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_AUTH_DISABLE_LOGIN_FORM=false
+      - GF_USERS_ALLOW_SIGN_UP=false
+      # Coolify generates this password once and keeps it across deploys — nothing
+      # is committed, and you read it back from the resource's Environment tab.
+      # Grafana applies it when it creates the admin user, i.e. on the first boot
+      # against an empty tatame_grafana_data volume. Changing it later is a
+      # password reset inside Grafana, not an edit here.
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${SERVICE_PASSWORD_GRAFANA}
+      # The session cookie is served over HTTPS by Coolify's proxy; mark it so.
+      - GF_SECURITY_COOKIE_SECURE=true
+      - GF_SECURITY_COOKIE_SAMESITE=lax
+      # Consistent with `reporting_enabled: false` in tempo.yml and loki.yml.
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+      - GF_USERS_DEFAULT_THEME=dark
+    volumes:
+      - ./infra/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - tatame_grafana_data:/var/lib/grafana
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    depends_on:
+      - prometheus
+      - tempo
+      - loki
+    restart: unless-stopped
+
+volumes:
+  tatame_prom_data:
+  tatame_tempo_data:
+  tatame_loki_data:
+  tatame_grafana_data:
