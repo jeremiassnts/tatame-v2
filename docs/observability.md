@@ -625,14 +625,20 @@ stack's uuid, which only exists after the first deploy.
 
 ### Steps
 
-**1. Create the resource.** New resource → Docker Compose, **from this Git
-repository**, with the compose file set to `/docker-compose.observability.prod.yml`.
+**1. Create the resource.** The source and the build pack are two separate choices in
+Coolify, and both matter here:
 
-It has to be the Git-based build pack, not "Docker Compose Empty" where you paste the
-file contents. Every service mounts its config with a relative bind mount
-(`./infra/observability/...`), and those paths only exist if Coolify has cloned the
-repository onto the server. Pasted compose content has no repository behind it, and
-all five containers come up broken.
+| Screen | Choose |
+| --- | --- |
+| + New Resource | **Private Repository (with GitHub App)** — the same source the API uses |
+| Repository | this repository, branch `main` |
+| Build Pack | **Docker Compose** |
+| Docker Compose Location | `/docker-compose.observability.prod.yml` |
+
+Do **not** use "Docker Compose Empty" and paste the file contents. Every service here
+mounts its config with a relative bind mount (`./infra/observability/...`), and those
+paths only exist if Coolify has cloned the repository onto the server. "Empty" has no
+repository behind it, so all five containers come up without their configuration.
 
 **2. Enable "Connect to Predefined Network"** on the stack's Service Stack page.
 Without it the stack gets a private network of its own and the API cannot resolve any
