@@ -63,11 +63,37 @@ export const CATALOG = {
   "payment.created": { domain: "payment", outcome: "success" },
   "payment.checkout_started": { domain: "payment", outcome: "success" },
   "payment.confirmed": { domain: "payment", outcome: "success" },
-  // No `payment.failed`. Both webhook handlers process only the success event
-  // (`checkout.session.completed`, `billing.paid`) and return silently on
-  // anything else, so the API has no student-payment failure path to report. The
-  // entry was in the spec's catalog; it was removed rather than left as an event
-  // that could never fire.
+  // Still no `payment.failed`. Both webhook handlers process only the success
+  // event (`checkout.session.completed`, `billing.paid`) and return on anything
+  // else, so the API has no student-payment failure path to report. Adding one
+  // means first handling the failure event types the providers already send,
+  // which is a product decision — whether the student hears about an expired
+  // Pix — not an observability one.
+  //
+  // What *was* missing and is below: the drops on the success path. A
+  // `billing.paid` whose `pixQrCodeId` matches no pending row, or a completed
+  // Stripe session with no metadata, both used to `return` with no trace at all
+  // and the route answered 200. That is money received and not recorded, and it
+  // was the most expensive thing in this service that produced no signal.
+  // `manager_subscription` already reported its equivalent; these two handlers
+  // had been left out.
+  "payment.webhook_unhandled": {
+    domain: "payment",
+    outcome: "rejected",
+    reasons: [
+      // A paid event we cannot tie to anything of ours. The first two mean the
+      // payment is lost until someone reconciles by hand; the last two mean the
+      // payment *was* recorded and only its emails were skipped.
+      "NO_PENDING_PIX",
+      "MISSING_REFERENCE",
+      "USER_OR_ACADEMY_NOT_FOUND",
+      "OWNER_NOT_FOUND",
+      // Only AbacatePay's. Stripe's unknown types are already reported by
+      // `manager_subscription.webhook_unhandled` — see the note at the top of
+      // stripe-checkout-webhook.handler.ts.
+      "UNKNOWN_EVENT_TYPE",
+    ],
+  },
   "payment.transferred": { domain: "payment", outcome: "success" },
 
   // --- manager_subscription (the Pro plan, via Stripe) --------------------

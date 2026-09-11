@@ -589,7 +589,7 @@ way `datasources/` and `dashboards/` already are:
 | --- | --- |
 | `contact-points.yml` | One contact point, `tatame-email`, address from `$ALERT_EMAIL_TO` |
 | `notification-policies.yml` | The routing tree: grouping, and how often a still-firing alert repeats |
-| `rules.yml` | The seven rules, their thresholds and their `for` durations |
+| `rules.yml` | The nine rules, their thresholds and their `for` durations |
 
 Provisioned alert rules are **read-only in the Grafana UI**. Grafana shows them with
 a "Provisioned" badge and no edit button, which is the point: a threshold is a commit,
@@ -597,13 +597,15 @@ reviewable and reproducible, and it survives the volume being rebuilt.
 
 ### The rules
 
-All seven live in the `Tatame Alerts` folder, in one group evaluated every minute.
+All nine live in the `Tatame Alerts` folder, in one group evaluated every minute.
 
 | Rule | Fires when | `for` | Severity |
 | --- | --- | --- | --- |
 | API not reporting | `target_info` for `tatame-api` is missing from Prometheus | 3m | critical |
 | API returning 5xx | more than 5 responses with a 5xx status in 5 minutes | 2m | critical |
 | API 5xx ratio above 20% | over 20% of requests are 5xx, with at least 0.05 req/s of traffic | 5m | critical |
+| Student payment received and not recorded | **any** `payment.webhook_unhandled` with `NO_PENDING_PIX` or `MISSING_REFERENCE` in 15 minutes | 5m | critical |
+| Payment recorded but its emails were skipped | more than 3 with `USER_OR_ACADEMY_NOT_FOUND` or `OWNER_NOT_FOUND` in 30 minutes | 5m | warning |
 | Pro subscription payments failing | more than 3 `manager_subscription.past_due` in 15 minutes | 5m | warning |
 | Stripe webhooks received and ignored | more than 3 `webhook_unhandled` in 30 minutes, excluding `UNKNOWN_EVENT_TYPE` | 5m | warning |
 | Observability component down | a Prometheus target has `up < 1` | 5m | critical |
@@ -648,24 +650,48 @@ such blind spot — it counts the response, not the code path that produced it. 
 event is still the better *debugging* tool, and the alert's description says so: it
 carries the LogQL to run next.
 
-### Why there is no payment-failure rule
+### The payment rules, and the one that is still missing
 
-The task this came from proposed alerting on `payment.*` and `manager_subscription.*`
-with `event_outcome="failed"`. No such event exists. Every `payment.*` entry in the
-catalog is an `outcome: success`, and the reason is in a comment there: both webhook
-handlers process only the success event and return silently on anything else, so the
-API has no student-payment failure path to report.
+The task this came from proposed alerting on `payment.*` with
+`event_outcome="failed"`. No such event exists, and it cannot: every `payment.*` entry
+in the catalog is an `outcome: success`, because both webhook handlers process only
+the success event and `return` on anything else. There is no failure path in the code
+to report from. Adding `payment.failed` means first *handling* the failure event types
+the providers already send (`payment_intent.payment_failed`, `checkout.session.expired`
+and AbacatePay's equivalents), which is a product decision — whether the student hears
+about an expired Pix — before it is an observability one. It is not done.
 
-What exists instead:
+What was wrong with the original framing is that it looked in the wrong place. The
+dangerous gap was not the failure path; it was the **success** path. Both handlers had
+a chain of silent `return`s, and two of them mean money moved and nothing was
+recorded:
 
-- `manager_subscription.past_due`, reason `PAYMENT_FAILED` — Stripe declined a Pro
-  subscription renewal. This has a rule.
-- a 5xx — anything that breaks server-side while taking a payment. Covered by the two
-  HTTP rules.
+| Drop | Reason | What it costs |
+| --- | --- | --- |
+| `billing.paid` whose `pixQrCodeId` matches no pending row | `NO_PENDING_PIX` | Pix paid, no payment row, student still overdue |
+| `checkout.session.completed` with no metadata | `MISSING_REFERENCE` | Same, via Stripe |
+| student or academy cannot be loaded | `USER_OR_ACADEMY_NOT_FOUND` | Payment recorded, confirmation email lost |
+| academy owner cannot be loaded | `OWNER_NOT_FOUND` | Payment recorded, manager email lost |
+| AbacatePay event type we do not handle | `UNKNOWN_EVENT_TYPE` | Nothing — normal traffic, filtered out of the rules |
 
-A real `payment.failed` event would be an improvement, and it is application code
-rather than configuration. Until it exists, this section is the honest account of what
-is and is not watched.
+None of these produced any signal at all: the route answers `{received: true}` with
+200 and the provider considers the webhook delivered. `manager_subscription` already
+reported its equivalent through `manager_subscription.webhook_unhandled`; these two
+handlers had simply been left out. They now emit `payment.webhook_unhandled`, and the
+first two reasons are the only rule in this folder with a **threshold of zero** — one
+lost payment is already worth an email.
+
+One asymmetry worth knowing: the AbacatePay handler reports `UNKNOWN_EVENT_TYPE` and
+the Stripe one does not. `/webhooks/stripe` runs `StripeCheckoutWebhookHandler` and
+then `StripeSubscriptionWebhookHandler` on the same event, and the second already
+reports unknown types from its default branch. Reporting in both would double-count
+every Stripe event the account sends.
+
+The two shapes of failure are complementary, which is why both sets of rules exist.
+The HTTP rules catch anything that *breaks* while taking a payment, including the 502
+`payment.service.ts` raises when AbacatePay refuses to create a QR code. The
+`payment.webhook_unhandled` rules catch the opposite: nothing broke, no error was
+raised, and the work silently did not happen.
 
 ### How an ongoing problem stays one email
 
@@ -734,7 +760,7 @@ arrives. Check them in that order.
 docker logs <grafana> 2>&1 | grep -i "provisioning\|alerting"
 
 # 2. are the rules there and evaluating? Alerting -> Alert rules should list
-#    seven under "Tatame Alerts", each with a state, none in Error.
+#    nine under "Tatame Alerts", each with a state, none in Error.
 ```
 
 Then a **test send**: Alerting → Contact points → `tatame-email` → **Test**. This is

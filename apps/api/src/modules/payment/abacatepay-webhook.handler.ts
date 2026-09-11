@@ -34,17 +34,46 @@ export class AbacatePayWebhookHandler {
   ) {}
 
   async handleEvent(body: AbacatePayWebhookEvent): Promise<void> {
-    if (body.event !== "billing.paid") return;
+    if (body.event !== "billing.paid") {
+      // Reported, unlike the equivalent branch in the Stripe handler, because
+      // this endpoint is AbacatePay's alone — nothing else reports what arrives
+      // here, so without this line "which AbacatePay events do we actually
+      // receive?" has no answer. It is the one reason the alert rule filters
+      // out: normal traffic, not a problem.
+      emitEvent("payment.webhook_unhandled", {
+        reason: "UNKNOWN_EVENT_TYPE",
+        extra: { provider: "abacatepay", type: body.event },
+      });
+      return;
+    }
 
     const pixQrCodeId = body.data.pixQrCode?.id;
-    if (!pixQrCodeId) return;
+    if (!pixQrCodeId) {
+      emitEvent("payment.webhook_unhandled", {
+        reason: "MISSING_REFERENCE",
+        extra: { provider: "abacatepay", cause: "no pixQrCode.id on billing.paid" },
+      });
+      return;
+    }
 
     // Look up metadata stored when the QR code was created
     const pending = await this.paymentRepo.findPendingPixByQrCodeId(pixQrCodeId);
-    if (!pending) return;
+    if (!pending) {
+      // The expensive one. A Pix was paid and there is no pending row to attach
+      // it to, so no payment is recorded and the student stays overdue. Nothing
+      // downstream will notice — the route still answers 200 and AbacatePay
+      // considers the webhook delivered.
+      emitEvent("payment.webhook_unhandled", {
+        reason: "NO_PENDING_PIX",
+        extra: { provider: "abacatepay", pixQrCodeId },
+      });
+      return;
+    }
 
     // Idempotency: check if payment already exists for this pixQrCodeId
     const existing = await this.paymentRepo.findByStripePaymentId(pixQrCodeId);
+    // Deliberately not reported. A provider retrying a webhook it already
+    // delivered is the system working, not a drop.
     if (existing) return;
 
     // Resolve dependentId from the subscription
@@ -99,7 +128,18 @@ export class AbacatePayWebhookHandler {
 
     const student = await this.userRepo.findById(pending.userId);
     const academy = await this.academyRepo.findById(pending.academyId);
-    if (!student || !academy) return;
+    if (!student || !academy) {
+      // Softer than the drops above: the payment is recorded, only its emails
+      // are skipped. Still a referential hole worth knowing about.
+      emitEvent("payment.webhook_unhandled", {
+        reason: "USER_OR_ACADEMY_NOT_FOUND",
+        userId: pending.userId,
+        academyId: pending.academyId,
+        paymentId: payment.id,
+        extra: { provider: "abacatepay", cause: "confirmation email skipped" },
+      });
+      return;
+    }
 
     await this.emailService.sendPaymentConfirmed(
       {
@@ -113,7 +153,15 @@ export class AbacatePayWebhookHandler {
     );
 
     const owner = await this.userRepo.findById(academy.ownerId);
-    if (!owner) return;
+    if (!owner) {
+      emitEvent("payment.webhook_unhandled", {
+        reason: "OWNER_NOT_FOUND",
+        academyId: pending.academyId,
+        paymentId: payment.id,
+        extra: { provider: "abacatepay", cause: "manager email skipped" },
+      });
+      return;
+    }
 
     await this.emailService.sendStudentPaymentReceived(
       {

@@ -18,6 +18,12 @@ export class StripeCheckoutWebhookHandler {
   ) {}
 
   async handleEvent(event: Stripe.Event): Promise<void> {
+    // No `UNKNOWN_EVENT_TYPE` here, unlike the AbacatePay handler. The
+    // `/webhooks/stripe` route calls this handler and then
+    // `StripeSubscriptionWebhookHandler` on *the same event*, and that one
+    // already emits `manager_subscription.webhook_unhandled` from its default
+    // branch. Reporting here as well would double-count every Stripe event the
+    // account sends, which is most of them.
     if (event.type !== "checkout.session.completed") return;
     await this.onCheckoutSessionCompleted(
       event.data.object,
@@ -34,6 +40,29 @@ export class StripeCheckoutWebhookHandler {
       !meta.academyId ||
       !meta.referenceMonth
     ) {
+      // The expensive one. The session completed — Stripe has the money — and
+      // the metadata that says which subscription and which month it belongs to
+      // is not there, so no payment row is written and the student stays
+      // overdue. Nothing downstream notices: the route answers 200 and Stripe
+      // considers the webhook delivered. `extra` names the missing keys rather
+      // than dumping the metadata, which can hold anything.
+      //
+      // Joined here rather than passed as an array: `toAttributeValue` in
+      // logger.ts turns anything that is not a scalar into JSON, and
+      // `app.missing="academyId, referenceMonth"` reads better in a LogQL filter
+      // than an escaped array does.
+      emitEvent("payment.webhook_unhandled", {
+        reason: "MISSING_REFERENCE",
+        extra: {
+          provider: "stripe",
+          sessionId: session.id,
+          missing: (
+            ["subscriptionId", "userId", "academyId", "referenceMonth"] as const
+          )
+            .filter((key) => !meta?.[key])
+            .join(", "),
+        },
+      });
       return;
     }
 
@@ -46,6 +75,8 @@ export class StripeCheckoutWebhookHandler {
       const existing = await this.paymentRepo.findByStripePaymentId(
         paymentIntentId,
       );
+      // Deliberately not reported: Stripe retrying a webhook it already
+      // delivered is the system working, not a drop.
       if (existing) return;
     }
 
@@ -98,7 +129,18 @@ export class StripeCheckoutWebhookHandler {
 
     const student = await this.userRepo.findById(meta.userId);
     const academy = await this.academyRepo.findById(meta.academyId);
-    if (!student || !academy) return;
+    if (!student || !academy) {
+      // Softer than the drop above: the payment is recorded, only its emails are
+      // skipped. Still a referential hole worth knowing about.
+      emitEvent("payment.webhook_unhandled", {
+        reason: "USER_OR_ACADEMY_NOT_FOUND",
+        userId: meta.userId,
+        academyId: meta.academyId,
+        paymentId: payment.id,
+        extra: { provider: "stripe", cause: "confirmation email skipped" },
+      });
+      return;
+    }
 
     await this.emailService.sendPaymentConfirmed(
       {
@@ -112,7 +154,15 @@ export class StripeCheckoutWebhookHandler {
     );
 
     const owner = await this.userRepo.findById(academy.ownerId);
-    if (!owner) return;
+    if (!owner) {
+      emitEvent("payment.webhook_unhandled", {
+        reason: "OWNER_NOT_FOUND",
+        academyId: meta.academyId,
+        paymentId: payment.id,
+        extra: { provider: "stripe", cause: "manager email skipped" },
+      });
+      return;
+    }
 
     await this.emailService.sendStudentPaymentReceived(
       {

@@ -221,6 +221,119 @@ groups:
             users even if the absolute error count is small.
 
       # ── Money ─────────────────────────────────────────────────────────────
+      - uid: tatame-payment-not-recorded
+        title: Student payment received and not recorded
+        # The only rule here with a threshold of zero, and the reason is that a
+        # single occurrence is already a real loss: the provider took the money
+        # and no payment row was written, so the student shows as overdue until
+        # somebody reconciles by hand. Nothing else reports it — the webhook
+        # route answers 200 and the provider considers it delivered.
+        #
+        # `for: 5m` still holds, and costs nothing: `count_over_time` over a
+        # fifteen-minute window keeps a single occurrence above the threshold for
+        # fifteen minutes, so one lost payment does send the email.
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 1800
+              to: 0
+            datasourceUid: loki
+            model:
+              datasource:
+                type: loki
+                uid: loki
+              editorMode: code
+              expr: sum(count_over_time({service_name="tatame-api"} | event_name="payment.webhook_unhandled" | event_reason=~"NO_PENDING_PIX|MISSING_REFERENCE" [15m]))
+              intervalMs: 60000
+              maxDataPoints: 43200
+              queryType: instant
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
+              expression: A
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: OK
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: A payment was taken and no record of it was written
+          description: >-
+            {{ $value }} paid webhook(s) in fifteen minutes that could not be tied
+            to anything of ours — either a Pix with no pending row
+            (`NO_PENDING_PIX`) or a completed Stripe session with no metadata
+            (`MISSING_REFERENCE`). The money is with the provider and the student
+            is still marked overdue. Reconcile by hand against the provider
+            dashboard. Query, with the ids:
+            {service_name="tatame-api"} | event_name="payment.webhook_unhandled"
+
+      - uid: tatame-payment-emails-skipped
+        title: Payment recorded but its emails were skipped
+        # Softer sibling of the rule above: the payment landed, and the student or
+        # academy it points at could not be loaded, so the confirmation never
+        # went out. Not a lost payment — a referential hole. Warning, and a
+        # threshold above one, because a single occurrence is more likely a
+        # deleted account than a broken system.
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 3600
+              to: 0
+            datasourceUid: loki
+            model:
+              datasource:
+                type: loki
+                uid: loki
+              editorMode: code
+              expr: sum(count_over_time({service_name="tatame-api"} | event_name="payment.webhook_unhandled" | event_reason=~"USER_OR_ACADEMY_NOT_FOUND|OWNER_NOT_FOUND" [30m]))
+              intervalMs: 60000
+              maxDataPoints: 43200
+              queryType: instant
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              conditions:
+                - evaluator:
+                    params: [3]
+                    type: gt
+              expression: A
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: OK
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Confirmation emails were skipped for recorded payments
+          description: >-
+            {{ $value }} payments in thirty minutes whose student, academy or
+            manager could not be loaded, so the confirmation email was not sent.
+            The payment rows exist; the people they point at do not. `app.cause`
+            on each event says which email was lost.
+
       - uid: tatame-subscription-payment-failing
         title: Pro subscription payments failing
         # `manager_subscription.past_due` carries reason PAYMENT_FAILED and is the
