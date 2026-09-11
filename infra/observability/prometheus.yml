@@ -34,6 +34,37 @@ scrape_configs:
         target_label: service_name
         replacement: "${2}"
 
+  # The Collector's own health, which is a different endpoint from the one above:
+  # 8889 is the data it re-exports for the API, 8888 is how it is doing. This is
+  # where `otelcol_exporter_send_failed_*` lives, and the
+  # "Collector failing to export telemetry" alert reads nothing else.
+  #
+  # It is not exposed by default — since v0.113 the Collector binds its internal
+  # metrics to localhost, which inside a container means nothing else can reach
+  # them. `service.telemetry.metrics.readers` in otel-collector-config.yml opens
+  # it to 0.0.0.0; without that block this target is permanently down.
+  - job_name: otel-collector-internal
+    static_configs:
+      - targets: ["otel-collector:8888"]
+
+  # The three stores, scraped only so that `up` exists for them. None of their
+  # series is on a dashboard — the point is the "Observability component down"
+  # alert, which cannot fire for a target Prometheus was never told about.
+  - job_name: loki
+    static_configs:
+      - targets: ["loki:3100"]
+
+  - job_name: tempo
+    static_configs:
+      - targets: ["tempo:3200"]
+
+  # Grafana exposes /metrics unauthenticated by default. Scraping it closes the
+  # loop on paper only: if Grafana is the thing that is down, the alert about it
+  # has no way out. Worth having anyway for the flapping case.
+  - job_name: grafana
+    static_configs:
+      - targets: ["grafana:3000"]
+
   # Prometheus scraping itself — handy to confirm the server is alive.
   - job_name: prometheus
     static_configs:

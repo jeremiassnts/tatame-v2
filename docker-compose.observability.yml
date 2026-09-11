@@ -73,6 +73,16 @@ services:
       GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
       GF_AUTH_DISABLE_LOGIN_FORM: "true"
       GF_USERS_DEFAULT_THEME: dark
+      # The alert rules are provisioned here too, so they can be read and watched
+      # fire against local traffic before they reach production. Mail is not:
+      # SMTP stays off and the contact point points at a domain that cannot
+      # exist, so a rule firing on a laptop can never email anyone. State
+      # transitions are still visible under Alerting → History, and the delivery
+      # that did not happen shows up in the container log as
+      # `Notify for alerts failed ... SMTP not configured`. That line is the
+      # proof the routing worked and only the transport was missing.
+      GF_SMTP_ENABLED: "false"
+      ALERT_EMAIL_TO: alertas@example.invalid
     volumes:
       - ./infra/observability/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./infra/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro

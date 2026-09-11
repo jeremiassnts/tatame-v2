@@ -338,6 +338,7 @@ curl -s localhost:8889/metrics | grep -o 'http_route="[^"]*"' | sort -u
 | `infra/observability/loki.yml` | Loki, single-binary mode, logs on local disk |
 | `infra/observability/upstream/` | Vendored third-party dashboards, never edited |
 | `infra/observability/grafana/provisioning/` | Datasource + dashboard provider |
+| `infra/observability/grafana/provisioning/alerting/` | Contact point, notification policy and alert rules |
 | `infra/observability/grafana/dashboards/` | Dashboard JSON (edit on disk, Grafana reloads in ~10s) |
 
 ## Traces
@@ -577,6 +578,219 @@ moment the service is idle.
 
 [22784]: https://grafana.com/grafana/dashboards/22784
 
+## Alerting
+
+Dashboards answer questions you thought to ask. Alerting is the part that tells you
+to ask one. Everything below is provisioned from
+`infra/observability/grafana/provisioning/alerting/` — three files, mounted the same
+way `datasources/` and `dashboards/` already are:
+
+| File | What it holds |
+| --- | --- |
+| `contact-points.yml` | One contact point, `tatame-email`, address from `$ALERT_EMAIL_TO` |
+| `notification-policies.yml` | The routing tree: grouping, and how often a still-firing alert repeats |
+| `rules.yml` | The seven rules, their thresholds and their `for` durations |
+
+Provisioned alert rules are **read-only in the Grafana UI**. Grafana shows them with
+a "Provisioned" badge and no edit button, which is the point: a threshold is a commit,
+reviewable and reproducible, and it survives the volume being rebuilt.
+
+### The rules
+
+All seven live in the `Tatame Alerts` folder, in one group evaluated every minute.
+
+| Rule | Fires when | `for` | Severity |
+| --- | --- | --- | --- |
+| API not reporting | `target_info` for `tatame-api` is missing from Prometheus | 3m | critical |
+| API returning 5xx | more than 5 responses with a 5xx status in 5 minutes | 2m | critical |
+| API 5xx ratio above 20% | over 20% of requests are 5xx, with at least 0.05 req/s of traffic | 5m | critical |
+| Pro subscription payments failing | more than 3 `manager_subscription.past_due` in 15 minutes | 5m | warning |
+| Stripe webhooks received and ignored | more than 3 `webhook_unhandled` in 30 minutes, excluding `UNKNOWN_EVENT_TYPE` | 5m | warning |
+| Observability component down | a Prometheus target has `up < 1` | 5m | critical |
+| Collector failing to export telemetry | `otelcol_exporter_send_failed_*` is increasing | 10m | critical |
+
+Each rule is the same two stages — `A` asks the datasource for one number *right
+now*, `B` compares it to the threshold — which is the shape
+`GET /api/v1/provisioning/alert-rules/export` produces, so an exported rule diffs
+cleanly against the file.
+
+Every `A` is an **instant** query, and there is deliberately no `reduce` stage. The
+first draft of these rules used the other common shape — a range query reduced with
+`last` — and it is quietly broken. `reduce` with `mode: dropNN` skips the empty tail
+of a series and returns the last value that *existed*, so a condition that stopped
+being true ten minutes ago still reads as true until it scrolls out of the query
+window. For `absent()` it is not a delay but an inversion: the healthy state produces
+no points at all, which is exactly the tail `dropNN` skips.
+
+Measured while building this, with the API healthy again and `absent()` returning
+empty on an instant query, the 10-minute range query still returned `1` from nine
+minutes earlier and the alert stayed firing. The smoothing belongs in the PromQL /
+LogQL window and in `for`, not in the reduce.
+
+### Why 5xx is a metric and not an event
+
+The obvious rule to write is "alert when `request.failed` appears", and it is the
+wrong one. `apps/api/src/middleware/error-handler.ts` returns early for `HttpError`:
+
+```ts
+if (err instanceof HttpError) {
+  res.status(err.statusCode).json({ ... });
+  return;                       // <- emitEvent("request.failed") is below this
+}
+```
+
+So the 502 that `payment.service.ts` raises when AbacatePay is unreachable is a
+server error the caller sees and the event catalog never records. Alerting on the
+event would miss exactly the class of failure worth waking up for.
+
+`http_server_request_duration_seconds_count{http_response_status_code=~"5.."}` has no
+such blind spot — it counts the response, not the code path that produced it. The
+event is still the better *debugging* tool, and the alert's description says so: it
+carries the LogQL to run next.
+
+### Why there is no payment-failure rule
+
+The task this came from proposed alerting on `payment.*` and `manager_subscription.*`
+with `event_outcome="failed"`. No such event exists. Every `payment.*` entry in the
+catalog is an `outcome: success`, and the reason is in a comment there: both webhook
+handlers process only the success event and return silently on anything else, so the
+API has no student-payment failure path to report.
+
+What exists instead:
+
+- `manager_subscription.past_due`, reason `PAYMENT_FAILED` — Stripe declined a Pro
+  subscription renewal. This has a rule.
+- a 5xx — anything that breaks server-side while taking a payment. Covered by the two
+  HTTP rules.
+
+A real `payment.failed` event would be an improvement, and it is application code
+rather than configuration. Until it exists, this section is the honest account of what
+is and is not watched.
+
+### How an ongoing problem stays one email
+
+Three numbers in `notification-policies.yml` do this:
+
+| | Meaning | critical | warning |
+| --- | --- | --- | --- |
+| `group_wait` | hold the first notification, so alerts firing together arrive together | 30s | 5m |
+| `group_interval` | minimum gap between emails for a group that *changed* | 5m | 30m |
+| `repeat_interval` | how often to re-send a group that has not changed at all | 4h | 24h |
+
+Groups are keyed on `alertname`, `grafana_folder`, `service_name` and `job`. An outage
+that starts at 03:00 and is still going at 09:00 is two emails on the critical route,
+not three hundred. When it ends, `disableResolveMessage: false` on the contact point
+sends the resolved notification — an alert that never tells you it stopped is worse
+than no alert, because you cannot tell an ongoing outage from one that ended.
+
+### Silencing one
+
+Silences are runtime state, not configuration, so this is the one part of alerting you
+do click: **Alerting → Silences → Add silence**, match on `alertname` (and
+`job`/`service_name` to narrow it), set an end time. It survives restarts — it lives in
+the `tatame_grafana_data` volume, not in the repo.
+
+Silence for a deploy window; change the threshold in `rules.yml` for anything that
+needs silencing twice.
+
+### One trap when editing these files
+
+Grafana interpolates `$VAR` from the environment when it reads a provisioning file,
+and its docs say a literal dollar must be doubled as `$$`. That is true of
+**contact-point settings** — it is how `$ALERT_EMAIL_TO` works — and *not* true of
+**alert-rule annotations**, which are read as a plain string map with no expansion
+step. So an annotation must be written `{{ $labels.job }}`, plain. Written `$$labels`
+it is stored verbatim and the rule fails to expand its own template:
+
+```
+level=error msg="Error in expanding template" error="... bad character U+0024 '$'"
+```
+
+The alert still fires; the email just arrives with no labels in it. Following the
+documented escaping broke six of the seven rules here before it was caught, so grep
+the Grafana log for `Error in expanding template` after any annotation edit.
+
+### Changing a threshold
+
+Edit `rules.yml` and restart Grafana, or hot-reload without one:
+
+```bash
+# from anywhere with the admin password
+curl -X POST -u admin:<password> https://<grafana-domain>/api/admin/provisioning/alerting/reload
+```
+
+Keep `uid` stable across edits. Changing it makes Grafana delete the old rule and
+create a new one, which drops its state — a firing alert re-fires from scratch and any
+silence attached to it stops matching.
+
+### Verifying it end to end
+
+Three things can be true independently: the rules evaluate, SMTP works, and an email
+arrives. Check them in that order.
+
+```bash
+# 1. did the files provision at all? (a syntax error here is fatal at startup —
+#    Grafana refuses to boot rather than run with half a config)
+docker logs <grafana> 2>&1 | grep -i "provisioning\|alerting"
+
+# 2. are the rules there and evaluating? Alerting -> Alert rules should list
+#    seven under "Tatame Alerts", each with a state, none in Error.
+```
+
+Then a **test send**: Alerting → Contact points → `tatame-email` → **Test**. This is
+the only step that proves SMTP. Grafana does not validate the contact point at startup,
+so a wrong password or an unverified sender domain looks exactly like a working setup
+until something fires.
+
+Last, prove a rule actually fires *and* resolves. The cheapest one to trigger without
+breaking anything real:
+
+```bash
+# stop Loki. "Observability component down" fires ~5 minutes later.
+docker stop <loki>
+# ... wait for the email, then
+docker start <loki>
+# ... and wait for the [RESOLVED] one.
+```
+
+Do this once, after the first deploy. If the firing email arrives and the resolved one
+does not, the problem is `disableResolveMessage`, not the rule.
+
+### What the stack watches about itself
+
+`up` only exists for targets Prometheus was told to scrape, so
+`infra/observability/prometheus.yml` scrapes all of them: the Collector's data
+endpoint (`:8889`), its *internal* endpoint (`:8888`), Loki, Tempo, Grafana and
+Prometheus itself. The three stores contribute no series to any dashboard — they are
+scraped so that "Observability component down" has something to be false about.
+
+Two details that are easy to get wrong:
+
+- The Collector binds its internal metrics to `localhost` by default (since v0.113),
+  which inside a container means the endpoint exists and nothing can reach it. The
+  `service.telemetry.metrics.readers` block in `otel-collector-config.yml` opens it to
+  `0.0.0.0`. Without it the `otel-collector-internal` target is permanently down and
+  "Collector failing to export telemetry" can never fire.
+- Grafana being the down component is the one case this cannot report. The email would
+  have to come from the thing that is down.
+
+### Detecting an API that is simply gone
+
+Nothing scrapes the API — it pushes — so there is no `up` series for it and no
+`up == 0` to alert on. What replaces it is the Collector's Prometheus exporter
+forgetting series it has stopped receiving. `metric_expiration: 2m` in
+`otel-collector-config.yml` sets that, down from the 5m default, and the rule's 3m
+`for` makes the total detection window about six minutes.
+
+Shortening it is safe because the SDK re-exports every series on each interval (30s in
+production) whether or not anything changed — two minutes is four missed exports, not
+a quiet period. Raising it again slows the alert, not just the dashboards.
+
+Measured locally, stopping the telemetry at 13:17:16: the rule went pending at
+13:20:17, fired at 13:23:17 and the email landed at 13:23:58. Call it six and a half
+minutes from "the API died" to "there is an email", and roughly ninety seconds the
+other way once it comes back.
+
 ## No auth, locally
 
 Grafana runs with anonymous admin access and no login form. That is fine for
@@ -692,7 +906,29 @@ Grafana applies that password when it *creates* the admin user — that is, on t
 first boot against an empty `tatame_grafana_data` volume. Changing it afterwards is a
 password change inside Grafana, not an edit to the environment.
 
-**6. Point the API at the Collector.** Coolify suffixes compose container names with
+**6. Set the alerting variables**, on the observability resource's Environment tab:
+
+```
+ALERT_EMAIL_TO=ops@tatame.app
+GRAFANA_SMTP_PASSWORD=re_...
+GRAFANA_SMTP_FROM_ADDRESS=alertas@tatame.app
+```
+
+Only these three. The rest (`GRAFANA_SMTP_ENABLED`, `_HOST`, `_USER`, `_FROM_NAME`)
+default to Resend in the compose file and need setting only to move off it. The
+password is a Resend API key and can be one scoped to sending, separate from the API's
+own `RESEND_API_KEY`; the sender must be on a domain verified in Resend.
+
+`ALERT_EMAIL_TO` is read by Grafana's *provisioning*, not by Docker —
+`contact-points.yml` contains the literal `$ALERT_EMAIL_TO`. Several recipients are
+separated by `;`, not by commas. Its default is `alertas@example.invalid`, an address
+that cannot receive mail, so a deploy that forgets this fails loudly at the test send
+rather than silently at 03:00.
+
+Then do the **test send** and the fire/resolve check from "Verifying it end to end"
+above. Nothing before this point proves an email can leave the server.
+
+**7. Point the API at the Collector.** Coolify suffixes compose container names with
 the stack's uuid, so read the real name off the server rather than guessing it:
 
 ```bash

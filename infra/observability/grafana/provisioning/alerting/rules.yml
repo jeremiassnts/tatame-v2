@@ -1,0 +1,439 @@
+# The alert rules. Provisioned, which means they are not editable from the
+# Grafana UI — a threshold change is a commit, not a click. That is the intended
+# trade: the rules are reviewable and they survive a rebuilt volume.
+#
+# Three conventions run through every rule below.
+#
+# `$labels` / `$value` are written plain, *not* escaped as `$$`. Grafana's docs
+# say provisioning interpolates `$VAR` from the environment and that a literal
+# dollar must be doubled — true for contact-point settings (which is how
+# `$ALERT_EMAIL_TO` works in contact-points.yml) and not true here. Rule
+# annotations are read as a plain string map with no expansion step, so `$$labels`
+# is stored as `$$labels` and renders as garbage in the email. Verified by
+# provisioning it both ways and reading the result back from
+# `GET /api/v1/provisioning/alert-rules`.
+#
+# A, B — every rule is the same two stages: A asks the datasource for one number
+# *right now*, B compares it to the threshold. `condition: B` names the stage that
+# decides. Written out per rule rather than hidden behind a shared anchor, because
+# the model blobs are what an exported rule looks like and matching that shape
+# keeps them diffable against `GET /api/v1/provisioning/alert-rules/export`.
+#
+# Every A is an **instant** query — `instant: true` for Prometheus,
+# `queryType: instant` for Loki — and there is deliberately no `reduce` stage. The
+# obvious alternative, a range query reduced with `last`, resolves late and in one
+# case never: `reduce` with `mode: dropNN` skips the empty tail of a series and
+# returns the last value that existed, so a condition that stopped being true ten
+# minutes ago still reads as true until it scrolls out of the window. For
+# `absent()` that is not a delay but an inversion — the healthy state produces no
+# points at all, which is exactly the tail `dropNN` skips over. Measured: the
+# instant query read healthy while the 10m range query still returned `1` from
+# nine minutes earlier. The smoothing lives where it belongs instead — in the
+# LogQL/PromQL window and in `for`.
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: tatame-critical
+    folder: Tatame Alerts
+    # Evaluated once a minute. Every `for` below is a whole number of minutes so
+    # it lands on an evaluation.
+    interval: 1m
+    rules:
+      # ── The API ───────────────────────────────────────────────────────────
+      - uid: tatame-api-down
+        title: API not reporting
+        # `target_info` is the one series that exists whether or not the service
+        # is handling traffic, which makes it the honest "is it alive" signal —
+        # a request-rate check cannot tell a dead API from a quiet night.
+        #
+        # The API pushes to the Collector; nothing scrapes it, so there is no
+        # `up` series for it. What replaces `up == 0` is the Collector's
+        # prometheus exporter forgetting a series it has stopped receiving:
+        # `metric_expiration: 2m` in otel-collector-config.yml. Two minutes of
+        # silence plus the 3m `for` below is a six-minute detection window —
+        # measured, not estimated: telemetry stopped at 13:17:16, pending at
+        # 13:20:17, firing at 13:23:17, email at 13:23:58.
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus
+              editorMode: code
+              expr: absent(target_info{service_namespace="tatame",service_name="tatame-api"})
+              instant: true
+              intervalMs: 60000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
+              expression: A
+              refId: B
+              type: threshold
+        # `absent()` returns *nothing* while the series exists, so "no data" here
+        # is the healthy case. This is the one rule where that inversion holds;
+        # every other rule below uses OK for the ordinary reason.
+        noDataState: OK
+        execErrState: Alerting
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: The API has stopped sending telemetry
+          description: >-
+            No `target_info` for tatame-api in Prometheus for over 3 minutes. Either
+            the API is down, it crashed before the SDK started, or it can no longer
+            reach the Collector. Check the API container first, then look for
+            `[otel] metrics exporting to ...` in its boot log.
+
+      - uid: tatame-api-5xx
+        title: API returning 5xx
+        # Deliberately the HTTP metric and not the `request.failed` event. The
+        # error handler returns early for `HttpError`, so a 502 from AbacatePay
+        # never emits that event — it is still a 5xx to the caller, and this
+        # counter sees every one of them regardless of how it was produced.
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus
+              editorMode: code
+              expr: sum(increase(http_server_request_duration_seconds_count{service_name="tatame-api",http_response_status_code=~"5.."}[5m]))
+              instant: true
+              intervalMs: 60000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              conditions:
+                - evaluator:
+                    params: [5]
+                    type: gt
+              expression: A
+              refId: B
+              type: threshold
+        # No 5xx metric at all means no traffic, or an API that is gone — the
+        # rule above owns that case, and duplicating it here would send two
+        # emails for one incident.
+        noDataState: OK
+        execErrState: OK
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: More than 5 server errors in the last 5 minutes
+          description: >-
+            {{ $value }} responses with a 5xx status in a five-minute window, held
+            for two minutes. The stacks for the ones the code did not expect are in
+            Loki: {service_name="tatame-api"} | event_name="request.failed". A 5xx
+            that is *not* there was raised deliberately as an HttpError — check the
+            status-code panel on the "Tatame API — overview" dashboard to see which.
+
+      - uid: tatame-api-5xx-ratio
+        title: API 5xx ratio above 20%
+        # The companion to the rule above, for the case it cannot see: low
+        # traffic where almost everything fails. Six errors out of six requests
+        # never crosses a count threshold of 5, but it is a total outage.
+        #
+        # The `and` clause is a traffic floor. Without it, one failed request at
+        # 04:00 is a 100% error rate and an email.
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus
+              editorMode: code
+              expr: |-
+                100 * sum(rate(http_server_request_duration_seconds_count{service_name="tatame-api",http_response_status_code=~"5.."}[5m]))
+                    / sum(rate(http_server_request_duration_seconds_count{service_name="tatame-api"}[5m]))
+                  and sum(rate(http_server_request_duration_seconds_count{service_name="tatame-api"}[5m])) > 0.05
+              instant: true
+              intervalMs: 60000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              conditions:
+                - evaluator:
+                    params: [20]
+                    type: gt
+              expression: A
+              refId: B
+              type: threshold
+        # Below the traffic floor the query returns nothing, which is the normal
+        # state of a quiet night.
+        noDataState: OK
+        execErrState: OK
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: One request in five is failing
+          description: >-
+            {{ $value }}% of requests returned 5xx over five minutes, with at least
+            0.05 req/s of traffic. At this ratio the API is effectively down for
+            users even if the absolute error count is small.
+
+      # ── Money ─────────────────────────────────────────────────────────────
+      - uid: tatame-subscription-payment-failing
+        title: Pro subscription payments failing
+        # `manager_subscription.past_due` carries reason PAYMENT_FAILED and is the
+        # only genuine payment-failure event the catalog has. Student payments
+        # have none: every `payment.*` entry is an `outcome: success`, because
+        # both webhook handlers process only the success event and return
+        # silently on anything else. A student payment that breaks server-side
+        # therefore shows up as a 5xx, which the rules above already cover.
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 1800
+              to: 0
+            datasourceUid: loki
+            model:
+              datasource:
+                type: loki
+                uid: loki
+              editorMode: code
+              expr: sum(count_over_time({service_name="tatame-api"} | event_name="manager_subscription.past_due" [15m]))
+              intervalMs: 60000
+              maxDataPoints: 43200
+              queryType: instant
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              conditions:
+                - evaluator:
+                    params: [3]
+                    type: gt
+              expression: A
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: OK
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: More than 3 subscriptions went past due in 15 minutes
+          description: >-
+            {{ $value }} `manager_subscription.past_due` events in a fifteen-minute
+            window. A handful is ordinary churn; a burst usually means Stripe is
+            rejecting cards for a reason that is not the cards — a bad price, an
+            expired API key, or a webhook replay. Query:
+            {service_name="tatame-api"} | event_name="manager_subscription.past_due"
+
+      - uid: tatame-stripe-webhooks-ignored
+        title: Stripe webhooks received and ignored
+        # UNKNOWN_EVENT_TYPE is filtered out on purpose: Stripe sends dozens of
+        # event types the handler has no reason to care about, and counting them
+        # would make this rule fire forever. What is left — NO_ACADEMY_OR_USER,
+        # USER_NOT_FOUND, NO_RECORD — is a webhook we *meant* to handle and could
+        # not match to a row, which is a real data problem.
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 3600
+              to: 0
+            datasourceUid: loki
+            model:
+              datasource:
+                type: loki
+                uid: loki
+              editorMode: code
+              expr: sum(count_over_time({service_name="tatame-api"} | event_name="manager_subscription.webhook_unhandled" | event_reason!="UNKNOWN_EVENT_TYPE" [30m]))
+              intervalMs: 60000
+              maxDataPoints: 43200
+              queryType: instant
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              conditions:
+                - evaluator:
+                    params: [3]
+                    type: gt
+              expression: A
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: OK
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Stripe webhooks could not be matched to an academy or user
+          description: >-
+            {{ $value }} `manager_subscription.webhook_unhandled` events in thirty
+            minutes, excluding UNKNOWN_EVENT_TYPE. Each one is a subscription change
+            Stripe told us about and we dropped. Query, with the reason:
+            {service_name="tatame-api"} | event_name="manager_subscription.webhook_unhandled"
+
+      # ── The stack itself ──────────────────────────────────────────────────
+      - uid: tatame-stack-target-down
+        title: Observability component down
+        # `min by (job, instance)` rather than `up == 0`: the comparison form
+        # returns an empty result while everything is healthy, which makes the
+        # healthy state indistinguishable from a broken Prometheus. This form
+        # always returns one series per target, so NoData means something is
+        # wrong with Prometheus itself — and that is worth an email too.
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus
+              editorMode: code
+              expr: min by (job, instance) (up)
+              instant: true
+              intervalMs: 60000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              conditions:
+                - evaluator:
+                    params: [1]
+                    type: lt
+              expression: A
+              refId: B
+              type: threshold
+        noDataState: NoData
+        execErrState: Alerting
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Prometheus cannot scrape {{ $labels.job }}
+          description: >-
+            The `{{ $labels.job }}` target at {{ $labels.instance }} has been
+            unreachable for five minutes. Telemetry from that component is being
+            lost for as long as this lasts. Grafana itself being the down target is
+            the one case this cannot tell you about — the email would not be sent.
+
+      - uid: tatame-collector-export-failing
+        title: Collector failing to export telemetry
+        # The Collector accepts data from the API and then fails to hand it on to
+        # Tempo or Loki — the silent failure mode where everything looks up and
+        # the dashboards slowly empty. The `(_total)?` in the matcher is not
+        # hedging: whether the scraped name carries the suffix depends on the
+        # Collector's internal-telemetry version, and matching both costs nothing.
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus
+              editorMode: code
+              expr: sum by (exporter) (rate({__name__=~"otelcol_exporter_send_failed_(spans|log_records|metric_points)(_total)?"}[5m]))
+              instant: true
+              intervalMs: 60000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
+              expression: A
+              refId: B
+              type: threshold
+        # A Collector that has never failed to export exposes no failure series.
+        noDataState: OK
+        execErrState: OK
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: The Collector cannot deliver to {{ $labels.exporter }}
+          description: >-
+            `{{ $labels.exporter }}` has been dropping telemetry for ten minutes.
+            The destination — Tempo for spans, Loki for logs — is refusing the push
+            or is unreachable. `docker logs <collector>` names the cause.

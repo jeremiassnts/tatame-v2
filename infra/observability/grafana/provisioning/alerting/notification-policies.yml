@@ -1,0 +1,50 @@
+# The routing tree. Provisioning this replaces Grafana's default root policy
+# (which points at `grafana-default-email`, a contact point with no address).
+#
+# The three numbers that decide whether an ongoing problem is one email or forty:
+#
+#   group_wait      how long to hold the first notification of a new group, so
+#                   alerts that fire together arrive together
+#   group_interval  the minimum gap between emails for a group that has *changed*
+#                   (a new instance started firing, or one resolved)
+#   repeat_interval how often to re-send a group that has not changed at all —
+#                   the "this is still broken" reminder
+#
+# An alert that fires at 03:00 and is still firing at 09:00 therefore produces two
+# emails on the critical route, not three hundred.
+apiVersion: 1
+
+policies:
+  - orgId: 1
+    receiver: tatame-email
+    # `alertname` and `grafana_folder` are the pair Grafana groups by out of the
+    # box; `service_name` and `job` are added so two different services, or two
+    # different stack components, do not collapse into one email that says
+    # "something is down" without saying which.
+    group_by:
+      - alertname
+      - grafana_folder
+      - service_name
+      - job
+    group_wait: 1m
+    group_interval: 5m
+    repeat_interval: 12h
+    routes:
+      # Critical: the API is down, returning 5xx, or the telemetry stack itself
+      # has stopped working. Short wait, and a reminder every 4h while it lasts.
+      - receiver: tatame-email
+        object_matchers:
+          - ["severity", "=", "critical"]
+        group_wait: 30s
+        group_interval: 5m
+        repeat_interval: 4h
+        continue: false
+      # Warning: something to look at today, not tonight. Held longer before the
+      # first email, and reminded once a day rather than every four hours.
+      - receiver: tatame-email
+        object_matchers:
+          - ["severity", "=", "warning"]
+        group_wait: 5m
+        group_interval: 30m
+        repeat_interval: 24h
+        continue: false

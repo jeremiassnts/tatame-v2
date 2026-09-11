@@ -1,0 +1,29 @@
+# Where a firing alert is delivered. One contact point, email, provisioned from
+# this file — so the address lives in the repo as a variable name and the value
+# lives in the deployment's environment.
+#
+# `$ALERT_EMAIL_TO` is expanded by Grafana itself when it reads this file, not by
+# Docker: provisioning interpolates `$VAR` from the container's environment. That
+# is also why every literal `$` elsewhere in this directory is written `$$` — see
+# the note above the annotations in rules.yml.
+#
+# Multiple recipients are separated by `;`, not by commas:
+#   ALERT_EMAIL_TO='ops@example.com;dev@example.com'
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: tatame-email
+    receivers:
+      - uid: tatame-email
+        type: email
+        # `false` is what sends the resolved notification. Leaving it at the
+        # default is deliberate: an alert that fires and never tells you it
+        # stopped is worse than no alert, because you cannot tell an ongoing
+        # outage from one that ended twenty minutes ago.
+        disableResolveMessage: false
+        settings:
+          addresses: $ALERT_EMAIL_TO
+          # One email per group rather than one per recipient. The grouping in
+          # notification-policies.yml is what decides how much lands in each.
+          singleEmail: true
