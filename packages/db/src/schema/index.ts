@@ -68,6 +68,19 @@ export const managerSubscriptionStatusEnum = pgEnum(
   ["active", "past_due", "canceled", "incomplete", "trialing"],
 );
 
+/**
+ * Where an academy's payout account stands with Asaas. Only `approved` can
+ * receive a split, which is why plan creation and enrollment gate on it.
+ */
+export const payoutAccountStatusEnum = pgEnum("payout_account_status", [
+  "pending",
+  "awaiting_documents",
+  "under_review",
+  "approved",
+  "rejected",
+  "suspended",
+]);
+
 export const pixKeyTypeEnum = pgEnum("pix_key_type", [
   "cpf",
   "email",
@@ -354,6 +367,55 @@ export const managerSubscriptions = pgTable("manager_subscriptions", {
     .notNull()
     .$onUpdate(() => new Date()),
 });
+
+/**
+ * The academy's own Asaas subaccount — the wallet a student payment is split
+ * into. One per academy, which is what makes a second creation attempt a 409
+ * rather than a second orphaned account at Asaas.
+ */
+export const academyPayoutAccounts = pgTable(
+  "academy_payout_accounts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    academyId: uuid("academy_id")
+      .notNull()
+      .unique()
+      .references(() => academies.id, { onDelete: "cascade" }),
+    provider: text("provider").notNull().default("asaas"),
+    externalAccountId: text("external_account_id").notNull(),
+    /** What a payment split is addressed to. Without it there is no split. */
+    walletId: text("wallet_id").notNull(),
+    /**
+     * The subaccount API key, AES-256-GCM sealed by `apps/api/src/lib/crypto.ts`.
+     * Asaas returns it once at creation and has no endpoint to read it back, and
+     * it is the only credential that can finish this academy's onboarding.
+     */
+    apiKeyEncrypted: text("api_key_encrypted").notNull(),
+    status: payoutAccountStatusEnum("status").notNull(),
+    /** The four areas Asaas reviews independently, stored as it reports them. */
+    generalStatus: text("general_status"),
+    commercialInfoStatus: text("commercial_info_status"),
+    documentStatus: text("document_status"),
+    bankAccountInfoStatus: text("bank_account_info_status"),
+    /** Set when Asaas refuses API uploads and the manager must finish on the web. */
+    onboardingUrl: text("onboarding_url"),
+    rejectionReason: text("rejection_reason"),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => ({
+    // An ACCOUNT_STATUS_* webhook arrives keyed by the Asaas account id, so
+    // that is the lookup the handler does on every delivery.
+    byExternalAccount: uniqueIndex("academy_payout_accounts_external_account_id")
+      .on(t.externalAccountId),
+  }),
+);
 
 export const payments = pgTable("payments", {
   id: uuid("id").primaryKey().defaultRandom(),
