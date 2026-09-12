@@ -1,5 +1,6 @@
 import { BackButton } from "@/components/BackButton";
 import { ModalSelect } from "@/components/ModalSelect";
+import { PayoutAccountCard } from "@/components/PayoutAccountCard";
 import { useAcademyContext } from "@/lib/academy-context";
 import { useFinancialSummary, usePaymentHistory } from "@/lib/hooks/use-finances";
 import { useAcademy, useUpdatePixKey } from "@/lib/hooks/use-academy";
@@ -177,6 +178,8 @@ export default function FinancialDashboard() {
             </Text>
           </Pressable>
         </View>
+
+        <PayoutAccountCard />
 
         <Pressable
           onPress={() => router.push("/(app)/(manager)/(members)")}
