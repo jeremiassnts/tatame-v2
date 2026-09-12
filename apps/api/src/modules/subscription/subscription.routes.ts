@@ -25,6 +25,7 @@ import { authorize } from "../../middleware/authorize.js";
 import { requireActivePlan } from "../../middleware/require-active-plan.js";
 import { validateBody } from "../../middleware/validate.js";
 import { PostgresAcademyRepository } from "../academy/academy.repository.postgres.js";
+import { PostgresPayoutAccountRepository } from "../payout-account/payout-account.repository.postgres.js";
 import { PostgresManagerSubscriptionRepository } from "../manager-subscription/manager-subscription.repository.postgres.js";
 import {
   PostgresStudentSubscriptionRepository,
@@ -64,6 +65,7 @@ const subscriptionService = new SubscriptionService(
   new PostgresStudentSubscriptionRepository(db),
   academyRepo,
   managerSubRepo,
+  new PostgresPayoutAccountRepository(db),
 );
 
 subscriptionRouter.get(

@@ -7,6 +7,7 @@ import { HttpError } from "../../lib/http-error.js";
 import type { IAcademyRepository } from "../academy/academy.repository.js";
 import type { IManagerSubscriptionRepository } from "../manager-subscription/manager-subscription.repository.js";
 import { FREE_PLAN_LIMITS } from "../manager-subscription/plan-limits.js";
+import type { IPayoutAccountRepository } from "../payout-account/payout-account.repository.js";
 import type {
   AcademySubscriptionItem,
   IStudentSubscriptionRepository,
@@ -47,7 +48,28 @@ export class SubscriptionService {
     private readonly studentSubRepo: IStudentSubscriptionRepository,
     private readonly academyRepo: IAcademyRepository,
     private readonly managerSubRepo?: IManagerSubscriptionRepository,
+    private readonly payoutAccountRepo?: IPayoutAccountRepository,
   ) {}
+
+  /**
+   * A plan whose academy has nowhere to receive money must not exist, and
+   * nobody may enrol in one. Without an approved Asaas subaccount there is no
+   * walletId, so a student payment would settle into the platform account with
+   * no automatic way out of it — which is the manual-transfer problem this
+   * whole feature exists to remove.
+   *
+   * Coded 403, following the PLAN_LIMIT_* convention the app already renders.
+   */
+  private async assertAcademyCanReceive(academyId: string): Promise<void> {
+    if (!this.payoutAccountRepo) return;
+    const account = await this.payoutAccountRepo.findByAcademyId(academyId);
+    if (account?.status === "approved") return;
+    throw new HttpError(
+      403,
+      "Configure a conta de recebimento da academia para continuar",
+      { code: "PAYOUT_ACCOUNT_REQUIRED" },
+    );
+  }
 
   async listPlans(
     academyId: string,
@@ -72,6 +94,7 @@ export class SubscriptionService {
     body: CreateSubscriptionPlanBody,
   ): Promise<SubscriptionPlanRow> {
     await this.assertManagerOwnsAcademy(managerUserId, academyId);
+    await this.assertAcademyCanReceive(academyId);
 
     // Plan limit enforcement
     if (this.managerSubRepo) {
@@ -222,6 +245,9 @@ export class SubscriptionService {
     if (!plan.isActive) {
       throw new HttpError(409, "This subscription plan is no longer available");
     }
+    // New enrolments only. A subscription that already exists keeps being
+    // payable, so an academy mid-onboarding does not strand its students.
+    await this.assertAcademyCanReceive(academyId);
 
     const startsAt = utcTodayDateString();
     const expiresAt = addCalendarMonths(startsAt, plan.recurrenceMonths);
