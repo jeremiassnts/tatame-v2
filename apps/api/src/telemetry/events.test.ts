@@ -65,7 +65,7 @@ describe("the catalog itself", () => {
     }
   });
 
-  it("covers the eight P1 domains from the spec", () => {
+  it("covers the eight P1 domains from the spec, plus payout_account", () => {
     const domains = new Set(Object.values(CATALOG).map((e) => e.domain));
     expect([...domains].sort()).toEqual([
       "access",
@@ -74,6 +74,7 @@ describe("the catalog itself", () => {
       "manager_subscription",
       "membership",
       "payment",
+      "payout_account",
       "request",
       "subscription",
     ]);
