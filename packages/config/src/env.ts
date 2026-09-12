@@ -28,6 +28,21 @@ const envSchema = z.object({
   /** Base URL for the manager web portal (e.g., https://tatame.app/conta) */
   MANAGER_PORTAL_URL: z.string().url().optional(),
   ABACATEPAY_API_KEY: z.string().optional(),
+  /** Asaas root account API key — creates subaccounts and owns every charge. */
+  ASAAS_API_KEY: z.string().optional(),
+  /** `https://api-sandbox.asaas.com` or `https://api.asaas.com` (no trailing `/v3`). */
+  ASAAS_BASE_URL: z.string().url().optional(),
+  /** Expected value of the `asaas-access-token` header on incoming webhooks. */
+  ASAAS_WEBHOOK_TOKEN: z.string().optional(),
+  /**
+   * AES-256-GCM key for the stored Asaas subaccount API keys, as 64 hex chars
+   * (32 bytes). Asaas returns a subaccount key exactly once, so losing this
+   * value means no academy can finish onboarding from the app.
+   */
+  PAYOUT_ACCOUNT_ENCRYPTION_KEY: z
+    .string()
+    .regex(/^[0-9a-fA-F]{64}$/, "PAYOUT_ACCOUNT_ENCRYPTION_KEY must be 64 hex characters")
+    .optional(),
   RESEND_API_KEY: z.string().optional(),
   MANAGER_EMAIL: z.string().optional(),
   MANAGER_CLERK_ID: z.string().optional(),
