@@ -2,9 +2,12 @@ import { loadEnv } from "@tatame/config";
 import type {
   AsaasClient,
   AsaasCompanyType,
+  AsaasDocumentGroup,
+  AsaasDocumentType,
+  AsaasUploadedDocument,
   CreateAsaasAccountInput,
 } from "../../lib/asaas.js";
-import { encryptSecret } from "../../lib/crypto.js";
+import { decryptSecret, encryptSecret } from "../../lib/crypto.js";
 import { HttpError } from "../../lib/http-error.js";
 import { emitEvent } from "../../telemetry/events.js";
 import type { IAcademyRepository } from "../academy/academy.repository.js";
@@ -46,6 +49,33 @@ export interface CreatePayoutAccountInput {
  */
 export type PayoutAccountView = Omit<PayoutAccountRow, "apiKeyEncrypted">;
 
+/**
+ * A pending document group as the app needs it: the Asaas fields plus the one
+ * decision the screen has to make. `canUploadInApp` is not cosmetic — Asaas
+ * rejects an API upload for any group carrying an `onboardingUrl`, so it is
+ * the difference between a file picker and a link.
+ */
+export interface PayoutAccountDocumentGroup {
+  id: string;
+  status: string;
+  type: string;
+  title: string;
+  description: string;
+  onboardingUrl: string | null;
+  canUploadInApp: boolean;
+  documents: { id: string; status: string }[];
+}
+
+export interface PayoutAccountDocuments {
+  rejectReasons: string | null;
+  groups: PayoutAccountDocumentGroup[];
+}
+
+export interface UploadDocumentInput {
+  type: AsaasDocumentType;
+  file: { buffer: Buffer; filename: string; contentType: string };
+}
+
 /** Injected so unit tests never reach the network. `AsaasClient` satisfies it. */
 export interface AsaasClientFactory {
   root(): AsaasClient;
@@ -84,6 +114,19 @@ function isDuplicateAcademy(error: unknown): boolean {
     /duplicate key|unique constraint/i.test(error.message) &&
     /academy_id/i.test(error.message)
   );
+}
+
+function toGroup(group: AsaasDocumentGroup): PayoutAccountDocumentGroup {
+  return {
+    id: group.id,
+    status: group.status,
+    type: group.type,
+    title: group.title,
+    description: group.description,
+    onboardingUrl: group.onboardingUrl,
+    canUploadInApp: !group.onboardingUrl,
+    documents: group.documents,
+  };
 }
 
 export function toPayoutAccountView(row: PayoutAccountRow): PayoutAccountView {
@@ -162,6 +205,77 @@ export class PayoutAccountService {
     });
 
     return toPayoutAccountView(row);
+  }
+
+  async listDocuments(
+    managerUserId: string,
+    academyId: string,
+  ): Promise<PayoutAccountDocuments> {
+    const row = await this.requireAccount(managerUserId, academyId);
+    const response = await this.asSubaccount(row.apiKeyEncrypted).listDocuments();
+
+    const groups: PayoutAccountDocumentGroup[] = response.data.map(toGroup);
+
+    // Mirrored onto the row so the Financeiro card can show "finalize pelo
+    // link" without a round trip to Asaas on every dashboard load.
+    await this.repo.update(row.id, {
+      onboardingUrl: groups.find((g) => g.onboardingUrl)?.onboardingUrl ?? null,
+      rejectionReason: response.rejectReasons,
+    });
+
+    return { rejectReasons: response.rejectReasons, groups };
+  }
+
+  async uploadDocument(
+    managerUserId: string,
+    academyId: string,
+    groupId: string,
+    input: UploadDocumentInput,
+  ): Promise<AsaasUploadedDocument> {
+    const row = await this.requireAccount(managerUserId, academyId);
+    const client = this.asSubaccount(row.apiKeyEncrypted);
+
+    // The group list is the only place the onboarding url lives, so the check
+    // costs a read. Skipping it would trade that read for an Asaas rejection.
+    const { data } = await client.listDocuments();
+    const group = data.find((g) => g.id === groupId);
+    if (!group) {
+      throw new HttpError(404, "Documento não encontrado");
+    }
+    if (group.onboardingUrl) {
+      throw new HttpError(
+        409,
+        "Este documento precisa ser enviado pelo link do Asaas",
+        {
+          code: "DOCUMENT_REQUIRES_ONBOARDING_URL",
+          onboardingUrl: group.onboardingUrl,
+        },
+      );
+    }
+
+    return client.uploadDocument(groupId, input);
+  }
+
+  /**
+   * Decrypting here rather than at each call site keeps the plaintext key in
+   * one expression, and makes an undecryptable row fail before any request.
+   */
+  private asSubaccount(apiKeyEncrypted: string): AsaasClient {
+    return this.asaas.forSubaccount(decryptSecret(apiKeyEncrypted));
+  }
+
+  private async requireAccount(
+    managerUserId: string,
+    academyId: string,
+  ): Promise<PayoutAccountRow> {
+    await this.assertManagerOwnsAcademy(managerUserId, academyId);
+    const row = await this.repo.findByAcademyId(academyId);
+    if (!row) {
+      throw new HttpError(404, "Esta academia ainda não tem conta de recebimento", {
+        code: "PAYOUT_ACCOUNT_REQUIRED",
+      });
+    }
+    return row;
   }
 
   private buildWebhooks(email: string) {
