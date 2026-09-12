@@ -32,8 +32,13 @@ const envSchema = z.object({
   ASAAS_API_KEY: z.string().optional(),
   /** `https://api-sandbox.asaas.com` or `https://api.asaas.com` (no trailing `/v3`). */
   ASAAS_BASE_URL: z.string().url().optional(),
-  /** Expected value of the `asaas-access-token` header on incoming webhooks. */
-  ASAAS_WEBHOOK_TOKEN: z.string().optional(),
+  /**
+   * Expected value of the `asaas-access-token` header on incoming webhooks.
+   * Asaas requires a webhook `authToken` of 32 to 255 characters and rejects
+   * the webhook registration otherwise, so a short value fails at subaccount
+   * creation rather than here.
+   */
+  ASAAS_WEBHOOK_TOKEN: z.string().min(32).max(255).optional(),
   /**
    * AES-256-GCM key for the stored Asaas subaccount API keys, as 64 hex chars
    * (32 bytes). Asaas returns a subaccount key exactly once, so losing this
