@@ -71,6 +71,8 @@ describe("PostgresPlatformSummaryRepository", () => {
       subscriptionId: sub.id,
       userId: owner.id,
       academyId: academy.id,
+      // The factory defaults this to a random uuid, which no `users` row has.
+      confirmedBy: null,
     };
     await ctx.db.insert(payments).values([
       makePayment({ ...base, method: "pix", amountCents: 10_000, paidAt: INSIDE }),
@@ -109,6 +111,8 @@ describe("PostgresPlatformSummaryRepository", () => {
       subscriptionId: sub.id,
       userId: owner.id,
       academyId: academy.id,
+      // The factory defaults this to a random uuid, which no `users` row has.
+      confirmedBy: null,
     };
     await ctx.db.insert(payments).values([
       makePayment({ ...base, method: "pix", amountCents: 10_000 }),
@@ -165,6 +169,7 @@ describe("PostgresPlatformSummaryRepository", () => {
         subscriptionId: sub.id,
         userId: owner.id,
         academyId: academy.id,
+        confirmedBy: null,
         method: "pix",
         amountCents: 30_000,
         stripePaymentId: "pix_paid",
@@ -206,6 +211,7 @@ describe("PostgresPlatformSummaryRepository", () => {
         subscriptionId: paidSub.id,
         userId: paidUser.id,
         academyId: academy.id,
+        confirmedBy: null,
         referenceMonth: "2026-09-01",
         paidAt: INSIDE,
       }),

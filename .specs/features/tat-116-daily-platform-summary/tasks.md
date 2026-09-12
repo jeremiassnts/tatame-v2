@@ -19,8 +19,5 @@
 
 ## Status
 
-All tasks implemented. `typecheck`, `lint` and `test:unit` pass (436 tests).
-
-`test:integration` was **not executed**: it stands up Postgres through testcontainers
-and Docker is not running in this environment. The integration test is written and
-typechecks; it needs a `docker` daemon to run.
+All tasks implemented and verified. `typecheck`, `lint`, `test:unit` (436 tests) and
+`test:integration` (53 tests, 7 of them this feature's) all pass.
