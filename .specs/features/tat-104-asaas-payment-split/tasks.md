@@ -58,8 +58,8 @@ without an approved wallet there is nothing to split into.
 
 ## Status
 
-**Slice A (TAT-179) — backend complete.** A1-A12, A18 and A19 are merged on
-`main`, one commit per task. A13-A17 (mobile) are not started.
+**Slice A (TAT-179) — complete.** A1-A20 merged on `main`, one commit per task.
+Slice B (TAT-104) is untouched.
 
 | Task | Status | Notes |
 | --- | --- | --- |
@@ -75,10 +75,14 @@ without an approved wallet there is nothing to split into.
 | A10 | Done | 10 unit tests |
 | A11 | Done | 6 manager routes + `POST /webhooks/asaas` |
 | A12 | Done | 11 unit tests |
-| A13-A17 | Not started | mobile |
+| A13 | Done | `use-payout-account.ts` hooks |
+| A14 | Done | onboarding form, CEP lookup, prefill without write-back |
+| A15 | Done | documents screen, upload vs. onboarding link |
+| A16 | Done | "Conta de recebimento" card on Financeiro |
+| A17 | Done | fee and net value on plan create and edit |
 | A18 | Done | unit coverage written per task |
 | A19 | Done | 8 integration tests against a fake Asaas |
-| A20 | Done for A1-A19 | typecheck + lint + 559 unit + 61 integration green |
+| A20 | Done | typecheck + lint + 559 unit + 61 integration green; mobile tsc adds 0 errors |
 
 ### Carried forward
 
@@ -90,7 +94,21 @@ without an approved wallet there is nothing to split into.
    which `error-handler.ts` drops** — only `details.code` reaches the client.
    The documents list already gives the app the url, so the 409 is a safety
    net, not the path the screen takes. A15 should read the url from the list.
-4. **Drizzle snapshot drift.** `0019_tutorials` was hand-written with no meta
+4. **No PDF upload.** `expo-document-picker` is not a dependency, so A15 uses
+   `expo-image-picker` and a manager can only attach images. The Asaas documents
+   a CNPJ account is asked for — contrato social, certificado MEI, ata de
+   constituição — are normally PDFs. Adding the dependency means a new native
+   build, since `android/` and `ios/` are committed, so it was left as a
+   decision rather than taken silently.
+5. **`ApiError` gained `detail`.** `error-handler.ts` overwrites the `error`
+   field with the code when a failure carries one, and the mobile client read
+   only that field, so the Asaas sentence never reached a screen. `message`
+   still holds the code because `PLAN_LIMIT_*` and `PAYOUT_ACCOUNT_REQUIRED`
+   are matched on it; the prose now travels alongside in `detail`.
+6. **`plans/create.tsx` lost a hardcoded fee panel** claiming "3,99% + R$0,39"
+   for card and "R$0,80" for Pix. Not Asaas's numbers, and it was gated behind
+   a paid-plan check so most managers never saw it.
+7. **Drizzle snapshot drift.** `0019_tutorials` was hand-written with no meta
    snapshot, so generation re-emitted `CREATE TABLE tutorials` into 0020; it was
    stripped and the 0020 snapshot now records the table. The chain is consistent
    from here.

@@ -223,15 +223,15 @@ and see statements.
 
 | Requirement ID | Story | Issue | Phase | Status |
 | --- | --- | --- | --- | --- |
-| PAYOUT-01 | P1: Manager creates a receiving account | TAT-179 | Implemented | API done, mobile pending |
+| PAYOUT-01 | P1: Manager creates a receiving account | TAT-179 | Implemented | Done |
 | PAYOUT-02 | P1: Manager creates a receiving account (webhooks + persistence) | TAT-179 | Implemented | Done |
-| PAYOUT-03 | P1: Document submission in-app | TAT-179 | Implemented | API done, mobile pending |
-| PAYOUT-04 | P1: Document submission via onboarding link | TAT-179 | Implemented | API done, mobile pending |
+| PAYOUT-03 | P1: Document submission in-app | TAT-179 | Implemented | Done |
+| PAYOUT-04 | P1: Document submission via onboarding link | TAT-179 | Implemented | Done |
 | PAYOUT-05 | P1: Account status tracking + webhook | TAT-179 | Implemented | Done |
-| PAYOUT-06 | P1: Fee disclosure on plan creation | TAT-179 | Implemented | API done, mobile pending |
+| PAYOUT-06 | P1: Fee disclosure on plan creation | TAT-179 | Implemented | Done |
 | PAYOUT-07 | P1: Gate plan creation and enrollment | TAT-179 | Implemented | Done |
-| PAYOUT-08 | P2: Financeiro dashboard card | TAT-179 | - | Pending |
-| PAYOUT-09 | P3: Link to the Asaas account | TAT-179 | - | Pending |
+| PAYOUT-08 | P2: Financeiro dashboard card | TAT-179 | Implemented | Done |
+| PAYOUT-09 | P3: Link to the Asaas account | TAT-179 | Implemented | Done |
 | SPLIT-01 | P1: Asaas customer per student | TAT-104 | Design | Pending |
 | SPLIT-02 | P1: Pix charge with 100% split | TAT-104 | Design | Pending |
 | SPLIT-03 | P1: Card checkout with 100% split | TAT-104 | Design | Pending |
