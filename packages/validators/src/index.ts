@@ -112,3 +112,12 @@ export * from "./push-token.schema.js";
 export * from "./notification.schema.js";
 export * from "./announcement.schema.js";
 export * from "./dependent.schema.js";
+export {
+  asaasCompanyTypeSchema,
+  asaasDocumentTypeSchema,
+  createPayoutAccountBodySchema,
+  payoutAccountGroupIdParamSchema,
+  uploadPayoutDocumentBodySchema,
+  type CreatePayoutAccountBody,
+  type UploadPayoutDocumentBody,
+} from "./payout-account.schema.js";
