@@ -1,9 +1,18 @@
 import { FormInput } from "@/components/FormInput";
 import { ModalSelect } from "@/components/ModalSelect";
 import { PlanLimitModal, PLAN_LIMIT_MESSAGES } from "@/components/PlanLimitModal";
+import {
+  PlanFeeDisclosure,
+  PlanPayoutAccountNotice,
+  PAYOUT_ONBOARDING_ROUTE,
+} from "@/components/PlanFeeDisclosure";
 import { ApiError } from "@/lib/api";
 import { useCreatePlan } from "@/lib/hooks/use-subscription-plans";
-import { useManagerSubscription } from "@/lib/hooks/use-manager-subscription";
+import {
+  isPayoutErrorCode,
+  usePayoutAccount,
+  PAYOUT_ACCOUNT_REQUIRED,
+} from "@/lib/hooks/use-payout-account";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -43,8 +52,17 @@ const RECURRENCE_OPTIONS = [
 export default function CreatePlanScreen() {
   const router = useRouter();
   const createPlan = useCreatePlan();
-  const { data: managerSub } = useManagerSubscription();
-  const isFree = managerSub?.plan === "free";
+  const { data: payoutAccount, isSuccess: payoutAccountLoaded } = usePayoutAccount();
+
+  /**
+   * A plan the academy cannot be paid for must not be created, and the API
+   * refuses it with PAYOUT_ACCOUNT_REQUIRED anyway. Only a definite answer
+   * blocks the manager: a request that failed is not evidence of a missing
+   * account, so it falls through to the API instead of locking the screen.
+   */
+  const payoutAccountBlocked =
+    payoutAccountLoaded && payoutAccount?.status !== "approved";
+  const canSubmit = !createPlan.isPending && !payoutAccountBlocked;
   const [limitModal, setLimitModal] = useState<{ visible: boolean; message: string }>({
     visible: false,
     message: "",
@@ -67,8 +85,14 @@ export default function CreatePlanScreen() {
   });
 
   const isUnlimited = watch("unlimited");
+  // The form holds the price as a string of cents; the disclosure needs the number.
+  const typedPriceCents = parseInt(watch("priceCents") || "0", 10) || 0;
+
+  const goToPayoutOnboarding = () => router.push(PAYOUT_ONBOARDING_ROUTE);
 
   const onSubmit = async (data: FormData) => {
+    if (payoutAccountBlocked) return;
+
     const cents = parseInt(data.priceCents, 10);
 
     if (isNaN(cents) || cents <= 0) {
@@ -87,6 +111,18 @@ export default function CreatePlanScreen() {
       });
       router.back();
     } catch (e) {
+      // Safety net: the account may have changed between load and save.
+      if (isPayoutErrorCode(e, PAYOUT_ACCOUNT_REQUIRED)) {
+        Alert.alert(
+          "Conta de recebimento necessária",
+          "Configure a conta de recebimento da academia para criar planos. Sem ela o pagamento do aluno não teria para onde ir.",
+          [
+            { text: "Agora não", style: "cancel" },
+            { text: "Configurar", onPress: goToPayoutOnboarding },
+          ],
+        );
+        return;
+      }
       if (e instanceof ApiError && e.status === 403) {
         const msg = PLAN_LIMIT_MESSAGES[e.message];
         if (msg) {
@@ -120,6 +156,8 @@ export default function CreatePlanScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ gap: 16 }}
         >
+          <PlanPayoutAccountNotice blocking />
+
           <Controller
             control={control}
             name="name"
@@ -178,6 +216,8 @@ export default function CreatePlanScreen() {
               </View>
             )}
           />
+
+          <PlanFeeDisclosure priceCents={typedPriceCents} />
 
           <Controller
             control={control}
@@ -238,32 +278,20 @@ export default function CreatePlanScreen() {
           </View>
         </ScrollView>
 
-        {!isFree && (
-          <View
-            className="rounded-xl border border-surface-border bg-surface"
-            style={{ padding: 12, gap: 4 }}
-          >
-            <Text className="font-poppins-medium text-xs text-muted">
-              ℹ️ Taxas de pagamento
+        <View style={{ paddingBottom: 24, gap: 8 }}>
+          {payoutAccountBlocked ? (
+            <Text
+              className="font-poppins text-[11px] text-center"
+              style={{ color: "#FFD60A", lineHeight: 16 }}
+            >
+              Ative a conta de recebimento da academia para criar planos.
             </Text>
-            <Text className="font-poppins text-[11px] text-muted" style={{ lineHeight: 16 }}>
-              Pagamentos via cartão possuem uma taxa de 3,99% + R$0,39 por transação.
-              Pagamentos via Pix possuem uma taxa de R$0,80 por transação. Essas taxas
-              são cobradas pelo processador de pagamento, não pelo Tatame — cobramos
-              apenas a mensalidade da assinatura.
-            </Text>
-          </View>
-        )}
-
-        <View style={{ paddingBottom: 24 }}>
-          <Pressable
-            onPress={handleSubmit(onSubmit)}
-            disabled={createPlan.isPending}
-          >
+          ) : null}
+          <Pressable onPress={handleSubmit(onSubmit)} disabled={!canSubmit}>
             <View className="overflow-hidden rounded-xl">
               <LinearGradient
                 colors={
-                  createPlan.isPending
+                  !canSubmit
                     ? ["#3A3A3A", "#3A3A3A"]
                     : ["#A078E8", "#7C5CBF"]
                 }

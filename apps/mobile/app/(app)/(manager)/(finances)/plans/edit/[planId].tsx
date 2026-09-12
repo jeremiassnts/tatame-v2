@@ -1,6 +1,15 @@
 import { FormInput } from "@/components/FormInput";
 import { ModalSelect } from "@/components/ModalSelect";
+import {
+  PlanFeeDisclosure,
+  PlanPayoutAccountNotice,
+  PAYOUT_ONBOARDING_ROUTE,
+} from "@/components/PlanFeeDisclosure";
 import { ApiError } from "@/lib/api";
+import {
+  isPayoutErrorCode,
+  PAYOUT_ACCOUNT_REQUIRED,
+} from "@/lib/hooks/use-payout-account";
 import {
   useSubscriptionPlan,
   useUpdatePlan,
@@ -80,6 +89,8 @@ export default function EditPlanScreen() {
   }, [plan, reset]);
 
   const isUnlimited = watch("unlimited");
+  // The form holds the price as a string of cents; the disclosure needs the number.
+  const typedPriceCents = parseInt(watch("priceCents") || "0", 10) || 0;
 
   const onSubmit = async (data: FormData) => {
     const cents = parseInt(data.priceCents, 10);
@@ -100,6 +111,22 @@ export default function EditPlanScreen() {
       });
       router.back();
     } catch (e) {
+      // The API does not gate editing today, but if that changes the manager
+      // gets the reason and the way out instead of a raw error code.
+      if (isPayoutErrorCode(e, PAYOUT_ACCOUNT_REQUIRED)) {
+        Alert.alert(
+          "Conta de recebimento necessária",
+          "Configure a conta de recebimento da academia para alterar os planos.",
+          [
+            { text: "Agora não", style: "cancel" },
+            {
+              text: "Configurar",
+              onPress: () => router.push(PAYOUT_ONBOARDING_ROUTE),
+            },
+          ],
+        );
+        return;
+      }
       const msg = e instanceof ApiError ? e.message : "Erro ao atualizar plano";
       Alert.alert("Erro", msg);
     }
@@ -134,6 +161,13 @@ export default function EditPlanScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ gap: 16 }}
         >
+          {/*
+            Informative, not blocking: the API gates plan creation, not editing,
+            and a plan students already pay for must stay correctable while the
+            account is under review.
+          */}
+          <PlanPayoutAccountNotice blocking={false} />
+
           <Controller
             control={control}
             name="name"
@@ -192,6 +226,8 @@ export default function EditPlanScreen() {
               </View>
             )}
           />
+
+          <PlanFeeDisclosure priceCents={typedPriceCents} />
 
           <Controller
             control={control}
