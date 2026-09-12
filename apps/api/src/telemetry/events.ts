@@ -98,6 +98,27 @@ export const CATALOG = {
 
   // --- payout_account (the academy's Asaas subaccount) --------------------
   "payout_account.created": { domain: "payout_account", outcome: "success" },
+  "payout_account.approved": { domain: "payout_account", outcome: "success" },
+  // Was receiving, is not any more. The academy keeps its plans and its
+  // students, so nothing else about the app changes shape — only the money
+  // stops, which is why it needs a signal of its own.
+  "payout_account.suspended": {
+    domain: "payout_account",
+    outcome: "rejected",
+    reasons: ["GENERAL_APPROVAL_LOST"],
+  },
+  // An ACCOUNT_STATUS_* delivery that could not be applied. Silence here is
+  // indistinguishable from an onboarding the manager never finished.
+  "payout_account.webhook_unhandled": {
+    domain: "payout_account",
+    outcome: "rejected",
+    reasons: [
+      "UNKNOWN_EVENT_TYPE",
+      "MISSING_REFERENCE",
+      "ACCOUNT_NOT_FOUND",
+      "MISSING_STATUS",
+    ],
+  },
 
   // --- manager_subscription (the Pro plan, via Stripe) --------------------
   "manager_subscription.checkout_started": {
