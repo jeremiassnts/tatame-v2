@@ -61,9 +61,9 @@ export default tseslint.config(
     rules: { "no-console": "off" },
   },
   {
-    // `seed.ts` is a CLI. Its output is the product, not a diagnostic, and it
+    // These are CLIs. Their output is the product, not a diagnostic, and it
     // should not depend on `LOG_LEVEL` to print what it did.
-    files: ["src/seed.ts"],
+    files: ["src/seed.ts", "src/send-daily-summary.ts"],
     rules: { "no-console": "off" },
   },
   {

@@ -13,7 +13,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
     "lint": "eslint .",
-    "seed": "tsx --env-file=../../.env src/seed.ts"
+    "seed": "tsx --env-file=../../.env src/seed.ts",
+    "summary:send": "tsx --env-file=../../.env src/send-daily-summary.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1016.0",
