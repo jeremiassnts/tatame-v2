@@ -4,6 +4,7 @@ import type {
   AsaasCompanyType,
   AsaasDocumentGroup,
   AsaasDocumentType,
+  AsaasRegistrationStatus,
   AsaasUploadedDocument,
   CreateAsaasAccountInput,
 } from "../../lib/asaas.js";
@@ -15,6 +16,7 @@ import type {
   IPayoutAccountRepository,
   PayoutAccountRow,
 } from "./payout-account.repository.js";
+import { derivePayoutAccountStatus } from "./payout-account.status.js";
 
 /**
  * The academy's receiving account at Asaas.
@@ -254,6 +256,54 @@ export class PayoutAccountService {
     }
 
     return client.uploadDocument(groupId, input);
+  }
+
+  /**
+   * Re-reads the account from Asaas. The webhook is the fast path, but a
+   * delivery can be missed, and pull to refresh has to be able to prove the
+   * stored status rather than repeat it.
+   */
+  async refreshStatus(
+    managerUserId: string,
+    academyId: string,
+  ): Promise<PayoutAccountView> {
+    const row = await this.requireAccount(managerUserId, academyId);
+    const status = await this.asSubaccount(row.apiKeyEncrypted).getAccountStatus();
+    const updated = await this.applyAsaasStatus(row, status);
+    return toPayoutAccountView(updated);
+  }
+
+  /**
+   * The single place a row takes on an Asaas verdict, shared with the webhook
+   * handler so a pull to refresh and a delivery cannot disagree.
+   */
+  async applyAsaasStatus(
+    row: PayoutAccountRow,
+    status: {
+      general: AsaasRegistrationStatus;
+      commercialInfo: AsaasRegistrationStatus;
+      bankAccountInfo: AsaasRegistrationStatus;
+      documentation: AsaasRegistrationStatus;
+    },
+  ): Promise<PayoutAccountRow> {
+    const derived = derivePayoutAccountStatus(
+      { id: row.externalAccountId, ...status },
+      row.status,
+    );
+
+    const updated = await this.repo.update(row.id, {
+      status: derived,
+      generalStatus: status.general,
+      commercialInfoStatus: status.commercialInfo,
+      bankAccountInfoStatus: status.bankAccountInfo,
+      documentStatus: status.documentation,
+      // First approval only. Re-approval after a suspension is a different
+      // fact from the day the academy could first receive money.
+      approvedAt:
+        derived === "approved" && !row.approvedAt ? new Date() : row.approvedAt,
+    });
+    if (!updated) throw new HttpError(404, "Conta de recebimento não encontrada");
+    return updated;
   }
 
   /**
