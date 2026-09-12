@@ -17,3 +17,11 @@ export { ManagerNewMember, type ManagerNewMemberProps } from "./templates/manage
 export { StudentPaymentReceived, type StudentPaymentReceivedProps } from "./templates/student-payment-received.js";
 export { TrialEnding, type TrialEndingProps } from "./templates/trial-ending.js";
 export { AdminNewManager, type AdminNewManagerProps } from "./templates/admin-new-manager.js";
+export {
+  DailyPlatformSummary,
+  type DailyPlatformSummaryProps,
+  type AcademySummary,
+  type SummaryDelta,
+  type SummaryMethodTotal,
+  type SummaryMoney,
+} from "./templates/daily-platform-summary.js";

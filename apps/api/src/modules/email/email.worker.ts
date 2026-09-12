@@ -1,5 +1,6 @@
 import {
   AdminNewManager,
+  DailyPlatformSummary,
   InvoicePaid,
   ManagerNewMember,
   MemberApproved,
@@ -32,6 +33,8 @@ const subjectMap: Record<EmailJobName, (data: Record<string, unknown>) => string
   "student-payment-received": () => "Pagamento de aluno recebido",
   "trial-ending": () => "Seu período de teste termina em breve",
   "admin-new-manager": () => "Novo manager cadastrado",
+  "daily-platform-summary": (d) =>
+    `Resumo diário Tatame — ${String(d.referenceDate)}`,
 };
 
 type TemplateComponent = (props: Record<string, unknown>) => React.ReactElement;
@@ -48,6 +51,7 @@ const templateMap: Record<EmailJobName, TemplateComponent> = {
   "student-payment-received": StudentPaymentReceived as unknown as TemplateComponent,
   "trial-ending": TrialEnding as unknown as TemplateComponent,
   "admin-new-manager": AdminNewManager as unknown as TemplateComponent,
+  "daily-platform-summary": DailyPlatformSummary as unknown as TemplateComponent,
 };
 
 async function processEmailJob(job: Job): Promise<void> {

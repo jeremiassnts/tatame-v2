@@ -64,3 +64,30 @@ export function apiBaseUrl(): string {
   const port = process.env.API_PORT ?? "3001";
   return `http://localhost:${port}`;
 }
+
+/**
+ * Payment processor fees, as shown to managers on the plan-creation screen.
+ *
+ * These are the processor's fees, not Tatame's — the product charges the manager
+ * a Pro subscription and takes no cut of a student's mensalidade. They live here
+ * so the daily summary's "líquido a repassar" and the manager-facing copy cannot
+ * drift apart on the numbers.
+ */
+export const CARD_FEE_PERCENT_BPS = 399; // 3.99%
+export const CARD_FEE_FIXED_CENTS = 39; // R$ 0,39
+export const PIX_FEE_CENTS = 80; // R$ 0,80
+
+/** `manual` is cash the academy took directly — no processor, no fee. */
+export function processorFeeCents(
+  method: "manual" | "stripe" | "pix",
+  amountCents: number,
+): number {
+  switch (method) {
+    case "stripe":
+      return Math.round((amountCents * CARD_FEE_PERCENT_BPS) / 10_000) + CARD_FEE_FIXED_CENTS;
+    case "pix":
+      return PIX_FEE_CENTS;
+    case "manual":
+      return 0;
+  }
+}

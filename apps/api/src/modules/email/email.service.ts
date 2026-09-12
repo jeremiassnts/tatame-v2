@@ -128,4 +128,20 @@ export class EmailService {
       `admin-new-manager-${stripeSubscriptionId}`,
     );
   }
+
+  /**
+   * `referenceDate` is the BRT day the report covers (`YYYY-MM-DD`), and it is
+   * the job id: re-running the cron for a day already sent is a no-op rather
+   * than a duplicate in the owner's inbox.
+   */
+  async sendDailyPlatformSummary(
+    data: EmailJobMap["daily-platform-summary"],
+    referenceDate: string,
+  ) {
+    await this.enqueue(
+      "daily-platform-summary",
+      data,
+      `daily-summary-${referenceDate}`,
+    );
+  }
 }

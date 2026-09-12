@@ -21,6 +21,15 @@ import {
 } from "./modules/notification/notification.worker.js";
 import { closeEngagementQueue, getEngagementQueue, registerEngagementJobs } from "./modules/engagement/engagement.queue.js";
 import { startEngagementWorker, closeEngagementWorker } from "./modules/engagement/engagement.worker.js";
+import {
+  closePlatformSummaryQueue,
+  getPlatformSummaryQueue,
+  registerPlatformSummaryJobs,
+} from "./modules/platform-summary/platform-summary.queue.js";
+import {
+  startPlatformSummaryWorker,
+  closePlatformSummaryWorker,
+} from "./modules/platform-summary/platform-summary.worker.js";
 import { createBullBoard } from "@bull-board/api";
 import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
 import { ExpressAdapter } from "@bull-board/express";
@@ -45,6 +54,11 @@ if (env.REDIS_URL) {
   startEngagementWorker(env.REDIS_URL);
   await registerEngagementJobs(env.REDIS_URL);
   log.info("worker started, cron jobs registered", { component: "engagement" });
+  startPlatformSummaryWorker(env.REDIS_URL);
+  await registerPlatformSummaryJobs(env.REDIS_URL);
+  log.info("worker started, cron jobs registered", {
+    component: "platform-summary",
+  });
 
   const serverAdapter = new ExpressAdapter();
   serverAdapter.setBasePath("/admin/queues");
@@ -53,6 +67,7 @@ if (env.REDIS_URL) {
       new BullMQAdapter(getEmailQueue(env.REDIS_URL)),
       new BullMQAdapter(getNotificationQueue(env.REDIS_URL)),
       new BullMQAdapter(getEngagementQueue(env.REDIS_URL)),
+      new BullMQAdapter(getPlatformSummaryQueue(env.REDIS_URL)),
     ],
     serverAdapter,
   });
@@ -86,6 +101,8 @@ async function shutdown() {
   await closeNotificationQueue();
   await closeEngagementWorker();
   await closeEngagementQueue();
+  await closePlatformSummaryWorker();
+  await closePlatformSummaryQueue();
   await flushTelemetry();
   process.exit(0);
 }
