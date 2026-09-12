@@ -6,7 +6,7 @@ import {
 import request from "supertest";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { setDbForTest } from "./lib/db.js";
-import { insertFreeSubscription, insertUserWithGlobalRole } from "./testing/integration-seed.js";
+import { insertApprovedPayoutAccount, insertFreeSubscription, insertUserWithGlobalRole } from "./testing/integration-seed.js";
 import { setupIntegrationTest } from "./testing/integration-setup.js";
 
 vi.mock("./lib/lock.js", async (importOriginal) => {
@@ -76,6 +76,7 @@ describe("Check-in integration", () => {
     expect(ac.status).toBe(201);
     const academyId = ac.body.id as string;
     await insertFreeSubscription(ctx.db, academyId);
+    await insertApprovedPayoutAccount(ctx.db, academyId);
 
     asClerkUser(CLERK_STUDENT);
     const reqJoin = await request(app)
@@ -150,6 +151,7 @@ describe("Check-in integration", () => {
       .send({ name: "Checkin Dojo" });
     const academyId = ac.body.id as string;
     await insertFreeSubscription(ctx.db, academyId);
+    await insertApprovedPayoutAccount(ctx.db, academyId);
 
     asClerkUser(CLERK_STUDENT);
     const reqJoin = await request(app)
@@ -241,6 +243,7 @@ describe("Check-in integration", () => {
       .send({ name: "Empty Dojo" });
     const academyId = ac.body.id as string;
     await insertFreeSubscription(ctx.db, academyId);
+    await insertApprovedPayoutAccount(ctx.db, academyId);
 
     asClerkUser(CLERK_STUDENT);
     const reqJoin = await request(app)

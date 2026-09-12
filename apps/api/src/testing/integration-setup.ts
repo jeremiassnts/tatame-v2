@@ -42,6 +42,7 @@ const TRUNCATE_ALL = `
 TRUNCATE TABLE
   academies,
   academy_memberships,
+  academy_payout_accounts,
   announcements,
   belt_promotions,
   checkins,

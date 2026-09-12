@@ -1,5 +1,10 @@
 import type { Database } from "@tatame/db";
-import { managerSubscriptions, userRoles, users } from "@tatame/db/schema";
+import {
+  academyPayoutAccounts,
+  managerSubscriptions,
+  userRoles,
+  users,
+} from "@tatame/db/schema";
 import { makeUser, makeUserRole } from "./factories/index.js";
 
 export async function insertUserWithGlobalRole(
@@ -29,4 +34,24 @@ export async function insertUserWithoutRole(db: Database, clerkUserId: string) {
   const u = makeUser({ clerkUserId });
   await db.insert(users).values(u);
   return u;
+}
+
+/**
+ * An academy that can already receive money. Plan creation and enrolment are
+ * gated on it, so any test that reaches either needs one — the same way they
+ * already need a manager subscription.
+ */
+export async function insertApprovedPayoutAccount(
+  db: Database,
+  academyId: string,
+) {
+  await db.insert(academyPayoutAccounts).values({
+    academyId,
+    externalAccountId: `acc_${academyId.slice(0, 8)}`,
+    walletId: `wal_${academyId.slice(0, 8)}`,
+    apiKeyEncrypted: "test-sealed-key",
+    status: "approved",
+    generalStatus: "APPROVED",
+    approvedAt: new Date(),
+  });
 }

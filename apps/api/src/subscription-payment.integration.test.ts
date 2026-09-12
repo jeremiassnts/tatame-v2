@@ -5,7 +5,7 @@ import {
 import request from "supertest";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { setDbForTest } from "./lib/db.js";
-import { insertFreeSubscription, insertUserWithGlobalRole } from "./testing/integration-seed.js";
+import { insertApprovedPayoutAccount, insertFreeSubscription, insertUserWithGlobalRole } from "./testing/integration-seed.js";
 import { setupIntegrationTest } from "./testing/integration-setup.js";
 
 const CLERK_MANAGER = "user_integration_sub_mgr";
@@ -49,6 +49,7 @@ describe("Subscription & payment integration", () => {
     expect(ac.status).toBe(201);
     const academyId = ac.body.id as string;
     await insertFreeSubscription(ctx.db, academyId);
+    await insertApprovedPayoutAccount(ctx.db, academyId);
 
     asClerkUser(CLERK_STUDENT);
     const reqJoin = await request(app)
@@ -99,6 +100,7 @@ describe("Subscription & payment integration", () => {
     expect(ac.status).toBe(201);
     const academyId = ac.body.id as string;
     await insertFreeSubscription(ctx.db, academyId);
+    await insertApprovedPayoutAccount(ctx.db, academyId);
 
     asClerkUser(CLERK_STUDENT);
     const join = await request(app)
@@ -158,6 +160,7 @@ describe("Subscription & payment integration", () => {
       .send({ name: "Finance Dojo" });
     expect(ac.status).toBe(201);
     await insertFreeSubscription(ctx.db, ac.body.id as string);
+    await insertApprovedPayoutAccount(ctx.db, ac.body.id as string);
 
     asClerkUser(CLERK_STUDENT);
     const join = await request(app)
@@ -203,6 +206,7 @@ describe("Subscription & payment integration", () => {
       .post("/v1/academies")
       .send({ name: "Limit Dojo" });
     await insertFreeSubscription(ctx.db, ac.body.id as string);
+    await insertApprovedPayoutAccount(ctx.db, ac.body.id as string);
 
     asClerkUser(CLERK_STUDENT);
     const join = await request(app)
