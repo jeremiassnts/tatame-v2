@@ -143,6 +143,12 @@ export interface AsaasFees {
   payment: {
     pix: {
       fixedFeeValue: number;
+      /**
+       * The promotional rate Asaas actually charges until `discountExpiration`.
+       * It is reported next to the standard rate, not instead of it.
+       */
+      fixedFeeValueWithDiscount?: number | null;
+      discountExpiration?: string | null;
       percentageFee: number;
       minimumFeeValue: number;
       maximumFeeValue: number;
@@ -152,6 +158,10 @@ export interface AsaasFees {
     creditCard: {
       operationValue: number;
       oneInstallmentPercentage: number;
+      discountOneInstallmentPercentage?: number | null;
+      /** Asaas's own verdict on whether the promotional rate is in force. */
+      hasValidDiscount?: boolean;
+      discountExpiration?: string | null;
       daysToReceive: number;
     };
   };

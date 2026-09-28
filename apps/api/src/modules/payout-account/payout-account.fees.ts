@@ -70,6 +70,24 @@ export class DefaultFeesCache implements FeesCache {
   }
 }
 
+/**
+ * Asaas negotiates a promotional rate per account and charges it while it is in
+ * force, reporting it alongside the standard rate rather than in place of it.
+ * Reading the standard rate overstates the fee, so the plan screen would promise
+ * the manager less than actually reaches them.
+ *
+ * When the discount cannot be confirmed as active the standard rate wins: an
+ * overstated fee disappoints upwards, an understated one breaks the promise the
+ * screen makes.
+ */
+function pixDiscountIsActive(expiration: string | null | undefined): boolean {
+  if (!expiration) return false;
+  // `YYYY-MM-DD HH:mm:ss`, not ISO — Safari and Node disagree on the raw form.
+  const parsed = new Date(expiration.replace(" ", "T"));
+  if (Number.isNaN(parsed.getTime())) return false;
+  return parsed.getTime() > Date.now();
+}
+
 function unavailable(): HttpError {
   return new HttpError(503, "Não foi possível consultar as taxas do Asaas agora", {
     code: "FEES_UNAVAILABLE",
@@ -105,7 +123,11 @@ export class PayoutAccountFeesService {
 
     const fees: NormalizedFees = {
       pix: {
-        fixedFee: pix.fixedFeeValue,
+        fixedFee:
+          typeof pix.fixedFeeValueWithDiscount === "number" &&
+          pixDiscountIsActive(pix.discountExpiration)
+            ? pix.fixedFeeValueWithDiscount
+            : pix.fixedFeeValue,
         percentageFee: pix.percentageFee,
         minFee: pix.minimumFeeValue,
         maxFee: pix.maximumFeeValue,
@@ -114,7 +136,13 @@ export class PayoutAccountFeesService {
       },
       creditCard: {
         operationFee: creditCard.operationValue,
-        percentage: creditCard.oneInstallmentPercentage,
+        // Unlike Pix, the card block carries Asaas's own verdict on the
+        // discount, so there is no date to second-guess here.
+        percentage:
+          creditCard.hasValidDiscount === true &&
+          typeof creditCard.discountOneInstallmentPercentage === "number"
+            ? creditCard.discountOneInstallmentPercentage
+            : creditCard.oneInstallmentPercentage,
         daysToReceive: creditCard.daysToReceive,
       },
       fetchedAt: new Date().toISOString(),
