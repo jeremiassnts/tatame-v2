@@ -1,6 +1,6 @@
 import type Stripe from "stripe";
 import { loadEnv } from "@tatame/config";
-import type { SubscriptionWithPeriod } from "../../lib/stripe.js";
+import { subscriptionPeriodEnd } from "../../lib/stripe.js";
 import type { IManagerSubscriptionRepository } from "./manager-subscription.repository.js";
 import type { IAcademyRepository } from "../academy/academy.repository.js";
 import type { IUserRepository } from "../user/user.repository.js";
@@ -89,7 +89,6 @@ export class StripeSubscriptionWebhookHandler {
     const stripeCustomerId =
       typeof sub.customer === "string" ? sub.customer : sub.customer.id;
     const clerkUserId = sub.metadata?.clerkUserId;
-    const s = sub as SubscriptionWithPeriod;
 
     // Case 1: Subscription already linked to an academy
     const existing =
@@ -104,7 +103,7 @@ export class StripeSubscriptionWebhookHandler {
         stripeSubscriptionId: sub.id,
         stripeCustomerId,
         stripePriceId: sub.items.data[0]?.price.id ?? null,
-        currentPeriodEnd: new Date(s.current_period_end * 1000),
+        currentPeriodEnd: subscriptionPeriodEnd(sub),
         trialEndsAt: sub.trial_end ? new Date(sub.trial_end * 1000) : null,
         canceledAt: sub.cancel_at ? new Date(sub.cancel_at * 1000) : null,
       });
@@ -147,7 +146,7 @@ export class StripeSubscriptionWebhookHandler {
         stripeCustomerId,
         stripeSubscriptionId: sub.id,
         stripePriceId: sub.items.data[0]?.price.id ?? null,
-        currentPeriodEnd: new Date(s.current_period_end * 1000),
+        currentPeriodEnd: subscriptionPeriodEnd(sub),
         trialEndsAt: sub.trial_end ? new Date(sub.trial_end * 1000) : null,
       });
       emitEvent("manager_subscription.activated", {

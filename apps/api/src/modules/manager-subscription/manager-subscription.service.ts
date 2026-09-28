@@ -9,7 +9,7 @@ import type {
   ManagerSubscriptionRow,
 } from "./manager-subscription.repository.js";
 import { FREE_PLAN_LIMITS } from "./plan-limits.js";
-import type { SubscriptionWithPeriod } from "../../lib/stripe.js";
+import { subscriptionPeriodEnd } from "../../lib/stripe.js";
 
 /** Only the pending-Stripe fields `linkPendingSubscription` reads off a user row. */
 type PendingStripeUser = {
@@ -93,7 +93,6 @@ export class ManagerSubscriptionService {
       user.pendingStripeSubscriptionId,
     );
 
-    const currentPeriodEnd = (stripeSub as unknown as SubscriptionWithPeriod).current_period_end;
     const trialEnd = stripeSub.trial_end;
 
     await this.subRepo.upsertByAcademy({
@@ -103,7 +102,7 @@ export class ManagerSubscriptionService {
       stripeCustomerId: user.pendingStripeCustomerId,
       stripeSubscriptionId: user.pendingStripeSubscriptionId,
       stripePriceId: stripeSub.items.data[0]?.price.id ?? null,
-      currentPeriodEnd: currentPeriodEnd ? new Date(currentPeriodEnd * 1000) : null,
+      currentPeriodEnd: subscriptionPeriodEnd(stripeSub),
       trialEndsAt: trialEnd ? new Date(trialEnd * 1000) : null,
     });
 

@@ -2,13 +2,31 @@ import Stripe from "stripe";
 import { loadEnv } from "@tatame/config";
 
 /**
- * Stripe v21 removed `current_period_end` from the Subscription type (new billing
- * mode), but the field is still present in payloads for subscriptions using the
- * legacy/fixed billing mode.
+ * Stripe v21 moved `current_period_end` off the Subscription and onto each
+ * subscription item. Subscriptions created under the legacy billing mode still
+ * carry the old top-level field, so both are read here.
  */
-export type SubscriptionWithPeriod = Stripe.Subscription & {
-  current_period_end: number;
-};
+type LegacySubscriptionPeriod = { current_period_end?: number };
+
+/**
+ * The end of the current billing period, or `null` when Stripe sent neither
+ * shape.
+ *
+ * Reading the removed top-level field directly yields `undefined`, and
+ * `undefined * 1000` is `NaN` — which becomes an Invalid Date that survives
+ * every check until Drizzle calls `toISOString()` on it deep inside query
+ * building, failing the request with `RangeError: Invalid time value` and no
+ * hint of where it came from. Returning `null` keeps a missing period a
+ * missing period.
+ */
+export function subscriptionPeriodEnd(sub: Stripe.Subscription): Date | null {
+  const fromItem = sub.items?.data?.[0]?.current_period_end;
+  const fromLegacy = (sub as unknown as LegacySubscriptionPeriod)
+    .current_period_end;
+  const seconds = fromItem ?? fromLegacy;
+  if (typeof seconds !== "number" || !Number.isFinite(seconds)) return null;
+  return new Date(seconds * 1000);
+}
 
 let stripeInstance: Stripe | null = null;
 
