@@ -42,14 +42,30 @@ export type SubscriptionMePayload = {
   academyPlan: "free" | "pro" | null;
 };
 
+/** Extra behaviour the composition root decides, rather than the caller. */
+export type SubscriptionServiceOptions = {
+  /**
+   * Whether to enforce the receiving-account requirement. Defaults to `true`
+   * here so the rule is the service's normal behaviour; production wiring
+   * passes `PAYOUT_ACCOUNT_REQUIRED`, which ships off until the mobile release
+   * carrying the onboarding flow is adopted.
+   */
+  requirePayoutAccount?: boolean;
+};
+
 export class SubscriptionService {
+  private readonly requirePayoutAccount: boolean;
+
   constructor(
     private readonly planRepo: ISubscriptionPlanRepository,
     private readonly studentSubRepo: IStudentSubscriptionRepository,
     private readonly academyRepo: IAcademyRepository,
     private readonly managerSubRepo?: IManagerSubscriptionRepository,
     private readonly payoutAccountRepo?: IPayoutAccountRepository,
-  ) {}
+    opts: SubscriptionServiceOptions = {},
+  ) {
+    this.requirePayoutAccount = opts.requirePayoutAccount ?? true;
+  }
 
   /**
    * A plan whose academy has nowhere to receive money must not exist, and
@@ -59,8 +75,15 @@ export class SubscriptionService {
    * whole feature exists to remove.
    *
    * Coded 403, following the PLAN_LIMIT_* convention the app already renders.
+   *
+   * The rule is gated because the only way to obtain an approved account is
+   * the onboarding flow in the mobile app, and a store release cannot be
+   * deployed alongside the API. Enforcing it while managers are still on an
+   * older build would block plan creation and enrolment with no way out, so
+   * the requirement stays off until that version is in their hands.
    */
   private async assertAcademyCanReceive(academyId: string): Promise<void> {
+    if (!this.requirePayoutAccount) return;
     if (!this.payoutAccountRepo) return;
     const account = await this.payoutAccountRepo.findByAcademyId(academyId);
     if (account?.status === "approved") return;

@@ -15,7 +15,12 @@ import { SubscriptionService } from "./subscription.service.js";
  * The invariant the whole feature protects: a plan whose academy has nowhere
  * to receive money must not exist, and nobody may enrol in one.
  */
-async function setup(opts: { payoutStatus?: PayoutAccountStatus | "none" } = {}) {
+async function setup(
+  opts: {
+    payoutStatus?: PayoutAccountStatus | "none";
+    requirePayoutAccount?: boolean;
+  } = {},
+) {
   const managerId = randomUUID();
   const academy = makeAcademy({ ownerId: managerId });
   const plan = makeSubscriptionPlan({ academyId: academy.id });
@@ -41,6 +46,7 @@ async function setup(opts: { payoutStatus?: PayoutAccountStatus | "none" } = {})
     academyRepo,
     undefined,
     payoutRepo,
+    { requirePayoutAccount: opts.requirePayoutAccount ?? true },
   );
   return { svc, managerId, academy, plan, planRepo };
 }
@@ -126,5 +132,49 @@ describe("without a payout repository wired", () => {
 
     await expect(svc.createPlan(managerId, academy.id, PLAN_BODY)).resolves.toBeDefined();
     await expect(svc.selectPlan(randomUUID(), academy.id, plan.id)).resolves.toBeDefined();
+  });
+});
+
+/**
+ * The requirement can only be satisfied through the onboarding flow in the
+ * mobile app, and a store release does not land with the API deploy. Until
+ * that version is adopted the rule has to stay off, or every manager on an
+ * older build loses plan creation and every new enrolment fails, with no
+ * reachable way to fix it.
+ */
+describe("with the requirement turned off", () => {
+  it("creates the plan even though the academy cannot receive", async () => {
+    const { svc, managerId, academy } = await setup({
+      payoutStatus: "none",
+      requirePayoutAccount: false,
+    });
+
+    await expect(
+      svc.createPlan(managerId, academy.id, PLAN_BODY),
+    ).resolves.toMatchObject({ name: "Mensal" });
+  });
+
+  it("enrols the student even though the academy cannot receive", async () => {
+    const { svc, academy, plan } = await setup({
+      payoutStatus: "none",
+      requirePayoutAccount: false,
+    });
+
+    const { subscription } = await svc.selectPlan(randomUUID(), academy.id, plan.id);
+    expect(subscription.planId).toBe(plan.id);
+  });
+
+  it("still refuses once the requirement is turned back on", async () => {
+    const { svc, managerId, academy } = await setup({
+      payoutStatus: "none",
+      requirePayoutAccount: true,
+    });
+
+    const error = (await svc
+      .createPlan(managerId, academy.id, PLAN_BODY)
+      .catch((e: unknown) => e)) as HttpError;
+
+    expect(error.statusCode).toBe(403);
+    expect(error.details).toMatchObject({ code: "PAYOUT_ACCOUNT_REQUIRED" });
   });
 });

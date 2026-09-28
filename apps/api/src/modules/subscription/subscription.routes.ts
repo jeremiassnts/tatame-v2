@@ -66,6 +66,7 @@ const subscriptionService = new SubscriptionService(
   academyRepo,
   managerSubRepo,
   new PostgresPayoutAccountRepository(db),
+  { requirePayoutAccount: env.PAYOUT_ACCOUNT_REQUIRED },
 );
 
 subscriptionRouter.get(

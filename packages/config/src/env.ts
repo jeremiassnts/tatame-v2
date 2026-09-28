@@ -48,6 +48,17 @@ const envSchema = z.object({
     .string()
     .regex(/^[0-9a-fA-F]{64}$/, "PAYOUT_ACCOUNT_ENCRYPTION_KEY must be 64 hex characters")
     .optional(),
+  /**
+   * Whether plan creation and new enrolments require an approved receiving
+   * account. Defaults to `false` because the onboarding UI ships only in the
+   * mobile app: turning this on before that version reaches the stores leaves
+   * managers with no way to satisfy the requirement. Turn it on once the
+   * release carrying the onboarding flow has been adopted.
+   */
+  PAYOUT_ACCOUNT_REQUIRED: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((v) => v === "true"),
   RESEND_API_KEY: z.string().optional(),
   MANAGER_EMAIL: z.string().optional(),
   MANAGER_CLERK_ID: z.string().optional(),
