@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import flexibleSubscriptionCreated from "./__fixtures__/subscription-created.flexible.json" with { type: "json" };
 import type Stripe from "stripe";
 import { describe, expect, it } from "vitest";
 import { makeAcademy, makeUser } from "../../testing/factories/index.js";
@@ -166,5 +167,50 @@ describe("unknown clerk user", () => {
     );
 
     expect(await subRepo.findByAcademyId(academy.id)).toBeUndefined();
+  });
+});
+
+/**
+ * The exact event Stripe delivered in production, trimmed only of fields the
+ * handler never reads. `billing_mode.type` is "flexible" — the new mode — and
+ * the payload carries no top-level `current_period_end` at all, which is what
+ * the handler used to read.
+ */
+describe("the production payload that failed", () => {
+  const CLERK_ID = "user_3JxbrNmuyg9b7JQ8Pm1cEfKcjs9";
+  const ITEM_PERIOD_END = 1_793_207_582;
+
+  it("carries the period only on the item", () => {
+    const sub = flexibleSubscriptionCreated.data.object;
+
+    expect(sub).not.toHaveProperty("current_period_end");
+    expect(sub.items.data[0]?.current_period_end).toBe(ITEM_PERIOD_END);
+    expect(sub.billing_mode.type).toBe("flexible");
+  });
+
+  it("records the subscription instead of failing the webhook", async () => {
+    const user = makeUser({ clerkUserId: CLERK_ID });
+    const academy = makeAcademy({ ownerId: user.id });
+    const subRepo = new InMemoryManagerSubscriptionRepository([]);
+    const handler = new StripeSubscriptionWebhookHandler(
+      subRepo,
+      new InMemoryAcademyRepository([academy]),
+      new InMemoryUserRepository([user]),
+      null,
+    );
+
+    await handler.handleEvent(
+      flexibleSubscriptionCreated as unknown as Stripe.Event,
+    );
+
+    const saved = await subRepo.findByAcademyId(academy.id);
+    expect(saved).toBeDefined();
+    expect(saved!.plan).toBe("pro");
+    expect(saved!.status).toBe("trialing");
+    expect(saved!.stripeSubscriptionId).toBe("sub_1UKi6uKxAZnjqqVoXReInSbv");
+    expect(saved!.stripeCustomerId).toBe("cus_VLMJbCmIKL8hKu");
+    expect(saved!.stripePriceId).toBe("price_1RX97RKxAZnjqqVoKL414xu8");
+    expect(saved!.currentPeriodEnd).toEqual(new Date(ITEM_PERIOD_END * 1000));
+    expect(saved!.trialEndsAt).toEqual(new Date(ITEM_PERIOD_END * 1000));
   });
 });
