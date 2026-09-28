@@ -51,14 +51,66 @@ without an approved wallet there is nothing to split into.
 
 ## Blockers before starting
 
-1. The Tatame root Asaas account must be a **CNPJ** — subaccount creation requires it.
-2. Sandbox credentials (`ASAAS_API_KEY`, `ASAAS_BASE_URL`, `ASAAS_WEBHOOK_TOKEN`) provisioned.
+1. ~~The Tatame root Asaas account must be a **CNPJ**~~ — **resolved 2026-09-28.**
+   `EFA FIREFLY LABS LTDA`, `personType: JURIDICA`, `general: APPROVED`.
+2. ~~Sandbox credentials provisioned~~ — **resolved 2026-09-28.** `ASAAS_API_KEY`
+   and `ASAAS_BASE_URL` in hand; `ASAAS_WEBHOOK_TOKEN` still to be generated.
 3. Confirm the production rollout fits the Asaas evaluation window: up to 10 subaccounts
-   and R$ 2.000 per charge during the first 60 days.
+   and R$ 2.000 per charge during the first 60 days. **Still open.**
+4. **New — a Pix key on the root account.** `GET /payments/{id}/pixQrCode` answers
+   400 `invalid_action` with "Você não possui uma chave Pix cadastrada para
+   recebimentos" until the account owning the charge has one. Asaas provisions it
+   asynchronously, so a freshly created account fails for the first minutes. The
+   key belongs to the **root** account only — the charge lives there and the split
+   moves the money internally, so no academy needs one. B4 has to surface this
+   error rather than let it become a generic 502.
+
+## Sandbox validation — 2026-09-28
+
+The first run against the real Asaas sandbox, before any of Slice B existed. Every
+call below was made by hand against `https://api-sandbox.asaas.com`, not a fake.
+
+**Proved:**
+
+| Step | Result |
+| --- | --- |
+| Root account is CNPJ and approved | `JURIDICA`, `general: APPROVED` |
+| `POST /v3/accounts` creates a subaccount | returns `walletId` and `apiKey` |
+| The api key arrives at both documented places | top level **and** `accessToken.apiKey` — the defensive read in `lib/asaas.ts` was right |
+| **`split: [{ walletId, percentualValue: 100 }]` is accepted** | `value 150,00 → netValue 149,01 → split totalValue 149,01` |
+| Pix QR code generation | beneficiary is the **root** account, as the design assumes |
+
+The split arithmetic matches D1 and D3 to the cent: the fee is taken before the
+split, the academy receives the net, and the platform nets exactly zero.
+
+**Found, and not previously written down anywhere:**
+
+1. **The root account needs a Pix key** before any charge can show a QR. See
+   blocker 4.
+2. **Manual settlement cancels the split.** See D5 in `context.md`; the decision
+   is that manual confirmation cancels the open Asaas charge.
+3. **The fee disclosure was wrong** — Asaas reports a negotiated rate next to the
+   standard one and charges the negotiated one. `payout-account.fees.ts` read only
+   the standard rate, so the plan screen promised R$ 148,01 where the sandbox
+   credited R$ 149,01. Fixed, with the sandbox payload pinned as a regression test.
+4. **Sandbox approves subaccounts instantly** (`general: APPROVED` on creation,
+   the only document group already `APPROVED`). The pending-document path and the
+   `ACCOUNT_STATUS_*` webhook therefore cannot be exercised naturally here — they
+   have to be driven by replaying a payload by hand, and only production will
+   exercise them for real.
+5. **`GET /v3/payments/{id}/splits` answers 404.** The split state is returned
+   inline on the payment object instead. Relevant to B7.
+
+Sandbox rates on the day: Pix R$ 0,99 fixed with 100 free monthly credits; card
+1,99% + R$ 0,49, settling in 32 days.
 
 ## Status
 
-**Slice A (TAT-179) — complete.** A1-A20 merged on `main`, one commit per task.
+**Slice A (TAT-179) — implemented, partially validated.** A1-A20 merged on `main`,
+one commit per task, plus the fee correction above on
+`fix/tat-179-asaas-sandbox-findings`. The split maths and subaccount creation are
+confirmed against the sandbox; the onboarding round trip through the app and the
+account-status webhook are **not** — they still need a public URL and a tunnel.
 Slice B (TAT-104) is untouched.
 
 | Task | Status | Notes |
@@ -86,8 +138,9 @@ Slice B (TAT-104) is untouched.
 
 ### Carried forward
 
-1. **No Asaas credentials yet.** Everything is verified against a fake; nothing
-   has touched sandbox. The blockers below are still open.
+1. ~~**No Asaas credentials yet.**~~ **Superseded 2026-09-28** by the sandbox
+   validation above. What is still unverified is narrower: the onboarding round
+   trip driven from the app, and both webhooks actually delivered by Asaas.
 2. **`POST /webhooks/asaas` accepts `PAYMENT_*` and ignores it** so Asaas does
    not retry for days. B8 replaces that branch with the real dispatch.
 3. **`DOCUMENT_REQUIRES_ONBOARDING_URL` carries the url in `HttpError.details`,

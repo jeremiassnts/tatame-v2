@@ -47,6 +47,26 @@ Stripe stays for the manager subscription only.
 **Implication:** an academy without an approved payout account has no automatic
 payment at all — only manual confirmation by the manager.
 
+## D5 — Manual settlement versus an open Asaas charge
+
+**Decision:** confirming a month by hand cancels the open Asaas charge for that
+month.
+
+**Found in the sandbox, not in the docs:** `POST /v3/payments/{id}/receiveInCash`
+leaves the charge at `RECEIVED_IN_CASH` with `netValue` equal to the gross, and
+marks the split `CANCELLED` with `cancellationReason: PAYMENT_RECEIVED_IN_CASH`.
+The subaccount balance stays at zero. That is correct on Asaas's side — no money
+moved through the rail — but it means a manual confirmation credits the academy
+nothing through the split, and the charge stays payable.
+
+**Implication:** the manager's existing manual confirmation has to cancel the
+Asaas charge, or a student can pay a Pix for a month already settled and the
+money lands in the subaccount with no payment row to match it.
+
+**Rejected:** blocking manual confirmation while a charge is open — the manager
+takes cash at the counter and cannot be told to wait. Also rejected: leaving both
+alive, which is the double-payment hole above.
+
 ## Open assumption (flagged, not blocking)
 
 Existing academies have plans and active subscriptions created before payout accounts
