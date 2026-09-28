@@ -6,10 +6,22 @@ import { managerFetch } from "@/lib/manager-api";
 
 type Subscription = {
   id: string;
+  plan: "free" | "pro" | string;
   status: "active" | "trialing" | "past_due" | "canceled" | string;
-  currentPeriodEnd: string;
+  currentPeriodEnd: string | null;
+  subscribedAt: string;
   createdAt: string;
   canceledAt: string | null;
+};
+
+/**
+ * The card used to hardcode "Pro" and "R$49". An account on the retired free
+ * plan therefore read as a paying Pro subscriber, which is exactly how a
+ * declined card looked like an active subscription.
+ */
+const PLAN_LABELS: Record<string, { name: string; price: string | null }> = {
+  pro: { name: "Pro", price: "R$49" },
+  free: { name: "Gratuito", price: null },
 };
 
 type BillingPortalResponse = { url: string };
@@ -34,6 +46,10 @@ function StatusBadge({ status }: { status: string }) {
       label: "Cancelado",
       className: "bg-red-500/20 text-red-400",
     },
+    incomplete: {
+      label: "Pagamento não confirmado",
+      className: "bg-red-500/20 text-red-400",
+    },
   };
 
   const config = map[status] ?? {
@@ -50,8 +66,16 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("pt-BR", {
+/**
+ * Returns "—" for a missing or unparseable date. Without this a null
+ * `currentPeriodEnd` rendered as "31 de dezembro de 1969" — `new Date(null)`
+ * is the epoch, not an error.
+ */
+function formatDate(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "long",
     year: "numeric",
@@ -231,6 +255,10 @@ export default function AssinaturaPage() {
   }
 
   const isCanceled = Boolean(subscription?.canceledAt);
+  const planInfo = PLAN_LABELS[subscription?.plan ?? ""] ?? {
+    name: subscription?.plan ?? "—",
+    price: null,
+  };
 
   return (
     <>
@@ -259,16 +287,18 @@ export default function AssinaturaPage() {
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <span className="font-[family-name:var(--font-sora)] text-xl font-bold text-text-primary">
-                  Pro
+                  {planInfo.name}
                 </span>
                 <StatusBadge status={subscription.status} />
               </div>
-              <span className="text-lg font-semibold text-text-primary">
-                R$49
-                <span className="text-sm font-normal text-text-secondary">
-                  /mês
+              {planInfo.price && (
+                <span className="text-lg font-semibold text-text-primary">
+                  {planInfo.price}
+                  <span className="text-sm font-normal text-text-secondary">
+                    /mês
+                  </span>
                 </span>
-              </span>
+              )}
             </div>
 
             {/* Divider */}
@@ -291,7 +321,7 @@ export default function AssinaturaPage() {
                   Assinante desde
                 </span>
                 <span className="text-sm font-medium text-text-primary">
-                  {formatDate(subscription.createdAt)}
+                  {formatDate(subscription.subscribedAt ?? subscription.createdAt)}
                 </span>
               </div>
               {isCanceled && subscription.canceledAt && (

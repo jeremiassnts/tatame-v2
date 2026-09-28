@@ -24,7 +24,7 @@ import { PostgresManagerSubscriptionRepository } from "../manager-subscription/m
 import { ManagerSubscriptionService } from "../manager-subscription/manager-subscription.service.js";
 import { PostgresMembershipRepository } from "../membership/membership.repository.postgres.js";
 import { PostgresUserRepository } from "../user/user.repository.postgres.js";
-import { getStripe } from "../../lib/stripe.js";
+import { getStripeOrNull } from "../../lib/stripe.js";
 import { PostgresAcademyRepository } from "./academy.repository.postgres.js";
 import { AcademyService } from "./academy.service.js";
 
@@ -36,9 +36,7 @@ const userRepo = new PostgresUserRepository(db);
 const subRepo = new PostgresManagerSubscriptionRepository(db);
 
 function getManagerSubService() {
-  let stripe = null;
-  try { stripe = getStripe(); } catch { /* Stripe not configured */ }
-  return new ManagerSubscriptionService(subRepo, academyRepo, stripe);
+  return new ManagerSubscriptionService(subRepo, academyRepo, getStripeOrNull());
 }
 
 const academyService = new AcademyService(

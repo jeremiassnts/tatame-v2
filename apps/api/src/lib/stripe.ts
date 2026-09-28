@@ -25,3 +25,16 @@ export function getStripe(): Stripe {
   return stripeInstance;
 }
 
+/**
+ * Stripe when it is configured, `null` when it is not. Read paths that merely
+ * construct a service holding a Stripe handle must not 500 on a missing
+ * payment secret — the service already answers 503 from the methods that
+ * genuinely need Stripe.
+ */
+export function getStripeOrNull(): Stripe | null {
+  try {
+    return getStripe();
+  } catch {
+    return null;
+  }
+}

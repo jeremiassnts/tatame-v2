@@ -157,24 +157,6 @@ export class ManagerSubscriptionService {
     });
   }
 
-  async createFree(academyId: string): Promise<ManagerSubscriptionRow> {
-    const existing = await this.subRepo.findByAcademyId(academyId);
-    if (existing) {
-      throw new HttpError(409, "Uma conta já existe para esta academia.");
-    }
-
-    return this.subRepo.create({
-      academyId,
-      plan: "free",
-      status: "active",
-      stripeCustomerId: null,
-      stripeSubscriptionId: null,
-      stripePriceId: null,
-      currentPeriodEnd: null,
-      trialEndsAt: null,
-    });
-  }
-
   async getLimits(academyId: string) {
     const sub = await this.subRepo.findByAcademyId(academyId);
     if (!sub) {

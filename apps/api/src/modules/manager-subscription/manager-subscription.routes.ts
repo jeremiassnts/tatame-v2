@@ -3,7 +3,7 @@ import { Role } from "@tatame/types";
 import { Router } from "express";
 import { getDb } from "../../lib/db.js";
 import { HttpError } from "../../lib/http-error.js";
-import { getStripe } from "../../lib/stripe.js";
+import { getStripe, getStripeOrNull } from "../../lib/stripe.js";
 import {
   attachActiveAcademyContext,
   requireActiveAcademy,
@@ -65,7 +65,7 @@ function getService() {
   return new ManagerSubscriptionService(
     subRepo,
     acadRepo,
-    getStripe(),
+    getStripeOrNull(),
     membershipRepo,
     planRepo,
     classRepo,
@@ -104,22 +104,6 @@ managerSubscriptionRouter.get(
     try {
       const limits = await getService().getLimits(req.appAuth!.activeAcademyId!);
       res.json(limits);
-    } catch (e) {
-      next(e);
-    }
-  },
-);
-
-// POST /manager-subscriptions/free — create free plan for new managers
-managerSubscriptionRouter.post(
-  "/free",
-  authorize(Role.Manager),
-  attachActiveAcademyContext,
-  requireActiveAcademy,
-  async (req, res, next) => {
-    try {
-      const sub = await getService().createFree(req.appAuth!.activeAcademyId!);
-      res.status(201).json(sub);
     } catch (e) {
       next(e);
     }

@@ -37,11 +37,12 @@ export function requireActivePlan(
         return;
       }
 
-      if (
-        sub.status === "active" ||
-        sub.status === "trialing" ||
-        sub.status === "incomplete"
-      ) {
+      // `incomplete` means Stripe never got a successful payment for the
+      // subscription — a declined card lands here. Letting it through was the
+      // second way an unpaid account reached the manager panel. The gap between
+      // checkout and webhook confirmation is covered by `trialing`, which is
+      // what a completed checkout produces given the 30-day trial.
+      if (sub.status === "active" || sub.status === "trialing") {
         req.appAuth = {
           ...req.appAuth,
           managerPlan: sub.plan,

@@ -30,6 +30,25 @@ export async function insertFreeSubscription(
   });
 }
 
+/**
+ * A manager subscription in an arbitrary state, for tests that care about the
+ * plan gate rather than about having any subscription at all.
+ */
+export async function insertSubscription(
+  db: Database,
+  academyId: string,
+  opts: {
+    plan?: "free" | "pro";
+    status?: "active" | "trialing" | "past_due" | "canceled" | "incomplete";
+  } = {},
+) {
+  await db.insert(managerSubscriptions).values({
+    academyId,
+    plan: opts.plan ?? "pro",
+    status: opts.status ?? "active",
+  });
+}
+
 export async function insertUserWithoutRole(db: Database, clerkUserId: string) {
   const u = makeUser({ clerkUserId });
   await db.insert(users).values(u);

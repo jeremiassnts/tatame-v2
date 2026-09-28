@@ -1,5 +1,5 @@
 import { useApi } from "@/lib/api";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 export type ManagerSubscription = {
   id: string;
@@ -40,18 +40,5 @@ export function useManagerLimits() {
   return useQuery({
     queryKey: ["manager-limits"],
     queryFn: () => api.get<ManagerLimits>("/manager-subscriptions/limits"),
-  });
-}
-
-export function useSelectFreePlan() {
-  const api = useApi();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: () => api.post<ManagerSubscription>("/manager-subscriptions/free"),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["manager-subscription"] });
-      queryClient.invalidateQueries({ queryKey: ["manager-limits"] });
-    },
   });
 }
