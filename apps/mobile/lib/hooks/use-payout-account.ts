@@ -130,7 +130,20 @@ export function useCreatePayoutAccount() {
   return useMutation({
     mutationFn: (body: CreatePayoutAccountInput) =>
       api.post<{ account: PayoutAccount }>("/payout-account", body),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      /*
+        Written, not just invalidated. The dashboard card reads this same query
+        to decide whether to offer onboarding, so by the time a manager reaches
+        this form the cache already holds `account: null`. Invalidating marks
+        that stale but keeps serving it until a refetch lands — and the
+        documents screen we navigate to next redirects straight back here when
+        it reads no account, landing the manager on an empty form seconds after
+        Asaas e-mailed them about the account they just opened.
+
+        The response carries the account that was created, so there is nothing
+        to wait for.
+      */
+      queryClient.setQueryData(accountKey, data);
       // Exact, so a fresh account does not also refetch the fees — they are
       // platform-wide and a 503 there is not worth re-triggering here.
       queryClient.invalidateQueries({ queryKey: accountKey, exact: true });
