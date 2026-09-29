@@ -326,10 +326,13 @@ charge: `POST /v1/payments/pix` and `POST /v1/payments/checkout`. Nothing
 records a payment yet — that is B6 and B8, and until they land a student can
 pay in the sandbox and no `payments` row appears.
 
-**Migration `0022_awesome_masque` is not yet applied to the Coolify database.**
-`0021` is. 0022 is purely additive (a `pending_asaas_kind` enum and a
-defaulted column) and its `when` is newer than 0021's, so it applies alone and
-cleanly despite the `__drizzle_migrations` bookkeeping gap described below.
+**Migrations `0021_yummy_gambit` and `0022_awesome_masque` are both applied to
+the Coolify database** (2026-09-29). 0022 was purely additive — a
+`pending_asaas_kind` enum and a defaulted column — and its `when` is newer than
+0021's, so it applied alone and cleanly despite the `__drizzle_migrations`
+bookkeeping gap described below, adding row 19. Verified against the database:
+`pending_asaas_payments.kind` exists as `pending_asaas_kind NOT NULL DEFAULT
+'payment'`, and the enum holds exactly `payment` and `checkout`.
 
 | Task | Status | Notes |
 | --- | --- | --- |
