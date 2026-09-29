@@ -408,6 +408,15 @@ And three from B4:
    through `cancelAsaasHandle`, and the mutation that made it ignore `kind` is
    caught by three tests.
 
+6b. **From B5 — the two rails disagree about a charge that was already paid.**
+   `DELETE /v3/payments/{id}` on a paid charge answers 400 `invalid_action` ("Só é
+   possível remover cobranças pendentes ou vencidas"), and `deletePayment` swallows
+   only 404 — so a manual confirmation for a month already paid by Pix is blocked.
+   `POST /v3/checkouts/{id}/cancel` answers the *same* 400 for a paid session as for
+   an already-cancelled or expired one, so `cancelCheckout` must swallow it, and the
+   card rail proceeds instead. Once B6 lands that month carries two payment rows. It
+   is the same root cause as finding 6 below, and the same fix closes both.
+
 6. **`confirmManual` has no duplicate-month guard, and still does not.** Noted, not
    fixed — it is outside B4's line item. The spec's edge case ("WHEN a student pays
    exactly as the manager confirms the same month manually THEN the reference-month
