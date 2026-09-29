@@ -175,7 +175,7 @@ To tell a live tunnel from a dead one, ask for a route that exists:
 `curl -o /dev/null -w '%{http_code}' https://<domain>/v1/payout-account` answers **401**
 when the API is behind it and **404** when ngrok has nobody to forward to.
 
-### Migrations on the Coolify database — read before B1
+### Migrations on the Coolify database — settled by B1
 
 Drizzle decides what is missing from the `created_at` of the last registered migration,
 **not from the hash**. `0019_tutorials` was hand-written and its table created outside
@@ -186,6 +186,19 @@ run back — it runs in a single transaction. `0020` is applied now.
 hash belongs** (one of them literally `0007_overjoyed_k...`). Harmless while the hash is
 not compared, but it is hand-edited bookkeeping, and B1 adds the next migration on top
 of it. Look before running.
+
+**Looked, on 2026-09-29, and it is worse than the note said — and still harmless.** The
+table holds 17 rows against 21 journal entries: besides the three tagged rows, **0008,
+0009, 0014 and 0015 have no row at all**, their tables having been created outside
+drizzle the same way. None of it matters, because only the newest `created_at` is read.
+That was 0020's `1789220128881`; `0021_yummy_gambit` is `1790687505908`, so it applied
+alone and cleanly, adding row 18 with a real hash. `pending_asaas_payments`,
+`payments.asaas_payment_id` and `users.asaas_customer_id` are live on the Coolify
+database.
+
+The gap is only ever a problem for a migration that would *recreate* something already
+there. 0021 is purely additive, which is why it was safe to run without repairing the
+bookkeeping first.
 
 ### Objects already in the Asaas sandbox
 
@@ -216,7 +229,7 @@ finally driven through the app end to end**: form → account created → docume
 which stays, lists the group Asaas returned, and settles the status from Asaas on its
 own. What is still untested is everything only production exercises — a document group
 that actually needs a document, a rejection, and a suspension.
-Slice B (TAT-104) is untouched.
+**Slice B (TAT-104) — B1 and B2 done**, the persistence layer only; nothing calls it yet.
 
 | Task | Status | Notes |
 | --- | --- | --- |
@@ -240,6 +253,27 @@ Slice B (TAT-104) is untouched.
 | A18 | Done | unit coverage written per task |
 | A19 | Done | 8 integration tests against a fake Asaas |
 | A20 | Done | typecheck + lint + 559 unit + 61 integration green; mobile tsc adds 0 errors |
+
+### Slice B
+
+| Task | Status | Notes |
+| --- | --- | --- |
+| B1 | Done | migration `0021_yummy_gambit`, applied to the Coolify database |
+| B2 | Done | 16 integration tests; the contract runs against Postgres **and** in-memory |
+| B3-B13 | Pending | |
+
+Two things B2 decided that the task list did not spell out:
+
+1. **The repository contract is tested against both implementations.** The in-memory
+   repository is what every service unit test measures and Postgres is what production
+   runs; where they disagree the unit tests measure a fiction. `createPendingAsaas`
+   ignoring a repeat id is the concrete case — `onConflictDoNothing` in Postgres, and
+   in memory it had to be written to match. The unique constraint on
+   `payments.asaas_payment_id` is the one behaviour only Postgres can answer, so that
+   test is Postgres-only.
+2. **`findPendingAsaasBySubscriptionMonth` exists with no caller.** B4 needs it to hand
+   a student back the charge they already have open for the month instead of opening a
+   second one, and it is a query over the pending table, which is B2's half of the work.
 
 ### Carried forward
 
