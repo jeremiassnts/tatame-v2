@@ -109,3 +109,45 @@ academy has no path and the uploader has to come back; it is one `git revert` aw
 
 **Untouched:** a group carrying an `onboardingUrl` is still opened as a link, which is
 Asaas's own rule — it refuses every other channel for those.
+
+---
+
+## D7 — The student's document is typed, never stored
+
+**Decision (2026-09-29):** the student types their CPF/CNPJ on the payment screen the
+first time they pay. It goes straight to Asaas at customer creation and only the
+resulting `asaas_customer_id` comes back to us. From the second charge on, nobody is
+asked anything.
+
+**What forced the question:** the platform stores no document for anyone, and B3 could
+not be written without knowing where the student's would come from. The sandbox drew
+the line precisely:
+
+| Call | Result |
+| --- | --- |
+| `POST /v3/customers` with only a `name` | **200** — customer created, `cpfCnpj: null` |
+| `POST /v3/payments` for that customer | **400** — "Para criar esta cobrança é necessário preencher o CPF ou CNPJ do cliente." |
+| `POST /v3/customers/{id}` adding the document | 200 |
+| the same charge, retried | 200, `value 150,00 → netValue 149,01` |
+
+So the document is optional to *create* a customer and mandatory to *charge* one. The
+useless half of that pair is not worth being able to express, and `createCustomer`
+requires `cpfCnpj`.
+
+**Why not store it.** It is the same decision the design already took for the manager —
+"`cpfCnpj` — always typed; the platform stores no document today" — and `users`
+gains no column. B1 already put `asaas_customer_id` on `users`, which is exactly what
+makes the question a one-time one: the document lives at Asaas, keyed by an id we do
+hold.
+
+**Rejected:** a `users.cpf_cnpj` column, which would put a personal document on every
+student row to save a field the student sees once; and asking at signup or in the
+profile, which needs the same column and changes screens outside TAT-104.
+
+**The cost, accepted:** `POST /payments/pix` takes an optional `cpfCnpj`, required only
+when the student has no customer yet, and answers 400 `CPF_REQUIRED` when it is needed
+and missing. The mobile screen (B10) has to render that field and that error.
+
+**Also settled here:** customers are created with `notificationDisabled: true`. Asaas
+bills the customer by e-mail and SMS on its own, and the payment webhook already
+notifies and e-mails the student in wording we control.

@@ -143,6 +143,8 @@ receives the money directly.
 4. WHEN a charge already exists and is unpaid for the same subscription and reference month THEN the system SHALL return the existing charge instead of creating a duplicate
 5. WHEN the payment for the reference month was already confirmed THEN the system SHALL return 409
 6. WHEN the academy has no approved payout account THEN the system SHALL return 403 with code `PAYOUT_ACCOUNT_REQUIRED`
+7. WHEN the student has no Asaas customer yet THEN the system SHALL require their CPF/CNPJ, answering 400 with code `CPF_REQUIRED` when it is absent, since Asaas refuses to charge a customer without a document (D7)
+8. WHEN the student already has an Asaas customer THEN the system SHALL NOT ask for the document again, and the platform SHALL NOT store it at any point
 
 **Independent Test**: Pay the sandbox QR code and see the payment row appear with the split recorded.
 
@@ -235,7 +237,7 @@ and see statements.
 | PAYOUT-07 | P1: Gate plan creation and enrollment | TAT-179 | Implemented | Done |
 | PAYOUT-08 | P2: Financeiro dashboard card | TAT-179 | Implemented | Done |
 | PAYOUT-09 | P3: Link to the Asaas account | TAT-179 | Implemented | Done |
-| SPLIT-01 | P1: Asaas customer per student | TAT-104 | Design | Pending |
+| SPLIT-01 | P1: Asaas customer per student | TAT-104 | Implemented | Service done (B3), no caller until B4 |
 | SPLIT-02 | P1: Pix charge with 100% split | TAT-104 | Design | Pending |
 | SPLIT-03 | P1: Card checkout with 100% split | TAT-104 | Design | Pending |
 | SPLIT-04 | P1: Webhook reconciliation and idempotency | TAT-104 | Design | Pending |

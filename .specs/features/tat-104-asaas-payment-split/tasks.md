@@ -213,6 +213,8 @@ allows only 10 subaccounts and **7 are used**.
 | Customer (fictional student) | `cus_000009262465` |
 | Pix charge, pending, with a valid QR code | `pay_v2s11oiq3q4gcirb` |
 | Charge settled by hand, split `CANCELLED` | `pay_to6xc4jjssi0847w` |
+| Customer created with **no document**, then patched with one (D7 probe) | `cus_000009273325` |
+| Pix charge that only succeeded after that patch | `pay_flhul7uhgq4drw4d` |
 
 The last one is the evidence behind D5: `receiveInCash` leaves the split
 `CANCELLED` with `cancellationReason: PAYMENT_RECEIVED_IN_CASH` and the subaccount
@@ -260,7 +262,8 @@ that actually needs a document, a rejection, and a suspension.
 | --- | --- | --- |
 | B1 | Done | migration `0021_yummy_gambit`, applied to the Coolify database |
 | B2 | Done | 16 integration tests; the contract runs against Postgres **and** in-memory |
-| B3-B13 | Pending | |
+| B3 | Done | `asaas-customer.service.ts`, 9 unit tests; client gained `createCustomer` / `findCustomerByExternalReference`, 6 more |
+| B4-B13 | Pending | |
 
 Two things B2 decided that the task list did not spell out:
 
@@ -274,6 +277,15 @@ Two things B2 decided that the task list did not spell out:
 2. **`findPendingAsaasBySubscriptionMonth` exists with no caller.** B4 needs it to hand
    a student back the charge they already have open for the month instead of opening a
    second one, and it is a query over the pending table, which is B2's half of the work.
+
+And one the sandbox forced open during B3:
+
+3. **The student's CPF had no source.** Asaas creates a customer from a name alone and
+   then refuses to charge it. The platform stores no document for anyone, so B3 could
+   not be written until that was decided — see **D7**: typed on the payment screen,
+   sent straight to Asaas, never stored, asked exactly once per student. It adds an
+   optional `cpfCnpj` to `POST /payments/pix` (B4) and a field plus a `CPF_REQUIRED`
+   error to the mobile screen (B10).
 
 ### Carried forward
 
