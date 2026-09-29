@@ -95,20 +95,50 @@ const paymentHandler = new AsaasPaymentWebhookHandler(
 
 type AsaasWebhookEvent = AsaasAccountStatusEvent & AsaasPaymentEvent;
 
+/**
+ * Which token a delivery has to carry, decided by the stream it belongs to.
+ *
+ * The two registrations cost very different things to rotate. Both can be
+ * changed in place with `PUT /v3/webhooks/{id}`, but the account-status token
+ * lives on every subaccount, so rotating it means iterating each academy and
+ * decrypting its stored key — code that does not exist. The root webhook is
+ * one registration and one call. Binding the money stream to its own value is
+ * what keeps it cheap to rotate.
+ *
+ * An event belonging to neither stream is accepted on either token — it is
+ * going to be reported as unhandled anyway, and guessing which registration
+ * sent it would just turn a report into a 401.
+ */
+function tokensFor(
+  type: string,
+  env: { ASAAS_WEBHOOK_TOKEN?: string; ASAAS_PAYMENT_WEBHOOK_TOKEN?: string },
+): string[] {
+  const account = env.ASAAS_WEBHOOK_TOKEN!;
+  // Falling back keeps an environment that never split them working.
+  const payment = env.ASAAS_PAYMENT_WEBHOOK_TOKEN ?? account;
+
+  if (type.startsWith(ACCOUNT_STATUS_EVENT_PREFIX)) return [account];
+  if (type.startsWith(PAYMENT_EVENT_PREFIX)) return [payment];
+  return [account, payment];
+}
+
 asaasWebhookRouter.post("/", async (req, res, next) => {
   try {
     const env = loadEnv();
     if (!env.ASAAS_WEBHOOK_TOKEN) {
       throw new HttpError(503, "Webhook do Asaas não está configurado");
     }
+    // Read before authenticating, because which token is expected depends on
+    // the stream. It is already-parsed JSON either way — nothing acts on it
+    // until the check below passes.
+    const event = req.body as AsaasWebhookEvent;
+    const type = event?.event ?? "";
+
     const token = req.get("asaas-access-token");
-    if (token !== env.ASAAS_WEBHOOK_TOKEN) {
+    if (token === undefined || !tokensFor(type, env).includes(token)) {
       // Deliberately terse: an attacker learns nothing from a 401 body.
       throw new HttpError(401, "Unauthorized");
     }
-
-    const event = req.body as AsaasWebhookEvent;
-    const type = event?.event ?? "";
 
     // Two streams share one url because Asaas delivers per registered webhook,
     // not per path: `ACCOUNT_STATUS_*` from each academy's subaccount, and

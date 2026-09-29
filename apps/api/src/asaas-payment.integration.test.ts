@@ -27,6 +27,7 @@ import { setupIntegrationTest } from "./testing/integration-setup.js";
 const CLERK_MANAGER = "user_integration_asaaspay_mgr";
 const CLERK_STUDENT = "user_integration_asaaspay_std";
 const WEBHOOK_TOKEN = "w".repeat(40);
+const PAYMENT_TOKEN = "p".repeat(40);
 
 const CHECKOUT_ID = "6153e592-5def-41b6-a3bc-c160306eb25a";
 
@@ -124,6 +125,7 @@ describe("Asaas payment webhook integration", () => {
       "ASAAS_API_KEY",
       "ASAAS_BASE_URL",
       "ASAAS_WEBHOOK_TOKEN",
+      "ASAAS_PAYMENT_WEBHOOK_TOKEN",
       "API_PUBLIC_URL",
     ]) {
       originalEnv[key] = process.env[key];
@@ -131,6 +133,7 @@ describe("Asaas payment webhook integration", () => {
     process.env.ASAAS_API_KEY = "$aact_root_integration";
     process.env.ASAAS_BASE_URL = "https://api-sandbox.asaas.test";
     process.env.ASAAS_WEBHOOK_TOKEN = WEBHOOK_TOKEN;
+    process.env.ASAAS_PAYMENT_WEBHOOK_TOKEN = PAYMENT_TOKEN;
     process.env.API_PUBLIC_URL = "https://api.tatame.test";
 
     ctx = await setupIntegrationTest();
@@ -205,10 +208,10 @@ describe("Asaas payment webhook integration", () => {
     };
   }
 
-  const deliver = (body: object) =>
+  const deliver = (body: object, token: string = PAYMENT_TOKEN) =>
     request(app)
       .post("/v1/webhooks/asaas")
-      .set("asaas-access-token", WEBHOOK_TOKEN)
+      .set("asaas-access-token", token)
       .send(body);
 
   it("takes a Pix charge from QR code to a payment row", async () => {
@@ -320,14 +323,59 @@ describe("Asaas payment webhook integration", () => {
     asClerkUser(CLERK_STUDENT);
     await request(app).post("/v1/payments/pix").send({ cpfCnpj: "41763193640" });
 
-    const forged = await request(app)
-      .post("/v1/webhooks/asaas")
-      .set("asaas-access-token", "not-the-token")
-      .send(paymentEvent());
+    const forged = await deliver(paymentEvent(), "not-the-token");
     expect(forged.status).toBe(401);
 
     asClerkUser(CLERK_MANAGER);
     expect((await request(app).get("/v1/payments")).body.items).toHaveLength(0);
+  });
+
+  // The two registrations are rotated independently, so the account-status
+  // token must not open the money stream. Getting this backwards fails the
+  // expensive way: every payment 401s in silence and Asaas eventually
+  // interrupts the webhook.
+  it("refuses a payment delivery carrying the account-status token", async () => {
+    await seedEnrolledStudent();
+
+    asClerkUser(CLERK_STUDENT);
+    await request(app).post("/v1/payments/pix").send({ cpfCnpj: "41763193640" });
+
+    const wrongStream = await deliver(paymentEvent(), WEBHOOK_TOKEN);
+    expect(wrongStream.status).toBe(401);
+
+    asClerkUser(CLERK_MANAGER);
+    expect((await request(app).get("/v1/payments")).body.items).toHaveLength(0);
+  });
+
+  it("accepts a payment delivery carrying the payment token", async () => {
+    await seedEnrolledStudent();
+
+    asClerkUser(CLERK_STUDENT);
+    await request(app).post("/v1/payments/pix").send({ cpfCnpj: "41763193640" });
+
+    expect((await deliver(paymentEvent(), PAYMENT_TOKEN)).status).toBe(200);
+
+    asClerkUser(CLERK_MANAGER);
+    expect((await request(app).get("/v1/payments")).body.items).toHaveLength(1);
+  });
+
+  // An environment that never split the two tokens has to keep working, or
+  // this change would silently 401 every payment the moment it deploys.
+  it("falls back to the account token when no payment token is configured", async () => {
+    await seedEnrolledStudent();
+
+    asClerkUser(CLERK_STUDENT);
+    await request(app).post("/v1/payments/pix").send({ cpfCnpj: "41763193640" });
+
+    delete process.env.ASAAS_PAYMENT_WEBHOOK_TOKEN;
+    try {
+      expect((await deliver(paymentEvent(), WEBHOOK_TOKEN)).status).toBe(200);
+    } finally {
+      process.env.ASAAS_PAYMENT_WEBHOOK_TOKEN = PAYMENT_TOKEN;
+    }
+
+    asClerkUser(CLERK_MANAGER);
+    expect((await request(app).get("/v1/payments")).body.items).toHaveLength(1);
   });
 
   // D5 deletes the month's open charge on every manual settlement. The

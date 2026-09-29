@@ -358,12 +358,9 @@ session, so they would be a second delivery saying the same thing.
 
 ### Telling one environment's deliveries from another's
 
-The webhook token is **not** what separates environments, and it cannot be: it
-is written into each subaccount at creation by `buildWebhooks`, which has one
-caller and no re-registration path, so rotating `ASAAS_WEBHOOK_TOKEN` would
-silently 401 every academy's account-status webhook forever. Copying config
-between environments copies the token with it, which is exactly the mistake
-that causes a cross-environment delivery in the first place.
+The webhook token is **not** what separates environments: copying config
+between them copies the token with it, which is exactly the mistake that causes
+a cross-environment delivery in the first place.
 
 What separates them is the account id on the delivery. `GET /v3/myAccount/status`
 on the root key returns the same id a `PAYMENT_*` event carries in
@@ -386,6 +383,34 @@ Also checked, and it is why no academy can forge a delivery: **the auth token
 is never readable back.** `GET /v3/webhooks` and `GET /v3/webhooks/{id}` both
 answer `hasAuthToken: true` with no `authToken` field, on the list and on the
 single read.
+
+### Two webhook tokens
+
+| Variable | Registered on | Rotating it |
+| --- | --- | --- |
+| `ASAAS_WEBHOOK_TOKEN` | every academy's subaccount, by `buildWebhooks` at creation | `PUT /v3/webhooks/{id}` per academy, each needing its stored key decrypted — **no code does this** |
+| `ASAAS_PAYMENT_WEBHOOK_TOKEN` | the root account, by hand | one `PUT`; falls back to the above when unset |
+
+The route picks the expected token from the event prefix: `ACCOUNT_STATUS_*`
+must carry the account token, `PAYMENT_*` the payment one. An event belonging
+to neither is accepted on either, since it is going to be reported as
+unhandled anyway and guessing which registration sent it would turn a report
+into a 401.
+
+The failure mode to respect is that a wrong value **401s in silence** and Asaas
+eventually interrupts the webhook, so both directions are pinned by tests and
+mutation-checked, and the fallback has a test of its own — an environment that
+never split them must keep working.
+
+**`PUT /v3/webhooks/{id}` with only `authToken` rotates a token in place** and
+preserves url, events, `sendType` and `enabled`. Verified against the sandbox
+on 2026-09-29. This is also the correction to an earlier claim here that the
+account-status token could not be rotated at all: it can, it just costs a pass
+over every academy.
+
+**Use a different value per environment.** The `FOREIGN_ACCOUNT` guard below
+catches a crossed delivery even when the tokens match, but there is no reason
+to lean on it.
 
 ### What has to exist in the Asaas account
 
