@@ -109,3 +109,136 @@ academy has no path and the uploader has to come back; it is one `git revert` aw
 
 **Untouched:** a group carrying an `onboardingUrl` is still opened as a link, which is
 Asaas's own rule — it refuses every other channel for those.
+
+---
+
+## D7 — The student's document is typed, never stored
+
+**Decision (2026-09-29):** the student types their CPF/CNPJ on the payment screen the
+first time they pay. It goes straight to Asaas at customer creation and only the
+resulting `asaas_customer_id` comes back to us. From the second charge on, nobody is
+asked anything.
+
+**What forced the question:** the platform stores no document for anyone, and B3 could
+not be written without knowing where the student's would come from. The sandbox drew
+the line precisely:
+
+| Call | Result |
+| --- | --- |
+| `POST /v3/customers` with only a `name` | **200** — customer created, `cpfCnpj: null` |
+| `POST /v3/payments` for that customer | **400** — "Para criar esta cobrança é necessário preencher o CPF ou CNPJ do cliente." |
+| `POST /v3/customers/{id}` adding the document | 200 |
+| the same charge, retried | 200, `value 150,00 → netValue 149,01` |
+
+So the document is optional to *create* a customer and mandatory to *charge* one. The
+useless half of that pair is not worth being able to express, and `createCustomer`
+requires `cpfCnpj`.
+
+**Why not store it.** It is the same decision the design already took for the manager —
+"`cpfCnpj` — always typed; the platform stores no document today" — and `users`
+gains no column. B1 already put `asaas_customer_id` on `users`, which is exactly what
+makes the question a one-time one: the document lives at Asaas, keyed by an id we do
+hold.
+
+**Rejected:** a `users.cpf_cnpj` column, which would put a personal document on every
+student row to save a field the student sees once; and asking at signup or in the
+profile, which needs the same column and changes screens outside TAT-104.
+
+**The cost, accepted:** `POST /payments/pix` takes an optional `cpfCnpj`, required only
+when the student has no customer yet, and answers 400 `CPF_REQUIRED` when it is needed
+and missing. The mobile screen (B10) has to render that field and that error.
+
+**Also settled here:** customers are created with `notificationDisabled: true`. Asaas
+bills the customer by e-mail and SMS on its own, and the payment webhook already
+notifies and e-mails the student in wording we control.
+
+---
+
+## D8 — The card rail does not use the student's Asaas customer
+
+**Decision (2026-09-29):** the Asaas checkout is created with no customer
+attached. The student identifies themselves on the Asaas page, which mints a
+customer of its own. `POST /payments/checkout` therefore takes no `cpfCnpj` and
+never calls `ensureCustomer`.
+
+**What forced it.** B5 was expected to reuse B3's `ensureCustomer` wholesale.
+The sandbox refused:
+
+| Call | Result |
+| --- | --- |
+| `POST /v3/checkouts` with `customer: cus_000009262465` | **400** — `address`, `addressNumber`, `postalCode`, `province`, `city` "deve existir para o customer informado" |
+| the same with `customerData: {name, cpfCnpj, email}` | **400** — the same five, plus `phoneNumber` |
+| with neither | **200** — the Asaas page collects identification, address and card |
+
+Our customers are a name and a document and nothing else (D7), and the platform
+holds no address for a student. So the only customer a checkout will accept is
+one we cannot build.
+
+**This narrows D7 rather than replacing it.** D7 still holds for Pix, which is
+where `asaas_customer_id` is written and reused. Card is simply a rail the
+question is never asked on — the student types the same data into Asaas's form
+instead of ours. A student who has only ever paid by card has no
+`asaas_customer_id`, and their first Pix charge will ask for the document then.
+
+**Rejected:** collecting an address to make the binding possible — it is a
+screen and a column for no benefit the student can see, since Asaas asks for
+the address on its own page regardless. Also rejected: sending a placeholder
+address, which is inventing data about a person.
+
+**The cost, accepted:** a student who pays by card has two customer records at
+Asaas over time, one per rail, and the platform can only ever see the Pix one.
+Reconciliation does not go through the customer — it goes through
+`payment.checkoutSession` and the pending row — so nothing downstream depends
+on them being the same.
+
+## D9 — A month is guarded in the service, not by a constraint
+
+**Decided 2026-09-29, closing open decisions 1 and 3.**
+
+The spec's edge case — "WHEN a student pays exactly as the manager confirms the
+same month manually THEN the reference-month uniqueness SHALL keep a single
+payment row" — assumed a uniqueness constraint on
+`payments (subscription_id, reference_month)` that has never existed. Two paths
+could write a second row for one month:
+
+1. `confirmManual` never asked. `createPixCharge` and `createCheckout` both ask
+   `existsForSubscriptionReferenceMonth` through `openChargeContext`; the one
+   path a human drives by hand did not.
+2. The webhook could not see it. `findByAsaasPaymentId` makes an Asaas
+   *redelivery* a no-op; it says nothing about a payment recorded through
+   another rail. And the card rail has no way to avoid this: `cancelCheckout`
+   must swallow Asaas's 400 for an already-paid session because it is the same
+   400 an expired or already-cancelled session gives, so the student's card
+   payment still arrives against a month a manual confirmation already closed.
+
+Both ask now. `confirmManual` throws the same 409 the charge paths do, and
+**before** D5's cancellation — a month that is already paid is a request to
+reject, and rejecting it must not cancel the student's open charge as a side
+effect. That ordering also replaces the symptom recorded under finding 6b: the
+manager used to get Asaas's "Só é possível remover cobranças pendentes ou
+vencidas" back from the failed `deletePayment`, and now gets the API's own 409.
+
+The webhook reports `payment.webhook_unhandled` / `DUPLICATE_MONTH` and writes
+nothing. Unlike the two drops beside it in the catalog this is not money lost —
+the split already put it in the academy's wallet. What is wrong is that the
+student paid one month twice, and only a human can decide whether that gets
+refunded, which is why it is reported rather than dropped quietly. The pending
+row is deliberately left in place: deleting it would make a redelivery report
+`NO_PENDING_CHARGE`, the wrong story and the louder alert.
+
+**No unique constraint, on purpose.** `payment.reversed` writes nothing, so a
+refunded month keeps its payment row — and a constraint would stop that student
+from ever paying that month again.
+
+The "zero duplicates, zero nulls" check that first justified calling the
+migration safe was run against a **development** database mistaken for
+production, and has been withdrawn. Nobody has asked production whether the
+pair is unique today, which only strengthens the choice: a constraint would
+have to survive whatever history is actually there, and the service guard does
+not. The service guard is reversible; the constraint is the one that turns a
+refund into a dead end.
+
+What this does not close is two concurrent writes. Nothing serialises
+`confirmManual` against the webhook, so a simultaneous pair can still produce
+two rows. That is the case a constraint *would* close, and it is the trade
+above: a rare race against a permanent block on re-paying a refunded month.

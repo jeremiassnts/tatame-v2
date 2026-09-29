@@ -92,7 +92,9 @@ export class StripeCheckoutWebhookHandler {
       userId: meta.userId,
       academyId: meta.academyId,
       amountCents: session.amount_total ?? 0,
-      method: "stripe",
+      // The column says how the student paid, not who processed it. Stripe is
+      // the provider; `stripe_payment_id` below is what records that.
+      method: "card",
       confirmedBy: null,
       stripePaymentId: paymentIntentId ?? session.id,
       referenceMonth: meta.referenceMonth,
@@ -106,7 +108,7 @@ export class StripeCheckoutWebhookHandler {
       academyId: payment.academyId,
       paymentId: payment.id,
       subscriptionId: payment.subscriptionId,
-      extra: { method: "stripe", amountCents: payment.amountCents },
+      extra: { method: "card", amountCents: payment.amountCents },
     });
 
     // Push notifications

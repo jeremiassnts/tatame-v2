@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export function FooterV2() {
   return (
@@ -23,9 +24,9 @@ export function FooterV2() {
           <div className="flex gap-20">
             <nav aria-label="Produto" className="flex flex-col gap-4">
               <h3 className="text-[13px] font-bold text-white">Produto</h3>
-              <a href="/" className="text-[13px] text-text-secondary hover:text-white">
+              <Link href="/" className="text-[13px] text-text-secondary hover:text-white">
                 Início
-              </a>
+              </Link>
               <a href="#recursos" className="text-[13px] text-text-secondary hover:text-white">
                 Recursos
               </a>

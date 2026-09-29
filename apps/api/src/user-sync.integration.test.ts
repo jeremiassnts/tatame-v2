@@ -134,6 +134,39 @@ describe("User sync integration", () => {
     });
   });
 
+  /**
+   * What the Pix screen renders its CPF field from. Asaas refuses to charge a
+   * customer with no document and the platform stores none (D7), so the student
+   * types it — but only ever on the first charge, because `ensureCustomer`
+   * returns early once `asaas_customer_id` is set and ignores the value sent.
+   *
+   * The flag exists so the screen can ask up front instead of asking always
+   * (monthly friction for a value the API throws away) or asking only after a
+   * `CPF_REQUIRED` 400 (an error on the normal path). Only ever a boolean —
+   * the document itself is never stored and never served.
+   */
+  it("GET /v1/users/me asks for a document from a student with no Asaas customer", async () => {
+    await request(app).post("/v1/users/me/sync").send({ role: "student" });
+
+    const me = await request(app).get("/v1/users/me");
+
+    expect(me.status).toBe(200);
+    expect(me.body.documentRequired).toBe(true);
+  });
+
+  it("GET /v1/users/me stops asking once the student has an Asaas customer", async () => {
+    await request(app).post("/v1/users/me/sync").send({ role: "student" });
+    const before = await request(app).get("/v1/users/me");
+
+    await ctx.db
+      .update(users)
+      .set({ asaasCustomerId: "cus_000009262465" })
+      .where(eq(users.id, before.body.id));
+
+    const me = await request(app).get("/v1/users/me");
+    expect(me.body.documentRequired).toBe(false);
+  });
+
   // ── PATCH /v1/users/me ──────────────────────────────────────────────
 
   it("PATCH /v1/users/me returns 404 when user not synced", async () => {

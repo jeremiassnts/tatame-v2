@@ -42,6 +42,11 @@ function buildMeResponse(
     activeRole,
     activeAcademy,
     hasPendingSubscription: !!row.pendingStripeCustomerId,
+    // Stale only in the rare case the recovery lookup in `ensureCustomer`
+    // finds a customer this column never recorded. Then the screen asks for a
+    // document it does not need and the service ignores it — much cheaper than
+    // the reverse.
+    documentRequired: !row.asaasCustomerId,
     activeMembership,
   });
 }

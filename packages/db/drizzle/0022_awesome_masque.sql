@@ -1,0 +1,2 @@
+CREATE TYPE "public"."pending_asaas_kind" AS ENUM('payment', 'checkout');--> statement-breakpoint
+ALTER TABLE "pending_asaas_payments" ADD COLUMN "kind" "pending_asaas_kind" DEFAULT 'payment' NOT NULL;

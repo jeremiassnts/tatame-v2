@@ -87,7 +87,7 @@ export default function DependentPaymentHistoryScreen() {
                   {formatMonth(item.referenceMonth)}
                 </Text>
                 <Text className="font-poppins text-xs" style={{ color: TEXT_MUTED }}>
-                  {formatDate(item.paidAt)} · {item.method === "pix" ? "PIX" : item.method === "stripe" ? "Cartão" : "Manual"}
+                  {formatDate(item.paidAt)} · {item.method === "pix" ? "PIX" : item.method === "card" ? "Cartão" : "Manual"}
                 </Text>
               </View>
               <Text className="font-poppins-semibold text-sm" style={{ color: "#32D74B" }}>

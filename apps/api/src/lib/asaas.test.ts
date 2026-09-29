@@ -251,4 +251,422 @@ describe("AsaasClient", () => {
       expect(fees.payment.creditCard.daysToReceive).toBe(30);
     });
   });
+
+  describe("customers", () => {
+    // The payload pinned here is the sandbox's own answer on 2026-09-29, down
+    // to the nulls it fills every unsent field with.
+    const SANDBOX_CUSTOMER = {
+      object: "customer",
+      id: "cus_000009273325",
+      dateCreated: "2026-09-29",
+      name: "Aluno Sem Documento B3",
+      email: null,
+      cpfCnpj: null,
+      personType: null,
+      externalReference: "probe-no-cpf",
+      deleted: false,
+      country: "Brasil",
+    };
+
+    it("creates a customer on the root account", async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse(200, { ...SANDBOX_CUSTOMER, cpfCnpj: "41763193640" }),
+      );
+
+      const customer = await AsaasClient.root().createCustomer({
+        name: "Aluno Teste",
+        cpfCnpj: "41763193640",
+        externalReference: "user-1",
+        notificationDisabled: true,
+      });
+
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${BASE_URL}/v3/customers`);
+      expect(init.method).toBe("POST");
+      expect(JSON.parse(init.body as string)).toEqual({
+        name: "Aluno Teste",
+        cpfCnpj: "41763193640",
+        externalReference: "user-1",
+        notificationDisabled: true,
+      });
+      expect(customer.id).toBe("cus_000009273325");
+      expect(customer.cpfCnpj).toBe("41763193640");
+    });
+
+    it("normalises a customer that came back without a document", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(200, SANDBOX_CUSTOMER));
+      const customer = await AsaasClient.root().createCustomer({
+        name: "Aluno Teste",
+        cpfCnpj: "41763193640",
+      });
+      expect(customer.cpfCnpj).toBeNull();
+    });
+
+    it("refuses a creation response with no id", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(200, { object: "customer" }));
+      await expect(
+        AsaasClient.root().createCustomer({ name: "X", cpfCnpj: "1" }),
+      ).rejects.toMatchObject({ statusCode: 502 });
+    });
+
+    it("finds a customer by our own user id", async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse(200, { totalCount: 1, data: [SANDBOX_CUSTOMER] }),
+      );
+
+      const found =
+        await AsaasClient.root().findCustomerByExternalReference("probe-no-cpf");
+
+      expect(fetchMock.mock.calls[0]![0]).toBe(
+        `${BASE_URL}/v3/customers?externalReference=probe-no-cpf`,
+      );
+      expect(found?.id).toBe("cus_000009273325");
+    });
+
+    it("returns undefined when no customer carries that reference", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(200, { totalCount: 0, data: [] }));
+      expect(
+        await AsaasClient.root().findCustomerByExternalReference("user-404"),
+      ).toBeUndefined();
+    });
+
+    it("escapes the reference into the query string", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(200, { data: [] }));
+      await AsaasClient.root().findCustomerByExternalReference("a b&c");
+      expect(fetchMock.mock.calls[0]![0]).toBe(
+        `${BASE_URL}/v3/customers?externalReference=a+b%26c`,
+      );
+    });
+  });
+
+  describe("charges", () => {
+    // The sandbox's own answers on 2026-09-29, kept verbatim.
+    const SANDBOX_PAYMENT = {
+      object: "payment",
+      id: "pay_flhul7uhgq4drw4d",
+      status: "PENDING",
+      value: 150.0,
+      netValue: 149.01,
+      billingType: "PIX",
+      dueDate: "2026-10-02",
+      deleted: false,
+    };
+
+    const SANDBOX_QR = {
+      success: true,
+      encodedImage: "iVBORw0KGgoAAAANSUhEUgAAAcIAAAHCAQ",
+      payload:
+        "00020101021226820014br.gov.bcb.pix2560pix-h.asaas.com/qr/cobv/f7e89c58-7383-459e-bef7-00451747eee25204000053039865802BR5921EFA FIREFLY LABS LTDA6009Sao Paulo6108013119146207050***63048B0A",
+      expirationDate: "2027-10-02 23:59:59",
+      description: "probe b3",
+    };
+
+    it("creates a charge carrying the whole split to the academy wallet", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(200, SANDBOX_PAYMENT));
+
+      const payment = await AsaasClient.root().createPayment({
+        customer: "cus_1",
+        billingType: "PIX",
+        value: 150,
+        dueDate: "2026-10-02",
+        split: [{ walletId: "wal_1", percentualValue: 100 }],
+      });
+
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${BASE_URL}/v3/payments`);
+      expect(JSON.parse(init.body as string).split).toEqual([
+        { walletId: "wal_1", percentualValue: 100 },
+      ]);
+      expect(payment.id).toBe("pay_flhul7uhgq4drw4d");
+      expect(payment.netValue).toBe(149.01);
+    });
+
+    it("refuses a charge response with no id", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(200, { object: "payment" }));
+      await expect(
+        AsaasClient.root().createPayment({
+          customer: "c",
+          billingType: "PIX",
+          value: 1,
+          dueDate: "2026-10-02",
+        }),
+      ).rejects.toMatchObject({ statusCode: 502 });
+    });
+
+    it("reads the QR code of a charge", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(200, SANDBOX_QR));
+
+      const qr = await AsaasClient.root().getPixQrCode("pay_1");
+
+      expect(fetchMock.mock.calls[0]![0]).toBe(
+        `${BASE_URL}/v3/payments/pay_1/pixQrCode`,
+      );
+      expect(qr.payload).toContain("br.gov.bcb.pix");
+      expect(qr.expirationDate).toBe("2027-10-02 23:59:59");
+    });
+
+    it("refuses a QR response missing the payload", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(200, { success: true }));
+      await expect(
+        AsaasClient.root().getPixQrCode("pay_1"),
+      ).rejects.toMatchObject({ statusCode: 502 });
+    });
+
+    // Blocker 4: the charge lives on the root account, so the QR fails until
+    // *that* account has a Pix key — and Asaas provisions it asynchronously, so
+    // a freshly created account fails for its first minutes. The sentence below
+    // is the only thing that explains the failure, so it must not be flattened
+    // into a generic 502.
+    it("passes the missing-Pix-key rejection through verbatim", async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse(400, {
+          errors: [
+            {
+              code: "invalid_action",
+              description:
+                "Você não possui uma chave Pix cadastrada para recebimentos.",
+            },
+          ],
+        }),
+      );
+
+      await expect(
+        AsaasClient.root().getPixQrCode("pay_1"),
+      ).rejects.toMatchObject({
+        statusCode: 400,
+        message: "Você não possui uma chave Pix cadastrada para recebimentos.",
+        details: { code: "invalid_action" },
+      });
+    });
+
+    it("reads a charge back, deleted flag included", async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse(200, { ...SANDBOX_PAYMENT, deleted: true }),
+      );
+
+      const found = await AsaasClient.root().findPayment("pay_1");
+
+      expect(fetchMock.mock.calls[0]![0]).toBe(`${BASE_URL}/v3/payments/pay_1`);
+      expect(found?.deleted).toBe(true);
+    });
+
+    it("answers undefined for a charge Asaas no longer has", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(404, { errors: [] }));
+      expect(await AsaasClient.root().findPayment("pay_gone")).toBeUndefined();
+    });
+
+    it("deletes a charge", async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse(200, { deleted: true, id: "pay_1" }),
+      );
+
+      await AsaasClient.root().deletePayment("pay_1");
+
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${BASE_URL}/v3/payments/pay_1`);
+      expect(init.method).toBe("DELETE");
+    });
+
+    // A charge that is already gone is the outcome the caller wanted.
+    it("treats deleting a charge that no longer exists as done", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(404, { errors: [] }));
+      await expect(
+        AsaasClient.root().deletePayment("pay_gone"),
+      ).resolves.toBeUndefined();
+    });
+
+    it("still raises anything other than a 404 on delete", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(500, {}));
+      await expect(
+        AsaasClient.root().deletePayment("pay_1"),
+      ).rejects.toMatchObject({ statusCode: 502 });
+    });
+  });
+  describe("checkouts", () => {
+    // The sandbox's own answer on 2026-09-29, kept verbatim. Note `split`
+    // singular coming back where the request sent `splits`, and the value
+    // under `percentageValue` rather than the payments spelling.
+    const SANDBOX_CHECKOUT = {
+      id: "28934c1d-2ded-4ee0-a7bb-8f305b28681a",
+      link: "https://sandbox.asaas.com/checkoutSession/show/28934c1d-2ded-4ee0-a7bb-8f305b28681a",
+      status: "ACTIVE",
+      minutesToExpire: 120,
+      externalReference: "B5PROBE-sub-2026-09-01",
+      billingTypes: ["CREDIT_CARD"],
+      chargeTypes: ["DETACHED"],
+      callback: {
+        cancelUrl: "https://example.test/v1/payments/checkout-result?status=cancel",
+        successUrl: "https://example.test/v1/payments/checkout-result?status=success",
+        expiredUrl: "https://example.test/v1/payments/checkout-result?status=expired",
+      },
+      items: [
+        {
+          name: "Plano Mensal — 2026-09",
+          description: null,
+          externalReference: null,
+          quantity: 1,
+          value: 150.0,
+        },
+      ],
+      subscription: null,
+      installment: null,
+      split: [
+        {
+          walletId: "742f6df1-c4ee-4645-87a6-523b50345be5",
+          fixedValue: null,
+          percentageValue: 100.0,
+          totalFixedValue: null,
+        },
+      ],
+      customer: null,
+      customerData: null,
+    };
+
+    const input = {
+      billingTypes: ["CREDIT_CARD"] as const,
+      chargeTypes: ["DETACHED"] as const,
+      minutesToExpire: 60,
+      items: [{ name: "Plano Mensal — 2026-09", quantity: 1, value: 150 }],
+      callback: {
+        successUrl: "https://example.test/v1/payments/checkout-result?status=success",
+        cancelUrl: "https://example.test/v1/payments/checkout-result?status=cancel",
+      },
+    };
+
+    it("creates a checkout carrying the whole split to the academy wallet", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(200, SANDBOX_CHECKOUT));
+
+      const checkout = await AsaasClient.root().createCheckout({
+        ...input,
+        billingTypes: ["CREDIT_CARD"],
+        chargeTypes: ["DETACHED"],
+        splits: [{ walletId: "wal_1", percentageValue: 100 }],
+      });
+
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${BASE_URL}/v3/checkouts`);
+      expect(init.method).toBe("POST");
+      expect(checkout.id).toBe("28934c1d-2ded-4ee0-a7bb-8f305b28681a");
+      expect(checkout.link).toBe(SANDBOX_CHECKOUT.link);
+    });
+
+    // The one difference from `/v3/payments` that a copy-paste would miss:
+    // `percentualValue` is rejected outright here, so the request has to carry
+    // `percentageValue` and nothing may quietly translate between them.
+    it("sends the split under the spelling the checkout endpoint requires", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(200, SANDBOX_CHECKOUT));
+
+      await AsaasClient.root().createCheckout({
+        ...input,
+        billingTypes: ["CREDIT_CARD"],
+        chargeTypes: ["DETACHED"],
+        splits: [{ walletId: "wal_1", percentageValue: 100 }],
+      });
+
+      const body = JSON.parse(
+        (fetchMock.mock.calls[0]![1] as RequestInit).body as string,
+      ) as Record<string, unknown>;
+      expect(body.splits).toEqual([
+        { walletId: "wal_1", percentageValue: 100 },
+      ]);
+      expect(body).not.toHaveProperty("split");
+    });
+
+    // Asaas answers 400 with the missing field named, and that sentence is
+    // what has to reach the student's screen.
+    it("passes an Asaas rejection through verbatim", async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse(400, {
+          errors: [
+            {
+              code: "invalid_object",
+              description: "O campo callback deve ser informado.",
+            },
+          ],
+        }),
+      );
+
+      await expect(
+        AsaasClient.root().createCheckout({
+          ...input,
+          billingTypes: ["CREDIT_CARD"],
+          chargeTypes: ["DETACHED"],
+        }),
+      ).rejects.toMatchObject({
+        statusCode: 400,
+        message: "O campo callback deve ser informado.",
+      });
+    });
+
+    it("refuses a checkout response with no link", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(200, { id: "chk_1" }));
+      await expect(
+        AsaasClient.root().createCheckout({
+          ...input,
+          billingTypes: ["CREDIT_CARD"],
+          chargeTypes: ["DETACHED"],
+        }),
+      ).rejects.toMatchObject({ statusCode: 502 });
+    });
+
+    it("cancels a checkout", async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse(200, { ...SANDBOX_CHECKOUT, status: "CANCELED" }),
+      );
+
+      await AsaasClient.root().cancelCheckout("chk_1");
+
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${BASE_URL}/v3/checkouts/chk_1/cancel`);
+      expect(init.method).toBe("POST");
+    });
+
+    // Unlike DELETE /v3/payments, Asaas is not idempotent here: a second
+    // cancel, or one on a session already paid or expired, answers this exact
+    // 400. All of them mean the session is no longer payable, which is what
+    // the caller asked for.
+    it("treats a checkout that is no longer active as already cancelled", async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse(400, {
+          errors: [
+            {
+              code: "invalid_action",
+              description: "O Checkout não está ativo para ser cancelado.",
+            },
+          ],
+        }),
+      );
+
+      await expect(
+        AsaasClient.root().cancelCheckout("chk_done"),
+      ).resolves.toBeUndefined();
+    });
+
+    it("treats cancelling a checkout that never existed as done", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(404, { errors: [] }));
+      await expect(
+        AsaasClient.root().cancelCheckout("chk_gone"),
+      ).resolves.toBeUndefined();
+    });
+
+    // A 400 that is *not* invalid_action is the student's data being refused,
+    // and swallowing it would report a cancellation that never happened.
+    it("still raises a rejection that is not an inactive checkout", async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse(400, {
+          errors: [{ code: "invalid_object", description: "Algo errado" }],
+        }),
+      );
+      await expect(
+        AsaasClient.root().cancelCheckout("chk_1"),
+      ).rejects.toMatchObject({ statusCode: 400 });
+    });
+
+    it("still raises anything other than a 404 on cancel", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(500, {}));
+      await expect(
+        AsaasClient.root().cancelCheckout("chk_1"),
+      ).rejects.toMatchObject({ statusCode: 502 });
+    });
+  });
 });

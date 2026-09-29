@@ -9,7 +9,7 @@ type Payment = {
   id: string;
   userName: string;
   amountCents: number;
-  method: "manual" | "stripe" | "pix";
+  method: "manual" | "card" | "pix";
   referenceMonth: string;
   paidAt: string;
   transferredAt: string | null;
@@ -88,7 +88,6 @@ function SortIcon({ field, sortField, sortDir }: { field: SortField; sortField: 
 
 export function PaymentsTable({
   payments,
-  academyId,
   total,
   limit,
   offset,
@@ -225,7 +224,10 @@ export function PaymentsTable({
           label="Método"
           options={[
             { value: "pix", label: "Pix" },
-            { value: "stripe", label: "Stripe" },
+            // The stored value is still `stripe`, but it has always meant
+            // "card, in the app" rather than which provider — and since
+            // TAT-104 the card rail is Asaas.
+            { value: "card", label: "Cartão" },
             { value: "manual", label: "Manual" },
           ]}
           value={filterMethod}

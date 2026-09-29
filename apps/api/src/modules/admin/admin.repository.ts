@@ -24,7 +24,7 @@ export type AdminPaymentRow = {
   id: string;
   userName: string;
   amountCents: number;
-  method: "manual" | "stripe" | "pix";
+  method: "manual" | "card" | "pix";
   referenceMonth: string;
   paidAt: Date;
   transferredAt: Date | null;

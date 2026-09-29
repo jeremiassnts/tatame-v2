@@ -40,6 +40,20 @@ const envSchema = z.object({
    */
   ASAAS_WEBHOOK_TOKEN: z.string().min(32).max(255).optional(),
   /**
+   * The same, for `PAYMENT_*` deliveries from the root account. Separate
+   * because the two registrations cost very different things to rotate.
+   * `PUT /v3/webhooks/{id}` does change a token in place, so neither is
+   * truly stuck — but the account-status one is written into every subaccount
+   * at creation and rotating it means iterating every academy and decrypting
+   * its stored key, which no code does today. The root webhook is a single
+   * registration and one call. Sharing one value would price the money
+   * stream at the expensive one.
+   *
+   * Falls back to `ASAAS_WEBHOOK_TOKEN` when unset, so an environment that
+   * never split them keeps working.
+   */
+  ASAAS_PAYMENT_WEBHOOK_TOKEN: z.string().min(32).max(255).optional(),
+  /**
    * AES-256-GCM key for the stored Asaas subaccount API keys, as 64 hex chars
    * (32 bytes). Asaas returns a subaccount key exactly once, so losing this
    * value means no academy can finish onboarding from the app.

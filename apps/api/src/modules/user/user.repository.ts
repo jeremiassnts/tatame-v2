@@ -62,4 +62,10 @@ export interface IUserRepository {
   ): Promise<void>;
 
   clearPendingStripe(id: string): Promise<void>;
+
+  /**
+   * The Asaas customer a student is charged as. Written once, the first time a
+   * charge is opened for them, and reused by every charge after that.
+   */
+  updateAsaasCustomerId(id: string, asaasCustomerId: string): Promise<void>;
 }

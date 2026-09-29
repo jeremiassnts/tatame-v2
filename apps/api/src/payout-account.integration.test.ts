@@ -144,6 +144,7 @@ describe("Payout account integration", () => {
       "ASAAS_API_KEY",
       "ASAAS_BASE_URL",
       "ASAAS_WEBHOOK_TOKEN",
+      "ASAAS_PAYMENT_WEBHOOK_TOKEN",
       "PAYOUT_ACCOUNT_ENCRYPTION_KEY",
       "API_PUBLIC_URL",
     ]) {
@@ -152,6 +153,8 @@ describe("Payout account integration", () => {
     process.env.ASAAS_API_KEY = "$aact_root_integration";
     process.env.ASAAS_BASE_URL = "https://api-sandbox.asaas.test";
     process.env.ASAAS_WEBHOOK_TOKEN = WEBHOOK_TOKEN;
+    // This file is the environment that never split the two.
+    delete process.env.ASAAS_PAYMENT_WEBHOOK_TOKEN;
     process.env.PAYOUT_ACCOUNT_ENCRYPTION_KEY = randomBytes(32).toString("hex");
     process.env.API_PUBLIC_URL = "https://api.tatame.test";
 
@@ -307,6 +310,28 @@ describe("Payout account integration", () => {
       .post("/v1/webhooks/asaas")
       .send(accountStatusEvent());
     expect(missing.status).toBe(401);
+
+    const account = await request(app).get("/v1/payout-account");
+    expect(account.body.account.status).toBe("pending");
+  });
+
+  // The money stream has a token of its own so it can be rotated; it must not
+  // be enough to move an academy's status. The reverse — the account token on
+  // a payment — is covered in asaas-payment.integration.test.ts.
+  it("refuses an account-status delivery carrying the payment token", async () => {
+    await seedAcademy();
+    await request(app).post("/v1/payout-account").send(ONBOARDING_FORM);
+
+    process.env.ASAAS_PAYMENT_WEBHOOK_TOKEN = "p".repeat(40);
+    try {
+      const wrongStream = await request(app)
+        .post("/v1/webhooks/asaas")
+        .set("asaas-access-token", "p".repeat(40))
+        .send(accountStatusEvent());
+      expect(wrongStream.status).toBe(401);
+    } finally {
+      delete process.env.ASAAS_PAYMENT_WEBHOOK_TOKEN;
+    }
 
     const account = await request(app).get("/v1/payout-account");
     expect(account.body.account.status).toBe("pending");
