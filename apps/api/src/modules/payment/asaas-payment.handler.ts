@@ -186,6 +186,39 @@ export class AsaasPaymentWebhookHandler {
       return;
     }
 
+    // `findByAsaasPaymentId` above makes a redelivery a no-op, but it cannot
+    // see a payment recorded through another rail. The manual one is the case
+    // that happens: a manager confirms the month by hand while a card checkout
+    // is open, and `cancelCheckout` has to swallow Asaas's 400 because it is
+    // the same 400 an expired session gives. So the student's card payment
+    // lands here against a month that is already closed.
+    if (
+      await this.paymentRepo.existsForSubscriptionReferenceMonth(
+        pending.subscriptionId,
+        pending.referenceMonth,
+      )
+    ) {
+      emitEvent("payment.webhook_unhandled", {
+        reason: "DUPLICATE_MONTH",
+        userId: pending.userId,
+        academyId: pending.academyId,
+        subscriptionId: pending.subscriptionId,
+        extra: {
+          provider: "asaas",
+          type,
+          asaasPaymentId,
+          referenceMonth: pending.referenceMonth,
+        },
+      });
+      // The pending row is left alone on purpose. Deleting it would make an
+      // Asaas redelivery report NO_PENDING_CHARGE — "money in, nothing
+      // recorded" — which is the wrong story and the louder alert. Nothing
+      // else trips over it: every caller of `cancelOpenAsaasCharge` is keyed
+      // to this same subscription and month, and all three are now behind the
+      // already-paid guard.
+      return;
+    }
+
     let dependentId: string | null = null;
     if (this.studentSubRepo) {
       const sub = await this.studentSubRepo.findByIdWithPlan(

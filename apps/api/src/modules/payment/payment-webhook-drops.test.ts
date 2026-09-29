@@ -403,6 +403,98 @@ describe("Asaas payment webhook drops", () => {
   // A card payment whose checkout we never recorded. Worth its own test because
   // the session id is the only way back — a handler that only looked up by
   // payment id would drop every card payment and this would be the only sign.
+  // Decision 3 of the slice, and the half a guard in `confirmManual` cannot
+  // reach. A manager confirms the month by hand while a card checkout is open;
+  // `cancelCheckout` has to swallow the 400 Asaas gives for an already-paid
+  // session because it is the same 400 it gives for an expired one, so the
+  // student's card payment still lands here. The money is real and already in
+  // the academy's wallet via the split — what must not happen is a second row
+  // billing the student twice for one month. Reported rather than dropped
+  // quietly, because someone has to decide whether to refund.
+  it("refuses to bill a month twice when a manual confirmation got there first", async () => {
+    const { emitted, AsaasPaymentWebhookHandler, InMemoryPaymentRepository } =
+      await setup();
+    const repo = new InMemoryPaymentRepository();
+    await repo.createPendingAsaas({
+      asaasPaymentId: "pay_orphan",
+      kind: "payment",
+      subscriptionId: "sub-1",
+      userId: "user-1",
+      academyId: "academy-1",
+      referenceMonth: "2026-09-01",
+      amountCents: 15000,
+    });
+    await repo.create({
+      subscriptionId: "sub-1",
+      userId: "user-1",
+      academyId: "academy-1",
+      amountCents: 15000,
+      method: "manual",
+      confirmedBy: "manager-1",
+      stripePaymentId: null,
+      referenceMonth: "2026-09-01",
+      notes: null,
+      paidAt: new Date(),
+    });
+    const handler = new AsaasPaymentWebhookHandler(
+      repo,
+      noUsers,
+      noAcademies,
+      null,
+    );
+
+    await handler.handleEvent(paid);
+
+    expect(reasons(emitted)).toEqual(["DUPLICATE_MONTH"]);
+    // The record has to name the month and the student, because the question it
+    // raises is "who paid twice, and for what?".
+    expect(emitted[0]?.attributes).toMatchObject({
+      "app.asaasPaymentId": "pay_orphan",
+      "app.referenceMonth": "2026-09-01",
+    });
+    expect(await repo.findByAcademy("academy-1", {})).toHaveLength(1);
+  });
+
+  // The guard is per month, not per subscription: the next month has to record
+  // normally even though the subscription already has a payment row.
+  it("still records the next month on a subscription that already paid one", async () => {
+    const { emitted, AsaasPaymentWebhookHandler, InMemoryPaymentRepository } =
+      await setup();
+    const repo = new InMemoryPaymentRepository();
+    await repo.createPendingAsaas({
+      asaasPaymentId: "pay_orphan",
+      kind: "payment",
+      subscriptionId: "sub-1",
+      userId: "user-1",
+      academyId: "academy-1",
+      referenceMonth: "2026-10-01",
+      amountCents: 15000,
+    });
+    await repo.create({
+      subscriptionId: "sub-1",
+      userId: "user-1",
+      academyId: "academy-1",
+      amountCents: 15000,
+      method: "manual",
+      confirmedBy: "manager-1",
+      stripePaymentId: null,
+      referenceMonth: "2026-09-01",
+      notes: null,
+      paidAt: new Date(),
+    });
+    const handler = new AsaasPaymentWebhookHandler(
+      repo,
+      noUsers,
+      noAcademies,
+      null,
+    );
+
+    await handler.handleEvent(paid);
+
+    expect(reasons(emitted)).toEqual([]);
+    expect(await repo.findByAcademy("academy-1", {})).toHaveLength(2);
+  });
+
   it("reports a card payment whose checkout session is unknown", async () => {
     const { emitted, AsaasPaymentWebhookHandler, InMemoryPaymentRepository } =
       await setup();

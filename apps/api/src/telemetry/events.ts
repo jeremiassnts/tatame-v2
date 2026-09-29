@@ -90,6 +90,13 @@ export const CATALOG = {
       // left.
       "NO_PENDING_CHARGE",
       "MISSING_REFERENCE",
+      // The month already has a payment — a manual confirmation usually got
+      // there first, and `cancelCheckout` cannot tell an already-paid session
+      // from an expired one, so the card payment still arrives. Unlike the two
+      // above, the money is not lost: the split already put it in the academy's
+      // wallet. What is wrong is that the student paid the same month twice,
+      // and only a human can decide whether that gets refunded.
+      "DUPLICATE_MONTH",
       // A delivery from an Asaas account that is not ours — the same webhook
       // url or token configured in two environments. Without it, one
       // environment's payments raise `NO_PENDING_CHARGE` in another.

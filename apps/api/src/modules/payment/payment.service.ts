@@ -117,6 +117,24 @@ export class PaymentService {
       throw new HttpError(400, "Invalid paidAt");
     }
 
+    // Before D5's cancellation, not after: a month that is already paid is a
+    // request to reject, and rejecting it must not first cancel the student's
+    // open charge as a side effect. `createPixCharge` and `createCheckout` ask
+    // the same question through `openChargeContext`; this path is the one a
+    // human drives, and it was the only one that could bill a month twice.
+    //
+    // There is no unique constraint behind this — deliberately. `payment.reversed`
+    // writes nothing, so a refunded month keeps its row, and a constraint would
+    // stop the student from ever paying that month again.
+    const alreadyPaid =
+      await this.paymentRepo.existsForSubscriptionReferenceMonth(
+        sub.subscription.id,
+        body.referenceMonth,
+      );
+    if (alreadyPaid) {
+      throw new HttpError(409, "Payment already exists for this period");
+    }
+
     // D5, and it has to happen *before* the payment row exists. Asaas leaves a
     // hand-settled charge payable — `receiveInCash` only cancels the split, so
     // the money would land in the subaccount with no row to match it — and a

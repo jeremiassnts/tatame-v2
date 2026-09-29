@@ -46,6 +46,87 @@ describe("PaymentService", () => {
     expect(payRows).toHaveLength(1);
   });
 
+  // The gap this closes: `createPixCharge` and `createCheckout` both ask
+  // `existsForSubscriptionReferenceMonth` through `openChargeContext`, and
+  // `confirmManual` never did. So the one path a human drives by hand was the
+  // one that could bill a month twice.
+  it("confirmManual returns 409 when the month already has a payment", async () => {
+    const managerId = randomUUID();
+    const academy = makeAcademy({ ownerId: managerId });
+    const planRows = [makeSubscriptionPlan({ academyId: academy.id })];
+    const planRepo = new InMemorySubscriptionPlanRepository(planRows);
+    const subRows = [
+      makeStudentSubscription({
+        userId: randomUUID(),
+        planId: planRows[0]!.id,
+        status: "active",
+      }),
+    ];
+    const subRepo = new InMemoryStudentSubscriptionRepository(planRepo, subRows);
+    const payRows = [
+      makePayment({
+        subscriptionId: subRows[0]!.id,
+        academyId: academy.id,
+        referenceMonth: "2026-03-01",
+      }),
+    ];
+    const payRepo = new InMemoryPaymentRepository(payRows);
+    const svc = new PaymentService(
+      payRepo,
+      subRepo,
+      new InMemoryAcademyRepository([academy]),
+    );
+
+    await expect(
+      svc.confirmManual(managerId, academy.id, {
+        subscriptionId: subRows[0]!.id,
+        amountCents: 5000,
+        referenceMonth: "2026-03-01",
+        notes: null,
+      }),
+    ).rejects.toMatchObject({ statusCode: 409 });
+    expect(payRows).toHaveLength(1);
+  });
+
+  // A different month on the same subscription is the normal case, and the
+  // guard must not be a subscription-wide block.
+  it("confirmManual still records a month the subscription has not paid", async () => {
+    const managerId = randomUUID();
+    const academy = makeAcademy({ ownerId: managerId });
+    const planRows = [makeSubscriptionPlan({ academyId: academy.id })];
+    const planRepo = new InMemorySubscriptionPlanRepository(planRows);
+    const subRows = [
+      makeStudentSubscription({
+        userId: randomUUID(),
+        planId: planRows[0]!.id,
+        status: "active",
+      }),
+    ];
+    const subRepo = new InMemoryStudentSubscriptionRepository(planRepo, subRows);
+    const payRows = [
+      makePayment({
+        subscriptionId: subRows[0]!.id,
+        academyId: academy.id,
+        referenceMonth: "2026-03-01",
+      }),
+    ];
+    const payRepo = new InMemoryPaymentRepository(payRows);
+    const svc = new PaymentService(
+      payRepo,
+      subRepo,
+      new InMemoryAcademyRepository([academy]),
+    );
+
+    const row = await svc.confirmManual(managerId, academy.id, {
+      subscriptionId: subRows[0]!.id,
+      amountCents: 5000,
+      referenceMonth: "2026-04-01",
+      notes: null,
+    });
+    expect(row.referenceMonth).toBe("2026-04-01");
+    expect(payRows).toHaveLength(2);
+  });
+
   it("confirmManual returns 404 when subscription in another academy", async () => {
     const managerId = randomUUID();
     const academy = makeAcademy({ ownerId: managerId });
