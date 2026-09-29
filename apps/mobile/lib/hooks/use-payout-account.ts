@@ -1,8 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type {
-  CreatePayoutAccountBody,
-  UploadPayoutDocumentBody,
-} from "@tatame/validators";
+import type { CreatePayoutAccountBody } from "@tatame/validators";
 import { ApiError, useApi } from "@/lib/api";
 
 /**
@@ -86,15 +83,6 @@ export type PayoutAccountFees = {
 };
 
 export type CreatePayoutAccountInput = CreatePayoutAccountBody;
-
-export type PayoutDocumentType = UploadPayoutDocumentBody["type"];
-
-/** In React Native a picked file is this shape, never a web `File`. */
-export type PayoutDocumentFile = {
-  uri: string;
-  name: string;
-  type: string;
-};
 
 /**
  * Error codes the screens branch on. The API puts `details.code` into the
@@ -183,43 +171,6 @@ export function usePayoutAccountDocuments(opts?: { enabled?: boolean }) {
     queryKey: documentsKey,
     enabled: opts?.enabled ?? true,
     queryFn: () => api.get<PayoutAccountDocuments>("/payout-account/documents"),
-  });
-}
-
-export function useUploadPayoutDocument() {
-  const api = useApi();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      groupId,
-      type,
-      file,
-    }: {
-      groupId: string;
-      type: PayoutDocumentType;
-      file: PayoutDocumentFile;
-    }) => {
-      const formData = new FormData();
-      formData.append("type", type);
-      // React Native's FormData takes this object as the file part; the cast is
-      // what `api.uploadImage` does for the same reason.
-      formData.append("documentFile", {
-        uri: file.uri,
-        name: file.name,
-        type: file.type,
-      } as unknown as Blob);
-
-      return api.post<{ document: { id: string; status: string } }>(
-        `/payout-account/documents/${groupId}`,
-        formData,
-      );
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: documentsKey });
-      // An accepted document can move the account to under_review.
-      queryClient.invalidateQueries({ queryKey: accountKey, exact: true });
-    },
   });
 }
 

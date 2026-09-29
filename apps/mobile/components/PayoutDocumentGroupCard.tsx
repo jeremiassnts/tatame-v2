@@ -1,11 +1,6 @@
-import { ModalSelect } from "@/components/ModalSelect";
-import type {
-  PayoutAccountDocumentGroup,
-  PayoutDocumentType,
-} from "@/lib/hooks/use-payout-account";
-import { asaasDocumentTypeSchema } from "@tatame/validators";
-import { CheckCircle2, ExternalLink, Upload } from "lucide-react-native";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import type { PayoutAccountDocumentGroup } from "@/lib/hooks/use-payout-account";
+import { CheckCircle2, ExternalLink } from "lucide-react-native";
+import { Pressable, Text, View } from "react-native";
 
 const TEXT_SECONDARY = "#ABABAB";
 const TEXT_MUTED = "#525252";
@@ -61,84 +56,33 @@ export function StatusChip({ value }: { value: string | null | undefined }) {
   );
 }
 
-const DOCUMENT_TYPE_LABELS: Record<string, string> = {
-  ALLOW_BANK_ACCOUNT_DEPOSIT_STATEMENT: "Autorização de depósito em conta",
-  CUSTOM: "Outro documento",
-  EMANCIPATION_OF_MINORS: "Emancipação de menor",
-  ENTREPRENEUR_REQUIREMENT: "Requerimento de empresário",
-  IDENTIFICATION_SELFIE: "Selfie com documento",
-  IDENTIFICATION: "Documento de identificação",
-  INVOICE: "Nota fiscal",
-  MEI_CERTIFICATE: "Certificado do MEI",
-  MINUTES_OF_CONSTITUTION: "Ata de constituição",
-  MINUTES_OF_ELECTION: "Ata de eleição",
-  POWER_OF_ATTORNEY: "Procuração",
-  SOCIAL_CONTRACT: "Contrato social",
-};
-
-const DOCUMENT_TYPE_OPTIONS = asaasDocumentTypeSchema.options.map((value) => ({
-  value,
-  label: DOCUMENT_TYPE_LABELS[value] ?? value,
-}));
-
-/**
- * The group already carries the type Asaas expects, so it is the default. Only
- * a value outside the enum the API accepts forces us to ask the manager.
- */
-export function resolveDocumentType(
-  groupType: string,
-): PayoutDocumentType | null {
-  const parsed = asaasDocumentTypeSchema.safeParse(groupType);
-  return parsed.success ? parsed.data : null;
-}
-
 type PayoutDocumentGroupCardProps = {
   group: PayoutAccountDocumentGroup;
-  /** Set while this group — and only this group — is being uploaded. */
-  isUploading: boolean;
-  errorMessage?: string;
-  successMessage?: string;
-  /** Chosen type, only used when the group type is not one Asaas accepts. */
-  selectedType: string;
-  onSelectType: (value: string) => void;
-  onPickFile: (type: PayoutDocumentType) => void;
   onOpenOnboardingUrl: (url: string) => void;
 };
 
+/**
+ * Reports what Asaas wants and how far each document got. Sending happens in
+ * the manager's own Asaas account, never here: a standard subaccount has access
+ * to the Asaas interface and that is where Asaas expects the mandatory
+ * documents, so an uploader in this app would duplicate a flow Asaas already
+ * runs — and one that cannot take the PDFs a CNPJ academy needs.
+ *
+ * The exception Asaas itself defines: a group carrying an `onboardingUrl` is
+ * finished through that link and nowhere else.
+ */
 export function PayoutDocumentGroupCard({
   group,
-  isUploading,
-  errorMessage,
-  successMessage,
-  selectedType,
-  onSelectType,
-  onPickFile,
   onOpenOnboardingUrl,
 }: PayoutDocumentGroupCardProps) {
-  const knownType = resolveDocumentType(group.type);
-  const effectiveType = knownType ?? resolveDocumentType(selectedType);
+  const isApproved = group.status === "APPROVED";
   const sentCount = group.documents.length;
 
-  // The single branch that matters: Asaas refuses an API upload for any group
-  // that carries an onboarding link, so those get a link and never a picker.
-  const mustUseOnboardingLink = !group.canUploadInApp || !!group.onboardingUrl;
-  // Asaas approves a group on its own — instantly in sandbox, after review in
-  // production — and an approved group has nothing left to ask for.
-  const isApproved = group.status === "APPROVED";
-
-  /*
-    Asaas sends a `description` written for Asaas's own screens: "para enviar
-    esse documento acesse nosso aplicativo ou utilize o link de onboarding",
-    where "nosso aplicativo" is theirs and the link is `onboardingUrl` — null on
-    every group we can upload to. Rendering it verbatim pointed the manager away
-    from the button directly below it, so the instruction is ours and follows
-    whichever branch the card is about to render.
-  */
   const instruction = isApproved
     ? "O Asaas já aprovou este documento."
-    : mustUseOnboardingLink
-      ? "O Asaas só aceita este documento pelo site dele."
-      : "Envie uma foto nítida do documento, com todas as bordas visíveis.";
+    : group.onboardingUrl
+      ? "O Asaas pede este documento por um link próprio."
+      : "Envie este documento pela sua conta no Asaas.";
 
   return (
     <View
@@ -182,7 +126,7 @@ export function PayoutDocumentGroupCard({
             </Text>
           </View>
         )
-      ) : mustUseOnboardingLink ? (
+      ) : group.onboardingUrl ? (
         <View style={{ gap: 10 }}>
           <Text className="font-poppins text-[11px]" style={{ color: TEXT_MUTED }}>
             Toque abaixo para concluir por lá e volte para atualizar a situação.
@@ -191,80 +135,15 @@ export function PayoutDocumentGroupCard({
             onPress={() =>
               group.onboardingUrl && onOpenOnboardingUrl(group.onboardingUrl)
             }
-            disabled={!group.onboardingUrl}
             className="flex-row items-center justify-center rounded-xl"
-            style={{
-              height: 44,
-              gap: 8,
-              backgroundColor: group.onboardingUrl ? "#2A2A2A" : "#1F1F1F",
-            }}
+            style={{ height: 44, gap: 8, backgroundColor: "#2A2A2A" }}
           >
-            <ExternalLink size={16} color={group.onboardingUrl ? ACCENT : TEXT_MUTED} />
-            <Text
-              className="font-poppins-semibold text-sm"
-              style={{ color: group.onboardingUrl ? ACCENT : TEXT_MUTED }}
-            >
-              Enviar no site do Asaas
+            <ExternalLink size={16} color={ACCENT} />
+            <Text className="font-poppins-semibold text-sm" style={{ color: ACCENT }}>
+              Abrir o link do Asaas
             </Text>
           </Pressable>
         </View>
-      ) : (
-        <View style={{ gap: 10 }}>
-          {knownType ? null : (
-            <View style={{ gap: 8 }}>
-              <Text
-                className="font-poppins-medium text-xs"
-                style={{ color: TEXT_SECONDARY }}
-              >
-                Tipo do documento
-              </Text>
-              <ModalSelect
-                value={selectedType}
-                onChange={onSelectType}
-                options={DOCUMENT_TYPE_OPTIONS}
-                placeholder="Selecionar tipo"
-                disabled={isUploading}
-              />
-            </View>
-          )}
-          <Pressable
-            onPress={() => effectiveType && onPickFile(effectiveType)}
-            disabled={isUploading || !effectiveType}
-            className="flex-row items-center justify-center rounded-xl"
-            style={{
-              height: 44,
-              gap: 8,
-              backgroundColor: effectiveType && !isUploading ? ACCENT : "#3A3A3A",
-            }}
-          >
-            {isUploading ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <>
-                <Upload size={16} color="#FFFFFF" />
-                <Text className="font-poppins-semibold text-sm text-white">
-                  {sentCount > 0 ? "Enviar outro arquivo" : "Enviar documento"}
-                </Text>
-              </>
-            )}
-          </Pressable>
-          {isUploading ? (
-            <Text className="font-poppins text-[11px]" style={{ color: TEXT_SECONDARY }}>
-              Enviando o arquivo para o Asaas...
-            </Text>
-          ) : null}
-        </View>
-      )}
-
-      {errorMessage ? (
-        <Text className="font-poppins text-[11px]" style={{ color: RED }}>
-          {errorMessage}
-        </Text>
-      ) : null}
-      {successMessage ? (
-        <Text className="font-poppins text-[11px]" style={{ color: GREEN }}>
-          {successMessage}
-        </Text>
       ) : null}
     </View>
   );
