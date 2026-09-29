@@ -5,6 +5,7 @@ import {
   classes,
   managerSubscriptions,
   payments,
+  pendingAsaasPayments,
   pendingPixPayments,
   studentSubscriptions,
   subscriptionPlans,
@@ -181,6 +182,107 @@ describe("PostgresPlatformSummaryRepository", () => {
 
     expect(rows).toEqual([
       { academyId: academy.id, count: 1, amountCents: 12_000 },
+    ]);
+  });
+
+  // The rail this metric was written for is gone. `POST /payments/pix` writes
+  // `pending_asaas_payments` now, so a summary that reads only the AbacatePay
+  // table reports zero unpaid Pix forever while real ones pile up unseen.
+  it("counts an unpaid Asaas Pix charge, the rail that replaced AbacatePay", async () => {
+    const { owner, academy } = await seedAcademy();
+    const plan = makeSubscriptionPlan({ academyId: academy.id });
+    await ctx.db.insert(subscriptionPlans).values(plan);
+    const sub = makeStudentSubscription({ userId: owner.id, planId: plan.id });
+    await ctx.db.insert(studentSubscriptions).values(sub);
+
+    await ctx.db.insert(pendingAsaasPayments).values([
+      {
+        asaasPaymentId: "pay_unpaid",
+        kind: "payment",
+        subscriptionId: sub.id,
+        userId: owner.id,
+        academyId: academy.id,
+        referenceMonth: "2026-09-01",
+        amountCents: 12_000,
+        createdAt: INSIDE,
+      },
+      {
+        asaasPaymentId: "pay_paid",
+        kind: "payment",
+        subscriptionId: sub.id,
+        userId: owner.id,
+        academyId: academy.id,
+        referenceMonth: "2026-09-01",
+        amountCents: 30_000,
+        createdAt: INSIDE,
+      },
+      // A card checkout is not a Pix. It belongs to the same table, told apart
+      // by `kind`, and counting it would quietly change what the number means.
+      {
+        asaasPaymentId: "sess_card",
+        kind: "checkout",
+        subscriptionId: sub.id,
+        userId: owner.id,
+        academyId: academy.id,
+        referenceMonth: "2026-09-01",
+        amountCents: 50_000,
+        createdAt: INSIDE,
+      },
+    ]);
+    await ctx.db.insert(payments).values(
+      makePayment({
+        subscriptionId: sub.id,
+        userId: owner.id,
+        academyId: academy.id,
+        confirmedBy: null,
+        method: "pix",
+        amountCents: 30_000,
+        stripePaymentId: null,
+        asaasPaymentId: "pay_paid",
+        paidAt: INSIDE,
+      }),
+    );
+
+    const rows = await repo.unpaidPixPerAcademy(window);
+
+    expect(rows).toEqual([
+      { academyId: academy.id, count: 1, amountCents: 12_000 },
+    ]);
+  });
+
+  // The cutover is not instant: AbacatePay QR codes created before it are still
+  // payable, so for as long as any are open the number has to be both rails.
+  it("sums both rails while AbacatePay charges are still draining", async () => {
+    const { owner, academy } = await seedAcademy();
+    const plan = makeSubscriptionPlan({ academyId: academy.id });
+    await ctx.db.insert(subscriptionPlans).values(plan);
+    const sub = makeStudentSubscription({ userId: owner.id, planId: plan.id });
+    await ctx.db.insert(studentSubscriptions).values(sub);
+
+    await ctx.db.insert(pendingPixPayments).values({
+      pixQrCodeId: "pix_char_old",
+      subscriptionId: sub.id,
+      userId: owner.id,
+      academyId: academy.id,
+      referenceMonth: "2026-09-01",
+      amountCents: 7_000,
+      createdAt: INSIDE,
+    });
+    await ctx.db.insert(pendingAsaasPayments).values({
+      asaasPaymentId: "pay_new",
+      kind: "payment",
+      subscriptionId: sub.id,
+      userId: owner.id,
+      academyId: academy.id,
+      referenceMonth: "2026-09-01",
+      amountCents: 12_000,
+      createdAt: INSIDE,
+    });
+
+    const rows = await repo.unpaidPixPerAcademy(window);
+
+    expect(rows).toEqual([
+      { academyId: academy.id, count: 2, amountCents: 19_000 },
     ]);
   });
 
