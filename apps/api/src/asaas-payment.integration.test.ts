@@ -400,6 +400,54 @@ describe("Asaas payment webhook integration", () => {
     expect(retry.status).toBe(200);
   });
 
+  /**
+   * B7 is a telemetry change, so the signal it adds is asserted where signals
+   * are asserted — `payment-webhook-drops.test.ts`, which can capture log
+   * records. What only Postgres can answer is the other half of the decision:
+   * `payment.reversed` reports and writes nothing, so a refund must leave the
+   * recorded payment exactly as it was.
+   *
+   * Green before B7 as well as after, and deliberately so: it is a guard
+   * against the next person deciding a refund should delete the row, which is a
+   * product decision nobody has made.
+   */
+  it("leaves a recorded payment untouched when Asaas refunds it", async () => {
+    await seedEnrolledStudent();
+
+    asClerkUser(CLERK_STUDENT);
+    await request(app).post("/v1/payments/pix").send({ cpfCnpj: "41763193640" });
+    expect((await deliver(paymentEvent())).status).toBe(200);
+
+    asClerkUser(CLERK_MANAGER);
+    const before = (await request(app).get("/v1/payments")).body.items;
+    expect(before).toHaveLength(1);
+
+    // The real sandbox delivery, 2026-09-29: the split arrives already
+    // cancelled, which is the academy losing the money.
+    const refund = await deliver(
+      paymentEvent({
+        id: "evt_integration_refund",
+        event: "PAYMENT_REFUNDED",
+        payment: {
+          status: "REFUNDED",
+          split: [
+            {
+              status: "CANCELLED",
+              cancellationReason: "PAYMENT_REFUNDED",
+              percentualValue: 100,
+              totalValue: 146.53,
+            },
+          ],
+          refunds: [{ status: "DONE", value: 150, refundedSplits: null }],
+        },
+      }),
+    );
+    expect(refund.status).toBe(200);
+
+    asClerkUser(CLERK_MANAGER);
+    expect((await request(app).get("/v1/payments")).body.items).toEqual(before);
+  });
+
   it("answers 200 to a paid charge it cannot place, rather than retrying forever", async () => {
     await seedEnrolledStudent();
 

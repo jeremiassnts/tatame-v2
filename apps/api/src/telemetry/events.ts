@@ -111,6 +111,25 @@ export const CATALOG = {
    * release behind the one that actually fires.
    */
   "payment.charge_failed": { domain: "payment", outcome: "failed" },
+  /**
+   * Money went back: a refund, or any stage of a chargeback. One broad signal
+   * rather than a reason per stage, for the same argument as
+   * `payment.charge_failed` — the stages are Asaas's to invent, and the useful
+   * question is "whose money went back?", which the academy and payment ids on
+   * the record answer and an enumeration does not.
+   *
+   * The Asaas event name is `app.type`, and the split Asaas cancelled on the
+   * academy's side is `app.splitStatus` / `app.splitCancellationReason`. That
+   * split is the point: the platform nets zero on these charges, so a reversal
+   * comes out of the *academy's* wallet, and nothing else in the system says
+   * so. `SPLIT-05`.
+   *
+   * `rejected` rather than `failed`: nothing in the API broke. A refund is a
+   * normal thing a manager can ask Asaas for and a chargeback is the card
+   * network's decision — both want a warning, neither wants an error carrying a
+   * cause.
+   */
+  "payment.reversed": { domain: "payment", outcome: "rejected" },
   "payment.transferred": { domain: "payment", outcome: "success" },
 
   // --- payout_account (the academy's Asaas subaccount) --------------------

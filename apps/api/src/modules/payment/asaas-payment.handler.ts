@@ -40,6 +40,25 @@ export interface AsaasPaymentEvent {
     paymentDate?: string | null;
     clientPaymentDate?: string | null;
     deleted?: boolean;
+    /**
+     * The academy's side of the charge, and the only place it is reported: the
+     * `GET /v3/payments/{id}/splits` collection answers 404. A reversal arrives
+     * with the split already `CANCELLED` and `cancellationReason` naming the
+     * cause — `PAYMENT_REFUNDED` on a refund, `PAYMENT_RECEIVED_IN_CASH` on a
+     * manual settlement (D5).
+     */
+    split?: Array<{
+      status?: string | null;
+      cancellationReason?: string | null;
+    }> | null;
+    /**
+     * Present on the `PAYMENT_CHARGEBACK_*` deliveries. Shaped after the Asaas
+     * documentation rather than a capture: the sandbox has no way to provoke a
+     * chargeback — `GET /v3/chargebacks` exists and is empty, and every
+     * `simulateChargeback` spelling answers 404 — so the first real one will be
+     * in production. Both fields are read defensively for that reason.
+     */
+    chargeback?: { status?: string | null; reason?: string | null } | null;
   };
 }
 
@@ -59,6 +78,28 @@ const SETTLED_EVENTS = new Set(["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED"]);
  * normal outcome of a manager taking cash at the counter.
  */
 const SELF_INFLICTED_EVENTS = new Set(["PAYMENT_DELETED"]);
+
+/**
+ * Money going back out. Reported, never acted on — see `payment.reversed` in
+ * the telemetry catalog.
+ *
+ * The first four are what the root webhook is registered for. The last two are
+ * not registered and so never arrive today; they are here because the whole
+ * point of a broad signal is that the next reversal Asaas invents lands in it
+ * instead of in `UNKNOWN_EVENT_TYPE`. Registering them is a production webhook
+ * change, not a code one.
+ *
+ * `PAYMENT_REFUND_DENIED` is deliberately absent: it exists only for bank
+ * slips, which this platform does not issue.
+ */
+const REVERSAL_EVENTS = new Set([
+  "PAYMENT_REFUNDED",
+  "PAYMENT_CHARGEBACK_REQUESTED",
+  "PAYMENT_CHARGEBACK_DISPUTE",
+  "PAYMENT_AWAITING_CHARGEBACK_REVERSAL",
+  "PAYMENT_PARTIALLY_REFUNDED",
+  "PAYMENT_REFUND_IN_PROGRESS",
+]);
 
 /**
  * Our own root account id at Asaas, or `null` when it could not be determined.
@@ -94,10 +135,16 @@ export class AsaasPaymentWebhookHandler {
 
     if (SELF_INFLICTED_EVENTS.has(type)) return;
 
+    if (REVERSAL_EVENTS.has(type)) {
+      await this.reportReversal(event, type);
+      return;
+    }
+
     if (!SETTLED_EVENTS.has(type)) {
-      // Refunds and chargebacks land here until B7 gives them a home of their
-      // own. Reported rather than dropped, because this endpoint is the only
-      // place that can say which Asaas events actually arrive.
+      // Everything the root webhook is registered for is handled above, so
+      // reaching here means a registration nobody wrote code for. Reported
+      // rather than dropped, because this endpoint is the only place that can
+      // say which Asaas events actually arrive.
       emitEvent("payment.webhook_unhandled", {
         reason: "UNKNOWN_EVENT_TYPE",
         extra: { provider: "asaas", type: type || "(missing)" },
@@ -195,6 +242,51 @@ export class AsaasPaymentWebhookHandler {
     await this.paymentRepo.deletePendingAsaas(pending.asaasPaymentId);
 
     await this.announce(pending, payment.id, payment.amountCents, payment.referenceMonth);
+  }
+
+  /**
+   * A refund or a chargeback. Emits and stops.
+   *
+   * It looks the payment up first so the signal can name the academy whose
+   * wallet the money comes out of — without that it is a payment id and a date,
+   * and answering "which academy do we owe an explanation to?" means a query
+   * against the database by hand. `recorded: false` is itself worth seeing: a
+   * reversal of a charge we never recorded means the settlement was dropped too,
+   * and the `NO_PENDING_CHARGE` that should have fired is somewhere further
+   * back in the log.
+   *
+   * Nothing is written. A redelivery therefore emits twice, which is correct —
+   * the record is a log line describing a delivery, not a row describing money.
+   */
+  private async reportReversal(
+    event: AsaasPaymentEvent,
+    type: string,
+  ): Promise<void> {
+    const asaasPaymentId = event.payment?.id;
+    const recorded = asaasPaymentId
+      ? await this.paymentRepo.findByAsaasPaymentId(asaasPaymentId)
+      : undefined;
+    // Asaas sends one split per recipient and these charges have exactly one:
+    // the academy's wallet, at 100%.
+    const split = event.payment?.split?.[0];
+
+    emitEvent("payment.reversed", {
+      userId: recorded?.userId,
+      academyId: recorded?.academyId,
+      subscriptionId: recorded?.subscriptionId,
+      paymentId: recorded?.id,
+      extra: {
+        provider: "asaas",
+        type,
+        status: event.payment?.status ?? null,
+        asaasPaymentId: asaasPaymentId ?? null,
+        recorded: !!recorded,
+        splitStatus: split?.status ?? null,
+        splitCancellationReason: split?.cancellationReason ?? null,
+        chargebackStatus: event.payment?.chargeback?.status ?? null,
+        chargebackReason: event.payment?.chargeback?.reason ?? null,
+      },
+    });
   }
 
   /**

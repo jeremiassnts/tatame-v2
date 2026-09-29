@@ -307,12 +307,15 @@ describe("Asaas payment webhook drops", () => {
       null,
     );
 
-    await handler.handleEvent({ ...paid, event: "PAYMENT_REFUNDED" });
+    // Deliberately an event the root webhook is *not* registered for. The
+    // reversals it is registered for have their own signal — see below — and
+    // using one of them here would make this test pass for the wrong reason.
+    await handler.handleEvent({ ...paid, event: "PAYMENT_OVERDUE" });
 
     expect(reasons(emitted)).toEqual(["UNKNOWN_EVENT_TYPE"]);
     expect(emitted[0]?.attributes).toMatchObject({
       "app.provider": "asaas",
-      "app.type": "PAYMENT_REFUNDED",
+      "app.type": "PAYMENT_OVERDUE",
     });
   });
 
@@ -425,5 +428,271 @@ describe("Asaas payment webhook drops", () => {
     expect(emitted[0]?.attributes).toMatchObject({
       "app.checkoutSession": "chk_never_seen",
     });
+  });
+});
+
+/**
+ * B7. Not drops — nothing is lost here — but the same question in the other
+ * direction: an Asaas delivery that produces a signal instead of a payment row,
+ * asserted through the same log capture.
+ *
+ * The payload is the real `PAYMENT_REFUNDED` captured from the sandbox on
+ * 2026-09-29, trimmed to the fields the handler reads. Its shape is the finding:
+ * the delivery carries the whole payment object, so `split[].status` and
+ * `cancellationReason` arrive inline — `GET /v3/payments/{id}/splits` answers
+ * 404 and never had to be called.
+ */
+describe("Asaas refunds and chargebacks", () => {
+  const OUR_ACCOUNT = "c2b4388d-d81b-4a76-bad3-8d4519b302e1";
+
+  function refunded(over: Record<string, unknown> = {}) {
+    return {
+      id: "evt_d313266b1bd58128da69a2a96d82e79e&20581202",
+      event: "PAYMENT_REFUNDED",
+      dateCreated: "2026-09-29 13:09:21",
+      account: { id: OUR_ACCOUNT, ownerId: null },
+      payment: {
+        id: "pay_aalcgxwj24pkd6m5",
+        status: "REFUNDED",
+        value: 150,
+        netValue: 146.53,
+        billingType: "CREDIT_CARD",
+        checkoutSession: "ea7d07b8-f7a4-437f-b5b7-deaf06c2bb43",
+        externalReference: null,
+        confirmedDate: "2026-09-29",
+        paymentDate: null,
+        deleted: false,
+        split: [
+          {
+            walletId: "3cb204e1-e385-4026-9795-51f3f96246b4",
+            percentualValue: 100,
+            totalValue: 146.53,
+            status: "CANCELLED",
+            cancellationReason: "PAYMENT_REFUNDED",
+          },
+        ],
+        refunds: [
+          { status: "DONE", value: 150, refundedSplits: null },
+        ],
+        ...over,
+      },
+    };
+  }
+
+  /** The `payment.reversed` records emitted, in order. */
+  function reversals(emitted: LogRecord[]) {
+    return emitted.filter((r) => r.attributes?.["event.name"] === "payment.reversed");
+  }
+
+  /** A repository holding one recorded payment for the refunded charge. */
+  async function withRecordedPayment(
+    InMemoryPaymentRepository: new () => {
+      create(data: Record<string, unknown>): Promise<{ id: string }>;
+    },
+  ) {
+    const repo = new InMemoryPaymentRepository();
+    const row = await repo.create({
+      subscriptionId: "sub_1",
+      userId: "u1",
+      academyId: "a1",
+      amountCents: 15000,
+      method: "stripe",
+      confirmedBy: null,
+      stripePaymentId: null,
+      asaasPaymentId: "pay_aalcgxwj24pkd6m5",
+      referenceMonth: "2026-09-01",
+      notes: null,
+      paidAt: new Date("2026-09-29T12:00:00Z"),
+    });
+    return { repo, row };
+  }
+
+  it("names the student, academy and payment whose money went back", async () => {
+    const { emitted, AsaasPaymentWebhookHandler, InMemoryPaymentRepository } =
+      await setup();
+    const { repo, row } = await withRecordedPayment(
+      InMemoryPaymentRepository as never,
+    );
+    const handler = new AsaasPaymentWebhookHandler(
+      repo as never,
+      noUsers,
+      noAcademies,
+      null,
+    );
+
+    await handler.handleEvent(refunded());
+
+    expect(reversals(emitted)).toHaveLength(1);
+    expect(reversals(emitted)[0]?.attributes).toMatchObject({
+      "user.id": "u1",
+      "app.academy.id": "a1",
+      "app.subscription.id": "sub_1",
+      "app.payment.id": row.id,
+      "app.recorded": true,
+    });
+  });
+
+  it("carries the split cancellation Asaas performed on the academy's side", async () => {
+    const { emitted, AsaasPaymentWebhookHandler, InMemoryPaymentRepository } =
+      await setup();
+    const { repo } = await withRecordedPayment(InMemoryPaymentRepository as never);
+    const handler = new AsaasPaymentWebhookHandler(
+      repo as never,
+      noUsers,
+      noAcademies,
+      null,
+    );
+
+    await handler.handleEvent(refunded());
+
+    // SPLIT-05: the academy is the one that loses the money, and this is the
+    // only place that says so.
+    expect(reversals(emitted)[0]?.attributes).toMatchObject({
+      "app.provider": "asaas",
+      "app.type": "PAYMENT_REFUNDED",
+      "app.status": "REFUNDED",
+      "app.asaasPaymentId": "pay_aalcgxwj24pkd6m5",
+      "app.splitStatus": "CANCELLED",
+      "app.splitCancellationReason": "PAYMENT_REFUNDED",
+    });
+  });
+
+  it("still reports a refund of a payment that was never recorded", async () => {
+    const { emitted, AsaasPaymentWebhookHandler, InMemoryPaymentRepository } =
+      await setup();
+    const handler = new AsaasPaymentWebhookHandler(
+      new InMemoryPaymentRepository(),
+      noUsers,
+      noAcademies,
+      null,
+    );
+
+    await handler.handleEvent(refunded());
+
+    // No row to name, and the reversal is still the thing worth knowing.
+    expect(reversals(emitted)[0]?.attributes).toMatchObject({
+      "app.recorded": false,
+    });
+    expect(reversals(emitted)[0]?.attributes?.["app.payment.id"]).toBeUndefined();
+  });
+
+  it("leaves the recorded payment alone", async () => {
+    const { emitted, AsaasPaymentWebhookHandler, InMemoryPaymentRepository } =
+      await setup();
+    const { repo } = await withRecordedPayment(InMemoryPaymentRepository as never);
+    const handler = new AsaasPaymentWebhookHandler(
+      repo as never,
+      noUsers,
+      noAcademies,
+      null,
+    );
+
+    await handler.handleEvent(refunded());
+
+    // What a reversed month means for the student's standing is a product
+    // decision. B7 makes it visible and touches nothing.
+    expect(
+      await (repo as never as {
+        findByAsaasPaymentId(id: string): Promise<unknown>;
+      }).findByAsaasPaymentId("pay_aalcgxwj24pkd6m5"),
+    ).toBeDefined();
+    expect(reversals(emitted)).toHaveLength(1);
+  });
+
+  it.each([
+    "PAYMENT_CHARGEBACK_REQUESTED",
+    "PAYMENT_CHARGEBACK_DISPUTE",
+    "PAYMENT_AWAITING_CHARGEBACK_REVERSAL",
+  ])("reports %s as the same signal, told apart by its type", async (event) => {
+    const { emitted, AsaasPaymentWebhookHandler, InMemoryPaymentRepository } =
+      await setup();
+    const handler = new AsaasPaymentWebhookHandler(
+      new InMemoryPaymentRepository(),
+      noUsers,
+      noAcademies,
+      null,
+    );
+
+    await handler.handleEvent({ ...refunded(), event });
+
+    // One broad signal, the stage in `app.type` — not a reason per stage.
+    expect(reversals(emitted)).toHaveLength(1);
+    expect(reversals(emitted)[0]?.attributes).toMatchObject({ "app.type": event });
+  });
+
+  it("carries the chargeback status and reason when Asaas sends one", async () => {
+    const { emitted, AsaasPaymentWebhookHandler, InMemoryPaymentRepository } =
+      await setup();
+    const handler = new AsaasPaymentWebhookHandler(
+      new InMemoryPaymentRepository(),
+      noUsers,
+      noAcademies,
+      null,
+    );
+
+    await handler.handleEvent({
+      ...refunded(),
+      event: "PAYMENT_CHARGEBACK_REQUESTED",
+      payment: {
+        ...refunded().payment,
+        status: "CHARGEBACK_REQUESTED",
+        chargeback: { status: "REQUESTED", reason: "PROCESS_ERROR" },
+      },
+    });
+
+    expect(reversals(emitted)[0]?.attributes).toMatchObject({
+      "app.chargebackStatus": "REQUESTED",
+      "app.chargebackReason": "PROCESS_ERROR",
+    });
+  });
+
+  it("counts none of the four as an unhandled event", async () => {
+    const { emitted, AsaasPaymentWebhookHandler, InMemoryPaymentRepository } =
+      await setup();
+    const handler = new AsaasPaymentWebhookHandler(
+      new InMemoryPaymentRepository(),
+      noUsers,
+      noAcademies,
+      null,
+    );
+
+    for (const event of [
+      "PAYMENT_REFUNDED",
+      "PAYMENT_CHARGEBACK_REQUESTED",
+      "PAYMENT_CHARGEBACK_DISPUTE",
+      "PAYMENT_AWAITING_CHARGEBACK_REVERSAL",
+    ]) {
+      await handler.handleEvent({ ...refunded(), event });
+    }
+
+    // The spec's own success criterion for the slice: zero
+    // `payment.webhook_unhandled` in a clean run. Every event the root webhook
+    // is registered for now has a home.
+    expect(reasons(emitted)).toEqual([]);
+    expect(reversals(emitted)).toHaveLength(4);
+  });
+
+  it("refuses a reversal from another Asaas account", async () => {
+    const { emitted, AsaasPaymentWebhookHandler, InMemoryPaymentRepository } =
+      await setup();
+    const handler = new AsaasPaymentWebhookHandler(
+      new InMemoryPaymentRepository(),
+      noUsers,
+      noAcademies,
+      null,
+      undefined,
+      undefined,
+      async () => OUR_ACCOUNT,
+    );
+
+    await handler.handleEvent({
+      ...refunded(),
+      account: { id: "another-environment", ownerId: null },
+    });
+
+    // The foreign-account gate comes first, or one environment's refunds would
+    // name the other's academies.
+    expect(reversals(emitted)).toEqual([]);
+    expect(reasons(emitted)).toEqual(["FOREIGN_ACCOUNT"]);
   });
 });
