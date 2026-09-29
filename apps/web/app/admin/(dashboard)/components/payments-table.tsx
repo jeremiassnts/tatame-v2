@@ -225,7 +225,10 @@ export function PaymentsTable({
           label="Método"
           options={[
             { value: "pix", label: "Pix" },
-            { value: "stripe", label: "Stripe" },
+            // The stored value is still `stripe`, but it has always meant
+            // "card, in the app" rather than which provider — and since
+            // TAT-104 the card rail is Asaas.
+            { value: "stripe", label: "Cartão" },
             { value: "manual", label: "Manual" },
           ]}
           value={filterMethod}

@@ -32,6 +32,9 @@ async function setup() {
   const { StripeCheckoutWebhookHandler } = await import(
     "./stripe-checkout-webhook.handler.js"
   );
+  const { AsaasPaymentWebhookHandler } = await import(
+    "./asaas-payment.handler.js"
+  );
   const { InMemoryPaymentRepository } = await import(
     "./payment.repository.in-memory.js"
   );
@@ -39,6 +42,7 @@ async function setup() {
     emitted,
     AbacatePayWebhookHandler,
     StripeCheckoutWebhookHandler,
+    AsaasPaymentWebhookHandler,
     InMemoryPaymentRepository,
   };
 }
@@ -276,5 +280,123 @@ describe("Stripe checkout webhook drops", () => {
 
     expect(reasons(emitted)).toEqual(["USER_OR_ACADEMY_NOT_FOUND"]);
     expect(await repo.findByStripePaymentId("cs_1")).toBeDefined();
+  });
+});
+
+describe("Asaas payment webhook drops", () => {
+  const paid = {
+    id: "evt_1",
+    event: "PAYMENT_RECEIVED",
+    account: { id: "c2b4388d-d81b-4a76-bad3-8d4519b302e1", ownerId: null },
+    payment: {
+      id: "pay_orphan",
+      status: "RECEIVED",
+      value: 150,
+      billingType: "PIX",
+      checkoutSession: null,
+    },
+  };
+
+  it("reports an event type it does not handle", async () => {
+    const { emitted, AsaasPaymentWebhookHandler, InMemoryPaymentRepository } =
+      await setup();
+    const handler = new AsaasPaymentWebhookHandler(
+      new InMemoryPaymentRepository(),
+      noUsers,
+      noAcademies,
+      null,
+    );
+
+    await handler.handleEvent({ ...paid, event: "PAYMENT_REFUNDED" });
+
+    expect(reasons(emitted)).toEqual(["UNKNOWN_EVENT_TYPE"]);
+    expect(emitted[0]?.attributes).toMatchObject({
+      "app.provider": "asaas",
+      "app.type": "PAYMENT_REFUNDED",
+    });
+  });
+
+  // D5 deletes the month's open charge on every manual settlement, and both
+  // charge paths delete stale ones. If this were reported, a manager taking
+  // cash at the counter would raise a drop alert every time.
+  it("says nothing about a charge we deleted ourselves", async () => {
+    const { emitted, AsaasPaymentWebhookHandler, InMemoryPaymentRepository } =
+      await setup();
+    const handler = new AsaasPaymentWebhookHandler(
+      new InMemoryPaymentRepository(),
+      noUsers,
+      noAcademies,
+      null,
+    );
+
+    await handler.handleEvent({ ...paid, event: "PAYMENT_DELETED" });
+
+    expect(reasons(emitted)).toEqual([]);
+  });
+
+  it("reports a settlement with no payment id", async () => {
+    const { emitted, AsaasPaymentWebhookHandler, InMemoryPaymentRepository } =
+      await setup();
+    const handler = new AsaasPaymentWebhookHandler(
+      new InMemoryPaymentRepository(),
+      noUsers,
+      noAcademies,
+      null,
+    );
+
+    await handler.handleEvent({ ...paid, payment: { status: "RECEIVED" } });
+
+    expect(reasons(emitted)).toEqual(["MISSING_REFERENCE"]);
+  });
+
+  it("reports a paid charge with no pending row — money in, nothing recorded", async () => {
+    const { emitted, AsaasPaymentWebhookHandler, InMemoryPaymentRepository } =
+      await setup();
+    const repo = new InMemoryPaymentRepository();
+    const handler = new AsaasPaymentWebhookHandler(
+      repo,
+      noUsers,
+      noAcademies,
+      null,
+    );
+
+    await handler.handleEvent(paid);
+
+    expect(reasons(emitted)).toEqual(["NO_PENDING_CHARGE"]);
+    expect(emitted[0]?.attributes).toMatchObject({
+      "app.asaasPaymentId": "pay_orphan",
+    });
+    // The drop is the point: no payment was written.
+    expect(await repo.findByAcademy("any", {})).toHaveLength(0);
+  });
+
+  // A card payment whose checkout we never recorded. Worth its own test because
+  // the session id is the only way back — a handler that only looked up by
+  // payment id would drop every card payment and this would be the only sign.
+  it("reports a card payment whose checkout session is unknown", async () => {
+    const { emitted, AsaasPaymentWebhookHandler, InMemoryPaymentRepository } =
+      await setup();
+    const handler = new AsaasPaymentWebhookHandler(
+      new InMemoryPaymentRepository(),
+      noUsers,
+      noAcademies,
+      null,
+    );
+
+    await handler.handleEvent({
+      ...paid,
+      event: "PAYMENT_CONFIRMED",
+      payment: {
+        id: "pay_card_orphan",
+        status: "CONFIRMED",
+        billingType: "CREDIT_CARD",
+        checkoutSession: "chk_never_seen",
+      },
+    });
+
+    expect(reasons(emitted)).toEqual(["NO_PENDING_CHARGE"]);
+    expect(emitted[0]?.attributes).toMatchObject({
+      "app.checkoutSession": "chk_never_seen",
+    });
   });
 });

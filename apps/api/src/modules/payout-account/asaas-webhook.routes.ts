@@ -2,6 +2,24 @@ import { loadEnv } from "@tatame/config";
 import { Router } from "express";
 import { getDb } from "../../lib/db.js";
 import { HttpError } from "../../lib/http-error.js";
+import { emitEvent } from "../../telemetry/events.js";
+import { PostgresAcademyRepository } from "../academy/academy.repository.postgres.js";
+import { getEmailQueue } from "../email/email.queue.js";
+import { EmailService } from "../email/email.service.js";
+import { PostgresMembershipRepository } from "../membership/membership.repository.postgres.js";
+import { NotificationDispatcher } from "../notification/notification-dispatcher.js";
+import { getNotificationQueue } from "../notification/notification.queue.js";
+import { PostgresNotificationRepository } from "../notification/notification.repository.postgres.js";
+import { NotificationService } from "../notification/notification.service.js";
+import {
+  AsaasPaymentWebhookHandler,
+  PAYMENT_EVENT_PREFIX,
+  type AsaasPaymentEvent,
+} from "../payment/asaas-payment.handler.js";
+import { PostgresPaymentRepository } from "../payment/payment.repository.postgres.js";
+import { PostgresPushTokenRepository } from "../push-token/push-token.repository.postgres.js";
+import { PostgresStudentSubscriptionRepository } from "../subscription/subscription.repository.postgres.js";
+import { PostgresUserRepository } from "../user/user.repository.postgres.js";
 import { PostgresPayoutAccountRepository } from "./payout-account.repository.postgres.js";
 import { payoutAccountService } from "./payout-account.routes.js";
 import {
@@ -23,10 +41,32 @@ import {
  */
 export const asaasWebhookRouter = Router();
 
+const db = getDb();
+const env = loadEnv();
+
 const accountHandler = new AsaasAccountWebhookHandler(
-  new PostgresPayoutAccountRepository(getDb()),
+  new PostgresPayoutAccountRepository(db),
   payoutAccountService,
 );
+
+const paymentHandler = new AsaasPaymentWebhookHandler(
+  new PostgresPaymentRepository(db),
+  new PostgresUserRepository(db),
+  new PostgresAcademyRepository(db),
+  env.REDIS_URL ? new EmailService(getEmailQueue(env.REDIS_URL)) : null,
+  new NotificationDispatcher(
+    new NotificationService(
+      new PostgresNotificationRepository(db),
+      new PostgresPushTokenRepository(db),
+      env.REDIS_URL ? getNotificationQueue(env.REDIS_URL) : null,
+    ),
+    new PostgresUserRepository(db),
+    new PostgresMembershipRepository(db),
+  ),
+  new PostgresStudentSubscriptionRepository(db),
+);
+
+type AsaasWebhookEvent = AsaasAccountStatusEvent & AsaasPaymentEvent;
 
 asaasWebhookRouter.post("/", async (req, res, next) => {
   try {
@@ -40,13 +80,25 @@ asaasWebhookRouter.post("/", async (req, res, next) => {
       throw new HttpError(401, "Unauthorized");
     }
 
-    const event = req.body as AsaasAccountStatusEvent;
-    if (event?.event?.startsWith(ACCOUNT_STATUS_EVENT_PREFIX)) {
+    const event = req.body as AsaasWebhookEvent;
+    const type = event?.event ?? "";
+
+    // Two streams share one url because Asaas delivers per registered webhook,
+    // not per path: `ACCOUNT_STATUS_*` from each academy's subaccount, and
+    // `PAYMENT_*` from the platform's root account, where every charge lives.
+    if (type.startsWith(ACCOUNT_STATUS_EVENT_PREFIX)) {
       await accountHandler.handleEvent(event);
+    } else if (type.startsWith(PAYMENT_EVENT_PREFIX)) {
+      await paymentHandler.handleEvent(event);
+    } else {
+      // Neither stream. Asaas has event families we register for nothing —
+      // invoices, transfers, bills — and one arriving here means a webhook was
+      // registered with events nobody handles.
+      emitEvent("payment.webhook_unhandled", {
+        reason: "UNKNOWN_EVENT_TYPE",
+        extra: { provider: "asaas", type: type || "(missing)" },
+      });
     }
-    // PAYMENT_* lands here too, and is answered 200 until TAT-104 adds its
-    // handler — Asaas would otherwise retry it for days against an endpoint
-    // that has nothing to do with it yet.
 
     res.status(200).json({ received: true });
   } catch (e) {

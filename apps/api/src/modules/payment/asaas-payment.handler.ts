@@ -1,0 +1,312 @@
+import { emitEvent } from "../../telemetry/events.js";
+import type { IAcademyRepository } from "../academy/academy.repository.js";
+import type { EmailService } from "../email/email.service.js";
+import type { NotificationDispatcher } from "../notification/notification-dispatcher.js";
+import type { IStudentSubscriptionRepository } from "../subscription/subscription.repository.js";
+import type { IUserRepository } from "../user/user.repository.js";
+import type { IPaymentRepository } from "./payment.repository.js";
+
+/**
+ * The `PAYMENT_*` deliveries from Asaas — the only thing that records a student
+ * payment. No client is trusted to say money arrived.
+ *
+ * The charge lives on the platform's **root** account, so these events come
+ * from the root webhook, not from the academy's subaccount: a subaccount that
+ * is merely the recipient of a split is not notified. Verified against the
+ * sandbox on 2026-09-29 — a card payment split 100% into an academy's wallet
+ * delivered nothing until a webhook existed on the root account, and arrived
+ * within a second once it did.
+ */
+
+export interface AsaasPaymentEvent {
+  id?: string;
+  event?: string;
+  dateCreated?: string;
+  account?: { id?: string; ownerId?: string | null };
+  payment?: {
+    id?: string;
+    status?: string;
+    value?: number;
+    netValue?: number | null;
+    billingType?: string;
+    /**
+     * Present on a payment that came from a checkout, and the only way back to
+     * the pending row: the checkout's `externalReference` is **not** copied
+     * onto the payment it produces.
+     */
+    checkoutSession?: string | null;
+    externalReference?: string | null;
+    confirmedDate?: string | null;
+    paymentDate?: string | null;
+    clientPaymentDate?: string | null;
+    deleted?: boolean;
+  };
+}
+
+export const PAYMENT_EVENT_PREFIX = "PAYMENT_";
+
+/**
+ * The two that mean the money is ours to record. Asaas sends `CONFIRMED` when
+ * the payment is approved and `RECEIVED` when it settles — two events for one
+ * payment, which is why idempotency is a unique constraint and not a flag.
+ */
+const SETTLED_EVENTS = new Set(["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED"]);
+
+/**
+ * Deliveries we cause ourselves and must not alert on. Every manual settlement
+ * deletes the month's open charge (D5), and so does either charge path finding
+ * a stale one — reporting those as unhandled would make a false drop alert the
+ * normal outcome of a manager taking cash at the counter.
+ */
+const SELF_INFLICTED_EVENTS = new Set(["PAYMENT_DELETED"]);
+
+export class AsaasPaymentWebhookHandler {
+  constructor(
+    private readonly paymentRepo: IPaymentRepository,
+    private readonly userRepo: IUserRepository,
+    private readonly academyRepo: IAcademyRepository,
+    private readonly emailService: EmailService | null,
+    private readonly dispatcher?: NotificationDispatcher,
+    private readonly studentSubRepo?: IStudentSubscriptionRepository,
+  ) {}
+
+  async handleEvent(event: AsaasPaymentEvent): Promise<void> {
+    const type = event.event ?? "";
+
+    if (SELF_INFLICTED_EVENTS.has(type)) return;
+
+    if (!SETTLED_EVENTS.has(type)) {
+      // Refunds and chargebacks land here until B7 gives them a home of their
+      // own. Reported rather than dropped, because this endpoint is the only
+      // place that can say which Asaas events actually arrive.
+      emitEvent("payment.webhook_unhandled", {
+        reason: "UNKNOWN_EVENT_TYPE",
+        extra: { provider: "asaas", type: type || "(missing)" },
+      });
+      return;
+    }
+
+    const asaasPaymentId = event.payment?.id;
+    if (!asaasPaymentId) {
+      emitEvent("payment.webhook_unhandled", {
+        reason: "MISSING_REFERENCE",
+        extra: { provider: "asaas", cause: `no payment.id on ${type}` },
+      });
+      return;
+    }
+
+    // The pre-check. It is not what makes this idempotent — the unique
+    // constraint on `payments.asaas_payment_id` is, and it is what survives
+    // `PAYMENT_CONFIRMED` and `PAYMENT_RECEIVED` arriving at once. This only
+    // saves the work. A provider redelivering is the system working, not a
+    // drop, so nothing is reported.
+    if (await this.paymentRepo.findByAsaasPaymentId(asaasPaymentId)) return;
+
+    const pending = await this.findPending(event, asaasPaymentId);
+    if (!pending) {
+      // The expensive one. Money arrived and there is no row saying which
+      // student or which month it belongs to, so no payment is recorded and
+      // the student stays overdue. Nothing downstream notices: the route still
+      // answers 200 and Asaas considers the delivery done.
+      emitEvent("payment.webhook_unhandled", {
+        reason: "NO_PENDING_CHARGE",
+        extra: {
+          provider: "asaas",
+          type,
+          asaasPaymentId,
+          checkoutSession: event.payment?.checkoutSession ?? null,
+        },
+      });
+      return;
+    }
+
+    let dependentId: string | null = null;
+    if (this.studentSubRepo) {
+      const sub = await this.studentSubRepo.findByIdWithPlan(
+        pending.subscriptionId,
+      );
+      dependentId = sub?.subscription.dependentId ?? null;
+    }
+
+    let payment;
+    try {
+      payment = await this.paymentRepo.create({
+        subscriptionId: pending.subscriptionId,
+        userId: pending.userId,
+        academyId: pending.academyId,
+        // The plan price the charge was opened for, not the value Asaas
+        // reports. They are the same today, and if they ever diverge the row
+        // has to say what the student owed for the month.
+        amountCents: pending.amountCents,
+        method: methodFor(event.payment?.billingType),
+        confirmedBy: null,
+        stripePaymentId: null,
+        asaasPaymentId,
+        referenceMonth: pending.referenceMonth,
+        notes: null,
+        paidAt: paidAtFrom(event),
+        dependentId,
+      });
+    } catch (error) {
+      // `PAYMENT_CONFIRMED` and `PAYMENT_RECEIVED` can be in flight together,
+      // and then both pass the pre-check above before either writes. The
+      // unique constraint is what settles it, and losing that race means the
+      // payment is recorded — by the other delivery. Letting it surface would
+      // answer 500 to a webhook that succeeded, and Asaas would retry for days
+      // against a payment already on the books.
+      if (!isDuplicateAsaasPayment(error)) throw error;
+      await this.paymentRepo.deletePendingAsaas(pending.asaasPaymentId);
+      return;
+    }
+
+    emitEvent("payment.confirmed", {
+      userId: payment.userId,
+      academyId: payment.academyId,
+      paymentId: payment.id,
+      subscriptionId: payment.subscriptionId,
+      extra: {
+        provider: "asaas",
+        method: payment.method,
+        amountCents: payment.amountCents,
+      },
+    });
+
+    // Only now: while this row exists, both charge paths believe the month has
+    // a charge open and will try to cancel it.
+    await this.paymentRepo.deletePendingAsaas(pending.asaasPaymentId);
+
+    await this.announce(pending, payment.id, payment.amountCents, payment.referenceMonth);
+  }
+
+  /**
+   * A Pix charge is keyed by its own payment id. A card payment has no id until
+   * it exists, so its row was keyed by the checkout session that produced it.
+   */
+  private async findPending(event: AsaasPaymentEvent, asaasPaymentId: string) {
+    const direct =
+      await this.paymentRepo.findPendingAsaasByPaymentId(asaasPaymentId);
+    if (direct) return direct;
+
+    const session = event.payment?.checkoutSession;
+    if (!session) return undefined;
+    return this.paymentRepo.findPendingAsaasByPaymentId(session);
+  }
+
+  /** Push and e-mail. Never allowed to undo a payment that is already recorded. */
+  private async announce(
+    pending: { userId: string; academyId: string },
+    paymentId: string,
+    amountCents: number,
+    referenceMonth: string,
+  ): Promise<void> {
+    const student = await this.userRepo.findById(pending.userId);
+
+    if (this.dispatcher) {
+      void this.dispatcher.notifyUsers(
+        "payment_confirmed",
+        [pending.userId],
+        ["assinatura"],
+        { academyId: pending.academyId },
+      );
+      void this.dispatcher.notifyAcademyManagers(
+        "student_payment_received",
+        pending.academyId,
+        [student?.name ?? "Aluno", "assinatura"],
+      );
+    }
+
+    if (!this.emailService) return;
+
+    const academy = await this.academyRepo.findById(pending.academyId);
+    if (!student || !academy) {
+      // Softer than the drops above: the payment is recorded, only its e-mails
+      // are skipped. Still a referential hole worth knowing about.
+      emitEvent("payment.webhook_unhandled", {
+        reason: "USER_OR_ACADEMY_NOT_FOUND",
+        userId: pending.userId,
+        academyId: pending.academyId,
+        paymentId,
+        extra: { provider: "asaas", cause: "confirmation email skipped" },
+      });
+      return;
+    }
+
+    await this.emailService.sendPaymentConfirmed(
+      {
+        email: student.email,
+        studentName: student.name,
+        academyName: academy.name,
+        amountCents,
+        referenceMonth,
+      },
+      paymentId,
+    );
+
+    const owner = await this.userRepo.findById(academy.ownerId);
+    if (!owner) {
+      emitEvent("payment.webhook_unhandled", {
+        reason: "OWNER_NOT_FOUND",
+        academyId: pending.academyId,
+        paymentId,
+        extra: { provider: "asaas", cause: "manager email skipped" },
+      });
+      return;
+    }
+
+    await this.emailService.sendStudentPaymentReceived(
+      {
+        email: owner.email,
+        managerName: owner.name,
+        academyName: academy.name,
+        studentName: student.name,
+        amountCents,
+        referenceMonth,
+        hasPixKey: !!academy.pixKey,
+      },
+      paymentId,
+    );
+  }
+}
+
+/**
+ * The unique constraint on `payments.asaas_payment_id` firing — the only thing
+ * that keeps two simultaneous deliveries of one payment to a single row. Matched
+ * on the message because that is all the driver gives us, and narrowed to the
+ * column so a unique violation somewhere else still surfaces.
+ */
+function isDuplicateAsaasPayment(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    /duplicate key|unique constraint/i.test(error.message) &&
+    /asaas_payment_id/i.test(error.message)
+  );
+}
+
+/**
+ * `payments.method` answers "how did the student pay?", never "through which
+ * provider" — that is what `asaas_payment_id` and `stripe_payment_id` are for.
+ * So a card payment is `stripe` here, which is the value that has always meant
+ * "card, in the app" and already renders as "Cartão" everywhere. The name is
+ * stale rather than wrong; renaming it belongs with B9, when Stripe actually
+ * leaves and the 255 existing rows can be migrated in one coherent change.
+ */
+function methodFor(billingType: string | undefined): "pix" | "stripe" {
+  return billingType === "PIX" ? "pix" : "stripe";
+}
+
+/**
+ * When the student actually paid, as Asaas reports it. `PAYMENT_CONFIRMED`
+ * carries `confirmedDate` and a null `paymentDate`; `PAYMENT_RECEIVED` carries
+ * both. Falling back to now keeps a payment with an unparseable date recorded
+ * rather than rejected — a wrong-by-hours `paidAt` is worth far less than the
+ * row itself.
+ */
+function paidAtFrom(event: AsaasPaymentEvent): Date {
+  const raw =
+    event.payment?.paymentDate ??
+    event.payment?.clientPaymentDate ??
+    event.payment?.confirmedDate;
+  if (!raw) return new Date();
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+}

@@ -85,10 +85,14 @@ export const CATALOG = {
       // payment is lost until someone reconciles by hand; the last two mean the
       // payment *was* recorded and only its emails were skipped.
       "NO_PENDING_PIX",
+      // The same meaning on the Asaas rail, where a charge is not always a
+      // Pix. `NO_PENDING_PIX` goes with AbacatePay in B9 and this is what is
+      // left.
+      "NO_PENDING_CHARGE",
       "MISSING_REFERENCE",
       "USER_OR_ACADEMY_NOT_FOUND",
       "OWNER_NOT_FOUND",
-      // Only AbacatePay's. Stripe's unknown types are already reported by
+      // AbacatePay's and Asaas's. Stripe's unknown types are already reported by
       // `manager_subscription.webhook_unhandled` — see the note at the top of
       // stripe-checkout-webhook.handler.ts.
       "UNKNOWN_EVENT_TYPE",
