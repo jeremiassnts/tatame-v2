@@ -226,11 +226,16 @@ refunded, which is why it is reported rather than dropped quietly. The pending
 row is deliberately left in place: deleting it would make a redelivery report
 `NO_PENDING_CHARGE`, the wrong story and the louder alert.
 
-**No unique constraint, on purpose.** Production has zero duplicates and zero
-nulls on that pair (checked 2026-09-29), so the migration would apply cleanly.
-But `payment.reversed` writes nothing, so a refunded month keeps its payment
-row — and a constraint would stop that student from ever paying that month
-again. The service guard is reversible; the constraint is the one that turns a
+**No unique constraint, on purpose.** `payment.reversed` writes nothing, so a
+refunded month keeps its payment row — and a constraint would stop that student
+from ever paying that month again.
+
+The "zero duplicates, zero nulls" check that first justified calling the
+migration safe was run against a **development** database mistaken for
+production, and has been withdrawn. Nobody has asked production whether the
+pair is unique today, which only strengthens the choice: a constraint would
+have to survive whatever history is actually there, and the service guard does
+not. The service guard is reversible; the constraint is the one that turns a
 refund into a dead end.
 
 What this does not close is two concurrent writes. Nothing serialises

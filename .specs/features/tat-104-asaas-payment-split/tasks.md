@@ -496,7 +496,15 @@ intact. `POST /v1/webhooks/asaas` does no schema validation on the body at all;
 the token is the whole boundary.
 
 
-## What the database said — 2026-09-29 (B9, B10)
+## What the database said — 2026-09-29 (B9, B10) — **WRONG DATABASE, see below**
+
+> **Corrected 2026-09-29.** Every number in this section came from the
+> `DATABASE_URL` in `.env`, which points at `31.97.64.10` — a server holding a
+> single `postgres` database that is **development, not production**. It was
+> read as production because the operating notes say "Postgres and Redis are the
+> Coolify ones". Production is a different server and is not reachable from this
+> workspace. The table below is kept for the record; **do not act on it**. What
+> replaces it is *The AbacatePay rail is not dead code* further down.
 
 Queried before deleting anything, and it moved two decisions.
 
@@ -508,15 +516,13 @@ Queried before deleting anything, and it moved two decisions.
 | `academy_payout_accounts` | 1 row, `approved` |
 | `select version()` | PostgreSQL 16.13 |
 
-**AbacatePay has never recorded a payment.** The plan kept its webhook handler
-"until charges created before the cutover have drained"; there is nothing to
-drain and there never was. The handler, `NO_PENDING_PIX`,
-`createPendingPix` / `findPendingPixByQrCodeId` and the `pending_pix_payments`
-table are therefore dead code. Left in place deliberately — removing them is a
-migration and a commit of its own.
+~~**AbacatePay has never recorded a payment.**~~ **False — it is the live Pix
+rail in production.** This read a development database. See *The AbacatePay
+rail is not dead code*.
 
-**The `stripe` → `card` rename cost 2 rows, not 255.** The handoff's figure was
-the whole payments table. Done in B9's wake as migration `0023`, an
+**The `stripe` → `card` rename cost 2 rows in development**, and the production
+count is unknown — but it does not matter: `ALTER TYPE ... RENAME VALUE`
+rewrites no rows at any size. Done in B9's wake as migration `0023`, an
 `ALTER TYPE ... RENAME VALUE` that rewrites nothing.
 
 > **`0023` must not be applied to Coolify before the code deploys.** `0021` and
@@ -603,26 +609,68 @@ cd apps/mobile && npx tsc --noEmit -p tsconfig.json 2>&1 | grep -c 'error TS'
 # stashing the branch and re-running.
 ```
 
-## What production's database says about the dead code — 2026-09-29
+## The AbacatePay rail is not dead code — corrected 2026-09-29
 
-Asked again before deciding whether to delete `abacatepay-webhook.handler.ts`,
-`stripe-checkout-webhook.handler.ts`, `NO_PENDING_PIX`, `createPendingPix` /
-`findPendingPixByQrCodeId` and the `pending_pix_payments` table.
+The plan, the B9 commit message and two sections above all describe
+`abacatepay-webhook.handler.ts`, `NO_PENDING_PIX`, `createPendingPix` /
+`findPendingPixByQrCodeId` and `pending_pix_payments` as dead code awaiting a
+deletion. That came from reading a development database and believing it was
+production. It is wrong twice over, and both halves are checkable in the code
+rather than in any database:
 
-| Question | Answer |
-| --- | --- |
-| `payments` by method | 253 `manual`, 2 `stripe` — **zero `pix`** |
-| the two non-manual rows | `pi_3Tb50XKxAZnjqqVo0aaiQbO6`, `pi_3Tb2p2KxAZnjqqVo2fEAXmkD` — Stripe PaymentIntents, not Pix |
-| rows whose id is AbacatePay-shaped (`pix_char_%`) | 0 |
-| `pending_pix_payments` | the same 4 rows, all one user, 25 May 18:04–18:13 — R$ 120,00 and three of R$ 1,00 |
-| duplicates on `(subscription_id, reference_month)` | 0, and 0 nulls — which is what makes D9's constraint option viable, and D9 declines it anyway |
+1. **It is the Pix rail that production runs today.** Production serves `main`,
+   where a student pays through `POST /payments/checkout/pix` → AbacatePay, and
+   `abacatepay-webhook.handler.ts` is what turns that into a `payments` row with
+   `method = 'pix'` and the QR code id in `stripe_payment_id`. It is not waiting
+   for anything to drain; it is the thing recording the money.
+2. **`pending_pix_payments` has a live reader.**
+   `platform-summary.repository.postgres.ts` → `unpaidPixPerAcademy` counts
+   unpaid QR codes per academy for the daily summary. Dropping the table breaks
+   that report.
 
-So the Pix payments production is remembered as having taken were a nine-minute
-test session, and none of them became a payment row. The honest limit of this
-evidence: four rows still pending proves no `billing.paid` was ever processed,
-**not** that nobody paid — a payment whose webhook failed would look exactly the
-same. Only AbacatePay's own dashboard answers that, and the amount at risk is
-R$ 123,00 belonging to the developer who made them.
+So there is no deletion task in this slice, and the deploy does not have a step
+for one. Retiring the AbacatePay rail is optional future work, and its real
+precondition is that production has no open AbacatePay QR codes left — which
+only production can answer:
+
+```sql
+select method, count(*) from payments group by method;
+select count(*), max(created_at) from pending_pix_payments;
+```
+
+What the cutover *did* break, and what is fixed rather than deleted:
+`unpaidPixPerAcademy` read only the AbacatePay table, whose writer B9 removed.
+It would have reported zero unpaid Pix forever while Asaas charges accumulated
+in `pending_asaas_payments` unseen — a metric that keeps rendering and stops
+measuring. It now sums both rails, filtered to `kind = 'payment'` so a card
+checkout session is not counted as a Pix. Two integration tests, three
+mutations.
+
+## The shipped app breaks on deploy — open, 2026-09-29
+
+Not a dead-code question, and more expensive than one. **`apps/mobile` is
+version 2.1.2 on this branch and on `main`** — B10 moved the Pix screens onto
+`POST /payments/pix` without bumping it. There is no OTA (`expo-updates` is not
+installed; store builds only), so the app on students' phones is a build of
+2.1.2 that still calls `POST /payments/checkout/pix` and
+`GET /payments/pix-status/:id` — the two routes **B9 already deleted**.
+
+The moment this API deploys, every student who has not installed a new build
+gets a 404 where Pix used to be.
+
+The lever for it already exists: `GET /version` returns
+`env.MIN_MOBILE_VERSION` (`router.ts`), and `apps/mobile/lib/version.ts`
+redirects to `(system)/force-update` when the installed version is lower. The
+`.env` currently says `2.1.0`. So the deploy is:
+
+1. bump `apps/mobile` past 2.1.2 and ship the store build;
+2. deploy the API with migration `0023` **and** `MIN_MOBILE_VERSION` raised to
+   that version, together.
+
+Whether a forced update is acceptable is a product call. The alternative is
+restoring the two deleted routes for one release and removing them after
+adoption.
+
 
 ## Status
 
