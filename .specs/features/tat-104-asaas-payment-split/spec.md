@@ -242,7 +242,7 @@ and see statements.
 | SPLIT-01 | P1: Asaas customer per student | TAT-104 | Implemented | Service done (B3), no caller until B4 |
 | SPLIT-02 | P1: Pix charge with 100% split | TAT-104 | Implemented | `POST /v1/payments/pix` (B4) |
 | SPLIT-03 | P1: Card checkout with 100% split | TAT-104 | Implemented | `POST /v1/payments/checkout` (B5) |
-| SPLIT-04 | P1: Webhook reconciliation and idempotency | TAT-104 | Design | Pending |
+| SPLIT-04 | P1: Webhook reconciliation and idempotency | TAT-104 | Implemented | `asaas-payment.handler.ts` + the dispatch in `POST /v1/webhooks/asaas` (B6, B8) |
 | SPLIT-05 | P1: Refund and chargeback visibility | TAT-104 | Design | Pending |
 | SPLIT-06 | P1: Retire AbacatePay and Stripe student checkout | TAT-104 | Design | Pending |
 

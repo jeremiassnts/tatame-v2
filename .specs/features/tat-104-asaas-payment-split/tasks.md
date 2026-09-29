@@ -295,19 +295,83 @@ Four of these shaped B5:
 The assembled payload the service builds was fired at the live sandbox and
 accepted, split stored at 100%.
 
-**Found while probing, and it blocks B6/B8:** `GET /v3/webhooks` on the **root
-account answers `totalCount: 0`**. A6 registers `PAYMENT_*` and
-`ACCOUNT_STATUS_*` webhooks on each *subaccount*, but every charge lives on the
-root account. Whether a subaccount receives `PAYMENT_*` for a split it is
-merely the recipient of is unverified, and if it does not, no payment webhook
-will ever arrive. Settle this before writing B8 — a webhook can be registered
-through `POST /v3/webhooks` with the root key.
+**Found while probing, and it turned out to block B6/B8 — now settled.** See
+**Webhook delivery — 2026-09-29** below: a subaccount is *not* notified of a
+payment it merely receives a split from, so the root account needs a webhook of
+its own.
 
 Also confirmed while probing: `CHECKOUT_PAID`, `CHECKOUT_CANCELED` and
 `CHECKOUT_EXPIRED` are valid webhook event names, alongside `PAYMENT_CREATED`,
 `PAYMENT_DELETED` and `PAYMENT_CHARGEBACK_REQUESTED`. B6 does not need the
 `CHECKOUT_*` ones — the payment carries `checkoutSession` — but B8 has to
 decide whether an unregistered event type is a drop or a shrug.
+
+
+## Webhook delivery — 2026-09-29
+
+The question B6 and B8 could not be written without: **who is told when a split
+charge is paid?** Settled by experiment, against the real sandbox, with the API
+behind its ngrok tunnel and ngrok's request inspector as the witness.
+
+| Step | Result |
+| --- | --- |
+| Baseline: deliveries at the tunnel | 4, all `ACCOUNT_STATUS_*` from the account created that morning — the tunnel works |
+| `GET /v3/webhooks` on the root account | `totalCount: 0` — nothing registered |
+| Pay a checkout split 100% into the academy's real wallet | payment `CONFIRMED`, split `AWAITING_CREDIT` … and **no delivery in 60s** |
+| Register `POST /v3/webhooks` on the root account | 200 |
+| Pay another, same wallet | **delivered within a second** |
+
+**A subaccount is not notified of a payment it is merely the split recipient
+of.** A6 registers `PAYMENT_*` and `ACCOUNT_STATUS_*` on each *subaccount*, but
+every charge lives on the root account — so without a webhook there, no student
+payment would ever have been recorded, and B6 would have passed its tests while
+recording nothing in production.
+
+The real delivery, which every fixture in the suite is now shaped after:
+
+```json
+{ "id": "evt_…", "event": "PAYMENT_CONFIRMED", "dateCreated": "2026-09-29 12:06:31",
+  "account": { "id": "<the root account>", "ownerId": null },
+  "payment": { "id": "pay_…", "status": "CONFIRMED", "value": 150.0, "netValue": 146.53,
+               "billingType": "CREDIT_CARD", "checkoutSession": "<the checkout id>",
+               "externalReference": null, "confirmedDate": "2026-09-29",
+               "paymentDate": null, "split": [ { "percentualValue": 100.0,
+               "totalValue": 146.53, "status": "AWAITING_CREDIT" } ] } }
+```
+
+Three things it settled:
+
+1. **`checkoutSession` is on the webhook.** B6 finds a card payment without
+   reading it back from Asaas.
+2. **`externalReference` is null** on a checkout's payment, confirming it is
+   not inherited. The session id really is the only way back.
+3. The header is `Asaas-Access-Token` and the agent is `Asaas_Hmlg/3.0`.
+
+These six event names are valid on `POST /v3/webhooks` and were registered:
+`PAYMENT_CONFIRMED`, `PAYMENT_RECEIVED`, `PAYMENT_REFUNDED`,
+`PAYMENT_CHARGEBACK_REQUESTED`, `PAYMENT_CHARGEBACK_DISPUTE`,
+`PAYMENT_AWAITING_CHARGEBACK_REVERSAL`. The last four are B7's; until it lands
+they are reported as `UNKNOWN_EVENT_TYPE` rather than dropped.
+`CHECKOUT_PAID`, `CHECKOUT_CANCELED` and `CHECKOUT_EXPIRED` are also valid and
+deliberately **not** registered — the payment already points back at its
+session, so they would be a second delivery saying the same thing.
+
+### What has to exist in the Asaas account
+
+Per environment, once. Not created by the app: it is platform configuration,
+and doing it at startup would race across instances and duplicate.
+
+| What | Where | Why |
+| --- | --- | --- |
+| A webhook on the **root** account at `{API_PUBLIC_URL}/v1/webhooks/asaas`, `apiVersion: 3`, `authToken: ASAAS_WEBHOOK_TOKEN`, the six `PAYMENT_*` events above | root | Nothing records a student payment without it |
+| A Pix key on the **root** account | root | `GET /payments/{id}/pixQrCode` fails until it exists; Asaas provisions it asynchronously |
+| Nothing per academy | subaccount | A6 registers the subaccount's `ACCOUNT_STATUS_*` webhook at creation |
+
+`sendType: SEQUENTIALLY` is what the subaccount registrations already use, and
+it matters here: it is what keeps `PAYMENT_CONFIRMED` from overtaking
+`PAYMENT_RECEIVED` for the same payment. The handler survives either order
+anyway — the unique constraint is what settles it — but out-of-order delivery
+would make the logs harder to read for no benefit.
 
 
 ## Status
@@ -321,10 +385,11 @@ finally driven through the app end to end**: form → account created → docume
 which stays, lists the group Asaas returned, and settles the status from Asaas on its
 own. What is still untested is everything only production exercises — a document group
 that actually needs a document, a rejection, and a suspension.
-**Slice B (TAT-104) — B1 to B5 done.** Both student rails now open a split
-charge: `POST /v1/payments/pix` and `POST /v1/payments/checkout`. Nothing
-records a payment yet — that is B6 and B8, and until they land a student can
-pay in the sandbox and no `payments` row appears.
+**Slice B (TAT-104) — B1 to B6, B8 and B12 done.** The loop closes: both
+student rails open a split charge (`POST /v1/payments/pix` and
+`POST /v1/payments/checkout`), and `POST /v1/webhooks/asaas` turns the
+settlement into a payment row. What is left is B7 (refunds and chargebacks),
+B9 (retiring AbacatePay), B10 (the mobile Pix screen) and the final gate.
 
 **Migrations `0021_yummy_gambit` and `0022_awesome_masque` are both applied to
 the Coolify database** (2026-09-29). 0022 was purely additive — a
@@ -366,7 +431,10 @@ bookkeeping gap described below, adding row 19. Verified against the database:
 | B3 | Done | `asaas-customer.service.ts`, 9 unit tests; client gained `createCustomer` / `findCustomerByExternalReference`, 6 more |
 | B4 | Done | `POST /v1/payments/pix`, 19 unit tests; implements D5; client gained `createPayment` / `getPixQrCode` / `findPayment` / `deletePayment` |
 | B5 | Done | `POST /v1/payments/checkout` is Asaas now; migration `0022_awesome_masque` adds `pending_asaas_payments.kind`; 19 unit + 9 client tests, 1 more repository contract test; client gained `createCheckout` / `cancelCheckout` |
-| B6-B13 | Pending | |
+| B6 | Done | `asaas-payment.handler.ts`, 16 unit + 5 drop tests; idempotent by the unique constraint, not a flag |
+| B8 | Done | `POST /v1/webhooks/asaas` dispatches both streams; 8 integration tests take a charge through the webhook to a payment row |
+| B12 | Done | covered by `asaas-payment.integration.test.ts` — both rails, replayed |
+| B7, B9-B11, B13 | Pending | |
 
 Two things B2 decided that the task list did not spell out:
 
@@ -432,8 +500,9 @@ And three from B4:
 1. ~~**No Asaas credentials yet.**~~ **Superseded 2026-09-28** by the sandbox
    validation above. What is still unverified is narrower: the onboarding round
    trip driven from the app, and both webhooks actually delivered by Asaas.
-2. **`POST /webhooks/asaas` accepts `PAYMENT_*` and ignores it** so Asaas does
-   not retry for days. B8 replaces that branch with the real dispatch.
+2. ~~**`POST /webhooks/asaas` accepts `PAYMENT_*` and ignores it**~~ —
+   **resolved 2026-09-29 by B8.** The route now dispatches `ACCOUNT_STATUS_*`
+   and `PAYMENT_*` to their handlers and reports anything else.
 3. ~~`DOCUMENT_REQUIRES_ONBOARDING_URL` carries the url in `HttpError.details`~~
    — **moot since D6.** The 409 lived on the upload route, which is gone. The
    screen reads the url from the document list, as it already did.
