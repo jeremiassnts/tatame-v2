@@ -15,6 +15,7 @@ import type {
 
 const PENDING_ASAAS_COLUMNS = {
   asaasPaymentId: pendingAsaasPayments.asaasPaymentId,
+  kind: pendingAsaasPayments.kind,
   subscriptionId: pendingAsaasPayments.subscriptionId,
   userId: pendingAsaasPayments.userId,
   academyId: pendingAsaasPayments.academyId,

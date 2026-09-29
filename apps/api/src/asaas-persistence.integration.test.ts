@@ -45,6 +45,7 @@ function describeContract(
       const { subscriptionId, userId, academyId } = ids();
 
       await repo.createPendingAsaas({
+        kind: "payment",
         asaasPaymentId: "pay_contract_1",
         subscriptionId,
         userId,
@@ -55,6 +56,7 @@ function describeContract(
 
       expect(await repo.findPendingAsaasByPaymentId("pay_contract_1")).toEqual({
         asaasPaymentId: "pay_contract_1",
+        kind: "payment",
         subscriptionId,
         userId,
         academyId,
@@ -79,6 +81,7 @@ function describeContract(
       const repo = makeRepo();
       const { subscriptionId, userId, academyId } = ids();
       const row = {
+        kind: "payment" as const,
         asaasPaymentId: "pay_contract_dup",
         subscriptionId,
         userId,
@@ -95,6 +98,40 @@ function describeContract(
       ).toEqual(row);
     });
 
+    // B5's half of the same table. A card checkout has no payment id until the
+    // student pays, so the row is keyed by the checkout session id — and `kind`
+    // is what tells the cancel path to close a checkout rather than delete a
+    // charge. A kind that did not survive the round trip would make a manual
+    // settlement report success while leaving the link payable.
+    it("round-trips a pending checkout, kind included", async () => {
+      const repo = makeRepo();
+      const { subscriptionId, userId, academyId } = ids();
+
+      await repo.createPendingAsaas({
+        kind: "checkout",
+        asaasPaymentId: "1c62e6a2-0000-4000-8000-b5contract01",
+        subscriptionId,
+        userId,
+        academyId,
+        referenceMonth: REFERENCE_MONTH,
+        amountCents: 15_000,
+      });
+
+      const found = await repo.findPendingAsaasBySubscriptionMonth(
+        subscriptionId,
+        REFERENCE_MONTH,
+      );
+      expect(found).toEqual({
+        asaasPaymentId: "1c62e6a2-0000-4000-8000-b5contract01",
+        kind: "checkout",
+        subscriptionId,
+        userId,
+        academyId,
+        referenceMonth: REFERENCE_MONTH,
+        amountCents: 15_000,
+      });
+    });
+
     // What B4 reuses instead of opening a second charge for a month that
     // already has one waiting to be paid.
     it("finds the open charge for a subscription and month", async () => {
@@ -102,6 +139,7 @@ function describeContract(
       const { subscriptionId, userId, academyId } = ids();
 
       await repo.createPendingAsaas({
+        kind: "payment",
         asaasPaymentId: "pay_contract_open",
         subscriptionId,
         userId,

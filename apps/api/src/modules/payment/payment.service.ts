@@ -13,6 +13,7 @@ import type {
   IPaymentRepository,
   PaymentRow,
   PaymentWithUser,
+  PendingAsaasPayment,
 } from "./payment.repository.js";
 
 /** What the student sends when asking for a Pix charge. */
@@ -25,12 +26,40 @@ export interface CreatePixChargeInput {
   cpfCnpj?: string;
 }
 
+/** What the student sends when asking for a card checkout. */
+export interface CreateCheckoutInput {
+  subscriptionId?: string;
+}
+
+/**
+ * How long an Asaas checkout stays payable. Expiry is what stops an abandoned
+ * link from being paid weeks later against a month settled some other way, so
+ * it is deliberately short rather than generous.
+ */
+const CHECKOUT_EXPIRY_MINUTES = 60;
+
 export interface PixChargeView {
   paymentId: string;
   encodedImage: string;
   payload: string;
   expirationDate: string | null;
   amountCents: number;
+  referenceMonth: string;
+}
+
+type SubscriptionWithPlan = Awaited<
+  ReturnType<IStudentSubscriptionRepository["listWithPlanByUserAndAcademy"]>
+>[number];
+
+/** What both Asaas charge paths establish before they may spend a call. */
+interface ChargeContext {
+  active: SubscriptionWithPlan;
+  account: NonNullable<
+    Awaited<ReturnType<IPayoutAccountRepository["findByAcademyId"]>>
+  >;
+  /** `YYYY-MM-DD`, today. */
+  today: string;
+  /** `YYYY-MM-01`, the billing period today falls in. */
   referenceMonth: string;
 }
 
@@ -144,8 +173,26 @@ export class PaymentService {
     );
     if (!open) return;
 
-    await this.asaas.root().deletePayment(open.asaasPaymentId);
+    await this.cancelAsaasHandle(open);
     await this.paymentRepo.deletePendingAsaas(open.asaasPaymentId);
+  }
+
+  /**
+   * Closes whichever kind of Asaas charge a pending row is holding.
+   *
+   * Reading `kind` rather than guessing is load-bearing. Both endpoints answer
+   * 404 for the other kind's id, and both wrappers treat a 404 as success — so
+   * cancelling a checkout with `deletePayment` would report success while
+   * leaving a link the student can still pay. That is exactly the
+   * double-payment hole D5 exists to close, re-opened on the card rail.
+   */
+  private async cancelAsaasHandle(open: PendingAsaasPayment): Promise<void> {
+    const client = this.asaas!.root();
+    if (open.kind === "checkout") {
+      await client.cancelCheckout(open.asaasPaymentId);
+      return;
+    }
+    await client.deletePayment(open.asaasPaymentId);
   }
 
   /**
@@ -191,13 +238,22 @@ export class PaymentService {
    * over `netValue`, so the academy receives the charge minus the Asaas fee and
    * the platform nets exactly zero (D1/D3).
    */
-  async createPixCharge(
+  /**
+   * Everything both charge paths must establish before spending an Asaas call:
+   * the plan allows automatic payment, the student has an active subscription,
+   * the month is not already paid, and the academy can receive.
+   *
+   * Shared on purpose. The payout-account lookup is both the gate and the
+   * source of the wallet the split is addressed to, so a path that forgot it
+   * would not fail — it would open a charge that pays the platform instead of
+   * the academy (D4). One copy is one thing to get right.
+   */
+  private async openChargeContext(
     studentUserId: string,
     academyId: string,
-    input: CreatePixChargeInput = {},
-  ): Promise<PixChargeView> {
-    const { asaas, customers, payoutAccountRepo } = this.requireAsaas();
-
+    payoutAccountRepo: IPayoutAccountRepository,
+    subscriptionId?: string,
+  ): Promise<ChargeContext> {
     if (this.managerSubRepo) {
       const managerSub = await this.managerSubRepo.findByAcademyId(academyId);
       if (managerSub?.plan === "free") {
@@ -213,10 +269,10 @@ export class PaymentService {
       studentUserId,
       academyId,
     );
-    const active = input.subscriptionId
+    const active = subscriptionId
       ? subs.find(
           (s) =>
-            s.subscription.id === input.subscriptionId &&
+            s.subscription.id === subscriptionId &&
             s.subscription.status === "active",
         )
       : subs.find((s) => s.subscription.status === "active");
@@ -225,25 +281,20 @@ export class PaymentService {
       throw new HttpError(404, "No active subscription found");
     }
 
-    const { subscription, plan } = active;
-
     const today = new Date().toISOString().slice(0, 10);
     const referenceMonth = today.slice(0, 7) + "-01";
 
     const alreadyPaid =
       await this.paymentRepo.existsForSubscriptionReferenceMonth(
-        subscription.id,
+        active.subscription.id,
         referenceMonth,
       );
     if (alreadyPaid) {
       throw new HttpError(409, "Payment already exists for this period");
     }
 
-    // One lookup serves two purposes: it is the gate, and it is where the
-    // wallet the split is addressed to comes from. Not flag-gated the way
-    // `SubscriptionService` gates enrolment — without a wallet there is nothing
-    // to split into, and a charge with no split pays the platform instead of
-    // the academy (D4).
+    // Not flag-gated the way `SubscriptionService` gates enrolment: without a
+    // wallet there is nothing to split into at all.
     const account = await payoutAccountRepo.findByAcademyId(academyId);
     if (!account || account.status !== "approved") {
       throw new HttpError(
@@ -253,29 +304,56 @@ export class PaymentService {
       );
     }
 
+    return { active, account, today, referenceMonth };
+  }
+
+  async createPixCharge(
+    studentUserId: string,
+    academyId: string,
+    input: CreatePixChargeInput = {},
+  ): Promise<PixChargeView> {
+    const { asaas, customers, payoutAccountRepo } = this.requireAsaas();
+
+    const { active, account, today, referenceMonth } =
+      await this.openChargeContext(
+        studentUserId,
+        academyId,
+        payoutAccountRepo,
+        input.subscriptionId,
+      );
+    const { subscription, plan } = active;
+
     const open = await this.paymentRepo.findPendingAsaasBySubscriptionMonth(
       subscription.id,
       referenceMonth,
     );
     if (open) {
-      // Asaas serves a QR for a deleted charge just as happily as for a live
-      // one, so the charge has to be read back. A row left behind by a charge
-      // cancelled elsewhere repairs itself here instead of becoming a dead QR.
-      const live = await asaas.root().findPayment(open.asaasPaymentId);
-      if (live && !live.deleted) {
-        const reused = await this.fetchPixQrCode(
-          asaas,
-          open.asaasPaymentId,
-          academyId,
-        );
-        return {
-          paymentId: open.asaasPaymentId,
-          encodedImage: reused.encodedImage,
-          payload: reused.payload,
-          expirationDate: reused.expirationDate,
-          amountCents: open.amountCents,
-          referenceMonth,
-        };
+      if (open.kind === "payment") {
+        // Asaas serves a QR for a deleted charge just as happily as for a live
+        // one, so the charge has to be read back. A row left behind by a charge
+        // cancelled elsewhere repairs itself here instead of becoming a dead QR.
+        const live = await asaas.root().findPayment(open.asaasPaymentId);
+        if (live && !live.deleted) {
+          const reused = await this.fetchPixQrCode(
+            asaas,
+            open.asaasPaymentId,
+            academyId,
+          );
+          return {
+            paymentId: open.asaasPaymentId,
+            encodedImage: reused.encodedImage,
+            payload: reused.payload,
+            expirationDate: reused.expirationDate,
+            amountCents: open.amountCents,
+            referenceMonth,
+          };
+        }
+      } else {
+        // A card checkout the student opened and then changed their mind
+        // about. It cannot be handed back here — it is a link, not a QR — and
+        // leaving it alive next to a fresh Pix charge makes the month payable
+        // twice.
+        await asaas.root().cancelCheckout(open.asaasPaymentId);
       }
       await this.paymentRepo.deletePendingAsaas(open.asaasPaymentId);
     }
@@ -319,6 +397,7 @@ export class PaymentService {
     // the charge that already exists.
     await this.paymentRepo.createPendingAsaas({
       asaasPaymentId: charge.id,
+      kind: "payment",
       subscriptionId: subscription.id,
       userId: studentUserId,
       academyId,
@@ -336,6 +415,100 @@ export class PaymentService {
       amountCents: plan.priceCents,
       referenceMonth,
     };
+  }
+
+  /**
+   * A hosted card checkout on Asaas, split whole into the academy's wallet,
+   * behind the same gate as the Pix charge.
+   *
+   * Three things differ from `createPixCharge`, all forced by the API:
+   *
+   * 1. The split field is `percentageValue`. `POST /v3/checkouts` rejects the
+   *    `percentualValue` that `POST /v3/payments` requires.
+   * 2. There is no payment id yet. Asaas answers a checkout session id, and
+   *    the payment it eventually creates points back with `checkoutSession` —
+   *    the checkout's own `externalReference` is *not* copied onto it. So the
+   *    pending row is keyed by the session id and marked `kind: "checkout"`.
+   * 3. The student's Asaas customer is not attached. Asaas demands a full
+   *    address on any customer bound here, and the platform holds none (D7),
+   *    so the student identifies themselves on the Asaas page instead.
+   *
+   * An open charge for the month is cancelled rather than reused, whichever
+   * kind it is: a checkout link cannot be handed back the way a QR can, and
+   * two live charges make the month payable twice.
+   */
+  async createCheckout(
+    studentUserId: string,
+    academyId: string,
+    apiPublicUrl: string,
+    input: CreateCheckoutInput = {},
+  ): Promise<{ checkoutUrl: string }> {
+    const { asaas, payoutAccountRepo } = this.requireAsaas();
+
+    const { active, account, referenceMonth } = await this.openChargeContext(
+      studentUserId,
+      academyId,
+      payoutAccountRepo,
+      input.subscriptionId,
+    );
+    const { subscription, plan } = active;
+
+    await this.cancelOpenAsaasCharge(subscription.id, referenceMonth);
+
+    const resultUrl = (status: string) =>
+      `${apiPublicUrl.replace(/\/$/, "")}/payments/checkout-result?status=${status}`;
+
+    let checkout;
+    try {
+      checkout = await asaas.root().createCheckout({
+        billingTypes: ["CREDIT_CARD"],
+        chargeTypes: ["DETACHED"],
+        minutesToExpire: CHECKOUT_EXPIRY_MINUTES,
+        items: [
+          {
+            name: `${plan.name} — ${referenceMonth.slice(0, 7)}`,
+            quantity: 1,
+            value: Number((plan.priceCents / 100).toFixed(2)),
+          },
+        ],
+        callback: {
+          successUrl: resultUrl("success"),
+          cancelUrl: resultUrl("cancel"),
+          expiredUrl: resultUrl("expired"),
+        },
+        splits: [{ walletId: account.walletId, percentageValue: 100 }],
+        externalReference: subscription.id,
+      });
+    } catch (error) {
+      emitEvent("payment.charge_failed", {
+        userId: studentUserId,
+        academyId,
+        subscriptionId: subscription.id,
+        extra: {
+          stage: "create_checkout",
+          code:
+            error instanceof HttpError ? (error.details?.code ?? null) : null,
+          message: error instanceof Error ? error.message : String(error),
+        },
+      });
+      throw error;
+    }
+
+    // The link is live from here on, so the row that makes it reconcilable has
+    // to exist even if the student never comes back. Without it the webhook
+    // arrives with a payment whose `checkoutSession` matches nothing, and the
+    // money has no subscription or month to be recorded against.
+    await this.paymentRepo.createPendingAsaas({
+      asaasPaymentId: checkout.id,
+      kind: "checkout",
+      subscriptionId: subscription.id,
+      userId: studentUserId,
+      academyId,
+      referenceMonth,
+      amountCents: plan.priceCents,
+    });
+
+    return { checkoutUrl: checkout.link };
   }
 
   async listForManager(

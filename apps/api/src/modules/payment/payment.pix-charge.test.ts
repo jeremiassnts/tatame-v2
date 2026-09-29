@@ -6,139 +6,18 @@ import {
   makeStudentSubscription,
   makeSubscriptionPlan,
 } from "../../testing/factories/index.js";
+import {
+  currentReferenceMonth,
+  QR,
+  setupAsaasCharges as setup,
+} from "../../testing/asaas-charge-harness.js";
 import { InMemoryAcademyRepository } from "../academy/academy.repository.in-memory.js";
-import { InMemoryPayoutAccountRepository } from "../payout-account/payout-account.repository.in-memory.js";
-import type { PayoutAccountRow } from "../payout-account/payout-account.repository.js";
 import {
   InMemoryStudentSubscriptionRepository,
   InMemorySubscriptionPlanRepository,
 } from "../subscription/subscription.repository.in-memory.js";
-import { InMemoryUserRepository } from "../user/user.repository.in-memory.js";
-import { AsaasCustomerService } from "./asaas-customer.service.js";
 import { InMemoryPaymentRepository } from "./payment.repository.in-memory.js";
-import type { PaymentRow } from "./payment.repository.js";
 import { PaymentService } from "./payment.service.js";
-
-const QR = {
-  encodedImage: "iVBORw0KGgo",
-  payload: "00020101021226820014br.gov.bcb.pix",
-  expirationDate: "2027-10-02 23:59:59",
-};
-
-function payoutAccount(
-  academyId: string,
-  status: PayoutAccountRow["status"] = "approved",
-): PayoutAccountRow {
-  const t = new Date();
-  return {
-    id: randomUUID(),
-    academyId,
-    provider: "asaas",
-    externalAccountId: "acc_1",
-    walletId: "wal_academy",
-    apiKeyEncrypted: "sealed",
-    status,
-    generalStatus: status === "approved" ? "APPROVED" : "PENDING",
-    commercialInfoStatus: null,
-    documentStatus: null,
-    bankAccountInfoStatus: null,
-    onboardingUrl: null,
-    rejectionReason: null,
-    approvedAt: status === "approved" ? t : null,
-    createdAt: t,
-    updatedAt: t,
-  };
-}
-
-function currentReferenceMonth(): string {
-  return new Date().toISOString().slice(0, 7) + "-01";
-}
-
-async function setup(
-  opts: {
-    accountStatus?: PayoutAccountRow["status"] | "none";
-    asaas?: Partial<{
-      createPayment: ReturnType<typeof vi.fn>;
-      getPixQrCode: ReturnType<typeof vi.fn>;
-      findPayment: ReturnType<typeof vi.fn>;
-      deletePayment: ReturnType<typeof vi.fn>;
-      createCustomer: ReturnType<typeof vi.fn>;
-      findCustomerByExternalReference: ReturnType<typeof vi.fn>;
-    }>;
-  } = {},
-) {
-  const managerId = randomUUID();
-  const academy = makeAcademy({ ownerId: managerId });
-  const plan = makeSubscriptionPlan({ academyId: academy.id, priceCents: 15000 });
-  const planRepo = new InMemorySubscriptionPlanRepository([plan]);
-
-  const userRepo = new InMemoryUserRepository();
-  await userRepo.upsert({
-    clerkUserId: "user_student",
-    email: "aluno@example.com",
-    name: "Aluno Teste",
-    profileImageUrl: null,
-  });
-  const student = (await userRepo.findByClerkId("user_student"))!;
-
-  const subscription = makeStudentSubscription({
-    userId: student.id,
-    planId: plan.id,
-    status: "active",
-  });
-  const subRepo = new InMemoryStudentSubscriptionRepository(planRepo, [
-    subscription,
-  ]);
-
-  const payRows: PaymentRow[] = [];
-  const payRepo = new InMemoryPaymentRepository(payRows);
-
-  const accountStatus = opts.accountStatus ?? "approved";
-  const payoutRepo = new InMemoryPayoutAccountRepository(
-    accountStatus === "none" ? [] : [payoutAccount(academy.id, accountStatus)],
-  );
-
-  const client = {
-    createPayment:
-      opts.asaas?.createPayment ??
-      vi.fn().mockResolvedValue({ id: "pay_new", status: "PENDING", value: 150 }),
-    getPixQrCode: opts.asaas?.getPixQrCode ?? vi.fn().mockResolvedValue(QR),
-    findPayment:
-      opts.asaas?.findPayment ??
-      vi.fn().mockResolvedValue({ id: "pay_open", status: "PENDING", value: 150, deleted: false }),
-    deletePayment: opts.asaas?.deletePayment ?? vi.fn().mockResolvedValue(undefined),
-    createCustomer:
-      opts.asaas?.createCustomer ??
-      vi.fn().mockResolvedValue({ id: "cus_1", name: "Aluno Teste", cpfCnpj: "41763193640" }),
-    findCustomerByExternalReference:
-      opts.asaas?.findCustomerByExternalReference ??
-      vi.fn().mockResolvedValue(undefined),
-  };
-  const factory = { root: () => client as never };
-
-  const service = new PaymentService(
-    payRepo,
-    subRepo,
-    new InMemoryAcademyRepository([academy]),
-    undefined,
-    undefined,
-    payoutRepo,
-    factory,
-    new AsaasCustomerService(userRepo, factory),
-  );
-
-  return {
-    service,
-    client,
-    payRepo,
-    userRepo,
-    managerId,
-    academyId: academy.id,
-    studentId: student.id,
-    subscriptionId: subscription.id,
-    plan,
-  };
-}
 
 describe("PaymentService.createPixCharge", () => {
   let ctx: Awaited<ReturnType<typeof setup>>;
@@ -177,6 +56,7 @@ describe("PaymentService.createPixCharge", () => {
 
     expect(await ctx.payRepo.findPendingAsaasByPaymentId("pay_new")).toEqual({
       asaasPaymentId: "pay_new",
+      kind: "payment",
       subscriptionId: ctx.subscriptionId,
       userId: ctx.studentId,
       academyId: ctx.academyId,
@@ -241,6 +121,7 @@ describe("PaymentService.createPixCharge", () => {
   describe("reusing an open charge", () => {
     beforeEach(async () => {
       await ctx.payRepo.createPendingAsaas({
+        kind: "payment",
         asaasPaymentId: "pay_open",
         subscriptionId: ctx.subscriptionId,
         userId: ctx.studentId,
@@ -408,6 +289,7 @@ describe("PaymentService.confirmManual cancelling the open charge (D5)", () => {
     const ctx = await setup();
     const referenceMonth = currentReferenceMonth();
     await ctx.payRepo.createPendingAsaas({
+      kind: "payment",
       asaasPaymentId: "pay_open",
       subscriptionId: ctx.subscriptionId,
       userId: ctx.studentId,
@@ -432,6 +314,7 @@ describe("PaymentService.confirmManual cancelling the open charge (D5)", () => {
   it("leaves other months alone", async () => {
     const ctx = await setup();
     await ctx.payRepo.createPendingAsaas({
+      kind: "payment",
       asaasPaymentId: "pay_other_month",
       subscriptionId: ctx.subscriptionId,
       userId: ctx.studentId,
@@ -479,6 +362,7 @@ describe("PaymentService.confirmManual cancelling the open charge (D5)", () => {
     });
     const referenceMonth = currentReferenceMonth();
     await ctx.payRepo.createPendingAsaas({
+      kind: "payment",
       asaasPaymentId: "pay_open",
       subscriptionId: ctx.subscriptionId,
       userId: ctx.studentId,

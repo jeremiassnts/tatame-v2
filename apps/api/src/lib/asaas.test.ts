@@ -482,4 +482,191 @@ describe("AsaasClient", () => {
       ).rejects.toMatchObject({ statusCode: 502 });
     });
   });
+  describe("checkouts", () => {
+    // The sandbox's own answer on 2026-09-29, kept verbatim. Note `split`
+    // singular coming back where the request sent `splits`, and the value
+    // under `percentageValue` rather than the payments spelling.
+    const SANDBOX_CHECKOUT = {
+      id: "28934c1d-2ded-4ee0-a7bb-8f305b28681a",
+      link: "https://sandbox.asaas.com/checkoutSession/show/28934c1d-2ded-4ee0-a7bb-8f305b28681a",
+      status: "ACTIVE",
+      minutesToExpire: 120,
+      externalReference: "B5PROBE-sub-2026-09-01",
+      billingTypes: ["CREDIT_CARD"],
+      chargeTypes: ["DETACHED"],
+      callback: {
+        cancelUrl: "https://example.test/v1/payments/checkout-result?status=cancel",
+        successUrl: "https://example.test/v1/payments/checkout-result?status=success",
+        expiredUrl: "https://example.test/v1/payments/checkout-result?status=expired",
+      },
+      items: [
+        {
+          name: "Plano Mensal — 2026-09",
+          description: null,
+          externalReference: null,
+          quantity: 1,
+          value: 150.0,
+        },
+      ],
+      subscription: null,
+      installment: null,
+      split: [
+        {
+          walletId: "742f6df1-c4ee-4645-87a6-523b50345be5",
+          fixedValue: null,
+          percentageValue: 100.0,
+          totalFixedValue: null,
+        },
+      ],
+      customer: null,
+      customerData: null,
+    };
+
+    const input = {
+      billingTypes: ["CREDIT_CARD"] as const,
+      chargeTypes: ["DETACHED"] as const,
+      minutesToExpire: 60,
+      items: [{ name: "Plano Mensal — 2026-09", quantity: 1, value: 150 }],
+      callback: {
+        successUrl: "https://example.test/v1/payments/checkout-result?status=success",
+        cancelUrl: "https://example.test/v1/payments/checkout-result?status=cancel",
+      },
+    };
+
+    it("creates a checkout carrying the whole split to the academy wallet", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(200, SANDBOX_CHECKOUT));
+
+      const checkout = await AsaasClient.root().createCheckout({
+        ...input,
+        billingTypes: ["CREDIT_CARD"],
+        chargeTypes: ["DETACHED"],
+        splits: [{ walletId: "wal_1", percentageValue: 100 }],
+      });
+
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${BASE_URL}/v3/checkouts`);
+      expect(init.method).toBe("POST");
+      expect(checkout.id).toBe("28934c1d-2ded-4ee0-a7bb-8f305b28681a");
+      expect(checkout.link).toBe(SANDBOX_CHECKOUT.link);
+    });
+
+    // The one difference from `/v3/payments` that a copy-paste would miss:
+    // `percentualValue` is rejected outright here, so the request has to carry
+    // `percentageValue` and nothing may quietly translate between them.
+    it("sends the split under the spelling the checkout endpoint requires", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(200, SANDBOX_CHECKOUT));
+
+      await AsaasClient.root().createCheckout({
+        ...input,
+        billingTypes: ["CREDIT_CARD"],
+        chargeTypes: ["DETACHED"],
+        splits: [{ walletId: "wal_1", percentageValue: 100 }],
+      });
+
+      const body = JSON.parse(
+        (fetchMock.mock.calls[0]![1] as RequestInit).body as string,
+      ) as Record<string, unknown>;
+      expect(body.splits).toEqual([
+        { walletId: "wal_1", percentageValue: 100 },
+      ]);
+      expect(body).not.toHaveProperty("split");
+    });
+
+    // Asaas answers 400 with the missing field named, and that sentence is
+    // what has to reach the student's screen.
+    it("passes an Asaas rejection through verbatim", async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse(400, {
+          errors: [
+            {
+              code: "invalid_object",
+              description: "O campo callback deve ser informado.",
+            },
+          ],
+        }),
+      );
+
+      await expect(
+        AsaasClient.root().createCheckout({
+          ...input,
+          billingTypes: ["CREDIT_CARD"],
+          chargeTypes: ["DETACHED"],
+        }),
+      ).rejects.toMatchObject({
+        statusCode: 400,
+        message: "O campo callback deve ser informado.",
+      });
+    });
+
+    it("refuses a checkout response with no link", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(200, { id: "chk_1" }));
+      await expect(
+        AsaasClient.root().createCheckout({
+          ...input,
+          billingTypes: ["CREDIT_CARD"],
+          chargeTypes: ["DETACHED"],
+        }),
+      ).rejects.toMatchObject({ statusCode: 502 });
+    });
+
+    it("cancels a checkout", async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse(200, { ...SANDBOX_CHECKOUT, status: "CANCELED" }),
+      );
+
+      await AsaasClient.root().cancelCheckout("chk_1");
+
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${BASE_URL}/v3/checkouts/chk_1/cancel`);
+      expect(init.method).toBe("POST");
+    });
+
+    // Unlike DELETE /v3/payments, Asaas is not idempotent here: a second
+    // cancel, or one on a session already paid or expired, answers this exact
+    // 400. All of them mean the session is no longer payable, which is what
+    // the caller asked for.
+    it("treats a checkout that is no longer active as already cancelled", async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse(400, {
+          errors: [
+            {
+              code: "invalid_action",
+              description: "O Checkout não está ativo para ser cancelado.",
+            },
+          ],
+        }),
+      );
+
+      await expect(
+        AsaasClient.root().cancelCheckout("chk_done"),
+      ).resolves.toBeUndefined();
+    });
+
+    it("treats cancelling a checkout that never existed as done", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(404, { errors: [] }));
+      await expect(
+        AsaasClient.root().cancelCheckout("chk_gone"),
+      ).resolves.toBeUndefined();
+    });
+
+    // A 400 that is *not* invalid_action is the student's data being refused,
+    // and swallowing it would report a cancellation that never happened.
+    it("still raises a rejection that is not an inactive checkout", async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse(400, {
+          errors: [{ code: "invalid_object", description: "Algo errado" }],
+        }),
+      );
+      await expect(
+        AsaasClient.root().cancelCheckout("chk_1"),
+      ).rejects.toMatchObject({ statusCode: 400 });
+    });
+
+    it("still raises anything other than a 404 on cancel", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(500, {}));
+      await expect(
+        AsaasClient.root().cancelCheckout("chk_1"),
+      ).rejects.toMatchObject({ statusCode: 502 });
+    });
+  });
 });

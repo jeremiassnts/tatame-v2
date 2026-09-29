@@ -81,6 +81,19 @@ export const payoutAccountStatusEnum = pgEnum("payout_account_status", [
   "suspended",
 ]);
 
+/**
+ * Which Asaas handle a pending row holds. A Pix charge is created as a payment
+ * and is cancelled with `DELETE /v3/payments/{id}`; a card checkout has no
+ * payment id until the student pays, so the row holds the checkout session id
+ * and is cancelled with `POST /v3/checkouts/{id}/cancel`. Calling one on the
+ * other answers 404, which both wrappers read as success — so a row that could
+ * not say which it is would leave a live charge behind every time.
+ */
+export const pendingAsaasKindEnum = pgEnum("pending_asaas_kind", [
+  "payment",
+  "checkout",
+]);
+
 export const pixKeyTypeEnum = pgEnum("pix_key_type", [
   "cpf",
   "email",
@@ -484,9 +497,19 @@ export const pendingPixPayments = pgTable("pending_pix_payments", {
  * academy and reference month have to be written at charge creation — the same
  * role `pendingPixPayments` plays for AbacatePay, keyed by the Asaas id instead
  * of a Pix QR code id. Rows are deleted once the payment is recorded.
+ *
+ * A card checkout has no payment id to be keyed by — `POST /v3/checkouts`
+ * answers only a checkout session id — so those rows hold that instead and
+ * `kind` says so. The payment a checkout produces carries `checkoutSession`,
+ * which is what leads back here.
  */
 export const pendingAsaasPayments = pgTable("pending_asaas_payments", {
+  /**
+   * The Asaas handle this row is found by: a payment id when `kind` is
+   * `payment`, a checkout session id when it is `checkout`.
+   */
   asaasPaymentId: text("asaas_payment_id").primaryKey(),
+  kind: pendingAsaasKindEnum("kind").notNull().default("payment"),
   subscriptionId: uuid("subscription_id")
     .notNull()
     .references(() => studentSubscriptions.id, { onDelete: "cascade" }),

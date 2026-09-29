@@ -8,12 +8,25 @@ export type PaymentWithUser = PaymentRow & {
 };
 
 /**
+ * Which Asaas handle a pending row holds, and therefore how it is cancelled.
+ * `DELETE /v3/payments/{id}` and `POST /v3/checkouts/{id}/cancel` both answer
+ * 404 for the other kind's id, and both wrappers read a 404 as success — so
+ * guessing would silently leave a live, payable charge behind.
+ */
+export type PendingAsaasKind = "payment" | "checkout";
+
+/**
  * What an Asaas charge has to leave behind to be reconcilable. The webhook
  * carries the Asaas payment id and nothing else worth trusting, so everything
  * needed to write the payment row is stored when the charge is created.
+ *
+ * A card checkout has no payment id yet — `POST /v3/checkouts` answers only a
+ * session id — so `asaasPaymentId` holds that instead and `kind` says so. The
+ * payment it later produces carries `checkoutSession`, which is the way back.
  */
 export type PendingAsaasPayment = {
   asaasPaymentId: string;
+  kind: PendingAsaasKind;
   subscriptionId: string;
   userId: string;
   academyId: string;

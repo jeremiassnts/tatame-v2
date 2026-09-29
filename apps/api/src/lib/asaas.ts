@@ -181,6 +181,60 @@ export interface CreateAsaasPaymentInput {
   split?: AsaasSplitInput[];
 }
 
+/**
+ * A checkout's split, which is **not** the payment one. `POST /v3/checkouts`
+ * rejects `percentualValue` — the spelling `POST /v3/payments` requires — and
+ * demands one of `percentageValue`, `fixedValue` or `totalFixedValue`. Asaas
+ * then echoes the stored split back under the payments spelling. Verified
+ * against the sandbox on 2026-09-29; the two endpoints really do disagree.
+ */
+export interface AsaasCheckoutSplitInput {
+  walletId: string;
+  percentageValue?: number;
+  fixedValue?: number;
+  totalFixedValue?: number;
+}
+
+export interface AsaasCheckoutItemInput {
+  name: string;
+  quantity: number;
+  value: number;
+  description?: string;
+}
+
+/**
+ * Where Asaas sends the student's browser when it is done. All three are
+ * ordinary URLs — nothing has to be pre-registered — but `successUrl` and
+ * `cancelUrl` are both required and the request is refused without them.
+ */
+export interface AsaasCheckoutCallbackInput {
+  successUrl: string;
+  cancelUrl: string;
+  expiredUrl?: string;
+}
+
+export interface CreateAsaasCheckoutInput {
+  billingTypes: ("CREDIT_CARD" | "PIX" | "BOLETO")[];
+  chargeTypes: ("DETACHED" | "RECURRENT" | "INSTALLMENT")[];
+  /** Asaas closes the session after this long, and the link stops working. */
+  minutesToExpire: number;
+  items: AsaasCheckoutItemInput[];
+  callback: AsaasCheckoutCallbackInput;
+  /** Plural here; the response echoes it back as `split`. */
+  splits?: AsaasCheckoutSplitInput[];
+  /**
+   * Stored on the checkout and **not** inherited by the payment it produces.
+   * The way back from a paid checkout is `payment.checkoutSession`, not this.
+   */
+  externalReference?: string;
+}
+
+export interface AsaasCheckout {
+  id: string;
+  link: string;
+  status: string;
+}
+
 export interface AsaasPayment {
   id: string;
   status: string;
@@ -191,6 +245,13 @@ export interface AsaasPayment {
   dueDate?: string;
   deleted?: boolean;
   invoiceUrl?: string;
+  /**
+   * The checkout session that produced this payment, on payments that came
+   * from one. It is the only link back: the checkout's `externalReference`
+   * is *not* copied onto the payment, and a checkout cannot be read back at
+   * all (`GET /v3/checkouts/{id}` answers 404).
+   */
+  checkoutSession?: string | null;
 }
 
 export interface AsaasPixQrCode {
@@ -403,6 +464,56 @@ export class AsaasClient {
       );
     } catch (error) {
       if (error instanceof HttpError && error.statusCode === 404) return;
+      throw error;
+    }
+  }
+
+  /**
+   * A hosted card checkout, split the same way a Pix charge is.
+   *
+   * It does **not** answer a payment id: the payment is only created when the
+   * student pays, and it carries `checkoutSession` pointing back here. There
+   * is also no way to read a checkout back, so this response is the only look
+   * at it a caller ever gets.
+   *
+   * Binding an existing `customer` is deliberately not offered. Asaas demands
+   * a full address on any customer or `customerData` passed here, and the
+   * platform holds no address for a student (D7) — so the student identifies
+   * themselves on the Asaas page, which is what the page is for.
+   */
+  async createCheckout(input: CreateAsaasCheckoutInput): Promise<AsaasCheckout> {
+    const body = await this.request<Partial<AsaasCheckout>>(
+      "POST",
+      "/checkouts",
+      { json: input },
+    );
+    if (!body.id || !body.link) {
+      throw new HttpError(502, "Asaas não retornou o checkout criado");
+    }
+    return { id: body.id, link: body.link, status: body.status ?? "ACTIVE" };
+  }
+
+  /**
+   * Closes an open checkout so its link stops being payable.
+   *
+   * Unlike `deletePayment`, Asaas is **not** idempotent here: a second cancel
+   * answers 400 `invalid_action`, and so does cancelling one already paid or
+   * expired. Every one of those means the session is no longer active, which
+   * is what the caller asked for — so they are success, not failures to
+   * handle. A 404 is the same story for an id that never existed.
+   */
+  async cancelCheckout(checkoutId: string): Promise<void> {
+    try {
+      await this.request<{ status?: string }>(
+        "POST",
+        `/checkouts/${checkoutId}/cancel`,
+      );
+    } catch (error) {
+      if (!(error instanceof HttpError)) throw error;
+      if (error.statusCode === 404) return;
+      if (error.statusCode === 400 && error.details?.code === "invalid_action") {
+        return;
+      }
       throw error;
     }
   }
