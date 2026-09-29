@@ -125,6 +125,39 @@ export interface AsaasDocumentsResponse {
   data: AsaasDocumentGroup[];
 }
 
+export interface CreateAsaasCustomerInput {
+  name: string;
+  /**
+   * Required to *charge* the customer, though not to create one: Asaas happily
+   * creates a customer with only a name and then refuses the charge with
+   * "Para criar esta cobrança é necessário preencher o CPF ou CNPJ do cliente."
+   * Verified against the sandbox on 2026-09-29, so it is required here — the
+   * useless half of that pair is not worth being able to express.
+   */
+  cpfCnpj: string;
+  email?: string;
+  mobilePhone?: string;
+  /**
+   * The Tatame user id. The only way back to a customer whose id we failed to
+   * persist — Asaas has no lookup by our own key otherwise.
+   */
+  externalReference?: string;
+  /** Asaas bills the customer by e-mail and SMS on its own unless this is set. */
+  notificationDisabled?: boolean;
+}
+
+export interface AsaasCustomer {
+  id: string;
+  name: string;
+  cpfCnpj: string | null;
+  email?: string | null;
+  externalReference?: string | null;
+}
+
+interface AsaasCustomerList {
+  data?: AsaasCustomer[];
+}
+
 export interface AsaasFees {
   payment: {
     pix: {
@@ -232,6 +265,34 @@ export class AsaasClient {
   }
 
 
+  async createCustomer(
+    input: CreateAsaasCustomerInput,
+  ): Promise<AsaasCustomer> {
+    const body = await this.request<Partial<AsaasCustomer>>(
+      "POST",
+      "/customers",
+      { json: input },
+    );
+    if (!body.id) {
+      throw new HttpError(502, "Asaas não retornou o cliente criado");
+    }
+    return { ...body, id: body.id, name: body.name ?? input.name, cpfCnpj: body.cpfCnpj ?? null };
+  }
+
+  /**
+   * The recovery path: a customer was created and the id never reached our
+   * database. Creating a second one would work, but it scatters a student's
+   * charges across two customers at Asaas for no reason.
+   */
+  async findCustomerByExternalReference(
+    externalReference: string,
+  ): Promise<AsaasCustomer | undefined> {
+    const body = await this.request<AsaasCustomerList>("GET", "/customers", {
+      query: { externalReference },
+    });
+    return body.data?.[0];
+  }
+
   getFees(): Promise<AsaasFees> {
     return this.request<AsaasFees>("GET", "/myAccount/fees");
   }
@@ -239,9 +300,12 @@ export class AsaasClient {
   private async request<T>(
     method: "GET" | "POST",
     path: string,
-    opts: { json?: unknown } = {},
+    opts: { json?: unknown; query?: Record<string, string> } = {},
   ): Promise<T> {
-    const url = `${this.baseUrl.replace(/\/+$/, "")}${API_PREFIX}${path}`;
+    const search = opts.query
+      ? `?${new URLSearchParams(opts.query).toString()}`
+      : "";
+    const url = `${this.baseUrl.replace(/\/+$/, "")}${API_PREFIX}${path}${search}`;
     const headers: Record<string, string> = {
       access_token: this.accessToken,
       accept: "application/json",

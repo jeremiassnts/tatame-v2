@@ -251,4 +251,91 @@ describe("AsaasClient", () => {
       expect(fees.payment.creditCard.daysToReceive).toBe(30);
     });
   });
+
+  describe("customers", () => {
+    // The payload pinned here is the sandbox's own answer on 2026-09-29, down
+    // to the nulls it fills every unsent field with.
+    const SANDBOX_CUSTOMER = {
+      object: "customer",
+      id: "cus_000009273325",
+      dateCreated: "2026-09-29",
+      name: "Aluno Sem Documento B3",
+      email: null,
+      cpfCnpj: null,
+      personType: null,
+      externalReference: "probe-no-cpf",
+      deleted: false,
+      country: "Brasil",
+    };
+
+    it("creates a customer on the root account", async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse(200, { ...SANDBOX_CUSTOMER, cpfCnpj: "41763193640" }),
+      );
+
+      const customer = await AsaasClient.root().createCustomer({
+        name: "Aluno Teste",
+        cpfCnpj: "41763193640",
+        externalReference: "user-1",
+        notificationDisabled: true,
+      });
+
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${BASE_URL}/v3/customers`);
+      expect(init.method).toBe("POST");
+      expect(JSON.parse(init.body as string)).toEqual({
+        name: "Aluno Teste",
+        cpfCnpj: "41763193640",
+        externalReference: "user-1",
+        notificationDisabled: true,
+      });
+      expect(customer.id).toBe("cus_000009273325");
+      expect(customer.cpfCnpj).toBe("41763193640");
+    });
+
+    it("normalises a customer that came back without a document", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(200, SANDBOX_CUSTOMER));
+      const customer = await AsaasClient.root().createCustomer({
+        name: "Aluno Teste",
+        cpfCnpj: "41763193640",
+      });
+      expect(customer.cpfCnpj).toBeNull();
+    });
+
+    it("refuses a creation response with no id", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(200, { object: "customer" }));
+      await expect(
+        AsaasClient.root().createCustomer({ name: "X", cpfCnpj: "1" }),
+      ).rejects.toMatchObject({ statusCode: 502 });
+    });
+
+    it("finds a customer by our own user id", async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse(200, { totalCount: 1, data: [SANDBOX_CUSTOMER] }),
+      );
+
+      const found =
+        await AsaasClient.root().findCustomerByExternalReference("probe-no-cpf");
+
+      expect(fetchMock.mock.calls[0]![0]).toBe(
+        `${BASE_URL}/v3/customers?externalReference=probe-no-cpf`,
+      );
+      expect(found?.id).toBe("cus_000009273325");
+    });
+
+    it("returns undefined when no customer carries that reference", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(200, { totalCount: 0, data: [] }));
+      expect(
+        await AsaasClient.root().findCustomerByExternalReference("user-404"),
+      ).toBeUndefined();
+    });
+
+    it("escapes the reference into the query string", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(200, { data: [] }));
+      await AsaasClient.root().findCustomerByExternalReference("a b&c");
+      expect(fetchMock.mock.calls[0]![0]).toBe(
+        `${BASE_URL}/v3/customers?externalReference=a+b%26c`,
+      );
+    });
+  });
 });
