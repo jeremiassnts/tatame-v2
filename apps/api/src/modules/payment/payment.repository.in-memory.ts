@@ -32,6 +32,7 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
       method: data.method,
       confirmedBy: data.confirmedBy,
       stripePaymentId: data.stripePaymentId,
+      asaasPaymentId: null,
       referenceMonth: data.referenceMonth,
       notes: data.notes,
       paidAt: data.paidAt,

@@ -76,6 +76,7 @@ export function makeUser(overrides: Partial<UserRow> = {}): UserRow {
     deletedAt: null,
     pendingStripeCustomerId: null,
     pendingStripeSubscriptionId: null,
+    asaasCustomerId: null,
     ...overrides,
   };
 }
@@ -255,6 +256,7 @@ export function makePayment(overrides: Partial<PaymentRow> = {}): PaymentRow {
     method: "manual",
     confirmedBy: rid(),
     stripePaymentId: null,
+    asaasPaymentId: null,
     referenceMonth: utcIsoDate(
       new Date(Date.UTC(ref.getUTCFullYear(), ref.getUTCMonth(), 1)),
     ),

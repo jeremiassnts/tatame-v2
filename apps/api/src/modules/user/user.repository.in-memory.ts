@@ -53,6 +53,7 @@ export class InMemoryUserRepository implements IUserRepository {
       deletedAt: null,
       pendingStripeCustomerId: null,
       pendingStripeSubscriptionId: null,
+      asaasCustomerId: null,
     });
   }
 

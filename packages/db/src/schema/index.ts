@@ -136,6 +136,12 @@ export const users = pgTable("users", {
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   pendingStripeCustomerId: text("pending_stripe_customer_id"),
   pendingStripeSubscriptionId: text("pending_stripe_subscription_id"),
+  /**
+   * The Asaas customer this student is charged as, reused across every charge.
+   * Asaas keys a payment to a customer, so without this the same student would
+   * accumulate one customer per month.
+   */
+  asaasCustomerId: text("asaas_customer_id"),
 });
 
 export const userRoles = pgTable(
@@ -437,6 +443,14 @@ export const payments = pgTable("payments", {
     onDelete: "set null",
   }),
   stripePaymentId: text("stripe_payment_id"),
+  /**
+   * Reconciliation key for charges created on Asaas. Unique because Asaas
+   * delivers at least once and sends `PAYMENT_CONFIRMED` before
+   * `PAYMENT_RECEIVED` for the same money — the constraint, not a check inside
+   * the handler, is what keeps that to one row. Nullable, and Postgres does not
+   * compare NULLs under a unique constraint, so every legacy row still fits.
+   */
+  asaasPaymentId: text("asaas_payment_id").unique(),
   referenceMonth: date("reference_month").notNull(),
   notes: text("notes"),
   paidAt: timestamp("paid_at", { withTimezone: true }).notNull(),
@@ -448,6 +462,31 @@ export const payments = pgTable("payments", {
 
 export const pendingPixPayments = pgTable("pending_pix_payments", {
   pixQrCodeId: text("pix_qr_code_id").primaryKey(),
+  subscriptionId: uuid("subscription_id")
+    .notNull()
+    .references(() => studentSubscriptions.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  academyId: uuid("academy_id")
+    .notNull()
+    .references(() => academies.id, { onDelete: "cascade" }),
+  referenceMonth: date("reference_month").notNull(),
+  amountCents: integer("amount_cents").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+/**
+ * What a paid Asaas charge is reconciled against. The webhook carries the Asaas
+ * payment id and nothing else we can trust, so the subscription, student,
+ * academy and reference month have to be written at charge creation — the same
+ * role `pendingPixPayments` plays for AbacatePay, keyed by the Asaas id instead
+ * of a Pix QR code id. Rows are deleted once the payment is recorded.
+ */
+export const pendingAsaasPayments = pgTable("pending_asaas_payments", {
+  asaasPaymentId: text("asaas_payment_id").primaryKey(),
   subscriptionId: uuid("subscription_id")
     .notNull()
     .references(() => studentSubscriptions.id, { onDelete: "cascade" }),
