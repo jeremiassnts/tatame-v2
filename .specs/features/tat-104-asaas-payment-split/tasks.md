@@ -356,6 +356,37 @@ they are reported as `UNKNOWN_EVENT_TYPE` rather than dropped.
 deliberately **not** registered — the payment already points back at its
 session, so they would be a second delivery saying the same thing.
 
+### Telling one environment's deliveries from another's
+
+The webhook token is **not** what separates environments, and it cannot be: it
+is written into each subaccount at creation by `buildWebhooks`, which has one
+caller and no re-registration path, so rotating `ASAAS_WEBHOOK_TOKEN` would
+silently 401 every academy's account-status webhook forever. Copying config
+between environments copies the token with it, which is exactly the mistake
+that causes a cross-environment delivery in the first place.
+
+What separates them is the account id on the delivery. `GET /v3/myAccount/status`
+on the root key returns the same id a `PAYMENT_*` event carries in
+`account.id`, so the API can learn which account is its own with no
+configuration and refuse the rest — reported as `FOREIGN_ACCOUNT`.
+
+The guard **fails open**: an undetermined id accepts everything. Refusing the
+money stream on a lookup failure loses real payments to prevent a
+misconfiguration that may not exist.
+
+Worth knowing what the damage actually was before the guard: a foreign payment
+has no pending row here, so **nothing was ever written**. What it produced was
+`NO_PENDING_CHARGE` — "money in, nothing recorded", the loudest signal in the
+handler — for an event that was never ours.
+
+`ACCOUNT_STATUS_*` needed nothing: its `account.id` is the *subaccount's*, and
+the handler already refuses an account with no row here.
+
+Also checked, and it is why no academy can forge a delivery: **the auth token
+is never readable back.** `GET /v3/webhooks` and `GET /v3/webhooks/{id}` both
+answer `hasAuthToken: true` with no `authToken` field, on the list and on the
+single read.
+
 ### What has to exist in the Asaas account
 
 Per environment, once. Not created by the app: it is platform configuration,
