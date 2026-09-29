@@ -233,20 +233,6 @@ describe("Payout account integration", () => {
       onboardingUrl: "https://onboarding.asaas.test/abc",
     });
 
-    // Uploading in-app works for the first, and is refused for the second.
-    const upload = await request(app)
-      .post("/v1/payout-account/documents/grp_id")
-      .field("type", "IDENTIFICATION")
-      .attach("documentFile", Buffer.from("%PDF-1.4 fake"), "rg.pdf");
-    expect(upload.status).toBe(201);
-    expect(upload.body.document).toMatchObject({ id: "doc_1", status: "PENDING" });
-
-    const refused = await request(app)
-      .post("/v1/payout-account/documents/grp_link")
-      .field("type", "SOCIAL_CONTRACT")
-      .attach("documentFile", Buffer.from("%PDF-1.4 fake"), "contrato.pdf");
-    expect(refused.status).toBe(409);
-
     // Pull to refresh reads the live status rather than trusting the row.
     const refreshed = await request(app).get("/v1/payout-account/status");
     expect(refreshed.status).toBe(200);

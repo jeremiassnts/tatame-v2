@@ -39,15 +39,14 @@ function setup() {
     rejectReasons: null,
     data: [UPLOADABLE_GROUP, LINK_ONLY_GROUP],
   });
-  const uploadDocument = vi.fn().mockResolvedValue({ id: "doc_1", status: "PENDING" });
-  const forSubaccount = vi.fn().mockReturnValue({ listDocuments, uploadDocument });
+  const forSubaccount = vi.fn().mockReturnValue({ listDocuments });
 
   const svc = new PayoutAccountService(repo, academyRepo, {
     root: () => ({}) as never,
     forSubaccount: forSubaccount as never,
   });
 
-  return { svc, repo, managerId, academy, listDocuments, uploadDocument, forSubaccount };
+  return { svc, repo, managerId, academy, listDocuments, forSubaccount };
 }
 
 async function seedAccount(
@@ -198,77 +197,6 @@ describe("PayoutAccountService documents", () => {
 
       await expect(svc.listDocuments(managerId, academy.id)).rejects.toThrow();
       expect(forSubaccount).not.toHaveBeenCalled();
-    });
-  });
-
-  describe("uploadDocument", () => {
-    const file = {
-      buffer: Buffer.from("pdf"),
-      filename: "rg.pdf",
-      contentType: "application/pdf",
-    };
-
-    it("uploads to a group Asaas accepts uploads for", async () => {
-      const { svc, repo, managerId, academy, uploadDocument } = setup();
-      await seedAccount(repo, academy.id);
-
-      const result = await svc.uploadDocument(managerId, academy.id, "grp_upload", {
-        type: "IDENTIFICATION",
-        file,
-      });
-
-      expect(uploadDocument).toHaveBeenCalledWith("grp_upload", {
-        type: "IDENTIFICATION",
-        file,
-      });
-      expect(result).toEqual({ id: "doc_1", status: "PENDING" });
-    });
-
-    it("refuses to upload to a group that carries an onboarding url", async () => {
-      const { svc, repo, managerId, academy, uploadDocument } = setup();
-      await seedAccount(repo, academy.id);
-
-      const error = (await svc
-        .uploadDocument(managerId, academy.id, "grp_link", { type: "CUSTOM", file })
-        .catch((e: unknown) => e)) as HttpError;
-
-      expect(error.statusCode).toBe(409);
-      expect(error.details).toMatchObject({
-        code: "DOCUMENT_REQUIRES_ONBOARDING_URL",
-        onboardingUrl: "https://onboarding.asaas.com/abc",
-      });
-      // Asaas rejects these outright; sending it anyway only wastes a call.
-      expect(uploadDocument).not.toHaveBeenCalled();
-    });
-
-    it("404s for a group Asaas does not list", async () => {
-      const { svc, repo, managerId, academy, uploadDocument } = setup();
-      await seedAccount(repo, academy.id);
-
-      const error = (await svc
-        .uploadDocument(managerId, academy.id, "grp_missing", { type: "CUSTOM", file })
-        .catch((e: unknown) => e)) as HttpError;
-
-      expect(error.statusCode).toBe(404);
-      expect(uploadDocument).not.toHaveBeenCalled();
-    });
-
-    it("404s when the academy has no payout account", async () => {
-      const { svc, managerId, academy } = setup();
-      const error = (await svc
-        .uploadDocument(managerId, academy.id, "grp_upload", { type: "CUSTOM", file })
-        .catch((e: unknown) => e)) as HttpError;
-      expect(error.statusCode).toBe(404);
-    });
-
-    it("refuses a manager who does not own the academy", async () => {
-      const { svc, repo, academy, uploadDocument } = setup();
-      await seedAccount(repo, academy.id);
-      const error = (await svc
-        .uploadDocument(randomUUID(), academy.id, "grp_upload", { type: "CUSTOM", file })
-        .catch((e: unknown) => e)) as HttpError;
-      expect(error.statusCode).toBe(403);
-      expect(uploadDocument).not.toHaveBeenCalled();
     });
   });
 });

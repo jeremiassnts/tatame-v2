@@ -2,11 +2,9 @@ import { loadEnv } from "@tatame/config";
 import { Role } from "@tatame/types";
 import {
   createPayoutAccountBodySchema,
-  uploadPayoutDocumentBodySchema,
   type CreatePayoutAccountBody,
 } from "@tatame/validators";
 import { Router } from "express";
-import multer from "multer";
 import { AsaasClient } from "../../lib/asaas.js";
 import { getDb } from "../../lib/db.js";
 import { HttpError } from "../../lib/http-error.js";
@@ -33,12 +31,6 @@ export const payoutAccountService = new PayoutAccountService(
 );
 
 const feesService = new PayoutAccountFeesService(AsaasClient);
-
-/** Asaas caps uploads at 5 MB; anything larger is refused before it is read. */
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
-});
 
 /**
  * Every route here is the manager's own academy, so the academy id comes from
@@ -114,42 +106,6 @@ payoutAccountRouter.get("/documents", ...managerOnly, async (req, res, next) => 
     next(e);
   }
 });
-
-payoutAccountRouter.post(
-  "/documents/:groupId",
-  ...managerOnly,
-  upload.single("documentFile"),
-  async (req, res, next) => {
-    try {
-      assertAsaasConfigured();
-      const groupId = req.params.groupId ?? "";
-      if (!req.file) {
-        throw new HttpError(400, "Envie o arquivo do documento");
-      }
-      const parsed = uploadPayoutDocumentBodySchema.safeParse(req.body);
-      if (!parsed.success) {
-        throw new HttpError(400, "Tipo de documento inválido");
-      }
-
-      const document = await payoutAccountService.uploadDocument(
-        req.appAuth!.userId,
-        req.appAuth!.activeAcademyId!,
-        groupId,
-        {
-          type: parsed.data.type,
-          file: {
-            buffer: req.file.buffer,
-            filename: req.file.originalname,
-            contentType: req.file.mimetype,
-          },
-        },
-      );
-      res.status(201).json({ document });
-    } catch (e) {
-      next(e);
-    }
-  },
-);
 
 payoutAccountRouter.get("/fees", ...managerOnly, async (_req, res, next) => {
   try {

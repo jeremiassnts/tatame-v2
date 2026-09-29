@@ -3,9 +3,7 @@ import type {
   AsaasClient,
   AsaasCompanyType,
   AsaasDocumentGroup,
-  AsaasDocumentType,
   AsaasRegistrationStatus,
-  AsaasUploadedDocument,
   CreateAsaasAccountInput,
 } from "../../lib/asaas.js";
 import { decryptSecret, encryptSecret } from "../../lib/crypto.js";
@@ -71,11 +69,6 @@ export interface PayoutAccountDocumentGroup {
 export interface PayoutAccountDocuments {
   rejectReasons: string | null;
   groups: PayoutAccountDocumentGroup[];
-}
-
-export interface UploadDocumentInput {
-  type: AsaasDocumentType;
-  file: { buffer: Buffer; filename: string; contentType: string };
 }
 
 /** Injected so unit tests never reach the network. `AsaasClient` satisfies it. */
@@ -228,36 +221,6 @@ export class PayoutAccountService {
     });
 
     return { rejectReasons: response.rejectReasons, groups };
-  }
-
-  async uploadDocument(
-    managerUserId: string,
-    academyId: string,
-    groupId: string,
-    input: UploadDocumentInput,
-  ): Promise<AsaasUploadedDocument> {
-    const row = await this.requireAccount(managerUserId, academyId);
-    const client = this.asSubaccount(row.apiKeyEncrypted);
-
-    // The group list is the only place the onboarding url lives, so the check
-    // costs a read. Skipping it would trade that read for an Asaas rejection.
-    const { data } = await client.listDocuments();
-    const group = data.find((g) => g.id === groupId);
-    if (!group) {
-      throw new HttpError(404, "Documento não encontrado");
-    }
-    if (group.onboardingUrl) {
-      throw new HttpError(
-        409,
-        "Este documento precisa ser enviado pelo link do Asaas",
-        {
-          code: "DOCUMENT_REQUIRES_ONBOARDING_URL",
-          onboardingUrl: group.onboardingUrl,
-        },
-      );
-    }
-
-    return client.uploadDocument(groupId, input);
   }
 
   /**
