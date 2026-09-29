@@ -127,6 +127,46 @@ describe("PaymentService", () => {
     expect(payRows).toHaveLength(2);
   });
 
+  // The restored AbacatePay rail has to obey D9 like the other three. It always
+  // did — this pins it, because the rail is scheduled for deletion and the
+  // guard is the part that must not be lost on the way out.
+  it("createPixQrCode returns 409 when the month already has a payment", async () => {
+    const studentId = randomUUID();
+    const academy = makeAcademy({ ownerId: randomUUID() });
+    const planRows = [makeSubscriptionPlan({ academyId: academy.id })];
+    const planRepo = new InMemorySubscriptionPlanRepository(planRows);
+    const subRows = [
+      makeStudentSubscription({
+        userId: studentId,
+        planId: planRows[0]!.id,
+        status: "active",
+      }),
+    ];
+    const subRepo = new InMemoryStudentSubscriptionRepository(planRepo, subRows);
+    const referenceMonth = new Date().toISOString().slice(0, 7) + "-01";
+    const payRows = [
+      makePayment({
+        subscriptionId: subRows[0]!.id,
+        academyId: academy.id,
+        referenceMonth,
+      }),
+    ];
+    const payRepo = new InMemoryPaymentRepository(payRows);
+    const svc = new PaymentService(
+      payRepo,
+      subRepo,
+      new InMemoryAcademyRepository([academy]),
+    );
+
+    await expect(
+      svc.createPixQrCode(studentId, academy.id, "key_test", {
+        subscriptionId: subRows[0]!.id,
+      }),
+    ).rejects.toMatchObject({ statusCode: 409 });
+    // It must reject before it opens a charge at AbacatePay, not after.
+    expect(payRows).toHaveLength(1);
+  });
+
   it("confirmManual returns 404 when subscription in another academy", async () => {
     const managerId = randomUUID();
     const academy = makeAcademy({ ownerId: managerId });

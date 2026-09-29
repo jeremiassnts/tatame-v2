@@ -454,6 +454,131 @@ export class PaymentService {
    * kind it is: a checkout link cannot be handed back the way a QR can, and
    * two live charges make the month payable twice.
    */
+  /**
+   * The AbacatePay Pix rail, restored after B9 deleted it. `POST /payments/pix`
+   * replaced it, but the app on the stores is 2.1.2, there is no OTA, and the
+   * API has to deploy before a new build clears Apple review — so for one
+   * release both rails are live and this is the one the installed app calls.
+   *
+   * **Delete this, its route, `/pix-status/:id` and `createPendingPix` once
+   * `MIN_MOBILE_VERSION` is past the build that stopped calling them.** Until
+   * then it is load-bearing, not a remnant.
+   *
+   * Unchanged from what B9 removed except for this comment. The duplicate-month
+   * guard below is D9's, and it was already here — every rail that can open a
+   * charge asks the same question.
+   */
+  async createPixQrCode(
+    studentUserId: string,
+    academyId: string,
+    abacatePayApiKey: string,
+    opts?: { subscriptionId?: string },
+  ): Promise<{
+    pixQrCodeId: string;
+    brCode: string;
+    brCodeBase64: string;
+    amount: number;
+    expiresAt: string;
+    metadata: { subscriptionId: string; userId: string; academyId: string; referenceMonth: string };
+  }> {
+    // Plan limit enforcement — free plan cannot use auto payment
+    if (this.managerSubRepo) {
+      const managerSub = await this.managerSubRepo.findByAcademyId(academyId);
+      if (managerSub?.plan === "free") {
+        throw new HttpError(403, "Pagamentos automáticos não estão disponíveis para o plano atual", {
+          code: "PLAN_LIMIT_PAYMENTS",
+        });
+      }
+    }
+
+    const subs = await this.studentSubRepo.listWithPlanByUserAndAcademy(
+      studentUserId,
+      academyId,
+    );
+    const active = opts?.subscriptionId
+      ? subs.find(
+          (s) =>
+            s.subscription.id === opts.subscriptionId &&
+            s.subscription.status === "active",
+        )
+      : subs.find((s) => s.subscription.status === "active");
+
+    if (!active) {
+      throw new HttpError(404, "No active subscription found");
+    }
+
+    const { subscription, plan } = active;
+
+    const today = new Date().toISOString().slice(0, 10);
+    const referenceMonth = today.slice(0, 7) + "-01";
+
+    const alreadyPaid = await this.paymentRepo.existsForSubscriptionReferenceMonth(
+      subscription.id,
+      referenceMonth,
+    );
+    if (alreadyPaid) {
+      throw new HttpError(409, "Payment already exists for this period");
+    }
+
+    const description = `${plan.name} — ${referenceMonth.slice(0, 7)}`;
+
+    const abacateRes = await fetch("https://api.abacatepay.com/v1/pixQrCode/create", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${abacatePayApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        amount: plan.priceCents,
+        expiresIn: 1800, // 30 minutes
+        description,
+      }),
+    });
+
+    const rawText = await abacateRes.text();
+    let result: { error?: string; data?: { id: string; brCode: string; brCodeBase64: string; amount: number; expiresAt: string } };
+    try {
+      result = JSON.parse(rawText) as typeof result;
+    } catch {
+      throw new HttpError(502, `AbacatePay returned invalid response: ${rawText.slice(0, 200)}`);
+    }
+
+    if (!abacateRes.ok || result.error) {
+      throw new HttpError(502, result.error ?? "AbacatePay request failed");
+    }
+
+    const data = result.data;
+    if (!data?.brCode) {
+      throw new HttpError(500, "Failed to create Pix QR code");
+    }
+
+    const metadata = {
+      subscriptionId: subscription.id,
+      userId: studentUserId,
+      academyId,
+      referenceMonth,
+    };
+
+    // Store metadata locally so the webhook can look it up by pixQrCodeId
+    await this.paymentRepo.createPendingPix({
+      pixQrCodeId: data.id,
+      subscriptionId: subscription.id,
+      userId: studentUserId,
+      academyId,
+      referenceMonth,
+      amountCents: plan.priceCents,
+    });
+
+    return {
+      pixQrCodeId: data.id,
+      brCode: data.brCode,
+      brCodeBase64: data.brCodeBase64,
+      amount: data.amount,
+      expiresAt: data.expiresAt,
+      metadata,
+    };
+  }
+
   async createCheckout(
     studentUserId: string,
     academyId: string,

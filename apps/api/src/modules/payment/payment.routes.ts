@@ -182,9 +182,10 @@ paymentRouter.post(
 );
 
 /**
- * The Asaas Pix charge, split whole into the academy's wallet. The only Pix
- * entry point there is: `/checkout/pix` and `/pix-status/:id` left with
- * AbacatePay in B9.
+ * The Asaas Pix charge, split whole into the academy's wallet. The rail the
+ * current app calls. `/checkout/pix` and `/pix-status/:id` are the AbacatePay
+ * pair the shipped build still calls and are live alongside this one for one
+ * release — see the note above them.
  */
 paymentRouter.post(
   "/pix",
@@ -211,6 +212,91 @@ paymentRouter.post(
         extra: { method: "pix", provider: "asaas" },
       });
       res.json(result);
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+/**
+ * The AbacatePay Pix rail, restored after B9 deleted it. `POST /payments/pix`
+ * is what the current app calls; these two are what the build on the stores
+ * calls, and it cannot be updated over the air. The API has to deploy before a
+ * new build clears Apple review, so for one release both are live.
+ *
+ * **Delete both once `MIN_MOBILE_VERSION` is past the build that stopped
+ * calling them.** `api.smoke.test.ts` fails if they go early.
+ */
+paymentRouter.post(
+  "/checkout/pix",
+  authorize(Role.Student, Role.Guardian),
+  attachActiveAcademyContext,
+  requireActiveAcademy,
+  validateBody(createCheckoutBodySchema),
+  async (req, res, next) => {
+    try {
+      const env = loadEnv();
+      if (!env.ABACATEPAY_API_KEY) {
+        throw new HttpError(503, "AbacatePay is not configured");
+      }
+
+      const body = req.validatedBody as CreateCheckoutBody;
+      const studentUserId = req.appAuth!.userId;
+      const academyId = req.appAuth!.activeAcademyId!;
+
+      const result = await paymentService.createPixQrCode(
+        studentUserId,
+        academyId,
+        env.ABACATEPAY_API_KEY,
+        { subscriptionId: body.subscriptionId },
+      );
+
+      emitEvent("payment.checkout_started", {
+        userId: studentUserId,
+        academyId,
+        subscriptionId: body.subscriptionId,
+        extra: { method: "pix" },
+      });
+      res.json(result);
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+paymentRouter.get(
+  "/pix-status/:pixQrCodeId",
+  authorize(Role.Student, Role.Guardian),
+  attachActiveAcademyContext,
+  requireActiveAcademy,
+  async (req, res, next) => {
+    try {
+      const env = loadEnv();
+      if (!env.ABACATEPAY_API_KEY) {
+        throw new HttpError(503, "AbacatePay is not configured");
+      }
+
+      const pixQrCodeId = req.params.pixQrCodeId ?? "";
+      const abacateRes = await fetch(
+        `https://api.abacatepay.com/v1/pixQrCode/check?id=${encodeURIComponent(pixQrCodeId)}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${env.ABACATEPAY_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      const rawText = await abacateRes.text();
+      let result: { data?: { status?: string } };
+      try {
+        result = JSON.parse(rawText) as typeof result;
+      } catch {
+        throw new HttpError(502, "AbacatePay returned invalid response");
+      }
+
+      res.json({ status: result.data?.status ?? "UNKNOWN" });
     } catch (e) {
       next(e);
     }
