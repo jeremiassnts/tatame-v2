@@ -101,7 +101,9 @@ split, the academy receives the net, and the platform nets exactly zero.
    have to be driven by replaying a payload by hand, and only production will
    exercise them for real.
 5. **`GET /v3/payments/{id}/splits` answers 404.** The split state is returned
-   inline on the payment object instead. Relevant to B7.
+   inline on the payment object instead. B7 confirmed this is enough: a refund
+   delivery arrives with the split already `CANCELLED`, so the call was never
+   needed.
 
 6. **A document group omits `documents` entirely** when nothing has been uploaded
    to it — the field is absent, not an empty list — and carries a `responsible`
@@ -218,6 +220,8 @@ allows only 10 subaccounts and **7 are used**.
 | Customer created with **no document**, then patched with one (D7 probe) | `cus_000009273325` |
 | Pix charge that only succeeded after that patch | `pay_flhul7uhgq4drw4d` |
 | Charge deleted by hand, still serving a valid QR (B4 probe) | `pay_hzcb83456el2ymjo` |
+| Card payment refunded by hand, split `CANCELLED` (B7 probe) | `pay_aalcgxwj24pkd6m5` |
+| A second one, refunded to confirm B7 live against the running API | `pay_224vjtax7yvvmsfe` |
 | Checkout paid with a sandbox card, split credited (B5 probe) | `28934c1d-2ded-4ee0-a7bb-8f305b28681a` |
 | The payment that checkout produced, carrying `checkoutSession` | `pay_cgdpb527fk94b2r0` |
 | Customer Asaas minted from the checkout page, not by us | `cus_000009273872` |
@@ -350,8 +354,10 @@ Three things it settled:
 These six event names are valid on `POST /v3/webhooks` and were registered:
 `PAYMENT_CONFIRMED`, `PAYMENT_RECEIVED`, `PAYMENT_REFUNDED`,
 `PAYMENT_CHARGEBACK_REQUESTED`, `PAYMENT_CHARGEBACK_DISPUTE`,
-`PAYMENT_AWAITING_CHARGEBACK_REVERSAL`. The last four are B7's; until it lands
-they are reported as `UNKNOWN_EVENT_TYPE` rather than dropped.
+`PAYMENT_AWAITING_CHARGEBACK_REVERSAL`. The last four are B7's, and B7 has
+landed: they emit `payment.reversed`. Nothing the root webhook is registered
+for reaches `UNKNOWN_EVENT_TYPE` any more, which is the slice's success
+criterion.
 `CHECKOUT_PAID`, `CHECKOUT_CANCELED` and `CHECKOUT_EXPIRED` are also valid and
 deliberately **not** registered — the payment already points back at its
 session, so they would be a second delivery saying the same thing.
@@ -430,6 +436,66 @@ anyway — the unique constraint is what settles it — but out-of-order deliver
 would make the logs harder to read for no benefit.
 
 
+## Reversal validation — 2026-09-29 (B7)
+
+Probed the same way: refund a real card charge in the sandbox and read what
+arrives, rather than trusting the docs.
+
+`POST /v3/payments/pay_aalcgxwj24pkd6m5/refund` on a `CONFIRMED` card payment
+split 100% into an academy wallet:
+
+| What arrived | Result |
+| --- | --- |
+| Deliveries | **exactly one** `PAYMENT_REFUNDED`, ~2s later. No `PAYMENT_DELETED`, no second event |
+| Payload | the **whole payment object** — much larger than the `PAYMENT_CONFIRMED` the fixtures were shaped after |
+| `payment.status` | `REFUNDED` |
+| `split[0].status` | `CANCELLED`, `cancellationReason: PAYMENT_REFUNDED` |
+| `refunds[0]` | `{ status: DONE, value: 150.0, refundedSplits: null }` |
+
+`refundedSplits` is null because the split was still `AWAITING_CREDIT` — the
+money had not reached the academy yet, so there was nothing to claw back. A
+refund after the credit date (2026-11-02 on these charges) is the case nobody
+has seen, and it is the one where the academy actually loses money it already
+had. The evaluation window will close before that date.
+
+**Three things that could not be reproduced, and why they matter:**
+
+1. **Partial refunds are refused here.** `POST …/refund {"value": 50}` on a
+   R$ 150 charge answers 400 `invalid_action`, "Valor da cobrança insuficiente
+   para o estorno solicitado" — which is wrong on its face and presumably means
+   "not while the split is uncredited". So `PAYMENT_PARTIALLY_REFUNDED` has
+   never been seen. It is in `REVERSAL_EVENTS` anyway, and **not** registered.
+2. **A chargeback cannot be provoked by API at all.** `GET /v3/chargebacks`
+   exists and answers an empty list; `POST /v3/payments/{id}/simulateChargeback`,
+   `/chargeback` and `/v3/sandbox/chargeback` are all 404. The
+   `payment.chargeback` object (`{ status, reason }`) is therefore shaped after
+   the documentation, not a capture, and the handler reads both fields
+   defensively. **The first real chargeback will be in production.**
+3. **A refund that arrives for a payment we never recorded** is a case the
+   sandbox cannot stage either. It emits `payment.reversed` with
+   `recorded: false`, which is worth looking for: it means the settlement was
+   dropped too and a `NO_PENDING_CHARGE` should be further back in the log.
+
+**What B7 decided.** One event, `payment.reversed`, `outcome: rejected` so it
+logs at warn. No enumerated reason — the Asaas event name is `app.type`, and
+the split Asaas cancelled is `app.splitStatus` / `app.splitCancellationReason`.
+The handler resolves the payment row first so the record names the student,
+academy and subscription; whose wallet the money comes out of is the only
+question worth asking of a reversal, and the platform nets zero on these
+charges, so the answer is always the academy.
+
+**It writes nothing.** Whether a reversed month leaves the student overdue
+again is a product decision nobody has made, and having the webhook invent one
+would make it invisibly. The integration suite guards this rather than the
+telemetry: a refund delivered end to end leaves the payment row byte-identical.
+
+Confirmed live afterwards — a second real refund (`pay_224vjtax7yvvmsfe`) was
+delivered to the running API through the tunnel and answered 200, so the full
+forty-field payload goes through the route unvalidated and reaches the handler
+intact. `POST /v1/webhooks/asaas` does no schema validation on the body at all;
+the token is the whole boundary.
+
+
 ## Status
 
 **Slice A (TAT-179) — implemented, partially validated.** A1-A20 merged on `main`,
@@ -441,11 +507,12 @@ finally driven through the app end to end**: form → account created → docume
 which stays, lists the group Asaas returned, and settles the status from Asaas on its
 own. What is still untested is everything only production exercises — a document group
 that actually needs a document, a rejection, and a suspension.
-**Slice B (TAT-104) — B1 to B6, B8 and B12 done.** The loop closes: both
+**Slice B (TAT-104) — B1 to B8 and B12 done.** The loop closes: both
 student rails open a split charge (`POST /v1/payments/pix` and
 `POST /v1/payments/checkout`), and `POST /v1/webhooks/asaas` turns the
-settlement into a payment row. What is left is B7 (refunds and chargebacks),
-B9 (retiring AbacatePay), B10 (the mobile Pix screen) and the final gate.
+settlement into a payment row, and B7 reports the money that goes back out.
+What is left is B9 (retiring AbacatePay), B10 (the mobile Pix screen) and the
+final gate.
 
 **Migrations `0021_yummy_gambit` and `0022_awesome_masque` are both applied to
 the Coolify database** (2026-09-29). 0022 was purely additive — a
@@ -490,7 +557,8 @@ bookkeeping gap described below, adding row 19. Verified against the database:
 | B6 | Done | `asaas-payment.handler.ts`, 16 unit + 5 drop tests; idempotent by the unique constraint, not a flag |
 | B8 | Done | `POST /v1/webhooks/asaas` dispatches both streams; 8 integration tests take a charge through the webhook to a payment row |
 | B12 | Done | covered by `asaas-payment.integration.test.ts` — both rails, replayed |
-| B7, B9-B11, B13 | Pending | |
+| B7 | Done | `payment.reversed`, 10 unit tests + 1 integration guard; implements SPLIT-05 |
+| B9-B11, B13 | Pending | |
 
 Two things B2 decided that the task list did not spell out:
 
