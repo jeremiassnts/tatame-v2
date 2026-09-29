@@ -107,6 +107,37 @@ describe("PayoutAccountService documents", () => {
       });
     });
 
+    /*
+      The payload a real sandbox subaccount answers with, pinned verbatim: Asaas
+      omits `documents` altogether for a group nothing was uploaded to, and adds
+      a `responsible` object our type never declared. Every other fixture here
+      carries `documents: []`, which is exactly why the mobile card crashed on
+      `group.documents.length` against the real API and never against this suite.
+    */
+    it("defaults documents to an empty list when Asaas omits the field", async () => {
+      const { svc, repo, managerId, academy, listDocuments } = setup();
+      await seedAccount(repo, academy.id);
+      listDocuments.mockResolvedValue({
+        rejectReasons: null,
+        data: [
+          {
+            id: "00000000-0000-0000-0000-000000000000",
+            status: "APPROVED",
+            type: "IDENTIFICATION",
+            title: "Documentos de identificação",
+            description:
+              "Para enviar esse documento acesse nosso aplicativo ou utilize o link de onboarding.",
+            responsible: { name: "Fighter's BJJ", type: "ASAAS_ACCOUNT_OWNER" },
+            onboardingUrl: null,
+          },
+        ],
+      });
+
+      const result = await svc.listDocuments(managerId, academy.id);
+
+      expect(result.groups[0]!.documents).toEqual([]);
+    });
+
     it("stores the onboarding url so the dashboard can route without a round trip", async () => {
       const { svc, repo, managerId, academy } = setup();
       await seedAccount(repo, academy.id);

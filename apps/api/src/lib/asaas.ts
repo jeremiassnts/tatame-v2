@@ -126,7 +126,12 @@ export interface AsaasDocumentGroup {
    */
   onboardingUrl: string | null;
   onboardingUrlExpirationDate?: string | null;
-  documents: { id: string; status: AsaasDocumentStatus }[];
+  /**
+   * Absent — not empty — for a group nothing has been uploaded to yet, which is
+   * the state every freshly created subaccount is in. Optional here so the
+   * normalisation below is the only place that has to know.
+   */
+  documents?: { id: string; status: AsaasDocumentStatus }[];
 }
 
 export interface AsaasDocumentsResponse {

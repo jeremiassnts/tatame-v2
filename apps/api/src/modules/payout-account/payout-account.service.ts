@@ -127,7 +127,9 @@ function toGroup(group: AsaasDocumentGroup): PayoutAccountDocumentGroup {
     description: group.description,
     onboardingUrl: group.onboardingUrl,
     canUploadInApp: !group.onboardingUrl,
-    documents: group.documents,
+    // Asaas omits the key entirely until something is uploaded. The clients are
+    // promised a list, and a missing one crashed the mobile card.
+    documents: group.documents ?? [],
   };
 }
 
