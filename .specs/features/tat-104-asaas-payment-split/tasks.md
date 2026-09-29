@@ -36,7 +36,7 @@ without an approved wallet there is nothing to split into.
 | B2 | Repository methods for the new columns and the pending table (Postgres + in-memory) | B1 | SPLIT-02, SPLIT-04 |
 | B3 | `AsaasCustomerService` — find-or-create the Asaas customer for a student, persist the id | A3,B2 | SPLIT-01 |
 | B4 | `PaymentService.createPixCharge` — guard, `POST /v3/payments` with `split[percentualValue:100]`, `GET /pixQrCode`, reuse an open charge | A3,A5,B3 | SPLIT-02 |
-| B5 | `PaymentService.createCheckout` on Asaas — `POST /v3/checkouts` with `splits` and callbacks, same `{ checkoutUrl }` contract | A3,A5,B3 | SPLIT-03 |
+| B5 | `PaymentService.createCheckout` on Asaas — `POST /v3/checkouts` with `splits` and callbacks, same `{ checkoutUrl }` contract. **B3 turned out not to be a dependency** — no customer can be attached to a checkout (D8) | A3,A5 | SPLIT-03 |
 | B6 | `asaas-payment.handler.ts` — token check, `PAYMENT_CONFIRMED`/`PAYMENT_RECEIVED` → payment row, idempotent, notification + e-mail | B2 | SPLIT-04 |
 | B7 | Refund and chargeback events → `emitEvent` (+ telemetry catalog entries) | B6 | SPLIT-05 |
 | B8 | Webhook route `POST /webhooks/asaas` dispatching payment and account events | A10,B6 | SPLIT-04, PAYOUT-05 |
@@ -218,6 +218,10 @@ allows only 10 subaccounts and **7 are used**.
 | Customer created with **no document**, then patched with one (D7 probe) | `cus_000009273325` |
 | Pix charge that only succeeded after that patch | `pay_flhul7uhgq4drw4d` |
 | Charge deleted by hand, still serving a valid QR (B4 probe) | `pay_hzcb83456el2ymjo` |
+| Checkout paid with a sandbox card, split credited (B5 probe) | `28934c1d-2ded-4ee0-a7bb-8f305b28681a` |
+| The payment that checkout produced, carrying `checkoutSession` | `pay_cgdpb527fk94b2r0` |
+| Customer Asaas minted from the checkout page, not by us | `cus_000009273872` |
+| `walletId` of "Academia Tatame Smoke 375360" — the **account** id above is not it | `742f6df1-c4ee-4645-87a6-523b50345be5` |
 
 The last one is the evidence behind D5: `receiveInCash` leaves the split
 `CANCELLED` with `cancellationReason: PAYMENT_RECEIVED_IN_CASH` and the subaccount
@@ -246,6 +250,66 @@ its charge is a dead QR code in a student's hands.
 The idempotent `DELETE` is what makes D5 safe to retry, and the 404 means a charge
 already gone is the outcome the caller wanted — `deletePayment` treats it as success.
 
+## Checkout validation — 2026-09-29
+
+Probed by hand before B5 was written, against `https://api-sandbox.asaas.com`,
+including paying one with a sandbox card in a browser.
+
+| Call | Result |
+| --- | --- |
+| `POST /v3/checkouts` with nothing | 400, naming `billingTypes` — then `chargeTypes`, `items`, `callback.successUrl`, `callback.cancelUrl` one at a time |
+| `splits` (plural) vs `split` (singular) | **both accepted**; the response always echoes `split` |
+| `percentualValue` — the `/v3/payments` spelling | **400** — "Um dos campos fixedValue, percentageValue, totalFixedValue deve ser informado" |
+| `percentageValue: 100` | 200, stored as `percentageValue: 100.0000` |
+| an arbitrary ngrok callback url | accepted — **nothing has to be pre-registered** |
+| `GET /v3/checkouts/{id}`, and the list | **404 both** — a checkout cannot be read back |
+| `customer: <an existing customer>` | 400 — `address`, `addressNumber`, `postalCode`, `province`, `city` required on it |
+| `customerData: {name, cpfCnpj, email}` | 400 — the same five plus `phoneNumber` |
+| **the payment produced by paying one** | `externalReference: null`, **`checkoutSession: <the checkout id>`** |
+| the split on that payment | `percentualValue 100`, `totalValue 146,53` = `netValue`, `AWAITING_CREDIT`, `creditDate` 34 days out |
+| `POST /v3/checkouts/{id}/cancel` | 200, `status: CANCELED` |
+| the same cancel, repeated | **400 `invalid_action`** — "O Checkout não está ativo para ser cancelado" |
+| cancel on a paid or expired checkout | the same 400 |
+| cancel on an id that never existed | 404 |
+
+Four of these shaped B5:
+
+1. **`percentageValue`, not `percentualValue`.** The two endpoints disagree on
+   the spelling of the same idea, so they need separate types and a
+   copy-paste between them fails at Asaas rather than at compile time.
+2. **There is no payment id until the student pays**, the checkout cannot be
+   read back, and the payment does **not** inherit the checkout's
+   `externalReference`. `payment.checkoutSession` is the only way back, so the
+   pending row is keyed by the session id — and `pending_asaas_payments.kind`
+   exists to say so. Without it `confirmManual` would call
+   `DELETE /v3/payments/{checkoutId}`, get a 404, read it as success, and
+   leave a payable link behind: D5's hole, re-opened on the card rail.
+3. **Cancel is not idempotent**, unlike `DELETE /v3/payments`. `cancelCheckout`
+   treats 404 *and* 400 `invalid_action` as success, because both mean the
+   session is no longer payable — which is what the caller asked for. Any
+   other 400 still raises: swallowing it would report a cancellation that
+   never happened.
+4. **No customer can be attached** — see **D8**. The card rail never asks the
+   student for a document; the Asaas page does.
+
+The assembled payload the service builds was fired at the live sandbox and
+accepted, split stored at 100%.
+
+**Found while probing, and it blocks B6/B8:** `GET /v3/webhooks` on the **root
+account answers `totalCount: 0`**. A6 registers `PAYMENT_*` and
+`ACCOUNT_STATUS_*` webhooks on each *subaccount*, but every charge lives on the
+root account. Whether a subaccount receives `PAYMENT_*` for a split it is
+merely the recipient of is unverified, and if it does not, no payment webhook
+will ever arrive. Settle this before writing B8 — a webhook can be registered
+through `POST /v3/webhooks` with the root key.
+
+Also confirmed while probing: `CHECKOUT_PAID`, `CHECKOUT_CANCELED` and
+`CHECKOUT_EXPIRED` are valid webhook event names, alongside `PAYMENT_CREATED`,
+`PAYMENT_DELETED` and `PAYMENT_CHARGEBACK_REQUESTED`. B6 does not need the
+`CHECKOUT_*` ones — the payment carries `checkoutSession` — but B8 has to
+decide whether an unregistered event type is a drop or a shrug.
+
+
 ## Status
 
 **Slice A (TAT-179) — implemented, partially validated.** A1-A20 merged on `main`,
@@ -257,7 +321,15 @@ finally driven through the app end to end**: form → account created → docume
 which stays, lists the group Asaas returned, and settles the status from Asaas on its
 own. What is still untested is everything only production exercises — a document group
 that actually needs a document, a rejection, and a suspension.
-**Slice B (TAT-104) — B1 and B2 done**, the persistence layer only; nothing calls it yet.
+**Slice B (TAT-104) — B1 to B5 done.** Both student rails now open a split
+charge: `POST /v1/payments/pix` and `POST /v1/payments/checkout`. Nothing
+records a payment yet — that is B6 and B8, and until they land a student can
+pay in the sandbox and no `payments` row appears.
+
+**Migration `0022_awesome_masque` is not yet applied to the Coolify database.**
+`0021` is. 0022 is purely additive (a `pending_asaas_kind` enum and a
+defaulted column) and its `when` is newer than 0021's, so it applies alone and
+cleanly despite the `__drizzle_migrations` bookkeeping gap described below.
 
 | Task | Status | Notes |
 | --- | --- | --- |
@@ -290,7 +362,8 @@ that actually needs a document, a rejection, and a suspension.
 | B2 | Done | 16 integration tests; the contract runs against Postgres **and** in-memory |
 | B3 | Done | `asaas-customer.service.ts`, 9 unit tests; client gained `createCustomer` / `findCustomerByExternalReference`, 6 more |
 | B4 | Done | `POST /v1/payments/pix`, 19 unit tests; implements D5; client gained `createPayment` / `getPixQrCode` / `findPayment` / `deletePayment` |
-| B5-B13 | Pending | |
+| B5 | Done | `POST /v1/payments/checkout` is Asaas now; migration `0022_awesome_masque` adds `pending_asaas_payments.kind`; 19 unit + 9 client tests, 1 more repository contract test; client gained `createCheckout` / `cancelCheckout` |
+| B6-B13 | Pending | |
 
 Two things B2 decided that the task list did not spell out:
 
@@ -326,6 +399,15 @@ And three from B4:
    the QR is fetched, because the QR is exactly the call that fails while the root
    account's Pix key is being provisioned. A charge with no pending row is one the
    retry cannot find, so it would open a second charge for the same month.
+6a. **From B5 — one row shape, two kinds of handle.** `pending_asaas_payments`
+   holds a payment id for Pix and a checkout session id for card, told apart by
+   `kind`. Both cancel endpoints answer 404 for the other kind's id and both
+   wrappers read 404 as success, so anything that guesses reports success while
+   leaving a payable charge alive. Every path that cancels — `confirmManual`,
+   and both charge paths meeting on a month that already has one open — goes
+   through `cancelAsaasHandle`, and the mutation that made it ignore `kind` is
+   caught by three tests.
+
 6. **`confirmManual` has no duplicate-month guard, and still does not.** Noted, not
    fixed — it is outside B4's line item. The spec's edge case ("WHEN a student pays
    exactly as the manager confirms the same month manually THEN the reference-month

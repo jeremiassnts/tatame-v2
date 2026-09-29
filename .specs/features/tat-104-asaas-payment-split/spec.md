@@ -164,6 +164,8 @@ migration (D4).
 2. WHEN the checkout succeeds, is canceled or expires THEN Asaas SHALL return the student to the corresponding callback URL
 3. WHEN the checkout is created THEN the system SHALL persist enough reference (subscription, reference month, academy) to reconcile the webhook without trusting the client
 4. WHEN the academy has no approved payout account THEN the system SHALL return 403 with code `PAYOUT_ACCOUNT_REQUIRED`
+5. WHEN the month already has a charge open on either rail THEN the system SHALL cancel it before opening the checkout, since a link cannot be handed back the way a Pix QR can and two live charges make the month payable twice
+6. WHEN a student requests a card payment THEN the system SHALL NOT ask for their CPF/CNPJ: Asaas refuses to bind a customer without a full address, which the platform does not hold, so the student identifies themselves on the Asaas page (D8)
 
 **Independent Test**: Open the returned link in sandbox, pay with a test card, and see the payment recorded.
 
@@ -239,7 +241,7 @@ and see statements.
 | PAYOUT-09 | P3: Link to the Asaas account | TAT-179 | Implemented | Done |
 | SPLIT-01 | P1: Asaas customer per student | TAT-104 | Implemented | Service done (B3), no caller until B4 |
 | SPLIT-02 | P1: Pix charge with 100% split | TAT-104 | Implemented | `POST /v1/payments/pix` (B4) |
-| SPLIT-03 | P1: Card checkout with 100% split | TAT-104 | Design | Pending |
+| SPLIT-03 | P1: Card checkout with 100% split | TAT-104 | Implemented | `POST /v1/payments/checkout` (B5) |
 | SPLIT-04 | P1: Webhook reconciliation and idempotency | TAT-104 | Design | Pending |
 | SPLIT-05 | P1: Refund and chargeback visibility | TAT-104 | Design | Pending |
 | SPLIT-06 | P1: Retire AbacatePay and Stripe student checkout | TAT-104 | Design | Pending |

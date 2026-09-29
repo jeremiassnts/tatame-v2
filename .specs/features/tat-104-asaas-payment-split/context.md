@@ -151,3 +151,42 @@ and missing. The mobile screen (B10) has to render that field and that error.
 **Also settled here:** customers are created with `notificationDisabled: true`. Asaas
 bills the customer by e-mail and SMS on its own, and the payment webhook already
 notifies and e-mails the student in wording we control.
+
+---
+
+## D8 — The card rail does not use the student's Asaas customer
+
+**Decision (2026-09-29):** the Asaas checkout is created with no customer
+attached. The student identifies themselves on the Asaas page, which mints a
+customer of its own. `POST /payments/checkout` therefore takes no `cpfCnpj` and
+never calls `ensureCustomer`.
+
+**What forced it.** B5 was expected to reuse B3's `ensureCustomer` wholesale.
+The sandbox refused:
+
+| Call | Result |
+| --- | --- |
+| `POST /v3/checkouts` with `customer: cus_000009262465` | **400** — `address`, `addressNumber`, `postalCode`, `province`, `city` "deve existir para o customer informado" |
+| the same with `customerData: {name, cpfCnpj, email}` | **400** — the same five, plus `phoneNumber` |
+| with neither | **200** — the Asaas page collects identification, address and card |
+
+Our customers are a name and a document and nothing else (D7), and the platform
+holds no address for a student. So the only customer a checkout will accept is
+one we cannot build.
+
+**This narrows D7 rather than replacing it.** D7 still holds for Pix, which is
+where `asaas_customer_id` is written and reused. Card is simply a rail the
+question is never asked on — the student types the same data into Asaas's form
+instead of ours. A student who has only ever paid by card has no
+`asaas_customer_id`, and their first Pix charge will ask for the document then.
+
+**Rejected:** collecting an address to make the binding possible — it is a
+screen and a column for no benefit the student can see, since Asaas asks for
+the address on its own page regardless. Also rejected: sending a placeholder
+address, which is inventing data about a person.
+
+**The cost, accepted:** a student who pays by card has two customer records at
+Asaas over time, one per rail, and the platform can only ever see the Pix one.
+Reconciliation does not go through the customer — it goes through
+`payment.checkoutSession` and the pending row — so nothing downstream depends
+on them being the same.
