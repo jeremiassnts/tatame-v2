@@ -1,5 +1,6 @@
 import { loadEnv } from "@tatame/config";
 import { Router } from "express";
+import { AsaasClient } from "../../lib/asaas.js";
 import { getDb } from "../../lib/db.js";
 import { HttpError } from "../../lib/http-error.js";
 import { emitEvent } from "../../telemetry/events.js";
@@ -49,6 +50,31 @@ const accountHandler = new AsaasAccountWebhookHandler(
   payoutAccountService,
 );
 
+/**
+ * Our own account id at Asaas, asked once and kept.
+ *
+ * It is what tells a delivery from this environment's Asaas account apart from
+ * one belonging to another — the sandbox key and the production key are
+ * different accounts, so the same webhook url or token living in both is no
+ * longer enough for an event to be processed in the wrong place.
+ *
+ * A failed lookup is not cached: the next delivery asks again, and until one
+ * succeeds every event is accepted. Refusing payments because Asaas was
+ * briefly unreachable would cost real money to prevent a misconfiguration.
+ */
+let rootAccountId: Promise<string | null> | null = null;
+
+function resolveRootAccountId(): Promise<string | null> {
+  rootAccountId ??= AsaasClient.root()
+    .getAccountStatus()
+    .then((status) => status.id ?? null)
+    .catch(() => {
+      rootAccountId = null;
+      return null;
+    });
+  return rootAccountId;
+}
+
 const paymentHandler = new AsaasPaymentWebhookHandler(
   new PostgresPaymentRepository(db),
   new PostgresUserRepository(db),
@@ -64,6 +90,7 @@ const paymentHandler = new AsaasPaymentWebhookHandler(
     new PostgresMembershipRepository(db),
   ),
   new PostgresStudentSubscriptionRepository(db),
+  resolveRootAccountId,
 );
 
 type AsaasWebhookEvent = AsaasAccountStatusEvent & AsaasPaymentEvent;

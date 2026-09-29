@@ -76,7 +76,12 @@ function cardEvent(over: Record<string, unknown> = {}) {
   };
 }
 
-async function setup() {
+const OUR_ACCOUNT = "c2b4388d-d81b-4a76-bad3-8d4519b302e1";
+
+async function setup(
+  rootAccountId: (() => Promise<string | null>) | undefined = async () =>
+    OUR_ACCOUNT,
+) {
   const rows: PaymentRow[] = [];
   const repo = new InMemoryPaymentRepository(rows);
   const dispatcher = {
@@ -94,6 +99,7 @@ async function setup() {
     email as never,
     dispatcher as never,
     { findByIdWithPlan: vi.fn(async () => undefined) } as never,
+    rootAccountId,
   );
   return { repo, handler, dispatcher, email, rows };
 }
@@ -309,6 +315,45 @@ describe("AsaasPaymentWebhookHandler", () => {
     expect(
       await ctx.repo.findPendingAsaasByPaymentId("pay_pix_1"),
     ).toBeDefined();
+  });
+
+  // The sandbox key and the production key are different Asaas accounts, so a
+  // delivery carrying someone else's account id is not ours to process — even
+  // when the url and the token happen to match, which is exactly what copying
+  // config between environments produces.
+  it("refuses a delivery from another Asaas account", async () => {
+    await pendingPix(ctx.repo);
+
+    await ctx.handler.handleEvent({
+      ...pixEvent(),
+      account: { id: "some-other-environment", ownerId: null },
+    });
+
+    expect(await ctx.repo.findByAcademy(ACADEMY, {})).toHaveLength(0);
+    // and the pending row is untouched — the real payment still has to land
+    expect(await ctx.repo.findPendingAsaasByPaymentId("pay_pix_1")).toBeDefined();
+  });
+
+  it("records a delivery from our own account", async () => {
+    await pendingPix(ctx.repo);
+
+    await ctx.handler.handleEvent(pixEvent());
+
+    expect(await ctx.repo.findByAcademy(ACADEMY, {})).toHaveLength(1);
+  });
+
+  // Refusing the money stream because Asaas was briefly unreachable would cost
+  // real payments to prevent a misconfiguration that may not exist.
+  it("accepts everything while our own account id is unknown", async () => {
+    const blind = await setup(async () => null);
+    await pendingPix(blind.repo);
+
+    await blind.handler.handleEvent({
+      ...pixEvent(),
+      account: { id: "some-other-environment", ownerId: null },
+    });
+
+    expect(await blind.repo.findByAcademy(ACADEMY, {})).toHaveLength(1);
   });
 
   it("ignores an event that is not a settlement", async () => {

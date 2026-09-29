@@ -334,6 +334,33 @@ describe("Asaas payment webhook drops", () => {
     expect(reasons(emitted)).toEqual([]);
   });
 
+  // The alert that matters: without this guard a production delivery reaching
+  // a development API raises NO_PENDING_CHARGE — "money in, nothing recorded",
+  // the loudest signal in the file — for an event that was never ours.
+  it("reports a delivery from another Asaas account, not a lost payment", async () => {
+    const { emitted, AsaasPaymentWebhookHandler, InMemoryPaymentRepository } =
+      await setup();
+    const handler = new AsaasPaymentWebhookHandler(
+      new InMemoryPaymentRepository(),
+      noUsers,
+      noAcademies,
+      null,
+      undefined,
+      undefined,
+      async () => "our-account",
+    );
+
+    await handler.handleEvent({
+      ...paid,
+      account: { id: "another-environment", ownerId: null },
+    });
+
+    expect(reasons(emitted)).toEqual(["FOREIGN_ACCOUNT"]);
+    expect(emitted[0]?.attributes).toMatchObject({
+      "app.sender": "another-environment",
+    });
+  });
+
   it("reports a settlement with no payment id", async () => {
     const { emitted, AsaasPaymentWebhookHandler, InMemoryPaymentRepository } =
       await setup();

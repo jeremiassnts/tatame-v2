@@ -90,6 +90,10 @@ export const CATALOG = {
       // left.
       "NO_PENDING_CHARGE",
       "MISSING_REFERENCE",
+      // A delivery from an Asaas account that is not ours — the same webhook
+      // url or token configured in two environments. Without it, one
+      // environment's payments raise `NO_PENDING_CHARGE` in another.
+      "FOREIGN_ACCOUNT",
       "USER_OR_ACADEMY_NOT_FOUND",
       "OWNER_NOT_FOUND",
       // AbacatePay's and Asaas's. Stripe's unknown types are already reported by

@@ -60,6 +60,12 @@ const SETTLED_EVENTS = new Set(["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED"]);
  */
 const SELF_INFLICTED_EVENTS = new Set(["PAYMENT_DELETED"]);
 
+/**
+ * Our own root account id at Asaas, or `null` when it could not be determined.
+ * Resolved once and cached; it never changes for a given key.
+ */
+export type RootAccountIdResolver = () => Promise<string | null>;
+
 export class AsaasPaymentWebhookHandler {
   constructor(
     private readonly paymentRepo: IPaymentRepository,
@@ -68,10 +74,23 @@ export class AsaasPaymentWebhookHandler {
     private readonly emailService: EmailService | null,
     private readonly dispatcher?: NotificationDispatcher,
     private readonly studentSubRepo?: IStudentSubscriptionRepository,
+    private readonly rootAccountId?: RootAccountIdResolver,
   ) {}
 
   async handleEvent(event: AsaasPaymentEvent): Promise<void> {
     const type = event.event ?? "";
+
+    if (await this.isForeign(event)) {
+      emitEvent("payment.webhook_unhandled", {
+        reason: "FOREIGN_ACCOUNT",
+        extra: {
+          provider: "asaas",
+          type: type || "(missing)",
+          sender: event.account?.id ?? null,
+        },
+      });
+      return;
+    }
 
     if (SELF_INFLICTED_EVENTS.has(type)) return;
 
@@ -176,6 +195,33 @@ export class AsaasPaymentWebhookHandler {
     await this.paymentRepo.deletePendingAsaas(pending.asaasPaymentId);
 
     await this.announce(pending, payment.id, payment.amountCents, payment.referenceMonth);
+  }
+
+  /**
+   * Whether this delivery came from an Asaas account that is not ours.
+   *
+   * Every charge lives on the platform's root account, so a `PAYMENT_*` event
+   * carries that account's id — and a sandbox key and a production key are
+   * different accounts. This is what keeps one environment's events from being
+   * processed by another when the same webhook url or token ends up in both.
+   * Without it a production delivery reaching a development API raises
+   * `NO_PENDING_CHARGE`, the loudest signal in this file, for an event that was
+   * never ours to record.
+   *
+   * Deliberately **fails open**. If our own id cannot be determined — Asaas
+   * unreachable, key not configured — every event is accepted, because
+   * refusing the money stream on a lookup failure loses real payments to save
+   * a misconfiguration that may not exist.
+   *
+   * `ACCOUNT_STATUS_*` needs nothing equivalent: its `account.id` is the
+   * *subaccount's*, and its handler already refuses an account with no row
+   * here.
+   */
+  private async isForeign(event: AsaasPaymentEvent): Promise<boolean> {
+    const sender = event.account?.id;
+    if (!sender || !this.rootAccountId) return false;
+    const ours = await this.rootAccountId();
+    return ours !== null && sender !== ours;
   }
 
   /**
