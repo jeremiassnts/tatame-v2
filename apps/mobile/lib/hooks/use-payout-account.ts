@@ -1,8 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type {
-  CreatePayoutAccountBody,
-  UploadPayoutDocumentBody,
-} from "@tatame/validators";
+import type { CreatePayoutAccountBody } from "@tatame/validators";
 import { ApiError, useApi } from "@/lib/api";
 
 /**
@@ -87,15 +84,6 @@ export type PayoutAccountFees = {
 
 export type CreatePayoutAccountInput = CreatePayoutAccountBody;
 
-export type PayoutDocumentType = UploadPayoutDocumentBody["type"];
-
-/** In React Native a picked file is this shape, never a web `File`. */
-export type PayoutDocumentFile = {
-  uri: string;
-  name: string;
-  type: string;
-};
-
 /**
  * Error codes the screens branch on. The API puts `details.code` into the
  * response `error` field, so they arrive as `ApiError.message`.
@@ -130,7 +118,20 @@ export function useCreatePayoutAccount() {
   return useMutation({
     mutationFn: (body: CreatePayoutAccountInput) =>
       api.post<{ account: PayoutAccount }>("/payout-account", body),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      /*
+        Written, not just invalidated. The dashboard card reads this same query
+        to decide whether to offer onboarding, so by the time a manager reaches
+        this form the cache already holds `account: null`. Invalidating marks
+        that stale but keeps serving it until a refetch lands — and the
+        documents screen we navigate to next redirects straight back here when
+        it reads no account, landing the manager on an empty form seconds after
+        Asaas e-mailed them about the account they just opened.
+
+        The response carries the account that was created, so there is nothing
+        to wait for.
+      */
+      queryClient.setQueryData(accountKey, data);
       // Exact, so a fresh account does not also refetch the fees — they are
       // platform-wide and a 503 there is not worth re-triggering here.
       queryClient.invalidateQueries({ queryKey: accountKey, exact: true });
@@ -142,10 +143,11 @@ export function useCreatePayoutAccount() {
 /**
  * Re-reads the live status from Asaas and persists it.
  *
- * A mutation rather than a query even though the route is a GET: it is only
- * ever triggered by hand (pull-to-refresh), it changes server state, and the
- * codebase has no manually-refetched query pattern. A disabled query would
- * also fight the 5-minute default `staleTime` on every mount.
+ * A mutation rather than a query even though the route is a GET: it is fired at
+ * chosen moments — pull to refresh, and once when the documents screen opens on
+ * an account still mid-flight — it changes server state, and the codebase has no
+ * manually-refetched query pattern. A disabled query would also fight the
+ * 5-minute default `staleTime` on every mount.
  */
 export function useRefreshPayoutAccountStatus() {
   const api = useApi();
@@ -169,43 +171,6 @@ export function usePayoutAccountDocuments(opts?: { enabled?: boolean }) {
     queryKey: documentsKey,
     enabled: opts?.enabled ?? true,
     queryFn: () => api.get<PayoutAccountDocuments>("/payout-account/documents"),
-  });
-}
-
-export function useUploadPayoutDocument() {
-  const api = useApi();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      groupId,
-      type,
-      file,
-    }: {
-      groupId: string;
-      type: PayoutDocumentType;
-      file: PayoutDocumentFile;
-    }) => {
-      const formData = new FormData();
-      formData.append("type", type);
-      // React Native's FormData takes this object as the file part; the cast is
-      // what `api.uploadImage` does for the same reason.
-      formData.append("documentFile", {
-        uri: file.uri,
-        name: file.name,
-        type: file.type,
-      } as unknown as Blob);
-
-      return api.post<{ document: { id: string; status: string } }>(
-        `/payout-account/documents/${groupId}`,
-        formData,
-      );
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: documentsKey });
-      // An accepted document can move the account to under_review.
-      queryClient.invalidateQueries({ queryKey: accountKey, exact: true });
-    },
   });
 }
 

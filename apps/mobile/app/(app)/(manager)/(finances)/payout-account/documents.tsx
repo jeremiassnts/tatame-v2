@@ -4,24 +4,26 @@ import {
   StatusChip,
   asaasStatusColor,
   asaasStatusLabel,
-  resolveDocumentType,
 } from "@/components/PayoutDocumentGroupCard";
-import { ApiError } from "@/lib/api";
 import {
   usePayoutAccount,
   usePayoutAccountDocuments,
   useRefreshPayoutAccountStatus,
-  useUploadPayoutDocument,
   type PayoutAccountStatus,
-  type PayoutDocumentType,
 } from "@/lib/hooks/use-payout-account";
-import * as ImagePicker from "expo-image-picker";
 import { Redirect } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
-import { AlertTriangle, CheckCircle2, FileText } from "lucide-react-native";
-import { useState } from "react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ExternalLink,
+  FileText,
+  Mail,
+} from "lucide-react-native";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Pressable,
   RefreshControl,
   ScrollView,
   Text,
@@ -39,8 +41,8 @@ const AMBER = "#FFD60A";
 const ONBOARDING_ROUTE =
   "/(app)/(manager)/(finances)/payout-account/onboarding";
 
-/** multer refuses anything larger before the route handler even runs. */
-const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+/** Same destination the Financeiro card offers, so the manager learns one door. */
+const ASAAS_LOGIN_URL = "https://www.asaas.com/login";
 
 /** Same wording and palette the dashboard card uses, so the two never disagree. */
 const ACCOUNT_STATUS_LABELS: Record<PayoutAccountStatus, string> = {
@@ -67,6 +69,17 @@ const ACCOUNT_STATUS_DESCRIPTIONS: Record<PayoutAccountStatus, string> = {
     "O Asaas suspendeu a conta da academia. Os pagamentos dos alunos não entram enquanto a suspensão não for resolvida.",
 };
 
+/*
+  Statuses Asaas does not move away from on its own, so arriving on the screen
+  does not need to ask it again. Everything else is mid-flight: the account was
+  created seconds ago, or documents are being reviewed right now.
+*/
+const SETTLED_STATUSES = new Set<PayoutAccountStatus>([
+  "approved",
+  "rejected",
+  "suspended",
+]);
+
 const ACCOUNT_STATUS_COLORS: Record<PayoutAccountStatus, string> = {
   pending: AMBER,
   awaiting_documents: AMBER,
@@ -83,23 +96,6 @@ const REVIEW_AREA_LABELS = [
   { key: "bankAccountInfoStatus", label: "Dados bancários" },
 ] as const;
 
-function formatMegabytes(bytes: number): string {
-  return `${(bytes / (1024 * 1024)).toFixed(1).replace(".", ",")} MB`;
-}
-
-function readErrorMessage(error: unknown): string {
-  if (error instanceof ApiError) {
-    // The API answers with a code in `error`, which is not worth showing raw.
-    if (error.status === 413) {
-      return "O arquivo é maior que o limite de 5 MB.";
-    }
-    return "O Asaas não aceitou este arquivo. Tente outro documento ou outra foto.";
-  }
-  return "Não foi possível enviar o arquivo. Verifique sua conexão e tente de novo.";
-}
-
-type GroupFeedback = { error?: string; success?: string };
-
 export default function PayoutAccountDocumentsScreen() {
   const {
     data: account,
@@ -108,17 +104,31 @@ export default function PayoutAccountDocumentsScreen() {
   } = usePayoutAccount();
   const documentsQuery = usePayoutAccountDocuments({ enabled: !!account });
   const refreshStatus = useRefreshPayoutAccountStatus();
-  const uploadDocument = useUploadPayoutDocument();
+
+  /*
+    The status this screen lands with is the one `create` returned — `pending`
+    by definition — and the `(app)` query client keeps it for five minutes. In
+    the sandbox Asaas approves the subaccount about eight seconds later, so the
+    manager was reading "Em criação" over an account that was already active,
+    with no way to know beyond pulling the screen down. Asking once on arrival
+    is what makes the two agree.
+
+    Deliberately silent on failure: the cached status is still on screen and
+    pull to refresh is the path that reports errors. The ref makes it once per
+    mount rather than once per status change.
+  */
+  const hasAskedAsaas = useRef(false);
+  const accountStatus = account?.status;
+  const refreshStatusMutate = refreshStatus.mutate;
+  useEffect(() => {
+    if (hasAskedAsaas.current) return;
+    if (!accountStatus || SETTLED_STATUSES.has(accountStatus)) return;
+    hasAskedAsaas.current = true;
+    refreshStatusMutate();
+  }, [accountStatus, refreshStatusMutate]);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
-  const [uploadingGroupId, setUploadingGroupId] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<Record<string, GroupFeedback>>({});
-  const [selectedTypes, setSelectedTypes] = useState<Record<string, string>>({});
-
-  const setGroupFeedback = (groupId: string, value: GroupFeedback) => {
-    setFeedback((current) => ({ ...current, [groupId]: value }));
-  };
 
   /**
    * Pull-to-refresh has to prove the status, not repeat it: it asks Asaas for
@@ -140,47 +150,6 @@ export default function PayoutAccountDocumentsScreen() {
 
   const handleOpenOnboardingUrl = async (url: string) => {
     await WebBrowser.openBrowserAsync(url);
-  };
-
-  const handlePickFile = async (groupId: string, type: PayoutDocumentType) => {
-    setGroupFeedback(groupId, {});
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      quality: 0.8,
-    });
-    if (result.canceled || !result.assets[0]) return;
-
-    const asset = result.assets[0];
-
-    // The 5 MB cap is enforced by multer before the handler, so a file over it
-    // fails with no useful message. Catching it here keeps the reason readable.
-    if (asset.fileSize && asset.fileSize > MAX_UPLOAD_BYTES) {
-      setGroupFeedback(groupId, {
-        error: `O arquivo tem ${formatMegabytes(asset.fileSize)} e o limite é 5 MB. Escolha um arquivo menor.`,
-      });
-      return;
-    }
-
-    setUploadingGroupId(groupId);
-    try {
-      await uploadDocument.mutateAsync({
-        groupId,
-        type,
-        file: {
-          uri: asset.uri,
-          name: asset.fileName ?? `documento-${Date.now()}.jpg`,
-          type: asset.mimeType ?? "image/jpeg",
-        },
-      });
-      setGroupFeedback(groupId, {
-        success: "Documento enviado. O Asaas vai analisar em seguida.",
-      });
-    } catch (error) {
-      setGroupFeedback(groupId, { error: readErrorMessage(error) });
-    } finally {
-      setUploadingGroupId(null);
-    }
   };
 
   if (isAccountPending) {
@@ -344,6 +313,47 @@ export default function PayoutAccountDocumentsScreen() {
           </View>
         ) : null}
 
+        {/*
+          The app does not take documents. A standard Asaas subaccount has its
+          own access to the Asaas interface, and that is where Asaas expects the
+          mandatory ones — it mails the holder a link to set a password the
+          moment the account is created. Pointing there beats a second uploader
+          that cannot accept the PDFs a CNPJ academy is asked for.
+        */}
+        {!isApproved ? (
+          <View
+            className="rounded-2xl border border-surface-border bg-surface"
+            style={{ padding: 14, gap: 10 }}
+          >
+            <View className="flex-row items-center" style={{ gap: 8 }}>
+              <Mail size={16} color={ACCENT} />
+              <Text className="font-poppins-semibold text-sm text-primary">
+                Envie os documentos no Asaas
+              </Text>
+            </View>
+            <Text className="font-poppins text-[11px]" style={{ color: TEXT_SECONDARY }}>
+              Procure o e-mail do Asaas na caixa de entrada do endereço que você
+              cadastrou: é por ele que você cria a senha da conta da academia. Com a
+              senha em mãos, entre e envie os documentos por lá — é onde o Asaas
+              analisa e libera os recebimentos.
+            </Text>
+            <Pressable
+              onPress={() => handleOpenOnboardingUrl(ASAAS_LOGIN_URL)}
+              className="flex-row items-center justify-center rounded-xl"
+              style={{ height: 44, gap: 8, backgroundColor: ACCENT }}
+            >
+              <ExternalLink size={16} color="#FFFFFF" />
+              <Text className="font-poppins-semibold text-sm text-white">
+                Abrir minha conta no Asaas
+              </Text>
+            </Pressable>
+            <Text className="font-poppins text-[11px]" style={{ color: TEXT_MUTED }}>
+              Depois de enviar, volte aqui e puxe a tela para baixo para atualizar a
+              situação.
+            </Text>
+          </View>
+        ) : null}
+
         <Text
           className="font-poppins-semibold text-sm"
           style={{ color: TEXT_SECONDARY }}
@@ -402,17 +412,6 @@ export default function PayoutAccountDocumentsScreen() {
             <PayoutDocumentGroupCard
               key={group.id}
               group={group}
-              isUploading={uploadingGroupId === group.id}
-              errorMessage={feedback[group.id]?.error}
-              successMessage={feedback[group.id]?.success}
-              selectedType={
-                selectedTypes[group.id] ??
-                (resolveDocumentType(group.type) ? group.type : "")
-              }
-              onSelectType={(value) =>
-                setSelectedTypes((current) => ({ ...current, [group.id]: value }))
-              }
-              onPickFile={(type) => handlePickFile(group.id, type)}
               onOpenOnboardingUrl={handleOpenOnboardingUrl}
             />
           ))}

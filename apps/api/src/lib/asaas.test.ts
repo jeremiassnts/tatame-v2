@@ -225,34 +225,6 @@ describe("AsaasClient", () => {
       expect(result.data).toHaveLength(2);
       expect(result.data[1]!.onboardingUrl).toBe("https://onboarding.asaas.com/x");
     });
-
-    it("uploads a document as multipart to the group id", async () => {
-      fetchMock.mockResolvedValue(jsonResponse(200, { id: "doc_1", status: "PENDING" }));
-
-      const uploaded = await AsaasClient.forSubaccount("k").uploadDocument("grp_1", {
-        type: "IDENTIFICATION",
-        file: { buffer: Buffer.from("pdf-bytes"), filename: "rg.pdf", contentType: "application/pdf" },
-      });
-
-      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-      expect(url).toBe(`${BASE_URL}/v3/myAccount/documents/grp_1`);
-      expect(init.method).toBe("POST");
-      expect(init.body).toBeInstanceOf(FormData);
-      const form = init.body as FormData;
-      expect(form.get("type")).toBe("IDENTIFICATION");
-      expect(form.get("documentFile")).toBeInstanceOf(File);
-      expect(uploaded).toEqual({ id: "doc_1", status: "PENDING" });
-    });
-
-    it("does not set a JSON content-type on a multipart upload", async () => {
-      fetchMock.mockResolvedValue(jsonResponse(200, { id: "d", status: "PENDING" }));
-      await AsaasClient.forSubaccount("k").uploadDocument("g", {
-        type: "CUSTOM",
-        file: { buffer: Buffer.from("x"), filename: "a.pdf", contentType: "application/pdf" },
-      });
-      const headers = (fetchMock.mock.calls[0]![1] as RequestInit).headers as Record<string, string>;
-      expect(headers["Content-Type"]).toBeUndefined();
-    });
   });
 
   describe("status and fees", () => {

@@ -114,10 +114,6 @@ export * from "./announcement.schema.js";
 export * from "./dependent.schema.js";
 export {
   asaasCompanyTypeSchema,
-  asaasDocumentTypeSchema,
   createPayoutAccountBodySchema,
-  payoutAccountGroupIdParamSchema,
-  uploadPayoutDocumentBodySchema,
   type CreatePayoutAccountBody,
-  type UploadPayoutDocumentBody,
 } from "./payout-account.schema.js";

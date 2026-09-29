@@ -67,22 +67,25 @@ gate for plan creation, enrollment and split.
 
 ### P1: Manager completes and tracks document review ⭐ MVP
 
-**User Story**: As a manager, I want to send my documents and see where my account
-stands so that I know when I can start receiving.
+**User Story**: As a manager, I want to know which documents Asaas wants, where to
+send them and where my account stands, so that I know when I can start receiving.
 
 **Why P1**: An account that is created but never approved cannot receive a split, so
 the manager needs a path to `APPROVED` that does not go through support.
 
+**Revised 2026-09-29** — the app no longer collects documents; see D6. It reports
+what Asaas wants and sends the manager to Asaas to submit.
+
 **Acceptance Criteria**:
 
-1. WHEN a payout account exists THEN the system SHALL list the pending document groups with title, description and status
-2. WHEN a document group has no `onboardingUrl` THEN the app SHALL let the manager pick a file and upload it in-app, showing progress and the resulting status
-3. WHEN a document group has an `onboardingUrl` THEN the app SHALL open that link instead of attempting an upload, because Asaas refuses API uploads for those groups
+1. WHEN a payout account exists THEN the system SHALL list the document groups with title, status and where that group is submitted
+2. WHEN the account is not yet approved THEN the app SHALL name the Asaas e-mail as the way to set the account password and SHALL open the Asaas login, rather than accepting a file
+3. WHEN a document group has an `onboardingUrl` THEN the app SHALL open that link, because Asaas refuses any other channel for those groups
 4. WHEN Asaas sends an `ACCOUNT_STATUS_*` webhook THEN the system SHALL update the stored status and, on `ACCOUNT_STATUS_GENERAL_APPROVAL_APPROVED`, mark the account `approved` and stamp `approvedAt`
-5. WHEN a status becomes rejected THEN the system SHALL store and display the rejection reason and allow resubmission
-6. WHEN the manager pulls to refresh THEN the system SHALL re-read the live status from Asaas rather than trusting only the webhook
+5. WHEN a status becomes rejected THEN the system SHALL store and display the rejection reason
+6. WHEN the manager opens the screen on an account still mid-flight, or pulls to refresh THEN the system SHALL re-read the live status from Asaas rather than trusting the cached one
 
-**Independent Test**: Upload a sandbox document, then force the approval webhook and see the card turn green.
+**Independent Test**: Open the screen on a pending account and watch the status settle from Asaas without pulling; confirm the screen offers Asaas and never a file picker.
 
 ---
 
@@ -225,7 +228,7 @@ and see statements.
 | --- | --- | --- | --- | --- |
 | PAYOUT-01 | P1: Manager creates a receiving account | TAT-179 | Implemented | Done |
 | PAYOUT-02 | P1: Manager creates a receiving account (webhooks + persistence) | TAT-179 | Implemented | Done |
-| PAYOUT-03 | P1: Document submission in-app | TAT-179 | Implemented | Done |
+| PAYOUT-03 | P1: Document submission — **superseded by D6**, the app points at Asaas | TAT-179 | Removed | Done |
 | PAYOUT-04 | P1: Document submission via onboarding link | TAT-179 | Implemented | Done |
 | PAYOUT-05 | P1: Account status tracking + webhook | TAT-179 | Implemented | Done |
 | PAYOUT-06 | P1: Fee disclosure on plan creation | TAT-179 | Implemented | Done |

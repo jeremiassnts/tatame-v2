@@ -37,20 +37,6 @@ export type AsaasDocumentStatus =
   | "REJECTED"
   | "IGNORED";
 
-export type AsaasDocumentType =
-  | "ALLOW_BANK_ACCOUNT_DEPOSIT_STATEMENT"
-  | "CUSTOM"
-  | "EMANCIPATION_OF_MINORS"
-  | "ENTREPRENEUR_REQUIREMENT"
-  | "IDENTIFICATION_SELFIE"
-  | "IDENTIFICATION"
-  | "INVOICE"
-  | "MEI_CERTIFICATE"
-  | "MINUTES_OF_CONSTITUTION"
-  | "MINUTES_OF_ELECTION"
-  | "POWER_OF_ATTORNEY"
-  | "SOCIAL_CONTRACT";
-
 export interface AsaasWebhookInput {
   name: string;
   url: string;
@@ -115,8 +101,8 @@ export interface AsaasAccountStatus {
 export interface AsaasDocumentGroup {
   id: string;
   status: AsaasDocumentStatus;
-  /** An `AsaasDocumentType` in practice, but left open: this is a display
-   *  field, and a new Asaas type must not break parsing. */
+  /** One of Asaas's document types, left open: this is a display field, and a
+   *  type we have never seen must not break parsing. */
   type: string;
   title: string;
   description: string;
@@ -126,7 +112,12 @@ export interface AsaasDocumentGroup {
    */
   onboardingUrl: string | null;
   onboardingUrlExpirationDate?: string | null;
-  documents: { id: string; status: AsaasDocumentStatus }[];
+  /**
+   * Absent — not empty — for a group nothing has been uploaded to yet, which is
+   * the state every freshly created subaccount is in. Optional here so the
+   * normalisation below is the only place that has to know.
+   */
+  documents?: { id: string; status: AsaasDocumentStatus }[];
 }
 
 export interface AsaasDocumentsResponse {
@@ -134,15 +125,16 @@ export interface AsaasDocumentsResponse {
   data: AsaasDocumentGroup[];
 }
 
-export interface AsaasUploadedDocument {
-  id: string;
-  status: AsaasDocumentStatus;
-}
-
 export interface AsaasFees {
   payment: {
     pix: {
       fixedFeeValue: number;
+      /**
+       * The promotional rate Asaas actually charges until `discountExpiration`.
+       * It is reported next to the standard rate, not instead of it.
+       */
+      fixedFeeValueWithDiscount?: number | null;
+      discountExpiration?: string | null;
       percentageFee: number;
       minimumFeeValue: number;
       maximumFeeValue: number;
@@ -152,6 +144,10 @@ export interface AsaasFees {
     creditCard: {
       operationValue: number;
       oneInstallmentPercentage: number;
+      discountOneInstallmentPercentage?: number | null;
+      /** Asaas's own verdict on whether the promotional rate is in force. */
+      hasValidDiscount?: boolean;
+      discountExpiration?: string | null;
       daysToReceive: number;
     };
   };
@@ -235,28 +231,6 @@ export class AsaasClient {
     return { rejectReasons: body.rejectReasons ?? null, data: body.data ?? [] };
   }
 
-  uploadDocument(
-    groupId: string,
-    input: {
-      type: AsaasDocumentType;
-      file: { buffer: Buffer; filename: string; contentType: string };
-    },
-  ): Promise<AsaasUploadedDocument> {
-    const form = new FormData();
-    form.append("type", input.type);
-    form.append(
-      "documentFile",
-      new File([new Uint8Array(input.file.buffer)], input.file.filename, {
-        type: input.file.contentType,
-      }),
-    );
-    // No Content-Type header: fetch has to set it so the multipart boundary matches.
-    return this.request<AsaasUploadedDocument>(
-      "POST",
-      `/myAccount/documents/${encodeURIComponent(groupId)}`,
-      { form },
-    );
-  }
 
   getFees(): Promise<AsaasFees> {
     return this.request<AsaasFees>("GET", "/myAccount/fees");
@@ -265,7 +239,7 @@ export class AsaasClient {
   private async request<T>(
     method: "GET" | "POST",
     path: string,
-    opts: { json?: unknown; form?: FormData } = {},
+    opts: { json?: unknown } = {},
   ): Promise<T> {
     const url = `${this.baseUrl.replace(/\/+$/, "")}${API_PREFIX}${path}`;
     const headers: Record<string, string> = {
@@ -279,7 +253,7 @@ export class AsaasClient {
       response = await fetch(url, {
         method,
         headers,
-        body: opts.form ?? (opts.json !== undefined ? JSON.stringify(opts.json) : undefined),
+        body: opts.json !== undefined ? JSON.stringify(opts.json) : undefined,
       });
     } catch {
       // The cause is a socket-level message with the upstream host in it —
