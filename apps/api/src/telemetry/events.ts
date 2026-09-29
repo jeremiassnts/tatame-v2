@@ -94,6 +94,15 @@ export const CATALOG = {
       "UNKNOWN_EVENT_TYPE",
     ],
   },
+  /**
+   * A student tried to pay and Asaas refused to open the charge, or to show its
+   * QR code. Deliberately one broad signal with the Asaas code and sentence in
+   * `extra`, rather than a reason per cause: the causes are Asaas's to invent —
+   * the root account having no Pix key yet, the 60-day evaluation cap, a
+   * document it did not like — and an enumeration here would always be one
+   * release behind the one that actually fires.
+   */
+  "payment.charge_failed": { domain: "payment", outcome: "failed" },
   "payment.transferred": { domain: "payment", outcome: "success" },
 
   // --- payout_account (the academy's Asaas subaccount) --------------------

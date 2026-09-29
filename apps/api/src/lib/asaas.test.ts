@@ -338,4 +338,148 @@ describe("AsaasClient", () => {
       );
     });
   });
+
+  describe("charges", () => {
+    // The sandbox's own answers on 2026-09-29, kept verbatim.
+    const SANDBOX_PAYMENT = {
+      object: "payment",
+      id: "pay_flhul7uhgq4drw4d",
+      status: "PENDING",
+      value: 150.0,
+      netValue: 149.01,
+      billingType: "PIX",
+      dueDate: "2026-10-02",
+      deleted: false,
+    };
+
+    const SANDBOX_QR = {
+      success: true,
+      encodedImage: "iVBORw0KGgoAAAANSUhEUgAAAcIAAAHCAQ",
+      payload:
+        "00020101021226820014br.gov.bcb.pix2560pix-h.asaas.com/qr/cobv/f7e89c58-7383-459e-bef7-00451747eee25204000053039865802BR5921EFA FIREFLY LABS LTDA6009Sao Paulo6108013119146207050***63048B0A",
+      expirationDate: "2027-10-02 23:59:59",
+      description: "probe b3",
+    };
+
+    it("creates a charge carrying the whole split to the academy wallet", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(200, SANDBOX_PAYMENT));
+
+      const payment = await AsaasClient.root().createPayment({
+        customer: "cus_1",
+        billingType: "PIX",
+        value: 150,
+        dueDate: "2026-10-02",
+        split: [{ walletId: "wal_1", percentualValue: 100 }],
+      });
+
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${BASE_URL}/v3/payments`);
+      expect(JSON.parse(init.body as string).split).toEqual([
+        { walletId: "wal_1", percentualValue: 100 },
+      ]);
+      expect(payment.id).toBe("pay_flhul7uhgq4drw4d");
+      expect(payment.netValue).toBe(149.01);
+    });
+
+    it("refuses a charge response with no id", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(200, { object: "payment" }));
+      await expect(
+        AsaasClient.root().createPayment({
+          customer: "c",
+          billingType: "PIX",
+          value: 1,
+          dueDate: "2026-10-02",
+        }),
+      ).rejects.toMatchObject({ statusCode: 502 });
+    });
+
+    it("reads the QR code of a charge", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(200, SANDBOX_QR));
+
+      const qr = await AsaasClient.root().getPixQrCode("pay_1");
+
+      expect(fetchMock.mock.calls[0]![0]).toBe(
+        `${BASE_URL}/v3/payments/pay_1/pixQrCode`,
+      );
+      expect(qr.payload).toContain("br.gov.bcb.pix");
+      expect(qr.expirationDate).toBe("2027-10-02 23:59:59");
+    });
+
+    it("refuses a QR response missing the payload", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(200, { success: true }));
+      await expect(
+        AsaasClient.root().getPixQrCode("pay_1"),
+      ).rejects.toMatchObject({ statusCode: 502 });
+    });
+
+    // Blocker 4: the charge lives on the root account, so the QR fails until
+    // *that* account has a Pix key — and Asaas provisions it asynchronously, so
+    // a freshly created account fails for its first minutes. The sentence below
+    // is the only thing that explains the failure, so it must not be flattened
+    // into a generic 502.
+    it("passes the missing-Pix-key rejection through verbatim", async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse(400, {
+          errors: [
+            {
+              code: "invalid_action",
+              description:
+                "Você não possui uma chave Pix cadastrada para recebimentos.",
+            },
+          ],
+        }),
+      );
+
+      await expect(
+        AsaasClient.root().getPixQrCode("pay_1"),
+      ).rejects.toMatchObject({
+        statusCode: 400,
+        message: "Você não possui uma chave Pix cadastrada para recebimentos.",
+        details: { code: "invalid_action" },
+      });
+    });
+
+    it("reads a charge back, deleted flag included", async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse(200, { ...SANDBOX_PAYMENT, deleted: true }),
+      );
+
+      const found = await AsaasClient.root().findPayment("pay_1");
+
+      expect(fetchMock.mock.calls[0]![0]).toBe(`${BASE_URL}/v3/payments/pay_1`);
+      expect(found?.deleted).toBe(true);
+    });
+
+    it("answers undefined for a charge Asaas no longer has", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(404, { errors: [] }));
+      expect(await AsaasClient.root().findPayment("pay_gone")).toBeUndefined();
+    });
+
+    it("deletes a charge", async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse(200, { deleted: true, id: "pay_1" }),
+      );
+
+      await AsaasClient.root().deletePayment("pay_1");
+
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${BASE_URL}/v3/payments/pay_1`);
+      expect(init.method).toBe("DELETE");
+    });
+
+    // A charge that is already gone is the outcome the caller wanted.
+    it("treats deleting a charge that no longer exists as done", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(404, { errors: [] }));
+      await expect(
+        AsaasClient.root().deletePayment("pay_gone"),
+      ).resolves.toBeUndefined();
+    });
+
+    it("still raises anything other than a 404 on delete", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(500, {}));
+      await expect(
+        AsaasClient.root().deletePayment("pay_1"),
+      ).rejects.toMatchObject({ statusCode: 502 });
+    });
+  });
 });

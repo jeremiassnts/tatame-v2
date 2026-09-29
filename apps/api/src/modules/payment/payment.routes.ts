@@ -4,10 +4,13 @@ import type { ConfirmManualPaymentBody } from "@tatame/validators";
 import {
   confirmManualPaymentBodySchema,
   createCheckoutBodySchema,
+  createPixChargeBodySchema,
   listPaymentsQuerySchema,
   type CreateCheckoutBody,
+  type CreatePixChargeBody,
 } from "@tatame/validators";
 import { Router } from "express";
+import { AsaasClient } from "../../lib/asaas.js";
 import { getDb } from "../../lib/db.js";
 import { HttpError } from "../../lib/http-error.js";
 import { emitEvent } from "../../telemetry/events.js";
@@ -30,7 +33,9 @@ import { PostgresNotificationRepository } from "../notification/notification.rep
 import { NotificationService } from "../notification/notification.service.js";
 import { PostgresPushTokenRepository } from "../push-token/push-token.repository.postgres.js";
 import { PostgresStudentSubscriptionRepository } from "../subscription/subscription.repository.postgres.js";
+import { PostgresPayoutAccountRepository } from "../payout-account/payout-account.repository.postgres.js";
 import { PostgresUserRepository } from "../user/user.repository.postgres.js";
+import { AsaasCustomerService } from "./asaas-customer.service.js";
 import { PostgresDependentRepository } from "../dependent/dependent.repository.postgres.js";
 import { PostgresGraduationRepository } from "../graduation/graduation.repository.postgres.js";
 import { DependentService } from "../dependent/dependent.service.js";
@@ -71,12 +76,19 @@ const dependentService = new DependentService(
   new PostgresStudentSubscriptionRepository(db),
 );
 
+const payoutAccountRepo = new PostgresPayoutAccountRepository(db);
+
 const paymentService = new PaymentService(
   new PostgresPaymentRepository(db),
   new PostgresStudentSubscriptionRepository(db),
   academyRepo,
   buildDispatcher(db),
   managerSubRepo,
+  payoutAccountRepo,
+  // `AsaasClient` itself is the factory; `root()` throws when the keys are
+  // absent, which `requireAsaas` turns into a 503 rather than a 500.
+  AsaasClient,
+  new AsaasCustomerService(userRepo, AsaasClient),
 );
 
 paymentRouter.post(
@@ -166,6 +178,42 @@ paymentRouter.post(
         academyId,
         subscriptionId: body.subscriptionId,
         extra: { method: "stripe" },
+      });
+      res.json(result);
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+/**
+ * The Asaas Pix charge, split whole into the academy's wallet. Replaces
+ * `/checkout/pix`, which stays until the AbacatePay charges created before the
+ * cutover have drained (B9).
+ */
+paymentRouter.post(
+  "/pix",
+  authorize(Role.Student, Role.Guardian),
+  attachActiveAcademyContext,
+  requireActiveAcademy,
+  validateBody(createPixChargeBodySchema),
+  async (req, res, next) => {
+    try {
+      const body = req.validatedBody as CreatePixChargeBody;
+      const studentUserId = req.appAuth!.userId;
+      const academyId = req.appAuth!.activeAcademyId!;
+
+      const result = await paymentService.createPixCharge(
+        studentUserId,
+        academyId,
+        { subscriptionId: body.subscriptionId, cpfCnpj: body.cpfCnpj },
+      );
+
+      emitEvent("payment.checkout_started", {
+        userId: studentUserId,
+        academyId,
+        subscriptionId: body.subscriptionId,
+        extra: { method: "pix", provider: "asaas" },
       });
       res.json(result);
     } catch (e) {

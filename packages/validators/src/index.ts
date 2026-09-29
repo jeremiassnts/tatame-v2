@@ -75,10 +75,12 @@ export {
 export {
   confirmManualPaymentBodySchema,
   createCheckoutBodySchema,
+  createPixChargeBodySchema,
   listPaymentsQuerySchema,
   referenceMonthSchema,
   type ConfirmManualPaymentBody,
   type CreateCheckoutBody,
+  type CreatePixChargeBody,
 } from "./payment.schema.js";
 export {
   checkinHistoryQuerySchema,

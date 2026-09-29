@@ -158,6 +158,47 @@ interface AsaasCustomerList {
   data?: AsaasCustomer[];
 }
 
+/**
+ * Where a charge's money goes. `percentualValue: 100` is the whole feature:
+ * Asaas splits over `netValue`, so the academy receives the charge minus the
+ * Asaas fee and the platform nets exactly zero (D1/D3).
+ */
+export interface AsaasSplitInput {
+  walletId: string;
+  percentualValue?: number;
+  fixedValue?: number;
+}
+
+export interface CreateAsaasPaymentInput {
+  /** The Asaas customer id, not ours. */
+  customer: string;
+  billingType: "PIX" | "CREDIT_CARD" | "UNDEFINED";
+  value: number;
+  /** `YYYY-MM-DD`. */
+  dueDate: string;
+  description?: string;
+  externalReference?: string;
+  split?: AsaasSplitInput[];
+}
+
+export interface AsaasPayment {
+  id: string;
+  status: string;
+  value: number;
+  /** Absent until Asaas has priced the charge. */
+  netValue?: number | null;
+  billingType?: string;
+  dueDate?: string;
+  deleted?: boolean;
+  invoiceUrl?: string;
+}
+
+export interface AsaasPixQrCode {
+  encodedImage: string;
+  payload: string;
+  expirationDate: string | null;
+}
+
 export interface AsaasFees {
   payment: {
     pix: {
@@ -293,12 +334,85 @@ export class AsaasClient {
     return body.data?.[0];
   }
 
+  async createPayment(input: CreateAsaasPaymentInput): Promise<AsaasPayment> {
+    const body = await this.request<Partial<AsaasPayment>>(
+      "POST",
+      "/payments",
+      { json: input },
+    );
+    if (!body.id) {
+      throw new HttpError(502, "Asaas não retornou a cobrança criada");
+    }
+    return { ...body, id: body.id, status: body.status ?? "PENDING", value: body.value ?? input.value };
+  }
+
+  /**
+   * The QR code for a Pix charge.
+   *
+   * Two traps live here. The charge belongs to the **root** account, so this
+   * fails until *that* account has a Pix key — a 400 whose message is the only
+   * thing that explains it, and which Asaas provisions asynchronously so a
+   * fresh account fails for its first minutes. And a **deleted** charge still
+   * answers 200 with a perfectly valid-looking QR, so a caller reusing a stored
+   * charge id cannot learn from here that the charge was cancelled.
+   */
+  async getPixQrCode(paymentId: string): Promise<AsaasPixQrCode> {
+    const body = await this.request<Partial<AsaasPixQrCode>>(
+      "GET",
+      `/payments/${paymentId}/pixQrCode`,
+    );
+    if (!body.encodedImage || !body.payload) {
+      throw new HttpError(502, "Asaas não retornou o QR code da cobrança");
+    }
+    return {
+      encodedImage: body.encodedImage,
+      payload: body.payload,
+      expirationDate: body.expirationDate ?? null,
+    };
+  }
+
+  /**
+   * A charge as Asaas currently holds it, or `undefined` if it no longer
+   * exists. The `deleted` flag is the only way to learn a stored charge was
+   * cancelled — `getPixQrCode` answers 200 with a valid-looking QR either way.
+   */
+  async findPayment(paymentId: string): Promise<AsaasPayment | undefined> {
+    try {
+      const body = await this.request<Partial<AsaasPayment>>(
+        "GET",
+        `/payments/${paymentId}`,
+      );
+      if (!body.id) return undefined;
+      return { ...body, id: body.id, status: body.status ?? "PENDING", value: body.value ?? 0 };
+    } catch (error) {
+      if (error instanceof HttpError && error.statusCode === 404) return undefined;
+      throw error;
+    }
+  }
+
+  /**
+   * Cancels an open charge. Idempotent at Asaas — deleting twice answers 200 —
+   * and a charge that is already gone is the outcome the caller wanted, so a
+   * 404 is success here rather than an error to handle.
+   */
+  async deletePayment(paymentId: string): Promise<void> {
+    try {
+      await this.request<{ deleted?: boolean }>(
+        "DELETE",
+        `/payments/${paymentId}`,
+      );
+    } catch (error) {
+      if (error instanceof HttpError && error.statusCode === 404) return;
+      throw error;
+    }
+  }
+
   getFees(): Promise<AsaasFees> {
     return this.request<AsaasFees>("GET", "/myAccount/fees");
   }
 
   private async request<T>(
-    method: "GET" | "POST",
+    method: "GET" | "POST" | "DELETE",
     path: string,
     opts: { json?: unknown; query?: Record<string, string> } = {},
   ): Promise<T> {
