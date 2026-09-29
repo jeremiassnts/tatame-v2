@@ -108,9 +108,6 @@ importers:
       '@tatame/validators':
         specifier: workspace:*
         version: link:../../packages/validators
-      abacatepay-nodejs-sdk:
-        specifier: 1.6.0
-        version: 1.6.0
       bullmq:
         specifier: 5.73.0
         version: 5.73.0
@@ -4794,9 +4791,6 @@ packages:
 
   '@zxcvbn-ts/language-common@3.0.4':
     resolution: {integrity: sha512-viSNNnRYtc7ULXzxrQIVUNwHAPSXRtoIwy/Tq4XQQdIknBzw4vz36lQLF6mvhMlTIlpjoN/Z1GFu/fwiAlUSsw==}
-
-  abacatepay-nodejs-sdk@1.6.0:
-    resolution: {integrity: sha512-vcFfVNRVzcPr+2HarwOLeDarIbdcSjJPwYIaZExwfr3z+x5xwdHZWyCFi5m7WennmQDh9JbdEvwFJZutlyKixA==}
 
   abitype@1.2.3:
     resolution: {integrity: sha512-Ofer5QUnuUdTFsBRwARMoWKOH1ND5ehwYhJ3OJ/BQO+StkwQjHw0XyVh4vDttzHB7QOFhPHa/o413PJ82gU/Tg==}
@@ -14988,8 +14982,6 @@ snapshots:
       fastest-levenshtein: 1.0.16
 
   '@zxcvbn-ts/language-common@3.0.4': {}
-
-  abacatepay-nodejs-sdk@1.6.0: {}
 
   abitype@1.2.3(typescript@5.9.3)(zod@3.25.76):
     optionalDependencies:

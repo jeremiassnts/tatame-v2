@@ -145,9 +145,8 @@ paymentRouter.post(
  *
  * The path and the `{ checkoutUrl }` shape are unchanged from the Stripe
  * version this replaces, which is the point — mobile changes provider without
- * changing its own contract. `createCheckoutSession` stays on the service for
- * B9 to remove along with AbacatePay; the Stripe webhook handler stays longer
- * still, since it is what records sessions already in flight.
+ * changing its own contract. The Stripe webhook handler stays, since it
+ * is what records sessions already in flight.
  */
 paymentRouter.post(
   "/checkout",
@@ -183,9 +182,9 @@ paymentRouter.post(
 );
 
 /**
- * The Asaas Pix charge, split whole into the academy's wallet. Replaces
- * `/checkout/pix`, which stays until the AbacatePay charges created before the
- * cutover have drained (B9).
+ * The Asaas Pix charge, split whole into the academy's wallet. The only Pix
+ * entry point there is: `/checkout/pix` and `/pix-status/:id` left with
+ * AbacatePay in B9.
  */
 paymentRouter.post(
   "/pix",
@@ -210,43 +209,6 @@ paymentRouter.post(
         academyId,
         subscriptionId: body.subscriptionId,
         extra: { method: "pix", provider: "asaas" },
-      });
-      res.json(result);
-    } catch (e) {
-      next(e);
-    }
-  },
-);
-
-paymentRouter.post(
-  "/checkout/pix",
-  authorize(Role.Student, Role.Guardian),
-  attachActiveAcademyContext,
-  requireActiveAcademy,
-  validateBody(createCheckoutBodySchema),
-  async (req, res, next) => {
-    try {
-      const env = loadEnv();
-      if (!env.ABACATEPAY_API_KEY) {
-        throw new HttpError(503, "AbacatePay is not configured");
-      }
-
-      const body = req.validatedBody as CreateCheckoutBody;
-      const studentUserId = req.appAuth!.userId;
-      const academyId = req.appAuth!.activeAcademyId!;
-
-      const result = await paymentService.createPixQrCode(
-        studentUserId,
-        academyId,
-        env.ABACATEPAY_API_KEY,
-        { subscriptionId: body.subscriptionId },
-      );
-
-      emitEvent("payment.checkout_started", {
-        userId: studentUserId,
-        academyId,
-        subscriptionId: body.subscriptionId,
-        extra: { method: "pix" },
       });
       res.json(result);
     } catch (e) {
@@ -295,45 +257,6 @@ paymentRouter.get("/checkout-result", (req, res) => {
 <p>${result.body}</p>
 </div></body></html>`);
 });
-
-paymentRouter.get(
-  "/pix-status/:pixQrCodeId",
-  authorize(Role.Student, Role.Guardian),
-  attachActiveAcademyContext,
-  requireActiveAcademy,
-  async (req, res, next) => {
-    try {
-      const env = loadEnv();
-      if (!env.ABACATEPAY_API_KEY) {
-        throw new HttpError(503, "AbacatePay is not configured");
-      }
-
-      const pixQrCodeId = req.params.pixQrCodeId ?? "";
-      const abacateRes = await fetch(
-        `https://api.abacatepay.com/v1/pixQrCode/check?id=${encodeURIComponent(pixQrCodeId)}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${env.ABACATEPAY_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-        },
-      );
-
-      const rawText = await abacateRes.text();
-      let result: { data?: { status?: string } };
-      try {
-        result = JSON.parse(rawText) as typeof result;
-      } catch {
-        throw new HttpError(502, "AbacatePay returned invalid response");
-      }
-
-      res.json({ status: result.data?.status ?? "UNKNOWN" });
-    } catch (e) {
-      next(e);
-    }
-  },
-);
 
 paymentRouter.get(
   "/dependent/:dependentId",
