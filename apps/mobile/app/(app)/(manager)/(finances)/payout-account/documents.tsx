@@ -19,7 +19,7 @@ import * as ImagePicker from "expo-image-picker";
 import { Redirect } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { AlertTriangle, CheckCircle2, FileText } from "lucide-react-native";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   RefreshControl,
@@ -67,6 +67,17 @@ const ACCOUNT_STATUS_DESCRIPTIONS: Record<PayoutAccountStatus, string> = {
     "O Asaas suspendeu a conta da academia. Os pagamentos dos alunos não entram enquanto a suspensão não for resolvida.",
 };
 
+/*
+  Statuses Asaas does not move away from on its own, so arriving on the screen
+  does not need to ask it again. Everything else is mid-flight: the account was
+  created seconds ago, or documents are being reviewed right now.
+*/
+const SETTLED_STATUSES = new Set<PayoutAccountStatus>([
+  "approved",
+  "rejected",
+  "suspended",
+]);
+
 const ACCOUNT_STATUS_COLORS: Record<PayoutAccountStatus, string> = {
   pending: AMBER,
   awaiting_documents: AMBER,
@@ -109,6 +120,28 @@ export default function PayoutAccountDocumentsScreen() {
   const documentsQuery = usePayoutAccountDocuments({ enabled: !!account });
   const refreshStatus = useRefreshPayoutAccountStatus();
   const uploadDocument = useUploadPayoutDocument();
+
+  /*
+    The status this screen lands with is the one `create` returned — `pending`
+    by definition — and the `(app)` query client keeps it for five minutes. In
+    the sandbox Asaas approves the subaccount about eight seconds later, so the
+    manager was reading "Em criação" over an account that was already active,
+    with no way to know beyond pulling the screen down. Asking once on arrival
+    is what makes the two agree.
+
+    Deliberately silent on failure: the cached status is still on screen and
+    pull to refresh is the path that reports errors. The ref makes it once per
+    mount rather than once per status change.
+  */
+  const hasAskedAsaas = useRef(false);
+  const accountStatus = account?.status;
+  const refreshStatusMutate = refreshStatus.mutate;
+  useEffect(() => {
+    if (hasAskedAsaas.current) return;
+    if (!accountStatus || SETTLED_STATUSES.has(accountStatus)) return;
+    hasAskedAsaas.current = true;
+    refreshStatusMutate();
+  }, [accountStatus, refreshStatusMutate]);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);

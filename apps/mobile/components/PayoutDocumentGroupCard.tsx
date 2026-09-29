@@ -122,6 +122,23 @@ export function PayoutDocumentGroupCard({
   // The single branch that matters: Asaas refuses an API upload for any group
   // that carries an onboarding link, so those get a link and never a picker.
   const mustUseOnboardingLink = !group.canUploadInApp || !!group.onboardingUrl;
+  // Asaas approves a group on its own — instantly in sandbox, after review in
+  // production — and an approved group has nothing left to ask for.
+  const isApproved = group.status === "APPROVED";
+
+  /*
+    Asaas sends a `description` written for Asaas's own screens: "para enviar
+    esse documento acesse nosso aplicativo ou utilize o link de onboarding",
+    where "nosso aplicativo" is theirs and the link is `onboardingUrl` — null on
+    every group we can upload to. Rendering it verbatim pointed the manager away
+    from the button directly below it, so the instruction is ours and follows
+    whichever branch the card is about to render.
+  */
+  const instruction = isApproved
+    ? "O Asaas já aprovou este documento."
+    : mustUseOnboardingLink
+      ? "O Asaas só aceita este documento pelo site dele."
+      : "Envie uma foto nítida do documento, com todas as bordas visíveis.";
 
   return (
     <View
@@ -133,14 +150,12 @@ export function PayoutDocumentGroupCard({
           <Text className="font-poppins-semibold text-[15px] text-primary">
             {group.title}
           </Text>
-          {group.description ? (
-            <Text
-              className="font-poppins text-[11px]"
-              style={{ color: TEXT_SECONDARY }}
-            >
-              {group.description}
-            </Text>
-          ) : null}
+          <Text
+            className="font-poppins text-[11px]"
+            style={{ color: TEXT_SECONDARY }}
+          >
+            {instruction}
+          </Text>
         </View>
         <StatusChip value={group.status} />
       </View>
@@ -158,11 +173,19 @@ export function PayoutDocumentGroupCard({
         </View>
       ) : null}
 
-      {mustUseOnboardingLink ? (
+      {isApproved ? (
+        sentCount > 0 ? null : (
+          <View className="flex-row items-center" style={{ gap: 6 }}>
+            <CheckCircle2 size={14} color={GREEN} />
+            <Text className="font-poppins text-[11px]" style={{ color: TEXT_SECONDARY }}>
+              Nada pendente aqui
+            </Text>
+          </View>
+        )
+      ) : mustUseOnboardingLink ? (
         <View style={{ gap: 10 }}>
           <Text className="font-poppins text-[11px]" style={{ color: TEXT_MUTED }}>
-            O Asaas só aceita este documento pelo site dele. Toque abaixo para
-            concluir por lá e volte para atualizar a situação.
+            Toque abaixo para concluir por lá e volte para atualizar a situação.
           </Text>
           <Pressable
             onPress={() =>

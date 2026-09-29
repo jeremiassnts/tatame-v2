@@ -155,10 +155,11 @@ export function useCreatePayoutAccount() {
 /**
  * Re-reads the live status from Asaas and persists it.
  *
- * A mutation rather than a query even though the route is a GET: it is only
- * ever triggered by hand (pull-to-refresh), it changes server state, and the
- * codebase has no manually-refetched query pattern. A disabled query would
- * also fight the 5-minute default `staleTime` on every mount.
+ * A mutation rather than a query even though the route is a GET: it is fired at
+ * chosen moments — pull to refresh, and once when the documents screen opens on
+ * an account still mid-flight — it changes server state, and the codebase has no
+ * manually-refetched query pattern. A disabled query would also fight the
+ * 5-minute default `staleTime` on every mount.
  */
 export function useRefreshPayoutAccountStatus() {
   const api = useApi();
