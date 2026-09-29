@@ -57,13 +57,15 @@ without an approved wallet there is nothing to split into.
    and `ASAAS_BASE_URL` in hand; `ASAAS_WEBHOOK_TOKEN` still to be generated.
 3. Confirm the production rollout fits the Asaas evaluation window: up to 10 subaccounts
    and R$ 2.000 per charge during the first 60 days. **Still open.**
-4. **New — a Pix key on the root account.** `GET /payments/{id}/pixQrCode` answers
-   400 `invalid_action` with "Você não possui uma chave Pix cadastrada para
-   recebimentos" until the account owning the charge has one. Asaas provisions it
-   asynchronously, so a freshly created account fails for the first minutes. The
+4. ~~**New — a Pix key on the root account.**~~ **Resolved 2026-09-29.** The root
+   account now holds one `EVP` key, `ACTIVE`. The failure it caused —
+   `GET /payments/{id}/pixQrCode` answering 400 `invalid_action` with "Você não
+   possui uma chave Pix cadastrada para recebimentos" — is therefore no longer
+   reproducible live, so B4 pinned the recorded payload as a regression test
+   instead. It still matters in production: Asaas provisions the key
+   asynchronously, so a freshly created account fails for its first minutes. The
    key belongs to the **root** account only — the charge lives there and the split
-   moves the money internally, so no academy needs one. B4 has to surface this
-   error rather than let it become a generic 502.
+   moves the money internally, so no academy needs one.
 
 ## Sandbox validation — 2026-09-28
 
@@ -215,10 +217,34 @@ allows only 10 subaccounts and **7 are used**.
 | Charge settled by hand, split `CANCELLED` | `pay_to6xc4jjssi0847w` |
 | Customer created with **no document**, then patched with one (D7 probe) | `cus_000009273325` |
 | Pix charge that only succeeded after that patch | `pay_flhul7uhgq4drw4d` |
+| Charge deleted by hand, still serving a valid QR (B4 probe) | `pay_hzcb83456el2ymjo` |
 
 The last one is the evidence behind D5: `receiveInCash` leaves the split
 `CANCELLED` with `cancellationReason: PAYMENT_RECEIVED_IN_CASH` and the subaccount
 balance at zero.
+
+## Charge-lifecycle validation — 2026-09-29
+
+Probed by hand before B4 was written, against `https://api-sandbox.asaas.com`.
+
+| Call | Result |
+| --- | --- |
+| `GET /v3/payments/{id}/pixQrCode` | `{success, encodedImage, payload, expirationDate}` |
+| `DELETE /v3/payments/{id}` | 200 `{deleted: true, id}` |
+| the same `DELETE`, repeated | 200 again — **idempotent** |
+| `DELETE` on an id that never existed | 404 |
+| `GET /v3/payments/{id}` after deleting | 200, `status: PENDING`, **`deleted: true`** |
+| **`GET .../pixQrCode` on the deleted charge** | **200, with a perfectly valid-looking QR** |
+| `GET /v3/pix/addressKeys` on the root account | one `EVP` key, `ACTIVE` |
+
+The sixth row is the one that shaped B4. A cancelled charge is indistinguishable
+from a live one through the QR endpoint, so "reuse an open charge" cannot trust a
+stored id — it reads the charge back and checks `deleted`. And it is why D5 deletes
+the Asaas charge and the `pending_asaas_payments` row as one unit: a row outliving
+its charge is a dead QR code in a student's hands.
+
+The idempotent `DELETE` is what makes D5 safe to retry, and the 404 means a charge
+already gone is the outcome the caller wanted — `deletePayment` treats it as success.
 
 ## Status
 
@@ -263,7 +289,8 @@ that actually needs a document, a rejection, and a suspension.
 | B1 | Done | migration `0021_yummy_gambit`, applied to the Coolify database |
 | B2 | Done | 16 integration tests; the contract runs against Postgres **and** in-memory |
 | B3 | Done | `asaas-customer.service.ts`, 9 unit tests; client gained `createCustomer` / `findCustomerByExternalReference`, 6 more |
-| B4-B13 | Pending | |
+| B4 | Done | `POST /v1/payments/pix`, 19 unit tests; implements D5; client gained `createPayment` / `getPixQrCode` / `findPayment` / `deletePayment` |
+| B5-B13 | Pending | |
 
 Two things B2 decided that the task list did not spell out:
 
@@ -286,6 +313,25 @@ And one the sandbox forced open during B3:
    sent straight to Asaas, never stored, asked exactly once per student. It adds an
    optional `cpfCnpj` to `POST /payments/pix` (B4) and a field plus a `CPF_REQUIRED`
    error to the mobile screen (B10).
+
+And three from B4:
+
+4. **The payout gate on a charge is not the same gate as on enrolment.**
+   `SubscriptionService` gates enrolment behind `PAYOUT_ACCOUNT_REQUIRED`, which
+   defaults off. `createPixCharge` does not read the flag at all: the payout
+   account is where the `walletId` comes from, so without one there is nothing to
+   split into and the charge would pay the platform instead of the academy. One
+   lookup is both the gate and the wallet source.
+5. **A failed QR must not lose the charge.** The pending row is written *before*
+   the QR is fetched, because the QR is exactly the call that fails while the root
+   account's Pix key is being provisioned. A charge with no pending row is one the
+   retry cannot find, so it would open a second charge for the same month.
+6. **`confirmManual` has no duplicate-month guard, and still does not.** Noted, not
+   fixed — it is outside B4's line item. The spec's edge case ("WHEN a student pays
+   exactly as the manager confirms the same month manually THEN the reference-month
+   uniqueness SHALL keep a single payment row") assumes a uniqueness constraint
+   that does not exist on `payments (subscription_id, reference_month)`. D5 closes
+   the Asaas half of that race; the manual-versus-manual half is still open.
 
 ### Carried forward
 

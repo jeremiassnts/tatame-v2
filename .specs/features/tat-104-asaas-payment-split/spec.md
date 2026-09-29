@@ -238,7 +238,7 @@ and see statements.
 | PAYOUT-08 | P2: Financeiro dashboard card | TAT-179 | Implemented | Done |
 | PAYOUT-09 | P3: Link to the Asaas account | TAT-179 | Implemented | Done |
 | SPLIT-01 | P1: Asaas customer per student | TAT-104 | Implemented | Service done (B3), no caller until B4 |
-| SPLIT-02 | P1: Pix charge with 100% split | TAT-104 | Design | Pending |
+| SPLIT-02 | P1: Pix charge with 100% split | TAT-104 | Implemented | `POST /v1/payments/pix` (B4) |
 | SPLIT-03 | P1: Card checkout with 100% split | TAT-104 | Design | Pending |
 | SPLIT-04 | P1: Webhook reconciliation and idempotency | TAT-104 | Design | Pending |
 | SPLIT-05 | P1: Refund and chargeback visibility | TAT-104 | Design | Pending |
