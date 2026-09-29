@@ -3,6 +3,7 @@
 import React, { useRef, useState } from "react";
 import { Menu, X } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { ButtonPrimary } from "../ui/button-primary";
 
 const navLinks = [
@@ -95,12 +96,12 @@ export function HeaderV2() {
     <header className={`sticky top-0 z-50 border-b transition-all duration-300 ${scrolled ? "bg-surface/60 backdrop-blur-lg border-border-light/30" : "bg-transparent border-transparent"}`}>
       <div className="mx-auto flex h-20 max-w-[1440px] items-center justify-between px-6 md:px-20">
         {/* Logo */}
-        <a href="/" className="flex items-center gap-3">
+        <Link href="/" className="flex items-center gap-3">
           <Image src="/icon.png" alt="Tatame" width={25} height={25} />
           <span className="font-sora text-[22px] font-bold tracking-tight text-white">
             TATAME
           </span>
-        </a>
+        </Link>
 
         {/* Desktop nav — pill with sliding cursor */}
         <NavPill />

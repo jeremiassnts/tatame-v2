@@ -88,7 +88,6 @@ function SortIcon({ field, sortField, sortDir }: { field: SortField; sortField: 
 
 export function PaymentsTable({
   payments,
-  academyId,
   total,
   limit,
   offset,
