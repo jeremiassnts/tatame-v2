@@ -13,7 +13,7 @@ without an approved wallet there is nothing to split into.
 | A4 | Schema: `payout_account_status` enum + `academy_payout_accounts` table + drizzle migration | — | PAYOUT-02 |
 | A5 | `IPayoutAccountRepository` + Postgres and in-memory implementations | A4 | PAYOUT-02, PAYOUT-05 |
 | A6 | `PayoutAccountService.create` — validate, `POST /v3/accounts` with webhooks, encrypt and persist, 409 on duplicate | A2,A3,A5 | PAYOUT-01, PAYOUT-02 |
-| A7 | `PayoutAccountService` documents — list groups, upload when there is no `onboardingUrl`, expose the link when there is | A3,A5 | PAYOUT-03, PAYOUT-04 |
+| A7 | `PayoutAccountService` documents — list groups and expose the onboarding link. The upload half was **removed on 2026-09-29** (D6): documents are submitted in the manager's own Asaas account | A3,A5 | PAYOUT-03, PAYOUT-04 |
 | A8 | `PayoutAccountService.refreshStatus` — `GET /v3/myAccount/status` and status mapping | A3,A5 | PAYOUT-05 |
 | A9 | `PayoutAccountService.getFees` — normalize `GET /v3/myAccount/fees`, 12h cache, 503 on failure | A3 | PAYOUT-06 |
 | A10 | `asaas-account-webhook.handler.ts` — `ACCOUNT_STATUS_*` → status, `approvedAt`, rejection reason; unhandled events reported | A5 | PAYOUT-05 |
@@ -101,6 +101,18 @@ split, the academy receives the net, and the platform nets exactly zero.
 5. **`GET /v3/payments/{id}/splits` answers 404.** The split state is returned
    inline on the payment object instead. Relevant to B7.
 
+6. **A document group omits `documents` entirely** when nothing has been uploaded
+   to it — the field is absent, not an empty list — and carries a `responsible`
+   object our type never declared. The hand-written `AsaasDocumentGroup` marked
+   `documents` required, so the API served the key as `undefined` and the mobile
+   card crashed on `group.documents.length` the moment a manager finished
+   onboarding. Every fixture in the suite carried `documents: []`: the fakes were
+   more complete than Asaas. Normalised at the boundary, real payload pinned.
+7. **Sandbox approves and fires the webhook in seconds.** Across five accounts
+   created from the app, `approved_at` landed between 0.9s and 7.9s after
+   `created_at`. The consequence for the UI: a screen that reads the account from
+   cache shows "Em criação" over an account that is already active.
+
 Sandbox rates on the day: Pix R$ 0,99 fixed with 100 free monthly credits; card
 1,99% + R$ 0,49, settling in 32 days.
 
@@ -142,10 +154,12 @@ has an account.
 **Slice A (TAT-179) — implemented, partially validated.** A1-A20 merged on `main`,
 one commit per task, plus the fee correction above on
 `fix/tat-179-asaas-sandbox-findings`. The split maths and subaccount creation are
-confirmed against the sandbox, and the account-status webhook is confirmed too (see
-the webhook validation section above). What remains unvalidated is the onboarding round
-trip **through the app**: that a freshly created account keeps the manager on the
-documents screen instead of bouncing back to the form.
+confirmed against the sandbox, the account-status webhook is confirmed too (see the
+webhook validation section above), and on 2026-09-29 the onboarding round trip **was
+finally driven through the app end to end**: form → account created → documents screen,
+which stays, lists the group Asaas returned, and settles the status from Asaas on its
+own. What is still untested is everything only production exercises — a document group
+that actually needs a document, a rejection, and a suspension.
 Slice B (TAT-104) is untouched.
 
 | Task | Status | Notes |
@@ -156,7 +170,7 @@ Slice B (TAT-104) is untouched.
 | A4 | Done | migration `0020_gray_klaw` |
 | A5 | Done | interface + postgres + in-memory |
 | A6 | Done | 15 unit tests |
-| A7 | Done | 13 unit tests |
+| A7 | Done | 9 unit tests; the 4 upload ones went with D6 |
 | A8 | Done | 10 mapper + 8 refresh unit tests |
 | A9 | Done | 10 unit tests |
 | A10 | Done | 10 unit tests |
@@ -178,16 +192,16 @@ Slice B (TAT-104) is untouched.
    trip driven from the app, and both webhooks actually delivered by Asaas.
 2. **`POST /webhooks/asaas` accepts `PAYMENT_*` and ignores it** so Asaas does
    not retry for days. B8 replaces that branch with the real dispatch.
-3. **`DOCUMENT_REQUIRES_ONBOARDING_URL` carries the url in `HttpError.details`,
-   which `error-handler.ts` drops** — only `details.code` reaches the client.
-   The documents list already gives the app the url, so the 409 is a safety
-   net, not the path the screen takes. A15 should read the url from the list.
-4. **No PDF upload.** `expo-document-picker` is not a dependency, so A15 uses
-   `expo-image-picker` and a manager can only attach images. The Asaas documents
-   a CNPJ account is asked for — contrato social, certificado MEI, ata de
-   constituição — are normally PDFs. Adding the dependency means a new native
-   build, since `android/` and `ios/` are committed, so it was left as a
-   decision rather than taken silently.
+3. ~~`DOCUMENT_REQUIRES_ONBOARDING_URL` carries the url in `HttpError.details`~~
+   — **moot since D6.** The 409 lived on the upload route, which is gone. The
+   screen reads the url from the document list, as it already did.
+4. ~~No PDF upload~~ — **moot since D6, and the reason it was taken.** The
+   uploader could only attach images, so a CNPJ academy asked for a contrato
+   social or certificado MEI could never finish in the app; `expo-document-picker`
+   would have meant a new native build to duplicate a flow Asaas already runs in
+   its own interface. The app now sends the manager there instead, so the
+   dependency is **not** on the path to a real academy onboarding. Revisit only if
+   Asaas turns out to leave a document group uncovered.
 5. **`ApiError` gained `detail`.** `error-handler.ts` overwrites the `error`
    field with the code when a failure carries one, and the mobile client read
    only that field, so the Asaas sentence never reached a screen. `message`
