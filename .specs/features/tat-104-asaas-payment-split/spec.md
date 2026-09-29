@@ -244,7 +244,7 @@ and see statements.
 | SPLIT-03 | P1: Card checkout with 100% split | TAT-104 | Implemented | `POST /v1/payments/checkout` (B5) |
 | SPLIT-04 | P1: Webhook reconciliation and idempotency | TAT-104 | Implemented | `asaas-payment.handler.ts` + the dispatch in `POST /v1/webhooks/asaas` (B6, B8) |
 | SPLIT-05 | P1: Refund and chargeback visibility | TAT-104 | Implemented | `payment.reversed` from `asaas-payment.handler.ts` (B7) |
-| SPLIT-06 | P1: Retire AbacatePay and Stripe student checkout | TAT-104 | Implemented | Entry points deleted (B9); both webhook handlers kept — **not** idle, AbacatePay is production's live Pix rail until a new mobile build is adopted |
+| SPLIT-06 | P1: Retire AbacatePay and Stripe student checkout | TAT-104 | Partial | Stripe student checkout retired (B5). The AbacatePay Pix rail stays live for one release — the shipped 2.1.2 calls it and has no OTA. Removal tracked in **TAT-187** |
 
 **Coverage:** 15 total, mapped in `tasks.md`.
 

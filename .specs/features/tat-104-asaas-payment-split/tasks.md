@@ -646,30 +646,49 @@ measuring. It now sums both rails, filtered to `kind = 'payment'` so a card
 checkout session is not counted as a Pix. Two integration tests, three
 mutations.
 
-## The shipped app breaks on deploy — open, 2026-09-29
+## Why both Pix rails are live — decided 2026-09-29
 
-Not a dead-code question, and more expensive than one. **`apps/mobile` is
-version 2.1.2 on this branch and on `main`** — B10 moved the Pix screens onto
-`POST /payments/pix` without bumping it. There is no OTA (`expo-updates` is not
-installed; store builds only), so the app on students' phones is a build of
-2.1.2 that still calls `POST /payments/checkout/pix` and
-`GET /payments/pix-status/:id` — the two routes **B9 already deleted**.
+`apps/mobile` is 2.1.2 on this branch **and** on `main` — B10 moved the Pix
+screens onto `POST /payments/pix` without bumping the version — and there is no
+OTA (`expo-updates` is not installed; store builds only). So the build on
+students' phones still calls `POST /payments/checkout/pix` and
+`GET /payments/pix-status/:id`, the two routes B9 deleted as "unreferenced".
 
-The moment this API deploys, every student who has not installed a new build
-gets a 404 where Pix used to be.
+Waiting for adoption is not available either: **the API has to be deployed at
+the moment the new build is submitted, because Apple's reviewers exercise the
+app against it.** The build under review needs the Asaas rail live and the
+installed 2.1.2 needs the AbacatePay one, at the same time.
 
-The lever for it already exists: `GET /version` returns
-`env.MIN_MOBILE_VERSION` (`router.ts`), and `apps/mobile/lib/version.ts`
-redirects to `(system)/force-update` when the installed version is lower. The
-`.env` currently says `2.1.0`. So the deploy is:
+So both are live for one release. `createPixQrCode` and the two routes are
+restored verbatim from `ec4d4cf^`, with comments saying why and when they go.
+What stayed deleted: `lib/abacatepay.ts` and the `abacatepay-nodejs-sdk`
+dependency — this path was always raw `fetch`, and the client only served the
+checkout B5 replaced — and `createCheckoutSession`, because the old app's card
+button calls `POST /payments/checkout`, which B5 kept on the same
+`{ checkoutUrl }` contract.
 
-1. bump `apps/mobile` past 2.1.2 and ship the store build;
-2. deploy the API with migration `0023` **and** `MIN_MOBILE_VERSION` raised to
-   that version, together.
+The pair had no tests, which is how they came to be deleted as unreferenced.
+They have two now:
 
-Whether a forced update is acceptable is a product call. The alternative is
-restoring the two deleted routes for one release and removing them after
-adoption.
+- `api.smoke.test.ts` asserts both answer 503-for-Clerk rather than 404 —
+  mounted *and* still behind `authorize`, which a bare existence check would
+  miss. Deleting either route turns it red by name.
+- `payment.service.test.ts` pins D9 on this rail: `createPixQrCode` already
+  asked `existsForSubscriptionReferenceMonth` before opening a charge, and that
+  is the part that must survive the eventual removal.
+
+**Removal is tracked in TAT-187** (Medium), in two stages: the entry points go
+once `MIN_MOBILE_VERSION` is past the build that stopped calling them; the
+handler, the table and the AbacatePay half of `unpaidPixPerAcademy` go only
+once production has no open QR codes left.
+
+### The deploy, in order
+
+1. Bump `apps/mobile` past 2.1.2 and submit the store build.
+2. Deploy the API **with migration `0023`**, since both rails are live and
+   nothing 404s during review.
+3. Once the build is out and adopted, raise `MIN_MOBILE_VERSION` to it. That is
+   what unblocks stage 1 of TAT-187.
 
 
 ## Status
