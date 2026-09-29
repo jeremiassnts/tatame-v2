@@ -149,6 +149,62 @@ screen. Re-running it needs the existing row removed first, since `Fighter's BJJ
 the only academy in the database and `create` answers 409 for an academy that already
 has an account.
 
+## Operating notes
+
+Facts that cost a session to discover and are not visible from the code.
+
+### Running it locally
+
+Postgres **and** Redis are the Coolify ones, so `docker compose` is not needed —
+`DATABASE_URL` and `REDIS_URL` both point at `31.97.64.10`. The API listens on
+`API_PORT=3001`.
+
+Reading fees only needs `ASAAS_API_KEY` and `ASAAS_BASE_URL`. **Creating** a payout
+account also needs `PAYOUT_ACCOUNT_ENCRYPTION_KEY` (64 hex, self-generated — rotating
+it makes every stored subaccount key unreadable), `ASAAS_WEBHOOK_TOKEN`, and
+`API_PUBLIC_URL`, which creation refuses to run without on purpose: it is the address
+the subaccount's webhooks are registered at.
+
+`API_PUBLIC_URL` is an ngrok reserved domain, so it survives restarts:
+
+```bash
+ngrok http --url=<the domain in API_PUBLIC_URL> 3001
+```
+
+To tell a live tunnel from a dead one, ask for a route that exists:
+`curl -o /dev/null -w '%{http_code}' https://<domain>/v1/payout-account` answers **401**
+when the API is behind it and **404** when ngrok has nobody to forward to.
+
+### Migrations on the Coolify database — read before B1
+
+Drizzle decides what is missing from the `created_at` of the last registered migration,
+**not from the hash**. `0019_tutorials` was hand-written and its table created outside
+drizzle, so `migrate` broke on "relation tutorials already exists" and rolled the whole
+run back — it runs in a single transaction. `0020` is applied now.
+
+**Three rows in `drizzle.__drizzle_migrations` still carry the migration tag where the
+hash belongs** (one of them literally `0007_overjoyed_k...`). Harmless while the hash is
+not compared, but it is hand-edited bookkeeping, and B1 adds the next migration on top
+of it. Look before running.
+
+### Objects already in the Asaas sandbox
+
+Created by hand on 2026-09-28; the CPF/CNPJ behind them are generated and collide with
+nothing real. Useful as fixtures rather than recreating them — the evaluation window
+allows only 10 subaccounts and **7 are used**.
+
+| What | Id |
+| --- | --- |
+| Subaccount CNPJ "Academia Tatame Smoke 375360" | `b1e0272a-3201-41bd-9454-479528c7e6d2` |
+| Subaccount CPF "Academia CPF Smoke 926184" | `e714a46e-a1ec-4c55-84e8-8af0baefd14e` |
+| Customer (fictional student) | `cus_000009262465` |
+| Pix charge, pending, with a valid QR code | `pay_v2s11oiq3q4gcirb` |
+| Charge settled by hand, split `CANCELLED` | `pay_to6xc4jjssi0847w` |
+
+The last one is the evidence behind D5: `receiveInCash` leaves the split
+`CANCELLED` with `cancellationReason: PAYMENT_RECEIVED_IN_CASH` and the subaccount
+balance at zero.
+
 ## Status
 
 **Slice A (TAT-179) — implemented, partially validated.** A1-A20 merged on `main`,
