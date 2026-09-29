@@ -1,7 +1,24 @@
 # Tatame — notes for agents
 
-- **Git commits** — Write all commit messages in English (subject and body).
+- **Git commits** — Write all commit messages in English (subject and body), and always lead with the
+  Linear ticket in lowercase brackets:
+
+  ```
+  [tat-170] feat: add the payout account card to the dashboard
+  [tat-179] fix: stop the new payout account bouncing back to the form
+  ```
+
+  The ticket number comes first, then the conventional-commit type. Work with no ticket
+  (chores, tooling) may omit the bracket, but anything tied to a Linear issue must carry it.
 - **Branching** — Use classic git branches (`git checkout -b`). Do **not** use git worktrees unless explicitly requested.
+- **Branch and PR flow** — `main` is deploy-on-merge, so nothing is pushed straight to it.
+
+  1. Branch off `dev` for each feature / ticket / bug fix.
+  2. When the work is done, open the PR **against `dev`** — never against `main`.
+  3. `dev` accumulates finished work; promoting `dev` to `main` is a **manual step the
+     maintainer does**, and triggers the production deploy.
+
+  Never open a PR targeting `main` and never merge into `main` without being asked.
 - **Language** — All code (variables, functions, classes, comments, commits) must be written in **English**. User-facing content (labels, messages, placeholders, errors, toasts, etc.) must be in **Brazilian Portuguese** with correct accentuation.
 - **Linear tasks** — All tasks must be created in Linear, always in this exact destination:
 

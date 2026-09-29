@@ -104,13 +104,48 @@ split, the academy receives the net, and the platform nets exactly zero.
 Sandbox rates on the day: Pix R$ 0,99 fixed with 100 free monthly credits; card
 1,99% + R$ 0,49, settling in 32 days.
 
+## Webhook validation — 2026-09-29
+
+**The `ACCOUNT_STATUS_*` webhook is confirmed against the real Asaas.** It was listed
+above as impossible to exercise in the sandbox; the row created by the app on
+2026-09-28 proves otherwise. Reconstructed from `academy_payout_accounts`
+(`external_account_id 1d4ff263-0a11-4b70-94db-1f5d9f9dffbe`):
+
+| Time | What happened |
+| --- | --- |
+| 23:02:59.882 | `create` wrote the row as `pending` |
+| 23:03:02.138 | status became `approved`, `approved_at` set — **+2.2s** |
+| 23:03:03.139 | `updated_at` moved without touching status — `GET /documents` mirroring `onboardingUrl` |
+
+Only `applyAsaasStatus` writes `status`, and it has exactly two callers: the webhook
+handler and `refreshStatus`. `refreshStatus` is reachable only through
+`GET /payout-account/status`, which on mobile fires only from `RefreshControl`
+(`documents.tsx` `handleRefresh`) — there is no mount effect, no focus effect and no
+cron. A pull to refresh 2.2 seconds after submitting the form, while the pre-fix app
+was bouncing the manager back to an empty form, is not a thing that happened.
+`listDocuments` also writes to the row but never to `status`, which is what the third
+timestamp is.
+
+So: Asaas delivered the account-status event to the ngrok url, the token check passed,
+and the handler applied it. **A10 and the webhook half of A19 are validated in
+practice**, not just by tests. The second write also shows more than one delivery
+arrived and that the "first approval only" guard on `approvedAt` held.
+
+What is still unvalidated is narrower than it was: the onboarding round trip **through
+the app** — specifically that the fix in `8047fb6` keeps the manager on the documents
+screen. Re-running it needs the existing row removed first, since `Fighter's BJJ` is
+the only academy in the database and `create` answers 409 for an academy that already
+has an account.
+
 ## Status
 
 **Slice A (TAT-179) — implemented, partially validated.** A1-A20 merged on `main`,
 one commit per task, plus the fee correction above on
 `fix/tat-179-asaas-sandbox-findings`. The split maths and subaccount creation are
-confirmed against the sandbox; the onboarding round trip through the app and the
-account-status webhook are **not** — they still need a public URL and a tunnel.
+confirmed against the sandbox, and the account-status webhook is confirmed too (see
+the webhook validation section above). What remains unvalidated is the onboarding round
+trip **through the app**: that a freshly created account keeps the manager on the
+documents screen instead of bouncing back to the form.
 Slice B (TAT-104) is untouched.
 
 | Task | Status | Notes |
