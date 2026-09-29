@@ -496,6 +496,72 @@ intact. `POST /v1/webhooks/asaas` does no schema validation on the body at all;
 the token is the whole boundary.
 
 
+## What the database said — 2026-09-29 (B9, B10)
+
+Queried before deleting anything, and it moved two decisions.
+
+| Question | Answer |
+| --- | --- |
+| `select method, count(*) from payments group by method` | 253 `manual`, 2 `card` (then `stripe`), **zero `pix`** |
+| Last payment of any kind | May 2026 |
+| `pending_pix_payments` | 4 rows, all 25 May, one test session |
+| `academy_payout_accounts` | 1 row, `approved` |
+| `select version()` | PostgreSQL 16.13 |
+
+**AbacatePay has never recorded a payment.** The plan kept its webhook handler
+"until charges created before the cutover have drained"; there is nothing to
+drain and there never was. The handler, `NO_PENDING_PIX`,
+`createPendingPix` / `findPendingPixByQrCodeId` and the `pending_pix_payments`
+table are therefore dead code. Left in place deliberately — removing them is a
+migration and a commit of its own.
+
+**The `stripe` → `card` rename cost 2 rows, not 255.** The handoff's figure was
+the whole payments table. Done in B9's wake as migration `0023`, an
+`ALTER TYPE ... RENAME VALUE` that rewrites nothing.
+
+> **`0023` must not be applied to Coolify before the code deploys.** `0021` and
+> `0022` were additive and safe to run early; this one is not. The running API
+> queries `method IN ('stripe', 'pix')` in `admin.repository.postgres.ts` and
+> `platform-summary.repository.postgres.ts`, and both start erroring the moment
+> the value is renamed under them. Coolify still reads `manual, stripe, pix`.
+
+That raw SQL is also what the integration suite caught and typecheck could not:
+every union in TypeScript was already `card` and the build was green, and only
+replaying the migration against real Postgres found the string literal.
+
+## The mobile rail, settled by B10
+
+- **`encodedImage` is raw base64**, no `data:` prefix. AbacatePay's field was a
+  data URI and was passed straight to `<Image uri>`; unchanged, the QR renders
+  as nothing.
+- **`expirationDate` is `"YYYY-MM-DD HH:mm:ss"`**, not ISO. Hermes 0.81 *does*
+  parse it — checked by running it through the engine in
+  `react-native/sdks/hermesc`, not assumed — so the explicit parser is not
+  fixing a crash. What it buys is returning `null` on unparseable input rather
+  than rendering the string "Invalid Date" to a student.
+- **The QR is valid about a year**, not minutes, even though `dueDate` is today.
+  The countdown the AbacatePay screen ran was meaningless here and is a date now.
+- **There is no charge-status endpoint on this rail.** The screen watches for the
+  payment row the webhook writes. `/payments/me` is `Role.Student` only, so a
+  guardian paying a dependent reads `/payments/dependent/:id` instead — and the
+  match is on the subscription as well as the month, because a student enrolled
+  in two academies has two subscriptions for the same month.
+- **A guardian needs no API change.** `selectPlan` writes `userId` = whoever
+  called it, so a dependent's subscription hangs off the guardian and
+  `listWithPlanByUserAndAcademy` finds it. Both screens pass `subscriptionId`
+  explicitly, so there is no ambiguity with the guardian's own plan.
+- **`GET /users/me` gained `documentRequired`.** The document is needed only on a
+  student's very first charge — `ensureCustomer` returns early once
+  `asaas_customer_id` is set and discards whatever was sent. Asking always is
+  monthly friction for a discarded value; asking after a `CPF_REQUIRED` 400 puts
+  an error on the normal path. The flag is stale only when the recovery lookup
+  finds a customer the column never recorded, and then the field is shown
+  needlessly — much cheaper than the reverse.
+- **The mobile app has no test runner at all** — no script, no config, no test
+  files. So none of the above is covered by an automated test on that side; the
+  API half is, and `tsc` adds zero errors against a baseline of 10 pre-existing.
+
+
 ## Status
 
 **Slice A (TAT-179) — implemented, partially validated.** A1-A20 merged on `main`,
@@ -507,12 +573,12 @@ finally driven through the app end to end**: form → account created → docume
 which stays, lists the group Asaas returned, and settles the status from Asaas on its
 own. What is still untested is everything only production exercises — a document group
 that actually needs a document, a rejection, and a suspension.
-**Slice B (TAT-104) — B1 to B8 and B12 done.** The loop closes: both
+**Slice B (TAT-104) — B1 to B12 done.** The loop closes: both
 student rails open a split charge (`POST /v1/payments/pix` and
 `POST /v1/payments/checkout`), and `POST /v1/webhooks/asaas` turns the
-settlement into a payment row, and B7 reports the money that goes back out.
-What is left is B9 (retiring AbacatePay), B10 (the mobile Pix screen) and the
-final gate.
+settlement into a payment row, B7 reports the money that goes back out, B9 shut
+the old rails and B10 moved the phone onto the new one. Only B13, the final
+gate, is left.
 
 **Migrations `0021_yummy_gambit` and `0022_awesome_masque` are both applied to
 the Coolify database** (2026-09-29). 0022 was purely additive — a
@@ -558,7 +624,10 @@ bookkeeping gap described below, adding row 19. Verified against the database:
 | B8 | Done | `POST /v1/webhooks/asaas` dispatches both streams; 8 integration tests take a charge through the webhook to a payment row |
 | B12 | Done | covered by `asaas-payment.integration.test.ts` — both rails, replayed |
 | B7 | Done | `payment.reversed`, 10 unit tests + 1 integration guard; implements SPLIT-05 |
-| B9-B11, B13 | Pending | |
+| B9 | Done | `/payments/checkout/pix`, `/pix-status/:id`, `createPixQrCode`, `createCheckoutSession` and `lib/abacatepay.ts` deleted; webhook handlers kept |
+| B10 | Done | `components/PixPaymentView.tsx`; both route files are shells; `documentRequired` on `GET /users/me` |
+| B11 | Done | Covered per task rather than in one pass — 687 unit, 97 integration |
+| B13 | Pending | |
 
 Two things B2 decided that the task list did not spell out:
 

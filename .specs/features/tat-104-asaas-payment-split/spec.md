@@ -244,7 +244,7 @@ and see statements.
 | SPLIT-03 | P1: Card checkout with 100% split | TAT-104 | Implemented | `POST /v1/payments/checkout` (B5) |
 | SPLIT-04 | P1: Webhook reconciliation and idempotency | TAT-104 | Implemented | `asaas-payment.handler.ts` + the dispatch in `POST /v1/webhooks/asaas` (B6, B8) |
 | SPLIT-05 | P1: Refund and chargeback visibility | TAT-104 | Implemented | `payment.reversed` from `asaas-payment.handler.ts` (B7) |
-| SPLIT-06 | P1: Retire AbacatePay and Stripe student checkout | TAT-104 | Design | Pending |
+| SPLIT-06 | P1: Retire AbacatePay and Stripe student checkout | TAT-104 | Implemented | Entry points deleted (B9); both webhook handlers kept, and provably idle |
 
 **Coverage:** 15 total, mapped in `tasks.md`.
 
