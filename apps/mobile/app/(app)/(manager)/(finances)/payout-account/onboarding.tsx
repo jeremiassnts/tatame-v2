@@ -1,6 +1,13 @@
 import { BackButton } from "@/components/BackButton";
 import { DatePickerField } from "@/components/DatePickerField";
 import { FormInput } from "@/components/FormInput";
+import {
+  CNPJ_DIGITS,
+  CPF_DIGITS,
+  formatCnpj,
+  formatCpf,
+  onlyDigits,
+} from "@/lib/format/document";
 import { ModalSelect } from "@/components/ModalSelect";
 import { PhoneInput } from "@/components/PhoneInput";
 import { useAcademyContext } from "@/lib/academy-context";
@@ -51,7 +58,6 @@ const COMPANY_TYPE_OPTIONS = [
   { value: "ASSOCIATION", label: "Associação" },
 ];
 
-const onlyDigits = (value: string) => value.replace(/\D/g, "");
 
 const ACCENT = "#A078E8";
 
@@ -68,22 +74,10 @@ const PERSON_TYPE_OPTIONS: { value: PersonType; label: string }[] = [
   { value: "JURIDICA", label: "Empresa" },
 ];
 
-const DOCUMENT_DIGITS: Record<PersonType, number> = { FISICA: 11, JURIDICA: 14 };
-
-function formatCpf(digits: string): string {
-  return digits
-    .replace(/^(\d{3})(\d)/, "$1.$2")
-    .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
-    .replace(/^(\d{3})\.(\d{3})\.(\d{3})(\d)/, "$1.$2.$3-$4");
-}
-
-function formatCnpj(digits: string): string {
-  return digits
-    .replace(/^(\d{2})(\d)/, "$1.$2")
-    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
-    .replace(/^(\d{2})\.(\d{3})\.(\d{3})(\d)/, "$1.$2.$3/$4")
-    .replace(/^(\d{2})\.(\d{3})\.(\d{3})\/(\d{4})(\d)/, "$1.$2.$3/$4-$5");
-}
+const DOCUMENT_DIGITS: Record<PersonType, number> = {
+  FISICA: CPF_DIGITS,
+  JURIDICA: CNPJ_DIGITS,
+};
 
 /**
  * The mask follows the chosen type, never the digits typed so far. Guessing

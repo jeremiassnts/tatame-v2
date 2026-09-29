@@ -59,6 +59,20 @@ export const userMeResponseSchema = z.object({
   activeMembership: activeMembershipSchema.nullable(),
   /** True when user has paid via Stripe but hasn't created an academy yet. */
   hasPendingSubscription: z.boolean().optional(),
+  /**
+   * Whether a Pix charge for this user would have to ask for a CPF/CNPJ.
+   *
+   * Asaas refuses to charge a customer with no document and the platform stores
+   * none (D7), so the student types it — but only ever on the first charge:
+   * `ensureCustomer` returns early once `asaas_customer_id` is set and ignores
+   * whatever was sent. The screen reads this to render the field up front
+   * instead of asking every month for a value that is discarded, or asking only
+   * after a `CPF_REQUIRED` 400, which puts an error on the normal path.
+   *
+   * A boolean and nothing more. The document itself is never stored and never
+   * served.
+   */
+  documentRequired: z.boolean().optional(),
 });
 
 export type UserMeResponse = z.infer<typeof userMeResponseSchema>;
