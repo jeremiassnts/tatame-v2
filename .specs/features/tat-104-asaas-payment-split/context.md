@@ -190,3 +190,50 @@ Asaas over time, one per rail, and the platform can only ever see the Pix one.
 Reconciliation does not go through the customer — it goes through
 `payment.checkoutSession` and the pending row — so nothing downstream depends
 on them being the same.
+
+## D9 — A month is guarded in the service, not by a constraint
+
+**Decided 2026-09-29, closing open decisions 1 and 3.**
+
+The spec's edge case — "WHEN a student pays exactly as the manager confirms the
+same month manually THEN the reference-month uniqueness SHALL keep a single
+payment row" — assumed a uniqueness constraint on
+`payments (subscription_id, reference_month)` that has never existed. Two paths
+could write a second row for one month:
+
+1. `confirmManual` never asked. `createPixCharge` and `createCheckout` both ask
+   `existsForSubscriptionReferenceMonth` through `openChargeContext`; the one
+   path a human drives by hand did not.
+2. The webhook could not see it. `findByAsaasPaymentId` makes an Asaas
+   *redelivery* a no-op; it says nothing about a payment recorded through
+   another rail. And the card rail has no way to avoid this: `cancelCheckout`
+   must swallow Asaas's 400 for an already-paid session because it is the same
+   400 an expired or already-cancelled session gives, so the student's card
+   payment still arrives against a month a manual confirmation already closed.
+
+Both ask now. `confirmManual` throws the same 409 the charge paths do, and
+**before** D5's cancellation — a month that is already paid is a request to
+reject, and rejecting it must not cancel the student's open charge as a side
+effect. That ordering also replaces the symptom recorded under finding 6b: the
+manager used to get Asaas's "Só é possível remover cobranças pendentes ou
+vencidas" back from the failed `deletePayment`, and now gets the API's own 409.
+
+The webhook reports `payment.webhook_unhandled` / `DUPLICATE_MONTH` and writes
+nothing. Unlike the two drops beside it in the catalog this is not money lost —
+the split already put it in the academy's wallet. What is wrong is that the
+student paid one month twice, and only a human can decide whether that gets
+refunded, which is why it is reported rather than dropped quietly. The pending
+row is deliberately left in place: deleting it would make a redelivery report
+`NO_PENDING_CHARGE`, the wrong story and the louder alert.
+
+**No unique constraint, on purpose.** Production has zero duplicates and zero
+nulls on that pair (checked 2026-09-29), so the migration would apply cleanly.
+But `payment.reversed` writes nothing, so a refunded month keeps its payment
+row — and a constraint would stop that student from ever paying that month
+again. The service guard is reversible; the constraint is the one that turns a
+refund into a dead end.
+
+What this does not close is two concurrent writes. Nothing serialises
+`confirmManual` against the webhook, so a simultaneous pair can still produce
+two rows. That is the case a constraint *would* close, and it is the trade
+above: a rare race against a permanent block on re-paying a refunded month.

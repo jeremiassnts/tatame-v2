@@ -562,6 +562,68 @@ replaying the migration against real Postgres found the string literal.
   API half is, and `tsc` adds zero errors against a baseline of 10 pre-existing.
 
 
+## The B13 gate — what it covers, and what it does not
+
+Closed 2026-09-29. Run as written it used to be misleading, because two of the
+four commands did not cover what their names suggest.
+
+| Command | Result | What it actually covers |
+| --- | --- | --- |
+| `pnpm typecheck` | 13/13 | api, web, every package — **not mobile**: `apps/mobile`'s script is `echo 'skipped: NativeWind className types need metro plugin'` |
+| `pnpm lint` | 8/8 | fixed here. `apps/web` had **no ESLint config at all**, so `next lint` opened its interactive setup and exited 1 — 6/8, and pre-existing |
+| `pnpm test:unit` | 692 | api only; nothing else in the workspace has unit tests |
+| `pnpm test:integration` | 97 | api only, Postgres testcontainer replaying every migration |
+| `pnpm --filter @tatame/web build` | clean | not part of the gate command; worth running once before a PR |
+
+**The web lint config.** `eslint-config-next` is deliberately not used: it pins
+`eslint@^7 || ^8 || ^9` and the workspace is on 10, which `apps/api` already
+sets, and `eslint-plugin-import` is its heaviest dependency and the usual
+laggard on a new eslint major. `@next/eslint-plugin-next` and
+`eslint-plugin-react-hooks` are plain plugins with no eslint peer of their own,
+so `apps/web/eslint.config.mjs` composes them directly. The script is `eslint .`
+because `next lint` is deprecated in 15 and removed in 16.
+
+It surfaced 8 pre-existing errors. Three were fixed — an unread destructured
+prop and two `<a href="/">` that should be `<Link>`, a full reload on the
+landing page's own logo. The other five are `react-hooks/set-state-in-effect`
+and `static-components`, the React-Compiler-era rules new in
+eslint-plugin-react-hooks 7; they are fair, but clearing them means refactoring
+`apps/web` components that have no tests, so they are **warnings** with the
+reason written beside them. Someone should do that pass; it is not a payment
+slice's job.
+
+**Mobile is still never typechecked by the gate, and has no test runner** — no
+`test` script, no vitest/jest config, no test file anywhere. Check it by hand,
+and compare against the baseline, because it is not zero:
+
+```bash
+cd apps/mobile && npx tsc --noEmit -p tsconfig.json 2>&1 | grep -c 'error TS'
+# 10 — all pre-existing: `belt`/`stripes` on DependentItem, Record<Belt,…>
+# indexing, a "guardian" comparison. None from this slice; verified by
+# stashing the branch and re-running.
+```
+
+## What production's database says about the dead code — 2026-09-29
+
+Asked again before deciding whether to delete `abacatepay-webhook.handler.ts`,
+`stripe-checkout-webhook.handler.ts`, `NO_PENDING_PIX`, `createPendingPix` /
+`findPendingPixByQrCodeId` and the `pending_pix_payments` table.
+
+| Question | Answer |
+| --- | --- |
+| `payments` by method | 253 `manual`, 2 `stripe` — **zero `pix`** |
+| the two non-manual rows | `pi_3Tb50XKxAZnjqqVo0aaiQbO6`, `pi_3Tb2p2KxAZnjqqVo2fEAXmkD` — Stripe PaymentIntents, not Pix |
+| rows whose id is AbacatePay-shaped (`pix_char_%`) | 0 |
+| `pending_pix_payments` | the same 4 rows, all one user, 25 May 18:04–18:13 — R$ 120,00 and three of R$ 1,00 |
+| duplicates on `(subscription_id, reference_month)` | 0, and 0 nulls — which is what makes D9's constraint option viable, and D9 declines it anyway |
+
+So the Pix payments production is remembered as having taken were a nine-minute
+test session, and none of them became a payment row. The honest limit of this
+evidence: four rows still pending proves no `billing.paid` was ever processed,
+**not** that nobody paid — a payment whose webhook failed would look exactly the
+same. Only AbacatePay's own dashboard answers that, and the amount at risk is
+R$ 123,00 belonging to the developer who made them.
+
 ## Status
 
 **Slice A (TAT-179) — implemented, partially validated.** A1-A20 merged on `main`,
@@ -577,8 +639,9 @@ that actually needs a document, a rejection, and a suspension.
 student rails open a split charge (`POST /v1/payments/pix` and
 `POST /v1/payments/checkout`), and `POST /v1/webhooks/asaas` turns the
 settlement into a payment row, B7 reports the money that goes back out, B9 shut
-the old rails and B10 moved the phone onto the new one. Only B13, the final
-gate, is left.
+the old rails and B10 moved the phone onto the new one. **B13 closed on
+2026-09-29 and the slice is code-complete**, along with the duplicate-month
+guard that open decisions 1 and 3 both asked for (D9).
 
 **Migrations `0021_yummy_gambit` and `0022_awesome_masque` are both applied to
 the Coolify database** (2026-09-29). 0022 was purely additive — a
@@ -627,7 +690,7 @@ bookkeeping gap described below, adding row 19. Verified against the database:
 | B9 | Done | `/payments/checkout/pix`, `/pix-status/:id`, `createPixQrCode`, `createCheckoutSession` and `lib/abacatepay.ts` deleted; webhook handlers kept |
 | B10 | Done | `components/PixPaymentView.tsx`; both route files are shells; `documentRequired` on `GET /users/me` |
 | B11 | Done | Covered per task rather than in one pass — 687 unit, 97 integration |
-| B13 | Pending | |
+| B13 | Done | typecheck 13/13, lint 8/8, 692 unit, 97 integration; mobile checked by hand — see **The B13 gate** below |
 
 Two things B2 decided that the task list did not spell out:
 
@@ -681,8 +744,14 @@ And three from B4:
    card rail proceeds instead. Once B6 lands that month carries two payment rows. It
    is the same root cause as finding 6 below, and the same fix closes both.
 
-6. **`confirmManual` has no duplicate-month guard, and still does not.** Noted, not
-   fixed — it is outside B4's line item. The spec's edge case ("WHEN a student pays
+6. ~~**`confirmManual` has no duplicate-month guard, and still does not.**~~
+   **Resolved 2026-09-29 by D9**, together with 6b — they were one hole seen from
+   two sides. `confirmManual` asks `existsForSubscriptionReferenceMonth` before
+   D5's cancellation and throws 409, and the webhook handler asks the same
+   question before writing, reporting `DUPLICATE_MONTH` instead of a second row.
+   No unique constraint, deliberately: a refunded month keeps its row, so a
+   constraint would block re-paying it. The original note, for the record — noted,
+   not fixed, outside B4's line item. The spec's edge case ("WHEN a student pays
    exactly as the manager confirms the same month manually THEN the reference-month
    uniqueness SHALL keep a single payment row") assumes a uniqueness constraint
    that does not exist on `payments (subscription_id, reference_month)`. D5 closes
