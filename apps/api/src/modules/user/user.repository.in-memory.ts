@@ -164,4 +164,15 @@ export class InMemoryUserRepository implements IUserRepository {
       user.updatedAt = new Date();
     }
   }
+
+  async updateAsaasCustomerId(
+    id: string,
+    asaasCustomerId: string,
+  ): Promise<void> {
+    const user = this.users.find((u) => u.id === id && !u.deletedAt);
+    if (user) {
+      user.asaasCustomerId = asaasCustomerId;
+      user.updatedAt = new Date();
+    }
+  }
 }

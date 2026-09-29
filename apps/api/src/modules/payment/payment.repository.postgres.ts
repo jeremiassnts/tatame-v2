@@ -1,10 +1,26 @@
 import { and, desc, eq, sum } from "drizzle-orm";
-import { payments, pendingPixPayments, users, type Database } from "@tatame/db";
+import {
+  payments,
+  pendingAsaasPayments,
+  pendingPixPayments,
+  users,
+  type Database,
+} from "@tatame/db";
 import type {
   IPaymentRepository,
   PaymentRow,
   PaymentWithUser,
+  PendingAsaasPayment,
 } from "./payment.repository.js";
+
+const PENDING_ASAAS_COLUMNS = {
+  asaasPaymentId: pendingAsaasPayments.asaasPaymentId,
+  subscriptionId: pendingAsaasPayments.subscriptionId,
+  userId: pendingAsaasPayments.userId,
+  academyId: pendingAsaasPayments.academyId,
+  referenceMonth: pendingAsaasPayments.referenceMonth,
+  amountCents: pendingAsaasPayments.amountCents,
+};
 
 export class PostgresPaymentRepository implements IPaymentRepository {
   constructor(private readonly db: Database) {}
@@ -21,6 +37,7 @@ export class PostgresPaymentRepository implements IPaymentRepository {
     notes: string | null;
     paidAt: Date;
     dependentId?: string | null;
+    asaasPaymentId?: string | null;
   }): Promise<PaymentRow> {
     const [row] = await this.db
       .insert(payments)
@@ -36,6 +53,7 @@ export class PostgresPaymentRepository implements IPaymentRepository {
         notes: data.notes,
         paidAt: data.paidAt,
         dependentId: data.dependentId ?? null,
+        asaasPaymentId: data.asaasPaymentId ?? null,
       })
       .returning();
     if (!row) throw new Error("Failed to create payment");
@@ -197,6 +215,73 @@ export class PostgresPaymentRepository implements IPaymentRepository {
     await this.db
       .delete(pendingPixPayments)
       .where(eq(pendingPixPayments.pixQrCodeId, pixQrCodeId));
+  }
+
+  async findByAsaasPaymentId(
+    asaasPaymentId: string,
+  ): Promise<PaymentRow | undefined> {
+    const [row] = await this.db
+      .select({
+        id: payments.id,
+        subscriptionId: payments.subscriptionId,
+        userId: payments.userId,
+        academyId: payments.academyId,
+        dependentId: payments.dependentId,
+        amountCents: payments.amountCents,
+        method: payments.method,
+        confirmedBy: payments.confirmedBy,
+        stripePaymentId: payments.stripePaymentId,
+        asaasPaymentId: payments.asaasPaymentId,
+        referenceMonth: payments.referenceMonth,
+        notes: payments.notes,
+        paidAt: payments.paidAt,
+        createdAt: payments.createdAt,
+      })
+      .from(payments)
+      .where(eq(payments.asaasPaymentId, asaasPaymentId))
+      .limit(1);
+    return row;
+  }
+
+  async createPendingAsaas(data: PendingAsaasPayment): Promise<void> {
+    await this.db
+      .insert(pendingAsaasPayments)
+      .values(data)
+      .onConflictDoNothing();
+  }
+
+  async findPendingAsaasByPaymentId(
+    asaasPaymentId: string,
+  ): Promise<PendingAsaasPayment | undefined> {
+    const [row] = await this.db
+      .select(PENDING_ASAAS_COLUMNS)
+      .from(pendingAsaasPayments)
+      .where(eq(pendingAsaasPayments.asaasPaymentId, asaasPaymentId))
+      .limit(1);
+    return row;
+  }
+
+  async findPendingAsaasBySubscriptionMonth(
+    subscriptionId: string,
+    referenceMonth: string,
+  ): Promise<PendingAsaasPayment | undefined> {
+    const [row] = await this.db
+      .select(PENDING_ASAAS_COLUMNS)
+      .from(pendingAsaasPayments)
+      .where(
+        and(
+          eq(pendingAsaasPayments.subscriptionId, subscriptionId),
+          eq(pendingAsaasPayments.referenceMonth, referenceMonth),
+        ),
+      )
+      .limit(1);
+    return row;
+  }
+
+  async deletePendingAsaas(asaasPaymentId: string): Promise<void> {
+    await this.db
+      .delete(pendingAsaasPayments)
+      .where(eq(pendingAsaasPayments.asaasPaymentId, asaasPaymentId));
   }
 
   async findByDependentId(dependentId: string): Promise<PaymentRow[]> {

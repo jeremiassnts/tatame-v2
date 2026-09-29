@@ -3,6 +3,7 @@ import type {
   IPaymentRepository,
   PaymentRow,
   PaymentWithUser,
+  PendingAsaasPayment,
 } from "./payment.repository.js";
 
 export class InMemoryPaymentRepository implements IPaymentRepository {
@@ -20,6 +21,7 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
     notes: string | null;
     paidAt: Date;
     dependentId?: string | null;
+    asaasPaymentId?: string | null;
   }): Promise<PaymentRow> {
     const t = new Date();
     const row: PaymentRow = {
@@ -32,7 +34,7 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
       method: data.method,
       confirmedBy: data.confirmedBy,
       stripePaymentId: data.stripePaymentId,
-      asaasPaymentId: null,
+      asaasPaymentId: data.asaasPaymentId ?? null,
       referenceMonth: data.referenceMonth,
       notes: data.notes,
       paidAt: data.paidAt,
@@ -118,6 +120,41 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
 
   async deletePendingPix(pixQrCodeId: string): Promise<void> {
     this.pendingPix.delete(pixQrCodeId);
+  }
+
+  async findByAsaasPaymentId(
+    asaasPaymentId: string,
+  ): Promise<PaymentRow | undefined> {
+    return this.rows.find((p) => p.asaasPaymentId === asaasPaymentId);
+  }
+
+  private pendingAsaas = new Map<string, PendingAsaasPayment>();
+
+  async createPendingAsaas(data: PendingAsaasPayment): Promise<void> {
+    // Mirrors `onConflictDoNothing`: the first write for an id wins.
+    if (this.pendingAsaas.has(data.asaasPaymentId)) return;
+    this.pendingAsaas.set(data.asaasPaymentId, data);
+  }
+
+  async findPendingAsaasByPaymentId(
+    asaasPaymentId: string,
+  ): Promise<PendingAsaasPayment | undefined> {
+    return this.pendingAsaas.get(asaasPaymentId);
+  }
+
+  async findPendingAsaasBySubscriptionMonth(
+    subscriptionId: string,
+    referenceMonth: string,
+  ): Promise<PendingAsaasPayment | undefined> {
+    return [...this.pendingAsaas.values()].find(
+      (p) =>
+        p.subscriptionId === subscriptionId &&
+        p.referenceMonth === referenceMonth,
+    );
+  }
+
+  async deletePendingAsaas(asaasPaymentId: string): Promise<void> {
+    this.pendingAsaas.delete(asaasPaymentId);
   }
 
   async findByDependentId(dependentId: string): Promise<PaymentRow[]> {
