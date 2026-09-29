@@ -129,7 +129,7 @@ export class PostgresPlatformSummaryRepository
       .from(payments)
       .where(
         and(
-          sql`${payments.method} IN ('stripe', 'pix')`,
+          sql`${payments.method} IN ('card', 'pix')`,
           isNull(payments.transferredAt),
         ),
       )

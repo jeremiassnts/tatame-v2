@@ -51,7 +51,7 @@ export class PostgresAdminRepository implements IAdminRepository {
     const [row] = await this.db
       .select({ total: sum(payments.amountCents) })
       .from(payments)
-      .where(sql`${payments.method} IN ('stripe', 'pix')`);
+      .where(sql`${payments.method} IN ('card', 'pix')`);
     return Number(row?.total ?? 0);
   }
 
@@ -61,7 +61,7 @@ export class PostgresAdminRepository implements IAdminRepository {
       .from(payments)
       .where(
         and(
-          sql`${payments.method} IN ('stripe', 'pix')`,
+          sql`${payments.method} IN ('card', 'pix')`,
           sql`${payments.transferredAt} IS NOT NULL`,
         ),
       );
@@ -74,7 +74,7 @@ export class PostgresAdminRepository implements IAdminRepository {
       .from(payments)
       .where(
         and(
-          sql`${payments.method} IN ('stripe', 'pix')`,
+          sql`${payments.method} IN ('card', 'pix')`,
           isNull(payments.transferredAt),
         ),
       );
@@ -128,7 +128,7 @@ export class PostgresAdminRepository implements IAdminRepository {
         .where(
           and(
             eq(payments.academyId, row.id),
-            sql`${payments.method} IN ('stripe', 'pix')`,
+            sql`${payments.method} IN ('card', 'pix')`,
             isNull(payments.transferredAt),
           ),
         );
@@ -195,7 +195,7 @@ export class PostgresAdminRepository implements IAdminRepository {
       .where(
         and(
           eq(payments.academyId, academyId),
-          sql`${payments.method} IN ('stripe', 'pix')`,
+          sql`${payments.method} IN ('card', 'pix')`,
           sql`${payments.transferredAt} IS NOT NULL`,
         ),
       );
@@ -209,7 +209,7 @@ export class PostgresAdminRepository implements IAdminRepository {
       .where(
         and(
           eq(payments.academyId, academyId),
-          sql`${payments.method} IN ('stripe', 'pix')`,
+          sql`${payments.method} IN ('card', 'pix')`,
           isNull(payments.transferredAt),
         ),
       );
@@ -254,7 +254,7 @@ export class PostgresAdminRepository implements IAdminRepository {
       .where(
         and(
           inArray(payments.id, paymentIds),
-          sql`${payments.method} IN ('stripe', 'pix')`,
+          sql`${payments.method} IN ('card', 'pix')`,
           isNull(payments.transferredAt),
         ),
       )

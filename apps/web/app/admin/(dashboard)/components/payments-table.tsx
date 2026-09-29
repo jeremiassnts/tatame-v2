@@ -9,7 +9,7 @@ type Payment = {
   id: string;
   userName: string;
   amountCents: number;
-  method: "manual" | "stripe" | "pix";
+  method: "manual" | "card" | "pix";
   referenceMonth: string;
   paidAt: string;
   transferredAt: string | null;
@@ -228,7 +228,7 @@ export function PaymentsTable({
             // The stored value is still `stripe`, but it has always meant
             // "card, in the app" rather than which provider — and since
             // TAT-104 the card rail is Asaas.
-            { value: "stripe", label: "Cartão" },
+            { value: "card", label: "Cartão" },
             { value: "manual", label: "Manual" },
           ]}
           value={filterMethod}

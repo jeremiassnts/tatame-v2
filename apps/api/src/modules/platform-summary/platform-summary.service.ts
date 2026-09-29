@@ -106,7 +106,7 @@ function perTransactionFee(
   return percentOnTotal + fixedPerTransaction * count;
 }
 
-/** Only `pix` and `stripe` flow through the platform; `manual` is cash. */
+/** Only `pix` and `card` flow through the platform; `manual` is cash. */
 function transferable(rows: SummaryMethodTotal[]): SummaryMethodTotal[] {
   return rows.filter((r) => r.method !== "manual");
 }

@@ -28,7 +28,7 @@ type PaymentItem = {
   id: string;
   userName: string;
   amountCents: number;
-  method: "manual" | "stripe" | "pix";
+  method: "manual" | "card" | "pix";
   referenceMonth: string;
   paidAt: string;
   transferredAt: string | null;

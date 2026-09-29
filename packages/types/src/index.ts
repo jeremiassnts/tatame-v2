@@ -17,7 +17,8 @@ export type MembershipStatus =
 
 export const PaymentMethod = {
   Manual: "manual",
-  Stripe: "stripe",
+  /** Was `Stripe` until the Asaas cutover: the column names how, not who. */
+  Card: "card",
   Pix: "pix",
 } as const;
 export type PaymentMethod =

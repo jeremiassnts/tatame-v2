@@ -162,6 +162,13 @@
       "when": 1790692441889,
       "tag": "0022_awesome_masque",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1790692441890,
+      "tag": "0023_rename_stripe_to_card",
+      "breakpoints": true
     }
   ]
 }

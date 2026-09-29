@@ -423,13 +423,9 @@ function isDuplicateAsaasPayment(error: unknown): boolean {
 /**
  * `payments.method` answers "how did the student pay?", never "through which
  * provider" — that is what `asaas_payment_id` and `stripe_payment_id` are for.
- * So a card payment is `stripe` here, which is the value that has always meant
- * "card, in the app" and already renders as "Cartão" everywhere. The name is
- * stale rather than wrong; renaming it belongs with B9, when Stripe actually
- * leaves and the 255 existing rows can be migrated in one coherent change.
  */
-function methodFor(billingType: string | undefined): "pix" | "stripe" {
-  return billingType === "PIX" ? "pix" : "stripe";
+function methodFor(billingType: string | undefined): "pix" | "card" {
+  return billingType === "PIX" ? "pix" : "card";
 }
 
 /**

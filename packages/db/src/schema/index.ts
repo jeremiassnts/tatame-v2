@@ -35,9 +35,15 @@ export const subscriptionStatusEnum = pgEnum("subscription_status", [
   "cancelled",
 ]);
 
+/**
+ * How the student paid, never through which provider — that is what
+ * `asaas_payment_id` and `stripe_payment_id` are for. `card` was called
+ * `stripe` until the Asaas cutover, when the name stopped matching the two
+ * rows that had it and every card payment since.
+ */
 export const paymentMethodEnum = pgEnum("payment_method", [
   "manual",
-  "stripe",
+  "card",
   "pix",
 ]);
 

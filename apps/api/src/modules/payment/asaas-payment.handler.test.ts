@@ -164,7 +164,7 @@ describe("AsaasPaymentWebhookHandler", () => {
     expect(row).toMatchObject({
       subscriptionId: SUBSCRIPTION,
       referenceMonth: "2026-09-01",
-      method: "stripe",
+      method: "card",
       // keyed by the payment, not by the session it came from
       asaasPaymentId: "pay_card_1",
     });
