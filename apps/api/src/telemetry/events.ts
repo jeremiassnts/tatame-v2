@@ -188,7 +188,18 @@ export const CATALOG = {
   "manager_subscription.webhook_unhandled": {
     domain: "manager_subscription",
     outcome: "rejected",
-    reasons: ["UNKNOWN_EVENT_TYPE", "NO_ACADEMY_OR_USER", "USER_NOT_FOUND", "NO_RECORD"],
+    reasons: [
+      "UNKNOWN_EVENT_TYPE",
+      "NO_ACADEMY_OR_USER",
+      "USER_NOT_FOUND",
+      "NO_RECORD",
+      // A second subscription on a Stripe Customer that already has one linked
+      // to an academy. `academy_id` and `stripe_subscription_id` are both
+      // unique, so only one of the two can ever be honoured — this is the signal
+      // that a duplicate exists and someone has to cancel it in Stripe. Before
+      // TAT-185 the handler simply repointed the row and said nothing.
+      "DUPLICATE_SUBSCRIPTION",
+    ],
   },
 
   // --- graduation ---------------------------------------------------------

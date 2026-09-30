@@ -90,10 +90,32 @@ export class StripeSubscriptionWebhookHandler {
       typeof sub.customer === "string" ? sub.customer : sub.customer.id;
     const clerkUserId = sub.metadata?.clerkUserId;
 
-    // Case 1: Subscription already linked to an academy
-    const existing =
-      (await this.subRepo.findByStripeSubscriptionId(sub.id)) ??
-      (await this.subRepo.findByStripeCustomerId(stripeCustomerId));
+    // Case 1: Subscription already linked to an academy.
+    //
+    // The customer-id fallback is what links the very first event of a
+    // subscription whose row was created ahead of it. It must not do more than
+    // that: one Stripe Customer can carry two subscriptions, and adopting an
+    // event onto a row that already names a *different* subscription is how a
+    // duplicate silently repoints the academy (TAT-185). A row that is already
+    // linked wins, and the duplicate is reported rather than applied — including
+    // not falling through to the pending-on-user branch below, which would only
+    // defer the same overwrite to academy-creation time.
+    let existing = await this.subRepo.findByStripeSubscriptionId(sub.id);
+    if (!existing) {
+      const byCustomer =
+        await this.subRepo.findByStripeCustomerId(stripeCustomerId);
+      if (byCustomer?.stripeSubscriptionId) {
+        emitEvent("manager_subscription.webhook_unhandled", {
+          reason: "DUPLICATE_SUBSCRIPTION",
+          subscriptionId: byCustomer.id,
+          academyId: byCustomer.academyId,
+          stripeSubscriptionId: sub.id,
+          extra: { linkedStripeSubscriptionId: byCustomer.stripeSubscriptionId },
+        });
+        return;
+      }
+      existing = byCustomer;
+    }
 
     if (existing) {
       const status = this.mapStatus(sub.status);

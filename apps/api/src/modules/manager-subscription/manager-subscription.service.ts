@@ -39,6 +39,35 @@ export class ManagerSubscriptionService {
     return sub.status === "active" || sub.status === "trialing";
   }
 
+  /**
+   * Whether this user already has a Pro subscription the platform is honouring.
+   *
+   * Two places can hold one: the `manager_subscriptions` row of an academy they
+   * own, and — before they have created an academy — `pending_stripe_*` on their
+   * own user row. Checking only the first is what let a manager who subscribed
+   * on the web and never finished onboarding subscribe a second time.
+   *
+   * `past_due` deliberately does not count. A manager whose card failed has to
+   * be able to open a new checkout, and the same goes for `canceled` and
+   * `incomplete` — resubscribing is a supported path, not the bug.
+   *
+   * The pending id is a parameter rather than a repository read because it lives
+   * on `users`, which this service has no repository for; every caller has the
+   * user row in hand already.
+   */
+  async hasSubscriptionInFlight(
+    userId: string,
+    pendingStripeSubscriptionId: string | null,
+  ): Promise<boolean> {
+    if (pendingStripeSubscriptionId) return true;
+
+    const academies = await this.acadRepo.findByOwnerId(userId);
+    for (const academy of academies) {
+      if (await this.isSubscriptionActive(academy.id)) return true;
+    }
+    return false;
+  }
+
   async createCheckoutSession(
     clerkUserId: string,
     email: string,
@@ -55,19 +84,26 @@ export class ManagerSubscriptionService {
       metadata: { clerkUserId },
     });
 
-    const session = await this.stripe.checkout.sessions.create({
-      mode: "subscription",
-      payment_method_types: ["card"],
-      customer: customer.id,
-      line_items: [{ price: priceId, quantity: 1 }],
-      subscription_data: {
-        trial_period_days: 30,
+    // Scoped to the caller and the price so a double-submit or a retried
+    // request maps to the one session Stripe already opened. Stripe keeps a key
+    // for 24h, so cancelling and resubscribing inside that window hands back the
+    // earlier session — same customer, same price, nothing lost.
+    const session = await this.stripe.checkout.sessions.create(
+      {
+        mode: "subscription",
+        payment_method_types: ["card"],
+        customer: customer.id,
+        line_items: [{ price: priceId, quantity: 1 }],
+        subscription_data: {
+          trial_period_days: 30,
+          metadata: { clerkUserId },
+        },
         metadata: { clerkUserId },
+        success_url: successUrl,
+        cancel_url: cancelUrl,
       },
-      metadata: { clerkUserId },
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-    });
+      { idempotencyKey: `manager-checkout:${clerkUserId}:${priceId}` },
+    );
 
     return session.url!;
   }
