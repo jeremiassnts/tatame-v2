@@ -399,6 +399,29 @@ One real defect was found in the redirect while tracing it: `(guardian)/(home)` 
 A guardian who already has dependents would be sent back through onboarding on any network
 blip. Now a failed request is left alone.
 
+## 8. H11 — Reproduced: paying a dependent's Pix returned to the guardian's own subscription
+
+**Symptom**: after a successful Pix payment for a dependent, the app came back to
+"Minha assinatura" instead of the dependent it was paying for.
+
+**Root cause**: `(student)` is a `Tabs` layout. The dependent's subscription screen lives in
+the `(more)` tab; `pix-payment` lived in the `(subscription)` tab. Pushing across tabs means
+`router.back()` unwinds inside the *destination* tab and lands on its index — the guardian's
+own subscription. The guardian rail never showed this because it had its own copy of the
+route inside `(dependents)`.
+
+**Fix**: one shared `app/(app)/pix-payment.tsx` on the root stack, above every tab group,
+replacing both per-tab shells. Pushed from there it returns to whatever screen opened it,
+whichever tab or role that was. Three call sites updated; the two shells deleted.
+
+**Same shape, not fixed here**: choosing a plan for a dependent also crosses tabs — both the
+student's dependent screen and the guardian's push `(student)/(subscription)/plans`. The
+outcome is right because `plans/[planId].tsx` ends with a `router.replace` to the correct
+screen, so only the back button and the highlighted tab are wrong. Moving that route up would
+also change what the student with no plan of their own sees: today the plan list is a gate
+*inside* the tab, with the tab bar still on screen, and lifting it to the root stack takes the
+tab bar away. That is a UX call, so it is left as is and recorded here.
+
 ### Still open
 - **T9** could not be run against the live dev data: September is already paid on both
   subscriptions, so the API refuses another charge. It is covered by the integration test.

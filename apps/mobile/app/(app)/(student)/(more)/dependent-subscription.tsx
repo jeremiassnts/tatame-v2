@@ -93,7 +93,7 @@ export default function DependentSubscriptionScreen() {
 
   const handlePayPix = () => {
     router.push({
-      pathname: "/(app)/(student)/(subscription)/pix-payment",
+      pathname: "/(app)/pix-payment",
       params: {
         subscriptionId: subscription!.id,
         dependentId: dependentId!,
