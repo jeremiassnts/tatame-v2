@@ -15,3 +15,14 @@ process.env.CLERK_SECRET_KEY ??= "test_clerk_key";
  * switch are covered directly in subscription.payout-gate.test.ts.
  */
 process.env.PAYOUT_ACCOUNT_REQUIRED ??= "true";
+
+/**
+ * The duplicate-subscription guard on `POST /manager-subscriptions/checkout`
+ * sits behind the endpoint's "is Stripe even configured" 503, and
+ * `manager-subscription.routes.ts` reads the env once at module load. Without a
+ * price id the route answers 503 before the guard ever runs, so every refusal
+ * test would pass for the wrong reason. The Stripe *key* stays unset on purpose:
+ * a caller the guard allows through then falls into 503, which is how those
+ * tests tell "allowed" from "refused" without talking to Stripe.
+ */
+process.env.STRIPE_PRO_PRICE_ID ??= "price_integration_pro";

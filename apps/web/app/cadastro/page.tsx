@@ -4,7 +4,8 @@ import { managerFetch } from "@/lib/manager-api";
 import { SignOutButton, useAuth, useSignIn, useUser } from "@clerk/nextjs";
 import { ArrowRight, CheckCircle } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function CadastroPage() {
   const { signIn } = useSignIn();
@@ -98,6 +99,11 @@ export default function CadastroPage() {
   );
 }
 
+type CheckoutEligibility = {
+  eligible: boolean;
+  reason: "ALREADY_SUBSCRIBED" | null;
+};
+
 // --- Authenticated view (post-signup) ---
 function AuthenticatedView({
   email,
@@ -106,8 +112,50 @@ function AuthenticatedView({
   email: string;
   getToken: () => Promise<string | null>;
 }) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [eligibility, setEligibility] = useState<
+    "checking" | "eligible" | "redirecting"
+  >("checking");
+
+  /**
+   * This page used to render "Ativar meus 30 dias grátis" for any authenticated
+   * user, so a manager who had already subscribed and came back to /cadastro
+   * bought a second 30-day trial on the same Stripe Customer. The CTA is now
+   * held back until the API says this account may actually subscribe.
+   *
+   * A failed check falls through to the CTA on purpose: the endpoint's own 409
+   * is the authority, and refusing to draw the button because our network blipped
+   * would strand a legitimate new signup.
+   */
+  useEffect(() => {
+    let active = true;
+
+    async function checkEligibility() {
+      try {
+        const token = await getToken();
+        const result = await managerFetch<CheckoutEligibility>(
+          "/manager-subscriptions/checkout-eligibility",
+          token,
+        );
+        if (!active) return;
+        if (result.eligible) {
+          setEligibility("eligible");
+          return;
+        }
+        setEligibility("redirecting");
+        router.replace("/conta/assinatura");
+      } catch {
+        if (active) setEligibility("eligible");
+      }
+    }
+
+    checkEligibility();
+    return () => {
+      active = false;
+    };
+  }, [getToken, router]);
 
   async function handleCheckout() {
     setError("");
@@ -131,6 +179,14 @@ function AuthenticatedView({
       setError(err instanceof Error ? err.message : "Erro ao iniciar pagamento");
       setLoading(false);
     }
+  }
+
+  if (eligibility !== "eligible") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
   }
 
   return (

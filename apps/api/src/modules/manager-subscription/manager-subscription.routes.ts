@@ -1,6 +1,7 @@
 import { loadEnv } from "@tatame/config";
 import { Role } from "@tatame/types";
 import { Router } from "express";
+import type { Request } from "express";
 import { getDb } from "../../lib/db.js";
 import { HttpError } from "../../lib/http-error.js";
 import { getStripe, getStripeOrNull } from "../../lib/stripe.js";
@@ -110,6 +111,50 @@ managerSubscriptionRouter.get(
   },
 );
 
+/**
+ * The one read behind both the checkout 409 and the web's eligibility check.
+ * `/cadastro` draws its CTA from this, so if the two ever disagreed the page
+ * would offer a button the endpoint is about to refuse.
+ *
+ * A caller we have never provisioned is eligible: nothing of ours exists for
+ * them, so they cannot hold a subscription.
+ */
+async function isCheckoutEligible(clerkUserId: string): Promise<boolean> {
+  const user = await userRepo.findByClerkId(clerkUserId);
+  if (!user) return true;
+  return !(await getService().hasSubscriptionInFlight(
+    user.id,
+    user.pendingStripeSubscriptionId,
+  ));
+}
+
+/** `@clerk/express` is imported lazily here, the same way `/checkout` does it. */
+async function requireClerkUserId(req: Request): Promise<string> {
+  const { getAuth } = await import("@clerk/express");
+  const { userId } = getAuth(req);
+  if (!userId) throw new HttpError(401, "Unauthorized");
+  return userId;
+}
+
+// GET /manager-subscriptions/checkout-eligibility — may this caller subscribe?
+// Uses requireSession (not authorize) for the same reason /checkout does: the
+// caller may have signed up on the web and not been provisioned yet. It also has
+// to answer for a manager who subscribed but never created an academy, which is
+// exactly the case `/me` cannot serve — that one demands an active academy.
+managerSubscriptionRouter.get(
+  "/checkout-eligibility",
+  requireSession,
+  async (req, res, next) => {
+    try {
+      const clerkUserId = await requireClerkUserId(req);
+      const eligible = await isCheckoutEligible(clerkUserId);
+      res.json({ eligible, reason: eligible ? null : "ALREADY_SUBSCRIBED" });
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
 // POST /manager-subscriptions/checkout — create Stripe Checkout session
 // Uses requireSession (not authorize) because the user may not be provisioned yet
 // (they just created a Clerk account on the web and haven't done onboarding)
@@ -156,6 +201,26 @@ managerSubscriptionRouter.post(
         if (!user) throw new HttpError(500, "Failed to provision user");
       }
       const email = user.email;
+
+      // TAT-185. Nothing here used to read `manager_subscriptions`, so a manager
+      // who revisited `/cadastro` bought a second 30-day trial on the same
+      // Stripe Customer — and since `academy_id` and `stripe_subscription_id`
+      // are both unique, the app could only ever honour one of the two.
+      //
+      // The refusal comes before the role promotion below: a request we turn
+      // away must leave its caller exactly as it found them.
+      if (
+        await getService().hasSubscriptionInFlight(
+          user.id,
+          user.pendingStripeSubscriptionId,
+        )
+      ) {
+        throw new HttpError(
+          409,
+          "Você já tem uma assinatura Tatame Pro ativa.",
+          { code: "ALREADY_SUBSCRIBED" },
+        );
+      }
 
       // Paying for Pro declares manager intent. Reconcile the role for every
       // user (not just freshly-provisioned ones): a user who signed up in the
