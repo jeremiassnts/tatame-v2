@@ -6,13 +6,7 @@
     "orientation": "portrait",
     "scheme": "tatame",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
     "icon": "./assets/images/icon.png",
-    "splash": {
-      "image": "./assets/images/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0C0C0C"
-    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.anonymous.tatame",
@@ -36,7 +30,6 @@
         "monochromeImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0C0C0C"
       },
-      "edgeToEdgeEnabled": true,
       "package": "com.anonymous.tatame",
       "permissions": [
         "android.permission.CAMERA"
@@ -58,7 +51,18 @@
           "merchantIdentifier": []
         }
       ],
-      "expo-notifications"
+      "expo-notifications",
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#0C0C0C",
+          "enableFullScreenImage_legacy": true
+        }
+      ],
+      "expo-web-browser"
     ],
     "extra": {
       "router": {},
