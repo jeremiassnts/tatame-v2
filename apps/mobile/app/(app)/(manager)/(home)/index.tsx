@@ -7,6 +7,7 @@ import { useApi } from "@/lib/api";
 import { useAcademy, useAcademyStats } from "@/lib/hooks/use-academy";
 import { useMyGraduation } from "@/lib/hooks/use-graduation";
 import { useManagerSubscription } from "@/lib/hooks/use-manager-subscription";
+import { usePayoutAccount } from "@/lib/hooks/use-payout-account";
 import { useCurrentUser } from "@/lib/hooks/use-user";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
@@ -62,6 +63,10 @@ export default function ManagerDashboard() {
   const { data: academy } = useAcademy(academyId);
   const { data: stats } = useAcademyStats(academyId);
   const { data: managerSub } = useManagerSubscription();
+  // `isSuccess`, not a truthiness check: the query answers `null` for an
+  // academy that never opened an account, which is exactly the state the
+  // warning exists for. Without it the warning would flash on every mount.
+  const { data: payoutAccount, isSuccess: payoutLoaded } = usePayoutAccount();
   const { data: graduation } = useMyGraduation();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -84,6 +89,7 @@ export default function ManagerDashboard() {
         queryKey: ["classes", academyId, dayOfWeek],
       }),
       queryClient.invalidateQueries({ queryKey: ["graduation", "me"] }),
+      queryClient.invalidateQueries({ queryKey: ["payout-account"] }),
     ]);
     setRefreshing(false);
   };
@@ -140,18 +146,21 @@ export default function ManagerDashboard() {
             </View>
           </View>
 
-          {managerSub?.plan === "pro" && academy && !academy.pixKey && (
-            <Pressable
-              onPress={() => router.push("/(app)/(manager)/(finances)")}
-              className="flex-row items-center rounded-xl"
-              style={{ padding: 12, gap: 10, backgroundColor: "#FF453A20" }}
-            >
-              <AlertTriangle size={16} color="#FF453A" />
-              <Text className="font-poppins-medium text-xs" style={{ color: "#FF453A", flex: 1 }}>
-                Configure sua chave PIX para receber pagamentos dos alunos
-              </Text>
-            </Pressable>
-          )}
+          {managerSub?.plan === "pro" &&
+            payoutLoaded &&
+            payoutAccount?.status !== "approved" && (
+              <Pressable
+                onPress={() => router.push("/(app)/(manager)/(finances)")}
+                className="flex-row items-center rounded-xl"
+                style={{ padding: 12, gap: 10, backgroundColor: "#FF453A20" }}
+              >
+                <AlertTriangle size={16} color="#FF453A" />
+                <Text className="font-poppins-medium text-xs" style={{ color: "#FF453A", flex: 1 }}>
+                  Ative sua conta de recebimento para que seus alunos possam
+                  pagar pelo app
+                </Text>
+              </Pressable>
+            )}
 
           <View
             className="rounded-2xl border border-surface-border bg-surface"
