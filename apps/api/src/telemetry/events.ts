@@ -43,6 +43,11 @@ export const CATALOG = {
       "DUPLICATE",
       "LOCK_BUSY",
       "MISSING_DEPENDENT",
+      // Someone asked to check in a dependent who is not theirs, or who
+      // belongs to another academy. Both are the caller reaching past their
+      // own household, so they are worth telling apart from a plain 403.
+      "DEPENDENT_NOT_OWNED",
+      "DEPENDENT_OTHER_ACADEMY",
     ],
   },
 

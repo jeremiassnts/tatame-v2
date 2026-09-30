@@ -40,6 +40,7 @@ vi.mock("./lib/redis.js", async (importOriginal) => {
 
 const CLERK_MANAGER = "user_integration_ckdep_mgr";
 const CLERK_STUDENT = "user_integration_ckdep_std";
+const CLERK_INTRUDER = "user_integration_ckdep_other";
 
 function utcMonthFirstIso(): string {
   const d = new Date();
@@ -81,6 +82,7 @@ describe("Check-in: account holder vs dependent", () => {
    */
   async function seedHousehold(): Promise<{
     studentId: string;
+    academyId: string;
     dependentId: string;
     morningClassId: string;
     eveningClassId: string;
@@ -184,11 +186,29 @@ describe("Check-in: account holder vs dependent", () => {
 
     return {
       studentId: student.id,
+      academyId,
       dependentId,
       morningClassId,
       eveningClassId,
       sessionDate,
     };
+  }
+
+  /** A second, unrelated student with an active membership in the same academy. */
+  async function joinIntruder(academyId: string): Promise<void> {
+    await insertUserWithGlobalRole(ctx.db, CLERK_INTRUDER, "student");
+
+    asClerkUser(CLERK_INTRUDER);
+    const join = await request(app)
+      .post("/v1/memberships/requests")
+      .send({ academyId });
+    expect(join.status).toBe(201);
+
+    asClerkUser(CLERK_MANAGER);
+    const approve = await request(app).patch(
+      `/v1/memberships/${join.body.id}/approve`,
+    );
+    expect(approve.status).toBe(200);
   }
 
   /** Takes both of the dependent's weekly sessions. */
@@ -290,6 +310,74 @@ describe("Check-in: account holder vs dependent", () => {
     const theirWeeks = theirs.body.items as Array<{ count: number }>;
     expect(theirWeeks).toHaveLength(1);
     expect(theirWeeks[0]?.count).toBe(2);
+  });
+
+  /**
+   * `dependentId` arrives in the request body, so the route has to establish
+   * that the caller is this dependent's guardian. Before that check existed,
+   * any member of the academy could spend another family's weekly allowance —
+   * and because the dependent's unique index is keyed on the dependent alone,
+   * that also left the real guardian's own check-in refused as a duplicate.
+   */
+  describe("only the guardian of record can check in a dependent", () => {
+    it("refuses another member who passes this dependent's id", async () => {
+      const h = await seedHousehold();
+      await joinIntruder(h.academyId);
+
+      asClerkUser(CLERK_INTRUDER);
+      const res = await request(app).post("/v1/checkins").send({
+        classId: h.morningClassId,
+        date: h.sessionDate,
+        dependentId: h.dependentId,
+      });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe("Você não é responsável por este dependente");
+    });
+
+    it("leaves the dependent's allowance and the guardian's own check-in intact", async () => {
+      const h = await seedHousehold();
+      await joinIntruder(h.academyId);
+
+      asClerkUser(CLERK_INTRUDER);
+      const attempt = await request(app).post("/v1/checkins").send({
+        classId: h.morningClassId,
+        date: h.sessionDate,
+        dependentId: h.dependentId,
+      });
+      expect(attempt.status).toBe(403);
+
+      // Nothing was written, so the guardian still has both sessions and the
+      // class is not held against them.
+      asClerkUser(CLERK_STUDENT);
+      const weekly = await request(app).get(
+        `/v1/checkins/dependent/${h.dependentId}/weekly-count`,
+      );
+      expect(weekly.status).toBe(200);
+      expect(weekly.body.count).toBe(0);
+
+      const real = await request(app).post("/v1/checkins").send({
+        classId: h.morningClassId,
+        date: h.sessionDate,
+        dependentId: h.dependentId,
+      });
+      expect(real.status).toBe(201);
+      expect(real.body.checkin?.dependentId).toBe(h.dependentId);
+    });
+
+    it("refuses an unknown dependent id", async () => {
+      const h = await seedHousehold();
+
+      asClerkUser(CLERK_STUDENT);
+      const res = await request(app).post("/v1/checkins").send({
+        classId: h.morningClassId,
+        date: h.sessionDate,
+        dependentId: "00000000-0000-4000-8000-000000000000",
+      });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe("Você não é responsável por este dependente");
+    });
   });
 
   /**

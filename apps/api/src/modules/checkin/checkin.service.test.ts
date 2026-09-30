@@ -3,12 +3,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   makeClass,
   makeCheckin,
+  makeDependent,
   makeMembership,
   makePayment,
   makeStudentSubscription,
   makeSubscriptionPlan,
 } from "../../testing/factories/index.js";
 import { InMemoryClassRepository } from "../class/class.repository.in-memory.js";
+import { InMemoryDependentRepository } from "../dependent/dependent.repository.in-memory.js";
+import type { DependentRow } from "../dependent/dependent.repository.js";
 import { InMemoryCheckinRepository } from "./checkin.repository.in-memory.js";
 import { InMemoryMembershipRepository } from "../membership/membership.repository.in-memory.js";
 import { InMemoryPaymentRepository } from "../payment/payment.repository.in-memory.js";
@@ -52,7 +55,8 @@ function buildService(opts: {
   classRow?: ReturnType<typeof makeClass>;
   checkins?: CheckinRow[];
   membershipOverrides?: Partial<ReturnType<typeof makeMembership>>;
-  engagementService?: ConstructorParameters<typeof CheckinService>[6];
+  dependents?: DependentRow[];
+  engagementService?: ConstructorParameters<typeof CheckinService>[7];
 }) {
   const academyId = opts.academyId;
   const userId = opts.userId;
@@ -114,6 +118,7 @@ function buildService(opts: {
     subRepo,
     payRepo,
     checkinRepo,
+    new InMemoryDependentRepository(opts.dependents ?? []),
     undefined,
     opts.engagementService,
   );
@@ -397,6 +402,7 @@ describe("CheckinService", () => {
       subRepo,
       new InMemoryPaymentRepository([]),
       new InMemoryCheckinRepository([]),
+      new InMemoryDependentRepository([]),
     );
 
     await expect(
@@ -667,6 +673,7 @@ describe("CheckinService", () => {
         }),
       ]),
       new InMemoryCheckinRepository([]),
+      new InMemoryDependentRepository([]),
     );
 
     const { checkin } = await svc.checkIn({
@@ -1001,6 +1008,7 @@ describe("CheckinService", () => {
         userId: guardianId,
         plan,
         extraSubs: [depSub],
+        dependents: [makeDependent({ id: dependentId, guardianId, academyId })],
         payments: [
           makePayment({ subscriptionId: depSub.id, userId: guardianId, academyId, referenceMonth: "2026-03-01" }),
         ],
@@ -1047,6 +1055,176 @@ describe("CheckinService", () => {
       });
     });
 
+    /**
+     * `dependentId` comes from the request body. These four cases are the ones
+     * that made it worth checking ownership in the service instead of in the
+     * route: each one is a caller reaching past their own household.
+     */
+    describe("only the guardian of record can check in a dependent", () => {
+      /** Two unrelated households in the same academy. */
+      function buildTwoHouseholds() {
+        const academyId = randomUUID();
+        const guardianId = randomUUID();
+        const strangerId = randomUUID();
+        const dependentId = randomUUID();
+
+        const plan = makeSubscriptionPlan({ academyId });
+        const depSub = makeStudentSubscription({
+          userId: guardianId,
+          planId: plan.id,
+          dependentId,
+          status: "active",
+          startsAt: "2026-01-01",
+          expiresAt: "2027-01-01",
+        });
+        const dependent = makeDependent({ id: dependentId, guardianId, academyId });
+
+        return { academyId, guardianId, strangerId, dependentId, plan, depSub, dependent };
+      }
+
+      it("refuses a guardian who is not this dependent's guardian", async () => {
+        const h = buildTwoHouseholds();
+        // The stranger is a legitimate, active member of the same academy —
+        // only the guardian relationship is missing.
+        const { svc, classRow } = buildService({
+          academyId: h.academyId,
+          userId: h.strangerId,
+          plan: h.plan,
+          extraSubs: [h.depSub],
+          dependents: [h.dependent],
+          membershipOverrides: { role: "guardian" },
+        });
+
+        await expect(
+          svc.checkIn({
+            userId: h.strangerId,
+            academyId: h.academyId,
+            academyRole: "guardian",
+            classId: classRow.id,
+            sessionDate: SESSION_DATE,
+            dependentId: h.dependentId,
+          }),
+        ).rejects.toMatchObject({
+          statusCode: 403,
+          message: "Você não é responsável por este dependente",
+        });
+      });
+
+      it("refuses a student who passes someone else's dependent", async () => {
+        const h = buildTwoHouseholds();
+        const { svc, classRow } = buildService({
+          academyId: h.academyId,
+          userId: h.strangerId,
+          plan: h.plan,
+          extraSubs: [h.depSub],
+          dependents: [h.dependent],
+        });
+
+        await expect(
+          svc.checkIn({
+            userId: h.strangerId,
+            academyId: h.academyId,
+            academyRole: "student",
+            classId: classRow.id,
+            sessionDate: SESSION_DATE,
+            dependentId: h.dependentId,
+          }),
+        ).rejects.toMatchObject({
+          statusCode: 403,
+          message: "Você não é responsável por este dependente",
+        });
+      });
+
+      it("writes nothing when the dependent is not the caller's", async () => {
+        const h = buildTwoHouseholds();
+        const { svc, classRow, checkinRepo } = buildService({
+          academyId: h.academyId,
+          userId: h.strangerId,
+          plan: h.plan,
+          extraSubs: [h.depSub],
+          dependents: [h.dependent],
+          membershipOverrides: { role: "guardian" },
+        });
+
+        await expect(
+          svc.checkIn({
+            userId: h.strangerId,
+            academyId: h.academyId,
+            academyRole: "guardian",
+            classId: classRow.id,
+            sessionDate: SESSION_DATE,
+            dependentId: h.dependentId,
+          }),
+        ).rejects.toMatchObject({ statusCode: 403 });
+
+        // The point of the refusal: the dependent's allowance is untouched, so
+        // the real guardian's own check-in is not later refused as a duplicate.
+        await expect(
+          checkinRepo.countByDependentAndWeek(h.dependentId, WEEK_REFERENCE),
+        ).resolves.toBe(0);
+      });
+
+      it("refuses an unknown dependent id with the same answer as someone else's", async () => {
+        const h = buildTwoHouseholds();
+        const { svc, classRow } = buildService({
+          academyId: h.academyId,
+          userId: h.guardianId,
+          plan: h.plan,
+          extraSubs: [h.depSub],
+          dependents: [h.dependent],
+          membershipOverrides: { role: "guardian" },
+        });
+
+        await expect(
+          svc.checkIn({
+            userId: h.guardianId,
+            academyId: h.academyId,
+            academyRole: "guardian",
+            classId: classRow.id,
+            sessionDate: SESSION_DATE,
+            dependentId: randomUUID(),
+          }),
+        ).rejects.toMatchObject({
+          statusCode: 403,
+          message: "Você não é responsável por este dependente",
+        });
+      });
+
+      it("refuses a dependent who belongs to another academy", async () => {
+        const h = buildTwoHouseholds();
+        const otherAcademyId = randomUUID();
+        // Same guardian, but the dependent was enrolled at a different academy.
+        const { svc, classRow } = buildService({
+          academyId: h.academyId,
+          userId: h.guardianId,
+          plan: h.plan,
+          extraSubs: [h.depSub],
+          dependents: [
+            makeDependent({
+              id: h.dependentId,
+              guardianId: h.guardianId,
+              academyId: otherAcademyId,
+            }),
+          ],
+          membershipOverrides: { role: "guardian" },
+        });
+
+        await expect(
+          svc.checkIn({
+            userId: h.guardianId,
+            academyId: h.academyId,
+            academyRole: "guardian",
+            classId: classRow.id,
+            sessionDate: SESSION_DATE,
+            dependentId: h.dependentId,
+          }),
+        ).rejects.toMatchObject({
+          statusCode: 403,
+          message: "Este dependente não pertence a esta academia",
+        });
+      });
+    });
+
     it("student can check in for themselves (existing behavior preserved)", async () => {
       const academyId = randomUUID();
       const userId = randomUUID();
@@ -1077,7 +1255,13 @@ describe("CheckinService", () => {
         startsAt: "2026-01-01",
         expiresAt: "2027-01-01",
       });
-      const { svc, classRow } = buildService({ academyId, userId, plan, extraSubs: [depSub] });
+      const { svc, classRow } = buildService({
+        academyId,
+        userId,
+        plan,
+        extraSubs: [depSub],
+        dependents: [makeDependent({ id: dependentId, guardianId: userId, academyId })],
+      });
 
       const { checkin } = await svc.checkIn({
         userId,
@@ -1132,6 +1316,7 @@ describe("CheckinService", () => {
         plan,
         sub,
         extraSubs: [depSub],
+        dependents: [makeDependent({ id: dependentId, guardianId, academyId })],
         checkins: dependentCheckins,
         membershipOverrides: { role: "guardian" },
       });
@@ -1180,7 +1365,9 @@ describe("CheckinService", () => {
           expiresAt: "2027-01-01",
         });
 
-        return { academyId, guardianId, dependentId, plan, sub, depSub };
+        const dependent = makeDependent({ id: dependentId, guardianId, academyId });
+
+        return { academyId, guardianId, dependentId, dependent, plan, sub, depSub };
       }
 
       /** The dependent's two sessions, both carrying the guardian's id. */
@@ -1321,9 +1508,10 @@ describe("CheckinService", () => {
           plan: h.plan,
           sub: h.sub,
           extraSubs: [h.depSub],
+          dependents: [h.dependent],
           engagementService: {
             checkMilestone,
-          } as unknown as ConstructorParameters<typeof CheckinService>[6],
+          } as unknown as ConstructorParameters<typeof CheckinService>[7],
         });
 
         await svc.checkIn({
@@ -1387,6 +1575,7 @@ describe("CheckinService", () => {
         plan,
         classRow,
         extraSubs: [depSub],
+        dependents: [makeDependent({ id: dependentId, guardianId, academyId })],
         checkins: existingCheckins,
         membershipOverrides: { role: "guardian" },
       });

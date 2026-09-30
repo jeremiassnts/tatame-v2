@@ -74,6 +74,7 @@ const checkinService = new CheckinService(
   new PostgresStudentSubscriptionRepository(db),
   new PostgresPaymentRepository(db),
   new PostgresCheckinRepository(db),
+  new PostgresDependentRepository(db),
   buildDispatcher(db),
   buildEngagementService(db),
 );
