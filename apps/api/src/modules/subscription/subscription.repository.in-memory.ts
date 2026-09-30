@@ -74,10 +74,12 @@ export class InMemoryStudentSubscriptionRepository
   async listWithPlanByUserAndAcademy(
     userId: string,
     academyId: string,
+    opts: { withoutDependent?: boolean } = {},
   ): Promise<StudentSubscriptionWithPlan[]> {
     const out: StudentSubscriptionWithPlan[] = [];
     for (const sub of this.rows) {
       if (sub.userId !== userId) continue;
+      if (opts.withoutDependent && sub.dependentId !== null) continue;
       const plan = await this.planRepo.findById(sub.planId);
       if (!plan || plan.academyId !== academyId) continue;
       out.push({ subscription: sub, plan });

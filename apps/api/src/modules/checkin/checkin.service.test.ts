@@ -49,6 +49,7 @@ function buildService(opts: {
   academyId: string;
   userId: string;
   plan?: ReturnType<typeof makeSubscriptionPlan>;
+  extraPlans?: ReturnType<typeof makeSubscriptionPlan>[];
   sub?: ReturnType<typeof makeStudentSubscription>;
   extraSubs?: ReturnType<typeof makeStudentSubscription>[];
   payments?: ReturnType<typeof makePayment>[];
@@ -62,7 +63,10 @@ function buildService(opts: {
   const userId = opts.userId;
 
   const plan = opts.plan ?? makeSubscriptionPlan({ academyId });
-  const planRepo = new InMemorySubscriptionPlanRepository([plan]);
+  const planRepo = new InMemorySubscriptionPlanRepository([
+    plan,
+    ...(opts.extraPlans ?? []),
+  ]);
 
   const sub =
     opts.sub ??
@@ -1341,6 +1345,118 @@ describe("CheckinService", () => {
      * keyed on `user_id` alone used to fold the child's training into the
      * parent's.
      */
+    /**
+     * The other half of the same invariant: resolving the *account holder's*
+     * own plan must not pick up a dependent's row. A dependent's subscription
+     * carries the guardian's `user_id` and is created later, so it sorted
+     * first and won.
+     */
+    describe("the guardian's own plan is resolved from their own subscription", () => {
+      it("refuses a guardian who has no plan of their own but a dependent who does", async () => {
+        const academyId = randomUUID();
+        const guardianId = randomUUID();
+        const dependentId = randomUUID();
+        const kidsPlan = makeSubscriptionPlan({ academyId, weeklyCheckinLimit: 2 });
+
+        // The household's only subscription belongs to the dependent.
+        const { svc, classRow } = buildService({
+          academyId,
+          userId: guardianId,
+          plan: kidsPlan,
+          sub: makeStudentSubscription({
+            userId: guardianId,
+            planId: kidsPlan.id,
+            dependentId,
+            status: "active",
+            startsAt: "2026-01-01",
+            expiresAt: "2027-01-01",
+          }),
+          dependents: [makeDependent({ id: dependentId, guardianId, academyId })],
+        });
+
+        await expect(
+          svc.checkIn({
+            userId: guardianId,
+            academyId,
+            academyRole: "student",
+            classId: classRow.id,
+            sessionDate: SESSION_DATE,
+          }),
+        ).rejects.toMatchObject({
+          statusCode: 403,
+          message: "Você não possui um plano ativo nesta academia",
+        });
+      });
+
+      it("measures the guardian against their own weekly limit, not the dependent's", async () => {
+        const academyId = randomUUID();
+        const guardianId = randomUUID();
+        const dependentId = randomUUID();
+
+        const adultPlan = makeSubscriptionPlan({ academyId, weeklyCheckinLimit: 5 });
+        const kidsPlan = makeSubscriptionPlan({ academyId, weeklyCheckinLimit: 1 });
+
+        // Explicit timestamps: the dependent's row has to be the newer one, or
+        // the fixture does not reproduce what the bug depended on.
+        const ownSub = makeStudentSubscription({
+          userId: guardianId,
+          planId: adultPlan.id,
+          status: "active",
+          startsAt: "2026-01-01",
+          expiresAt: "2027-01-01",
+          createdAt: new Date("2026-01-01T00:00:00.000Z"),
+        });
+        const depSub = makeStudentSubscription({
+          userId: guardianId,
+          planId: kidsPlan.id,
+          dependentId,
+          status: "active",
+          startsAt: "2026-01-01",
+          expiresAt: "2027-01-01",
+          createdAt: new Date("2026-02-01T00:00:00.000Z"),
+        });
+
+        // Two own sessions already taken: over the kids limit of 1, well under
+        // the adult limit of 5.
+        const { svc, classRow } = buildService({
+          academyId,
+          userId: guardianId,
+          plan: adultPlan,
+          extraPlans: [kidsPlan],
+          sub: ownSub,
+          extraSubs: [depSub],
+          dependents: [makeDependent({ id: dependentId, guardianId, academyId })],
+          payments: [
+            makePayment({
+              subscriptionId: ownSub.id,
+              userId: guardianId,
+              academyId,
+              referenceMonth: "2026-03-01",
+            }),
+          ],
+          checkins: [0, 1].map((i) =>
+            makeCheckin({
+              userId: guardianId,
+              dependentId: null,
+              classId: randomUUID(),
+              date: `2026-03-${16 + i}`,
+              weekReference: WEEK_REFERENCE,
+            }),
+          ),
+        });
+
+        const { checkin } = await svc.checkIn({
+          userId: guardianId,
+          academyId,
+          academyRole: "student",
+          classId: classRow.id,
+          sessionDate: SESSION_DATE,
+        });
+
+        expect(checkin.dependentId).toBeNull();
+      });
+    });
+
     describe("the guardian's own counters ignore their dependents", () => {
       /** Guardian and dependent sharing one plan, capped at 2/week by default. */
       function buildHousehold(weeklyCheckinLimit: number | null = 2) {

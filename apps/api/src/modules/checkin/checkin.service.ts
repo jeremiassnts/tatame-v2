@@ -477,9 +477,15 @@ export class CheckinService {
     plan: { weeklyCheckinLimit: number | null };
     warnings: CheckinWarnings;
   }> {
+    // Own rows only. A dependent's subscription carries the guardian's
+    // `user_id` and is created after theirs, so it sorted first and won the
+    // `find` below: a guardian with no plan of their own could check *themselves*
+    // in on a dependent's plan, and one who had a plan got the dependent's
+    // weekly limit and overdue warning measured against their own check-ins.
     const rows = await this.studentSubRepo.listWithPlanByUserAndAcademy(
       userId,
       academyId,
+      { withoutDependent: true },
     );
 
     for (const row of rows) {
