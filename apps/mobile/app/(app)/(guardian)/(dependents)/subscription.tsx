@@ -1,4 +1,5 @@
 import { BackButton } from "@/components/BackButton";
+import { CARD_PAYMENT_ENABLED } from "@/constants/payment";
 import { useDependent, useDependentPayments, useDependentSubscription, useDependentWeeklyCheckinCount } from "@/lib/hooks/use-dependents";
 import { useCreateCheckout } from "@/lib/hooks/use-subscription";
 import { useQueryClient } from "@tanstack/react-query";
@@ -299,23 +300,25 @@ export default function DependentSubscriptionScreen() {
                         Pix
                       </Text>
                     </Pressable>
-                    <Pressable
-                      onPress={handlePay}
-                      disabled={createCheckout.isPending}
-                      className="flex-1 flex-row items-center justify-center rounded-xl"
-                      style={{ height: 48, gap: 8, backgroundColor: "#6C63FF" }}
-                    >
-                      {createCheckout.isPending ? (
-                        <ActivityIndicator color="#FFFFFF" size="small" />
-                      ) : (
-                        <>
-                          <CreditCard size={18} color="#FFFFFF" />
-                          <Text className="font-poppins-semibold text-sm text-white">
-                            Cartão
-                          </Text>
-                        </>
-                      )}
-                    </Pressable>
+                    {CARD_PAYMENT_ENABLED && (
+                      <Pressable
+                        onPress={handlePay}
+                        disabled={createCheckout.isPending}
+                        className="flex-1 flex-row items-center justify-center rounded-xl"
+                        style={{ height: 48, gap: 8, backgroundColor: "#6C63FF" }}
+                      >
+                        {createCheckout.isPending ? (
+                          <ActivityIndicator color="#FFFFFF" size="small" />
+                        ) : (
+                          <>
+                            <CreditCard size={18} color="#FFFFFF" />
+                            <Text className="font-poppins-semibold text-sm text-white">
+                              Cartão
+                            </Text>
+                          </>
+                        )}
+                      </Pressable>
+                    )}
                   </View>
                 )}
               </View>
