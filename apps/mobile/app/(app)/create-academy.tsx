@@ -3,6 +3,7 @@ import { FormInput } from "@/components/FormInput";
 import { PhoneInput } from "@/components/PhoneInput";
 import { GradientButton } from "@/components/GradientButton";
 import { ImagePickerField } from "@/components/ImagePickerField";
+import { SignOutButton } from "@/components/SignOutButton";
 import { useCreateAcademy } from "@/lib/hooks/use-academy";
 import { useUploadImage } from "@/lib/hooks/use-upload";
 import { useCurrentUser } from "@/lib/hooks/use-user";
@@ -189,6 +190,8 @@ export default function CreateAcademyScreen() {
               onPress={handleSubmit(onSubmit)}
             />
           )}
+
+          <SignOutButton disabled={submitting} />
         </View>
       </View>
     </SafeAreaView>
