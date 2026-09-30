@@ -65,6 +65,41 @@ describe("PaymentService.createPixCharge", () => {
     });
   });
 
+  it("charges the caller's own plan, not a dependent's, when no subscription is named", async () => {
+    // Both rows carry the guardian's `user_id`, and the dependent's is the more
+    // recent one — so "the first active subscription" was the dependent's.
+    const kidsPlan = await ctx.planRepo.create({
+      academyId: ctx.academyId,
+      name: "Kids",
+      recurrenceMonths: 1,
+      priceCents: 9000,
+      weeklyCheckinLimit: null,
+      isActive: true,
+    });
+    await ctx.subRepo.create({
+      userId: ctx.studentId,
+      planId: kidsPlan.id,
+      status: "active",
+      startsAt: "2026-01-01",
+      expiresAt: "2026-02-01",
+      dependentId: randomUUID(),
+    });
+
+    const view = await ctx.service.createPixCharge(
+      ctx.studentId,
+      ctx.academyId,
+      { cpfCnpj: "41763193640" },
+    );
+
+    expect(ctx.client.createPayment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        value: 150,
+        externalReference: ctx.subscriptionId,
+      }),
+    );
+    expect(view.amountCents).toBe(15000);
+  });
+
   it("refuses an academy that cannot receive yet", async () => {
     const pending = await setup({ accountStatus: "pending" });
 

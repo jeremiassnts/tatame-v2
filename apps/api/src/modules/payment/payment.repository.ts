@@ -52,7 +52,18 @@ export interface IPaymentRepository {
 
   findByAcademy(
     academyId: string,
-    opts: { subscriptionId?: string; userId?: string; limit?: number },
+    opts: {
+      subscriptionId?: string;
+      userId?: string;
+      limit?: number;
+      /**
+       * Restricts the result to payments that are not a dependent's. A
+       * dependent's payment carries the guardian's `user_id`, so a filter on
+       * `userId` alone returns the dependents' months as if they were the
+       * caller's own.
+       */
+      withoutDependent?: boolean;
+    },
   ): Promise<PaymentRow[]>;
 
   findByAcademyWithUser(

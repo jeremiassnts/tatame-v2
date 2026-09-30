@@ -1,5 +1,6 @@
 import { BackButton } from "@/components/BackButton";
 import { SubscriptionPlanListItem } from "@/components/SubscriptionPlanListItem";
+import { useDependentSubscription } from "@/lib/hooks/use-dependents";
 import { useMySubscription } from "@/lib/hooks/use-subscription";
 import { useSubscriptionPlans } from "@/lib/hooks/use-subscription-plans";
 import { useQueryClient } from "@tanstack/react-query";
@@ -21,13 +22,27 @@ export default function SubscriptionPlansScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: plans, isLoading } = useSubscriptionPlans();
-  const { data: subResponse } = useMySubscription();
+  const { data: mySubResponse } = useMySubscription();
+  const { data: depSubResponse } = useDependentSubscription(dependentId ?? null);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Whose plan is being chosen decides whose current plan is marked. Reading
+  // the student's own subscription while picking for a dependent labelled the
+  // wrong card "Plano atual".
+  const subResponse = dependentId ? depSubResponse : mySubResponse;
 
   const currentPlanId =
     subResponse?.subscription?.effectiveStatus === "active"
       ? subResponse.subscription.planId
       : null;
+
+  /**
+   * Without a plan of their own the student reaches this screen as the gate the
+   * app puts in front of everything else, and there is nowhere to go back to.
+   * Choosing for a dependent is the opposite: it is always pushed from the
+   * dependent's screen, so it must be possible to leave.
+   */
+  const canGoBack = dependentId != null || currentPlanId != null;
 
   const activePlans = plans?.filter((p) => p.isActive) ?? [];
 
@@ -35,7 +50,9 @@ export default function SubscriptionPlansScreen() {
     setRefreshing(true);
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["subscription-plans"] }),
-      queryClient.invalidateQueries({ queryKey: ["subscription", "me"] }),
+      queryClient.invalidateQueries({
+        queryKey: dependentId ? ["subscription", dependentId] : ["subscription", "me"],
+      }),
     ]);
     setRefreshing(false);
   };
@@ -60,15 +77,17 @@ export default function SubscriptionPlansScreen() {
       >
         <View style={{ gap: 20 }}>
           <View className="flex-row items-center gap-3" style={{ paddingTop: 8 }}>
-            {currentPlanId && <BackButton />}
+            {canGoBack && <BackButton />}
             <Text className="flex-1 text-center font-poppins-semibold text-base text-primary">
               Planos de assinatura
             </Text>
-            {currentPlanId && <View className="h-10 w-10" />}
+            {canGoBack && <View className="h-10 w-10" />}
           </View>
 
           <Text className="font-poppins text-sm" style={{ color: TEXT_SECONDARY }}>
-            Escolha o plano ideal para você
+            {dependentId
+              ? "Escolha o plano do seu dependente"
+              : "Escolha o plano ideal para você"}
           </Text>
 
           {isLoading ? (

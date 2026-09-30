@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error-message";
 import { DatePickerField } from "@/components/DatePickerField";
 import { FormInput } from "@/components/FormInput";
 import { ModalSelect } from "@/components/ModalSelect";
@@ -61,8 +62,7 @@ export default function CreateDependentScreen() {
       });
       router.back();
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Erro ao cadastrar dependente";
-      Alert.alert("Erro", msg);
+      Alert.alert("Erro", describeApiError(e, "Erro ao cadastrar dependente"));
     }
   };
 

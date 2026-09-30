@@ -112,6 +112,7 @@ export class InMemoryStudentSubscriptionRepository
       if (
         sub.userId === userId &&
         sub.status === "active" &&
+        sub.dependentId === null &&
         planIds.has(sub.planId)
       ) {
         sub.status = "cancelled";

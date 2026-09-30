@@ -155,6 +155,11 @@ export class PaymentService {
       referenceMonth: body.referenceMonth,
       notes: body.notes ?? null,
       paidAt,
+      // Carried off the subscription, the same way all three webhook handlers
+      // do it. Without it a hand-confirmed month never reaches
+      // `GET /payments/dependent/:id`, which filters on this column, so the
+      // dependent's history stayed empty while the manager saw it as paid.
+      dependentId: sub.subscription.dependentId,
     });
 
     if (this.dispatcher) {
@@ -286,13 +291,20 @@ export class PaymentService {
       studentUserId,
       academyId,
     );
+    // A guardian's own subscriptions and their dependents' all carry the same
+    // `user_id`, so with no id to go on the only safe reading of "pay my plan"
+    // is the caller's own row — never a dependent's, which has its own id and
+    // its own price.
     const active = subscriptionId
       ? subs.find(
           (s) =>
             s.subscription.id === subscriptionId &&
             s.subscription.status === "active",
         )
-      : subs.find((s) => s.subscription.status === "active");
+      : subs.find(
+          (s) =>
+            s.subscription.status === "active" && !s.subscription.dependentId,
+        );
 
     if (!active) {
       throw new HttpError(404, "No active subscription found");
@@ -665,11 +677,20 @@ export class PaymentService {
     });
   }
 
+  /**
+   * The student's own months, and only those. A dependent's payment is written
+   * against the guardian's `user_id`, so this used to hand back the whole
+   * household — which made the app mark the student's own month as paid the
+   * moment a dependent's was. The dependent's history has its own endpoint.
+   */
   async listForStudent(
     studentUserId: string,
     academyId: string,
   ): Promise<PaymentRow[]> {
-    return this.paymentRepo.findByAcademy(academyId, { userId: studentUserId });
+    return this.paymentRepo.findByAcademy(academyId, {
+      userId: studentUserId,
+      withoutDependent: true,
+    });
   }
 
   async listForDependent(dependentId: string): Promise<PaymentRow[]> {

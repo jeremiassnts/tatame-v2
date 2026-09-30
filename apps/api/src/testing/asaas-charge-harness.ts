@@ -155,6 +155,8 @@ export async function setupAsaasCharges(
     service,
     client,
     payRepo,
+    subRepo,
+    planRepo,
     userRepo,
     managerId,
     academyId: academy.id,
