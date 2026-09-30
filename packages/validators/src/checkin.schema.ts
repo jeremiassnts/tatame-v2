@@ -20,6 +20,8 @@ export const checkinResponseSchema = z.object({
   checkedInAt: z.string(),
   date: z.string(),
   weekReference: z.string(),
+  /** Set when the check-in was taken for a dependent; null for the caller's own. */
+  dependentId: z.string().uuid().nullable(),
 });
 
 export const createCheckinResponseSchema = z.object({

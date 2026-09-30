@@ -88,6 +88,7 @@ function formatCheckinRow(row: CheckinRow) {
     checkedInAt: row.checkedInAt.toISOString(),
     date: dateStr,
     weekReference: weekStr,
+    dependentId: row.dependentId,
   };
 }
 

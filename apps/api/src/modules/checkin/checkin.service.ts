@@ -278,7 +278,10 @@ export class CheckinService {
           );
         }
 
-        if (this.engagementService) {
+        // Own check-ins only. Milestones celebrate what the account holder
+        // trained, so taking a dependent to class must not advance the
+        // guardian's count (TAT-181).
+        if (this.engagementService && !opts.dependentId) {
           void this.engagementService.checkMilestone(opts.userId);
         }
 

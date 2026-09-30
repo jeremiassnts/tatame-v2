@@ -1,4 +1,4 @@
-import { and, count, desc, eq, lt, sql } from "drizzle-orm";
+import { and, count, desc, eq, isNull, lt, sql } from "drizzle-orm";
 import { checkins, classes, type Database } from "@tatame/db";
 import type {
   CheckinHistoryItem,
@@ -33,6 +33,7 @@ export class PostgresCheckinRepository implements ICheckinRepository {
         and(
           eq(checkins.userId, userId),
           eq(checkins.weekReference, weekReference),
+          isNull(checkins.dependentId),
         ),
       );
     return Number(row?.c ?? 0);
@@ -79,7 +80,10 @@ export class PostgresCheckinRepository implements ICheckinRepository {
     userId: string,
     opts: { cursor?: string; limit: number },
   ): Promise<CheckinHistoryItem[]> {
-    const conditions = [eq(checkins.userId, userId)];
+    const conditions = [
+      eq(checkins.userId, userId),
+      isNull(checkins.dependentId),
+    ];
     if (opts.cursor) {
       conditions.push(lt(checkins.weekReference, opts.cursor));
     }
@@ -139,7 +143,7 @@ export class PostgresCheckinRepository implements ICheckinRepository {
     const [row] = await this.db
       .select({ c: count() })
       .from(checkins)
-      .where(eq(checkins.userId, userId));
+      .where(and(eq(checkins.userId, userId), isNull(checkins.dependentId)));
     return Number(row?.c ?? 0);
   }
 
@@ -150,7 +154,12 @@ export class PostgresCheckinRepository implements ICheckinRepository {
         count: count(),
       })
       .from(checkins)
-      .where(eq(checkins.weekReference, weekReference))
+      .where(
+        and(
+          eq(checkins.weekReference, weekReference),
+          isNull(checkins.dependentId),
+        ),
+      )
       .groupBy(checkins.userId);
     return rows.map((r) => ({ userId: r.userId, count: Number(r.count) }));
   }
@@ -159,6 +168,7 @@ export class PostgresCheckinRepository implements ICheckinRepository {
     const rows = await this.db
       .select({ userId: checkins.userId })
       .from(checkins)
+      .where(isNull(checkins.dependentId))
       .groupBy(checkins.userId)
       .having(sql`max(${checkins.date}) < ${beforeDate}`);
     return rows.map((r) => r.userId);
