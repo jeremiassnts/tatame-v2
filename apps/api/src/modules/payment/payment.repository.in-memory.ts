@@ -52,7 +52,12 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
 
   async findByAcademy(
     academyId: string,
-    opts: { subscriptionId?: string; userId?: string; limit?: number },
+    opts: {
+      subscriptionId?: string;
+      userId?: string;
+      limit?: number;
+      withoutDependent?: boolean;
+    },
   ): Promise<PaymentRow[]> {
     const sorted = this.rows
       .filter((p) => p.academyId === academyId)
@@ -61,6 +66,7 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
           !opts.subscriptionId || p.subscriptionId === opts.subscriptionId,
       )
       .filter((p) => !opts.userId || p.userId === opts.userId)
+      .filter((p) => !opts.withoutDependent || p.dependentId === null)
       .sort(
         (a, b) =>
           new Date(b.paidAt).getTime() - new Date(a.paidAt).getTime(),

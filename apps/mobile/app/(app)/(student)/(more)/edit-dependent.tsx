@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error-message";
 import { DatePickerField } from "@/components/DatePickerField";
 import { FormInput } from "@/components/FormInput";
 import { BELT_LABELS_SHORT, BELT_COLORS, KIDS_BELTS } from "@/lib/belts";
@@ -65,8 +66,7 @@ export default function EditDependentScreen() {
       });
       router.back();
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Erro ao salvar dependente";
-      Alert.alert("Erro", msg);
+      Alert.alert("Erro", describeApiError(e, "Erro ao salvar dependente"));
     }
   };
 

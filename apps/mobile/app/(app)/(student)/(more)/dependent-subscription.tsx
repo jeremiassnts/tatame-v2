@@ -1,5 +1,6 @@
 import { BackButton } from "@/components/BackButton";
 import { CARD_PAYMENT_ENABLED } from "@/constants/payment";
+import { describeApiError } from "@/lib/api-error-message";
 import { useDependent, useDependentPayments, useDependentSubscription, useDependentWeeklyCheckinCount } from "@/lib/hooks/use-dependents";
 import { useCreateCheckout } from "@/lib/hooks/use-subscription";
 import { useQueryClient } from "@tanstack/react-query";
@@ -9,6 +10,7 @@ import { Calendar, ChevronRight, CreditCard, QrCode } from "lucide-react-native"
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -81,16 +83,20 @@ export default function DependentSubscriptionScreen() {
       await WebBrowser.openBrowserAsync(result.checkoutUrl);
       setShowProcessingBanner(true);
       queryClient.invalidateQueries({ queryKey: ["payments", dependentId] });
-    } catch {
-      // Checkout creation failed
+    } catch (e) {
+      Alert.alert(
+        "Erro",
+        describeApiError(e, "Não foi possível iniciar o pagamento."),
+      );
     }
   };
 
   const handlePayPix = () => {
     router.push({
-      pathname: "/(app)/(student)/(subscription)/pix-payment",
+      pathname: "/(app)/pix-payment",
       params: {
         subscriptionId: subscription!.id,
+        dependentId: dependentId!,
         planName: plan!.name,
         priceCents: String(plan!.priceCents),
       },

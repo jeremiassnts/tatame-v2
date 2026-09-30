@@ -1,4 +1,4 @@
-import { and, desc, eq, sum } from "drizzle-orm";
+import { and, desc, eq, isNull, sum } from "drizzle-orm";
 import {
   payments,
   pendingAsaasPayments,
@@ -74,7 +74,12 @@ export class PostgresPaymentRepository implements IPaymentRepository {
 
   async findByAcademy(
     academyId: string,
-    opts: { subscriptionId?: string; userId?: string; limit?: number },
+    opts: {
+      subscriptionId?: string;
+      userId?: string;
+      limit?: number;
+      withoutDependent?: boolean;
+    },
   ): Promise<PaymentRow[]> {
     const conditions = [eq(payments.academyId, academyId)];
     if (opts.subscriptionId) {
@@ -82,6 +87,9 @@ export class PostgresPaymentRepository implements IPaymentRepository {
     }
     if (opts.userId) {
       conditions.push(eq(payments.userId, opts.userId));
+    }
+    if (opts.withoutDependent) {
+      conditions.push(isNull(payments.dependentId));
     }
     const whereClause =
       conditions.length === 1 ? conditions[0]! : and(...conditions);

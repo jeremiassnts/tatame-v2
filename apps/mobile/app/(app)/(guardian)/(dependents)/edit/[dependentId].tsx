@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error-message";
 import { DatePickerField } from "@/components/DatePickerField";
 import { FormInput } from "@/components/FormInput";
 import { ModalSelect } from "@/components/ModalSelect";
@@ -70,8 +71,7 @@ export default function EditDependentScreen() {
       });
       router.back();
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Erro ao salvar dependente";
-      Alert.alert("Erro", msg);
+      Alert.alert("Erro", describeApiError(e, "Erro ao salvar dependente"));
     }
   };
 
@@ -83,12 +83,16 @@ export default function EditDependentScreen() {
     );
   }
 
-  const belt = dependent.belt as Belt;
-  const beltColor = BELT_COLORS[belt] ?? "#525252";
-  const beltLabel = BELT_LABELS_SHORT[belt] ?? dependent.belt;
+  // `GET /dependents/:id` answers the rank under `currentBelt`; reading
+  // `dependent.belt` / `dependent.stripes` — fields the API never sends — left
+  // this row blank, and the student screen had it right all along.
+  const belt = dependent.currentBelt?.belt as Belt | undefined;
+  const beltColor = belt ? (BELT_COLORS[belt] ?? "#525252") : "#525252";
+  const beltLabel = belt ? (BELT_LABELS_SHORT[belt] ?? belt) : "—";
+  const stripes = dependent.currentBelt?.stripes ?? 0;
   const stripesLabel = STRIPES_OPTIONS.find(
-    (s) => s.value === String(dependent.stripes),
-  )?.label ?? `${dependent.stripes} graus`;
+    (s) => s.value === String(stripes),
+  )?.label ?? `${stripes} graus`;
 
   return (
     <SafeAreaView className="flex-1 bg-background pt-4" edges={["top"]}>
@@ -152,7 +156,7 @@ export default function EditDependentScreen() {
                 />
                 <Text className="font-poppins text-[15px] text-primary">
                   {beltLabel}
-                  {dependent.stripes > 0 ? ` · ${stripesLabel}` : ""}
+                  {stripes > 0 ? ` · ${stripesLabel}` : ""}
                 </Text>
               </View>
               <Lock size={16} color="#525252" />
