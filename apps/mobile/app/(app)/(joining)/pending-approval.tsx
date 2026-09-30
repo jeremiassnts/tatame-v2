@@ -1,3 +1,4 @@
+import { SignOutButton } from "@/components/SignOutButton";
 import { useCancelMembership } from "@/lib/hooks/use-membership";
 import { useCurrentUser } from "@/lib/hooks/use-user";
 import { useRouter } from "expo-router";
@@ -78,15 +79,20 @@ export default function PendingApprovalScreen() {
 
         <View className="flex-1" />
 
-        <Pressable
-          onPress={handleCancelMembership}
-          disabled={cancelMembership.isPending}
-          className="items-center justify-center rounded-xl border border-surface-border bg-surface py-3.5"
-        >
-          <Text className="font-poppins-semibold text-sm" style={{ color: "#FF453A" }}>
-            Cancelar solicitação
-          </Text>
-        </Pressable>
+        <View style={{ gap: 4 }}>
+          <Pressable
+            onPress={handleCancelMembership}
+            disabled={cancelMembership.isPending}
+            className="items-center justify-center rounded-xl border border-surface-border bg-surface py-3.5"
+          >
+            <Text className="font-poppins-semibold text-sm" style={{ color: "#FF453A" }}>
+              Cancelar solicitação
+            </Text>
+          </Pressable>
+
+          {/* Signing out leaves the request pending — cancelling is the destructive path. */}
+          <SignOutButton disabled={cancelMembership.isPending} />
+        </View>
       </View>
     </SafeAreaView>
   );
