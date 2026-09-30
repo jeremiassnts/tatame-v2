@@ -52,6 +52,7 @@ function buildService(opts: {
   classRow?: ReturnType<typeof makeClass>;
   checkins?: CheckinRow[];
   membershipOverrides?: Partial<ReturnType<typeof makeMembership>>;
+  engagementService?: ConstructorParameters<typeof CheckinService>[6];
 }) {
   const academyId = opts.academyId;
   const userId = opts.userId;
@@ -103,15 +104,21 @@ function buildService(opts: {
     }),
   ]);
 
+  const checkinRepo = new InMemoryCheckinRepository(opts.checkins ?? [], [
+    classRow,
+  ]);
+
   const svc = new CheckinService(
     memRepo,
     new InMemoryClassRepository([classRow]),
     subRepo,
     payRepo,
-    new InMemoryCheckinRepository(opts.checkins ?? []),
+    checkinRepo,
+    undefined,
+    opts.engagementService,
   );
 
-  return { svc, classRow, plan, sub };
+  return { svc, classRow, plan, sub, checkinRepo };
 }
 
 describe("CheckinService", () => {
@@ -1141,6 +1148,202 @@ describe("CheckinService", () => {
       ).rejects.toMatchObject({
         statusCode: 409,
         message: "Limite semanal de check-ins atingido",
+      });
+    });
+
+    /**
+     * TAT-181. A dependent's row carries the guardian's `user_id`, so anything
+     * keyed on `user_id` alone used to fold the child's training into the
+     * parent's.
+     */
+    describe("the guardian's own counters ignore their dependents", () => {
+      /** Guardian and dependent sharing one plan, capped at 2/week by default. */
+      function buildHousehold(weeklyCheckinLimit: number | null = 2) {
+        const academyId = randomUUID();
+        const guardianId = randomUUID();
+        const dependentId = randomUUID();
+
+        const plan = makeSubscriptionPlan({ academyId, weeklyCheckinLimit });
+        const sub = makeStudentSubscription({
+          userId: guardianId,
+          planId: plan.id,
+          status: "active",
+          startsAt: "2026-01-01",
+          expiresAt: "2027-01-01",
+        });
+        const depSub = makeStudentSubscription({
+          userId: guardianId,
+          planId: plan.id,
+          dependentId,
+          status: "active",
+          startsAt: "2026-01-01",
+          expiresAt: "2027-01-01",
+        });
+
+        return { academyId, guardianId, dependentId, plan, sub, depSub };
+      }
+
+      /** The dependent's two sessions, both carrying the guardian's id. */
+      function dependentCheckins(
+        guardianId: string,
+        dependentId: string,
+        classId: string,
+      ): CheckinRow[] {
+        return [0, 1].map((i) =>
+          makeCheckin({
+            userId: guardianId,
+            dependentId,
+            classId,
+            date: `2026-03-${16 + i}`,
+            weekReference: WEEK_REFERENCE,
+          }),
+        );
+      }
+
+      it("a dependent's check-ins do not consume the guardian's weekly limit", async () => {
+        const h = buildHousehold();
+        const classRow = makeClass({
+          academyId: h.academyId,
+          dayOfWeek: 3,
+          startTime: "18:00:00",
+          endTime: "19:00:00",
+          capacity: 10,
+          isActive: true,
+        });
+
+        const { svc } = buildService({
+          academyId: h.academyId,
+          userId: h.guardianId,
+          plan: h.plan,
+          sub: h.sub,
+          extraSubs: [h.depSub],
+          classRow,
+          checkins: dependentCheckins(h.guardianId, h.dependentId, classRow.id),
+          payments: [
+            makePayment({
+              subscriptionId: h.sub.id,
+              userId: h.guardianId,
+              academyId: h.academyId,
+              referenceMonth: "2026-03-01",
+            }),
+          ],
+        });
+
+        const { checkin } = await svc.checkIn({
+          userId: h.guardianId,
+          academyId: h.academyId,
+          academyRole: "student",
+          classId: classRow.id,
+          sessionDate: SESSION_DATE,
+        });
+
+        expect(checkin.dependentId).toBeNull();
+      });
+
+      it("getWeeklyCount counts only the account holder's own check-ins", async () => {
+        const h = buildHousehold();
+        const classRow = makeClass({
+          academyId: h.academyId,
+          dayOfWeek: 3,
+          startTime: "18:00:00",
+          endTime: "19:00:00",
+          capacity: 10,
+          isActive: true,
+        });
+        const { svc } = buildService({
+          academyId: h.academyId,
+          userId: h.guardianId,
+          plan: h.plan,
+          sub: h.sub,
+          extraSubs: [h.depSub],
+          classRow,
+          checkins: dependentCheckins(h.guardianId, h.dependentId, classRow.id),
+        });
+
+        await expect(svc.getWeeklyCount(h.guardianId)).resolves.toMatchObject({
+          count: 0,
+        });
+        await expect(
+          svc.getWeeklyCountForDependent(h.dependentId),
+        ).resolves.toMatchObject({ count: 2 });
+      });
+
+      it("each history holds only its own side of the household", async () => {
+        const h = buildHousehold();
+        const classRow = makeClass({
+          academyId: h.academyId,
+          dayOfWeek: 3,
+          startTime: "18:00:00",
+          endTime: "19:00:00",
+          capacity: 10,
+          isActive: true,
+        });
+        const ownCheckin = makeCheckin({
+          userId: h.guardianId,
+          dependentId: null,
+          classId: classRow.id,
+          date: "2026-03-17",
+          weekReference: WEEK_REFERENCE,
+        });
+        const { svc } = buildService({
+          academyId: h.academyId,
+          userId: h.guardianId,
+          plan: h.plan,
+          sub: h.sub,
+          extraSubs: [h.depSub],
+          classRow,
+          checkins: [
+            ownCheckin,
+            ...dependentCheckins(h.guardianId, h.dependentId, classRow.id),
+          ],
+        });
+
+        const mine = await svc.getHistory(h.guardianId, { limit: 4 });
+        expect(mine.items).toHaveLength(1);
+        expect(mine.items[0]?.count).toBe(1);
+        expect(mine.items[0]?.checkins[0]?.id).toBe(ownCheckin.id);
+
+        const theirs = await svc.getHistoryForDependent(h.dependentId, {
+          limit: 4,
+        });
+        expect(theirs.items[0]?.count).toBe(2);
+        expect(
+          theirs.items[0]?.checkins.map((c) => c.id),
+        ).not.toContain(ownCheckin.id);
+      });
+
+      it("a dependent's check-in does not advance the guardian's milestones", async () => {
+        const h = buildHousehold(null);
+        const checkMilestone = vi.fn().mockResolvedValue(undefined);
+        const { svc, classRow } = buildService({
+          academyId: h.academyId,
+          userId: h.guardianId,
+          plan: h.plan,
+          sub: h.sub,
+          extraSubs: [h.depSub],
+          engagementService: {
+            checkMilestone,
+          } as unknown as ConstructorParameters<typeof CheckinService>[6],
+        });
+
+        await svc.checkIn({
+          userId: h.guardianId,
+          academyId: h.academyId,
+          academyRole: "student",
+          classId: classRow.id,
+          sessionDate: SESSION_DATE,
+          dependentId: h.dependentId,
+        });
+        expect(checkMilestone).not.toHaveBeenCalled();
+
+        await svc.checkIn({
+          userId: h.guardianId,
+          academyId: h.academyId,
+          academyRole: "student",
+          classId: classRow.id,
+          sessionDate: SESSION_DATE,
+        });
+        expect(checkMilestone).toHaveBeenCalledWith(h.guardianId);
       });
     });
 
