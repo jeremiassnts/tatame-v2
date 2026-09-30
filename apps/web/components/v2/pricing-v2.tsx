@@ -13,7 +13,7 @@ const proPlan = {
     "Cadastre quantos alunos quiser",
     "Monte quantas turmas precisar",
     "Saiba quanto entra e quanto sai",
-    "Receba pagamentos via Pix e cartão direto no app",
+    "Receba mensalidades via Pix direto no app",
     "Adicione todos os seus instrutores",
     "Gerencie dependentes e responsáveis",
   ],

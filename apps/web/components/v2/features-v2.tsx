@@ -4,7 +4,7 @@ import {
   Calendar,
   UserCheck,
   Award,
-  CreditCard,
+  QrCode,
   Users,
   Baby,
   Smartphone,
@@ -41,10 +41,10 @@ const featuresBlock1: Feature[] = [
       "Acompanhe a evolução de cada aluno com histórico completo de faixas, graus e observações de promoção.",
   },
   {
-    icon: CreditCard,
+    icon: QrCode,
     title: "Pagamentos",
     description:
-      "Receba mensalidades via Pix ou cartão direto no app. Veja quem pagou, quem está atrasado e seu histórico financeiro.",
+      "Receba mensalidades via Pix direto no app. Veja quem pagou, quem está atrasado e seu histórico financeiro.",
   },
 ];
 
