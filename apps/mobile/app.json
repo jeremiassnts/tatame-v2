@@ -2,7 +2,7 @@
   "expo": {
     "name": "Tatame",
     "slug": "tatame",
-    "version": "2.1.2",
+    "version": "2.1.3",
     "orientation": "portrait",
     "scheme": "tatame",
     "userInterfaceStyle": "dark",
@@ -21,7 +21,7 @@
           "pt-BR"
         ]
       },
-      "buildNumber": "1"
+      "buildNumber": "2"
     },
     "android": {
       "googleServicesFile": "./google-services.json",
@@ -31,6 +31,7 @@
         "backgroundColor": "#0C0C0C"
       },
       "package": "com.anonymous.tatame",
+      "versionCode": 2,
       "permissions": [
         "android.permission.CAMERA"
       ]
