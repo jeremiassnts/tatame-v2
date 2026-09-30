@@ -110,12 +110,12 @@ the login screen.
 
 | Requirement ID | Story | Task | Status |
 | -------------- | ----- | ---- | ------ |
-| SIGNOUT-01 | Shared control: cache clear → signOut → replace `/(auth)` | T1 | Pending |
-| SIGNOUT-02 | Double-tap and in-flight guarding | T1 | Pending |
-| SIGNOUT-03 | P1: search-academy exit | T2 | Pending |
-| SIGNOUT-04 | P1: pending-approval exit, request preserved | T3 | Pending |
-| SIGNOUT-05 | P1: create-academy exit, disabled while submitting | T4 | Pending |
-| SIGNOUT-06 | Other pre-role screens audited and ruled out in writing | T5 | Pending |
+| SIGNOUT-01 | Shared control: cache clear → signOut → replace `/(auth)` | T1 | Verified |
+| SIGNOUT-02 | Double-tap and in-flight guarding | T1 | Verified |
+| SIGNOUT-03 | P1: search-academy exit | T2 | Verified |
+| SIGNOUT-04 | P1: pending-approval exit, request preserved | T3 | Verified |
+| SIGNOUT-05 | P1: create-academy exit, disabled while submitting | T4 | Verified |
+| SIGNOUT-06 | Other pre-role screens audited and ruled out in writing | T5 | Verified |
 
 **Coverage:** 6 total, 6 mapped to tasks, 0 unmapped
 

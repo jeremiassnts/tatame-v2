@@ -33,3 +33,20 @@ first so no component can re-render against the previous account's data during s
 `app/_layout.tsx` provides a different instance. Reading from context clears the same client
 the screens actually read through — importing the singleton would be correct by accident
 here and wrong the moment the provider nesting changes.
+
+## Status
+
+All five tasks implemented. `tsc --noEmit` produces the same 11 errors as the
+pre-change baseline — none of them in the four files this feature touches, and the
+count did not grow. The pre-commit hook ran workspace `typecheck` and `test:unit`
+(694 tests) green on every commit.
+
+Still unverified: the three *Independent Test* walkthroughs, which need a device.
+Run them in Expo Go before merging.
+
+## Follow-up
+
+TAT-183 AC 4 — a session that goes invalid while the user sits on a joining screen
+should redirect on its own — is **not** addressed here. `(app)/_layout.tsx` is still an
+unguarded `Stack`, and `useCurrentUser` has a 5-minute `staleTime`, so a revoked session
+produces no new request while the screen sits. Needs its own task.
