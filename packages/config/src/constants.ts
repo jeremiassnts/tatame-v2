@@ -69,9 +69,17 @@ export function apiBaseUrl(): string {
  * Payment processor fees, as shown to managers on the plan-creation screen.
  *
  * These are the processor's fees, not Tatame's — the product charges the manager
- * a Pro subscription and takes no cut of a student's mensalidade. They live here
- * so the daily summary's "líquido a repassar" and the manager-facing copy cannot
- * drift apart on the numbers.
+ * a Pro subscription and takes no cut of a student's mensalidade.
+ *
+ * The only consumer left is the daily platform summary's "Líquido dos managers"
+ * (`platform-summary.service.ts`). The manager-facing screens no longer read
+ * these: since TAT-104 they call `GET /payout-account/fees`, which reports the
+ * rates Asaas actually negotiated for that account.
+ *
+ * So the numbers below are still the pre-Asaas card/Pix rates, and the daily
+ * summary is the one place that has not caught up. Fixing that means feeding
+ * `NormalizedFees` into the summary rather than editing these constants, since
+ * the real rates are per-account.
  */
 export const CARD_FEE_PERCENT_BPS = 399; // 3.99%
 export const CARD_FEE_FIXED_CENTS = 39; // R$ 0,39

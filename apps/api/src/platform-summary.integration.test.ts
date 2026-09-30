@@ -101,43 +101,6 @@ describe("PostgresPlatformSummaryRepository", () => {
     expect(card).toMatchObject({ count: 1, amountCents: 20_000 });
   });
 
-  it("counts only untransferred card and Pix payments as owed", async () => {
-    const { owner, academy } = await seedAcademy();
-    const plan = makeSubscriptionPlan({ academyId: academy.id });
-    await ctx.db.insert(subscriptionPlans).values(plan);
-    const sub = makeStudentSubscription({ userId: owner.id, planId: plan.id });
-    await ctx.db.insert(studentSubscriptions).values(sub);
-
-    const base = {
-      subscriptionId: sub.id,
-      userId: owner.id,
-      academyId: academy.id,
-      // The factory defaults this to a random uuid, which no `users` row has.
-      confirmedBy: null,
-    };
-    await ctx.db.insert(payments).values([
-      makePayment({ ...base, method: "pix", amountCents: 10_000 }),
-      makePayment({
-        ...base,
-        method: "pix",
-        amountCents: 7_000,
-        transferredAt: INSIDE,
-      }),
-      makePayment({ ...base, method: "manual", amountCents: 50_000 }),
-    ]);
-
-    const rows = await repo.pendingTransfersPerAcademy();
-
-    expect(rows).toEqual([
-      {
-        academyId: academy.id,
-        method: "pix",
-        count: 1,
-        amountCents: 10_000,
-      },
-    ]);
-  });
-
   it("counts a Pix QR code as unpaid only while no payment references it", async () => {
     const { owner, academy } = await seedAcademy();
     const plan = makeSubscriptionPlan({ academyId: academy.id });

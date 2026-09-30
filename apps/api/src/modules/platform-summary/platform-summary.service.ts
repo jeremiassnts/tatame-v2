@@ -106,11 +106,6 @@ function perTransactionFee(
   return percentOnTotal + fixedPerTransaction * count;
 }
 
-/** Only `pix` and `card` flow through the platform; `manual` is cash. */
-function transferable(rows: SummaryMethodTotal[]): SummaryMethodTotal[] {
-  return rows.filter((r) => r.method !== "manual");
-}
-
 function toMethodTotals(rows: AcademyMethodAmount[]): SummaryMethodTotal[] {
   return rows
     .map((r) => ({
@@ -179,7 +174,6 @@ export class PlatformSummaryService {
       academyRows,
       activeStudents,
       overdueStudents,
-      pendingTransfers,
       activeSubscriptions,
       expiringSubscriptions,
       managerSubs,
@@ -190,7 +184,6 @@ export class PlatformSummaryService {
       this.repo.listAcademies(),
       this.repo.activeStudentsPerAcademy(),
       this.repo.overdueStudentsPerAcademy(monthOf(referenceDate), referenceDate),
-      this.repo.pendingTransfersPerAcademy(),
       this.repo.activeSubscriptionsPerAcademy(referenceDate),
       this.repo.expiringSubscriptionsPerAcademy(
         referenceDate,
@@ -206,7 +199,6 @@ export class PlatformSummaryService {
     const overdueByAcademy = indexCounts(overdueStudents);
     const activeSubsByAcademy = indexCounts(activeSubscriptions);
     const expiringByAcademy = indexCounts(expiringSubscriptions);
-    const pendingByAcademy = groupByAcademy(pendingTransfers);
 
     const academies: AcademySummary[] = academyRows.map((academy) => {
       const byMethod = toMethodTotals(day.payments.get(academy.id) ?? []);
@@ -234,9 +226,6 @@ export class PlatformSummaryService {
         byMethod,
         unpaidPixCount: unpaidPix?.count ?? 0,
         unpaidPixCents: unpaidPix?.amountCents ?? 0,
-        pendingTransfer: splitMoney(
-          transferable(toMethodTotals(pendingByAcademy.get(academy.id) ?? [])),
-        ),
         subscriptionsCreated: day.newSubscriptions.get(academy.id) ?? 0,
         subscriptionsExpiringIn7Days: expiringByAcademy.get(academy.id) ?? 0,
         subscriptionsCanceled: day.canceledSubscriptions.get(academy.id) ?? 0,
@@ -252,7 +241,6 @@ export class PlatformSummaryService {
     });
 
     const allMethods = toMethodTotals([...day.payments.values()].flat());
-    const allPending = transferable(toMethodTotals(pendingTransfers));
 
     return {
       referenceDate: formatBrDate(referenceDate),
@@ -260,7 +248,6 @@ export class PlatformSummaryService {
       revenuePreviousGrossCents: [...previousDay.payments.values()]
         .flat()
         .reduce((total, p) => total + p.amountCents, 0),
-      pendingTransfer: splitMoney(allPending),
       newUsers: { value: day.newUsers, previous: previousDay.newUsers },
       newAcademies: day.newAcademies,
       managerSubscriptions: {

@@ -20,8 +20,6 @@ type AcademyDetail = {
   };
   studentCount: number;
   revenueCentsCurrentMonth: number;
-  transferredCents: number;
-  pendingTransferCents: number;
 };
 
 type PaymentItem = {
@@ -31,7 +29,6 @@ type PaymentItem = {
   method: "manual" | "card" | "pix";
   referenceMonth: string;
   paidAt: string;
-  transferredAt: string | null;
 };
 
 function formatBRL(cents: number): string {
@@ -133,22 +130,11 @@ export default function AcademyDetailPage() {
       <div className="flex gap-4">
         <KpiCard label="Alunos" value={detail.studentCount.toLocaleString("pt-BR")} />
         <KpiCard label="Receita no Mês" value={formatBRL(detail.revenueCentsCurrentMonth)} />
-        <KpiCard
-          label="Já Repassado"
-          value={formatBRL(detail.transferredCents)}
-          valueColor="text-success"
-        />
-        <KpiCard
-          label="A Repassar"
-          value={formatBRL(detail.pendingTransferCents)}
-          valueColor="text-[#FFD60A]"
-        />
       </div>
 
       {/* Payments Table */}
       <PaymentsTable
         payments={payments}
-        academyId={id}
         total={total}
         limit={limit}
         offset={offset}

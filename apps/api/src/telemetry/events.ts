@@ -142,7 +142,6 @@ export const CATALOG = {
    * cause.
    */
   "payment.reversed": { domain: "payment", outcome: "rejected" },
-  "payment.transferred": { domain: "payment", outcome: "success" },
 
   // --- payout_account (the academy's Asaas subaccount) --------------------
   "payout_account.created": { domain: "payout_account", outcome: "success" },

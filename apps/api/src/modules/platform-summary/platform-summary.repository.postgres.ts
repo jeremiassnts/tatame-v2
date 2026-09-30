@@ -119,30 +119,6 @@ export class PostgresPlatformSummaryRepository
     return rows;
   }
 
-  async pendingTransfersPerAcademy(): Promise<AcademyMethodAmount[]> {
-    const rows = await this.db
-      .select({
-        academyId: payments.academyId,
-        method: payments.method,
-        count: count(),
-        amountCents: sum(payments.amountCents),
-      })
-      .from(payments)
-      .where(
-        and(
-          sql`${payments.method} IN ('card', 'pix')`,
-          isNull(payments.transferredAt),
-        ),
-      )
-      .groupBy(payments.academyId, payments.method);
-    return rows.map((r) => ({
-      academyId: r.academyId,
-      method: r.method as PaymentMethod,
-      count: r.count,
-      amountCents: cents(r.amountCents),
-    }));
-  }
-
   async activeSubscriptionsPerAcademy(today: string): Promise<AcademyCount[]> {
     const rows = await this.db
       .select({ academyId: subscriptionPlans.academyId, count: count() })

@@ -36,7 +36,6 @@ export class InMemoryPlatformSummaryRepository
   academies: AcademyRow[] = [];
   activeStudents: AcademyCount[] = [];
   overdueStudents: AcademyCount[] = [];
-  pendingTransfers: AcademyMethodAmount[] = [];
   activeSubscriptions: AcademyCount[] = [];
   expiringSubscriptions: AcademyCount[] = [];
   managerSubscriptions: ManagerSubscriptionCounts = { pro: 0, free: 0 };
@@ -68,10 +67,6 @@ export class InMemoryPlatformSummaryRepository
 
   async overdueStudentsPerAcademy(): Promise<AcademyCount[]> {
     return this.overdueStudents;
-  }
-
-  async pendingTransfersPerAcademy(): Promise<AcademyMethodAmount[]> {
-    return this.pendingTransfers;
   }
 
   async activeSubscriptionsPerAcademy(): Promise<AcademyCount[]> {

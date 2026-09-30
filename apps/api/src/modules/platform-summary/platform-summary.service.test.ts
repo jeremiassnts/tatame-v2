@@ -113,23 +113,6 @@ describe("PlatformSummaryService.buildReport", () => {
     expect(report.revenuePreviousGrossCents).toBe(15_000);
   });
 
-  it("excludes manual payments from the amount owed to the manager", async () => {
-    const { repo, service } = setup();
-    repo.pendingTransfers = [
-      { academyId: "a1", method: "pix", count: 1, amountCents: 10_000 },
-      { academyId: "a1", method: "manual", count: 1, amountCents: 90_000 },
-    ];
-
-    const report = await service.buildReport(DAY);
-
-    expect(report.academies[0]!.pendingTransfer).toEqual({
-      grossCents: 10_000,
-      feeCents: 80,
-      netCents: 9_920,
-    });
-    expect(report.pendingTransfer.grossCents).toBe(10_000);
-  });
-
   it("keeps the daily revenue gross across every method", async () => {
     const { repo, service } = setup();
     repo.setDay(DAY, {

@@ -11,12 +11,6 @@ type DashboardData = {
   subscribers: { total: number; pro: number; free: number };
   totalUsers: number;
   appRevenueCents: number;
-  transferredCents: number;
-};
-
-type FinancialSummary = {
-  transferredCents: number;
-  pendingTransferCents: number;
 };
 
 type CheckinItem = { date: string; count: number };
@@ -27,7 +21,6 @@ type AcademyItem = {
   managerPlan: string | null;
   managerPlanStatus: string | null;
   studentCount: number;
-  pendingTransferCents: number;
 };
 
 function formatBRL(cents: number): string {
@@ -37,7 +30,6 @@ function formatBRL(cents: number): string {
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
-  const [financial, setFinancial] = useState<FinancialSummary | null>(null);
   const [checkins, setCheckins] = useState<CheckinItem[]>([]);
   const [academies, setAcademies] = useState<AcademyItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,13 +42,11 @@ export default function AdminDashboardPage() {
 
     Promise.all([
       adminFetch<DashboardData>("/dashboard"),
-      adminFetch<FinancialSummary>("/dashboard/financial-summary"),
       adminFetch<{ items: CheckinItem[] }>("/dashboard/checkins"),
       adminFetch<{ items: AcademyItem[] }>("/dashboard/academies"),
     ])
-      .then(([d, f, c, a]) => {
+      .then(([d, c, a]) => {
         setDashboard(d);
-        setFinancial(f);
         setCheckins(c.items);
         setAcademies(a.items);
         setLoading(false);
@@ -66,7 +56,7 @@ export default function AdminDashboardPage() {
       });
   }, [router]);
 
-  if (loading || !dashboard || !financial) {
+  if (loading || !dashboard) {
     return (
       <div className="flex h-full items-center justify-center">
         <span className="text-sm text-text-muted">Carregando...</span>
@@ -103,31 +93,12 @@ export default function AdminDashboardPage() {
         />
         <KpiCard
           label="Total Movimentado"
-          value={formatBRL(dashboard.transferredCents)}
+          value={formatBRL(dashboard.appRevenueCents)}
         />
       </div>
 
       {/* Checkins Chart */}
       <CheckinsChart data={checkins} />
-
-      {/* Financial Summary */}
-      <div className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold text-text-primary">
-          Resumo Financeiro
-        </h2>
-        <div className="flex gap-4">
-          <KpiCard
-            label="Total Repassado"
-            value={formatBRL(financial.transferredCents)}
-            valueColor="text-success"
-          />
-          <KpiCard
-            label="A Repassar"
-            value={formatBRL(financial.pendingTransferCents)}
-            valueColor="text-[#FFD60A]"
-          />
-        </div>
-      </div>
 
       {/* Academies Table */}
       <div className="overflow-hidden rounded-[14px] border border-border bg-surface">
@@ -144,9 +115,7 @@ export default function AdminDashboardPage() {
           <span className="w-20 text-xs font-medium text-text-secondary">
             Alunos
           </span>
-          <span className="w-32 text-right text-xs font-medium text-text-secondary">
-            Pendência
-          </span>
+
         </div>
         {academies.map((academy) => (
           <Link
@@ -173,17 +142,6 @@ export default function AdminDashboardPage() {
             </span>
             <span className="w-20 text-sm text-text-secondary">
               {academy.studentCount}
-            </span>
-            <span
-              className={`w-32 text-right text-sm font-semibold ${
-                academy.pendingTransferCents > 0
-                  ? "text-[#FFD60A]"
-                  : "text-text-muted"
-              }`}
-            >
-              {academy.pendingTransferCents > 0
-                ? formatBRL(academy.pendingTransferCents)
-                : "—"}
             </span>
           </Link>
         ))}

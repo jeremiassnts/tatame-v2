@@ -7,7 +7,6 @@ import { HttpError } from "../../lib/http-error.js";
 import { adminOnly } from "../../middleware/admin-only.js";
 import { PostgresAdminRepository } from "./admin.repository.postgres.js";
 import { AdminService } from "./admin.service.js";
-import { emitEvent } from "../../telemetry/events.js";
 
 export const adminRouter = Router();
 
@@ -69,15 +68,6 @@ adminRouter.get("/dashboard/checkins", async (_req, res, next) => {
   }
 });
 
-adminRouter.get("/dashboard/financial-summary", async (_req, res, next) => {
-  try {
-    const data = await adminService.getFinancialSummary();
-    res.json(data);
-  } catch (e) {
-    next(e);
-  }
-});
-
 adminRouter.get("/dashboard/academies", async (_req, res, next) => {
   try {
     const data = await adminService.listAcademies();
@@ -117,34 +107,3 @@ adminRouter.get("/academies/:id/payments", async (req, res, next) => {
   }
 });
 
-const transferBodySchema = z.object({
-  paymentIds: z.array(z.string().uuid()).min(1),
-});
-
-adminRouter.patch("/payments/transfer", async (req, res, next) => {
-  try {
-    const body = transferBodySchema.safeParse(req.body);
-    if (!body.success) {
-      throw new HttpError(400, "Invalid body: paymentIds must be a non-empty array of UUIDs");
-    }
-    const updated = await adminService.confirmTransfer(body.data.paymentIds);
-    // One event for the batch, not one per payment: the id list is the detail,
-    // and a 200-payment payout should not become 200 log lines.
-    emitEvent("payment.transferred", {
-      extra: { count: body.data.paymentIds.length, batch: true },
-    });
-    res.json({ updated });
-  } catch (e) {
-    next(e);
-  }
-});
-
-adminRouter.patch("/payments/:id/transfer", async (req, res, next) => {
-  try {
-    const updated = await adminService.confirmTransfer([req.params.id]);
-    emitEvent("payment.transferred", { paymentId: req.params.id });
-    res.json({ updated });
-  } catch (e) {
-    next(e);
-  }
-});
