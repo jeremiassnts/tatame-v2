@@ -34,17 +34,23 @@ export default function GuardianHome() {
   const dayOfWeek = new Date().getDay();
   const { data: classes } = useClasses(dayOfWeek);
   const { data: announcementsData } = useAnnouncements(academyId);
-  const { data: dependentsData, isPending: dependentsPending } = useDependents();
+  const {
+    data: dependentsData,
+    isPending: dependentsPending,
+    isError: dependentsFailed,
+  } = useDependents();
   const [refreshing, setRefreshing] = useState(false);
 
-  // Redirect to onboarding if guardian has no dependents yet
+  // Redirect to onboarding if guardian has no dependents yet. A failed request
+  // is not an empty list: treating it as one sent a guardian who already has
+  // dependents back through onboarding every time the call fell over.
   useEffect(() => {
-    if (dependentsPending) return;
+    if (dependentsPending || dependentsFailed) return;
     const dependents = dependentsData?.items ?? [];
     if (dependents.length === 0) {
       router.replace("/(app)/(guardian)/(onboarding)/register-dependent");
     }
-  }, [dependentsPending, dependentsData, router]);
+  }, [dependentsPending, dependentsFailed, dependentsData, router]);
 
   const latestAnnouncements = announcementsData?.pages[0]?.items.slice(0, 3) ?? [];
 

@@ -366,12 +366,39 @@ New coverage: `apps/api/src/dependent.integration.test.ts` — 7 cases through t
 middleware chain, including the no-active-academy 403, the H3 regression, the H2 separation,
 the H4 manual payment and the H5 ownership refusal. Each was verified to fail before its fix.
 
-### Still open
+## 7. H1 — the ticket's leading hypothesis does not hold
 
-- **H1 — the product decision.** The guardian onboarding still has no academy-join step before
-  `register-dependent`, so a guardian with no membership dead-ends on 403. The error is now
-  legible ("Você precisa fazer parte de uma academia para continuar") but the flow is not
-  fixed. Deciding whether a guardian must hold a membership, or whether `POST /dependents`
-  should drop `requireActiveAcademy` for that role, is what the ticket asks to settle first.
+The ticket assumed the guardian onboarding goes straight to `register-dependent` with no
+academy step before it. Tracing the navigation says otherwise.
+
+`app/(app)/index.tsx:29` routes `instructor`, `student` **and** `guardian` the same way:
+
+```
+no activeMembership          → /(app)/(joining)/search-academy
+activeMembership = pending   → /(app)/(joining)/pending-approval
+activeMembership = active    → /(app)/(guardian)/(home)
+```
+
+and `register-dependent` is reached from exactly one place — `(guardian)/(home)/index.tsx:45`,
+the redirect fired when a guardian has no dependents yet. Reaching the guardian home already
+requires an `active` membership, so a guardian with no membership never gets to the screen:
+they are held at `search-academy`. `POST /dependents` cannot answer 403 there through normal
+navigation.
+
+**Decision: the guard stays as it is.** A dependent needs an `academy_id` — the column is
+`NOT NULL` and the whole feature (check-in, plans, payments) is scoped to an academy — so the
+guardian's membership is what says which academy the dependent belongs to. Dropping
+`requireActiveAcademy` for guardians would leave nothing to derive it from.
+
+What was actually broken on that screen was the error path: `onError` discarded the status
+and the message, so whatever the original failure was, it read as "Tente novamente". That is
+fixed, and any future failure now names itself.
+
+One real defect was found in the redirect while tracing it: `(guardian)/(home)` treated a
+**failed** `GET /dependents/me` as an empty list and bounced the guardian into onboarding.
+A guardian who already has dependents would be sent back through onboarding on any network
+blip. Now a failed request is left alone.
+
+### Still open
 - **T9** could not be run against the live dev data: September is already paid on both
   subscriptions, so the API refuses another charge. It is covered by the integration test.
