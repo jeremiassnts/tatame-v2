@@ -3,19 +3,23 @@
 **PR:** #27, `dev` → `main`, "Asaas payment split, Expo SDK 57 e correções de dependentes"
 **Written:** 2026-09-30
 **Base of the audit:** `554e92e` (merge-base with `main`: `2876166`)
-**State:** 5 commits on `dev`, **not pushed**. Working tree clean.
+**State:** 10 commits on `dev`, **not pushed**. Working tree clean.
+**Updated:** 2026-10-01 — second session. Read *Where to start* again; it changed.
 
-This picks up from a five-reviewer audit of the branch. Eight blockers were found;
-**five are fixed in the commits below, three remain.** Nothing else about the PR has
-changed.
+This picks up from a five-reviewer audit of the branch. Eight blockers were found.
+**Seven are fixed, one is open: B7.** B6 was fixed in `6e270ed`; B8 was closed by
+**removing its cause** — the enum rename is reverted and deferred to TAT-190 — so
+nothing in this PR is irreversible any more.
 
 ---
 
 ## Where to start
 
-Read *Remaining blockers* and pick one. Each carries the file, the line, and the fix.
-Recommended order: **B6** (one import), then **B8** (a runbook plus three lines of
-SQL), then **B7** (needs a product decision first).
+**B7 is the only blocker left**, and it needs a product decision before code — the
+operator has parked it for now. Everything else on the list below is done.
+
+What is left is not blockers but the *release sequence*, and step 2 is the one that
+decides whether any student payment is ever recorded. Read that section next.
 
 Then re-read *Decisions not to undo* before touching the payment or reporting code —
 several things that look like oversights are deliberate and say so in comments.
@@ -32,9 +36,19 @@ several things that look like oversights are deliberate and say so in comments.
 | `3f7db7c` | `[tat-181]` resolve a guardian's own plan from their own subscription |
 | `515d91d` | `[tat-104]` alert on the money events the Asaas rails actually emit |
 
+### Commits in the second session (2026-10-01)
+
+| SHA | What |
+| --- | --- |
+| `8f3caca` | `[tat-104]` describe the payment rail the split actually built (landing page) |
+| `a5bd409` | `[tat-104]` drop the chave PIX the split made dead |
+| `67599dd` | `docs(pr-27)` draft the legal copy the split makes necessary |
+| `6e270ed` | `[tat-104]` **B6** — stop showing students raw error codes on the Pix rail |
+| `691fd7a` | `[tat-104]` **B8** — postpone the `stripe` → `card` enum rename |
+
 Each commit message carries the full reasoning; this file does not repeat it.
 
-### Gates, run on `515d91d`
+### Gates, re-run on `691fd7a`
 
 | Gate | Result |
 | --- | --- |
@@ -45,47 +59,38 @@ Each commit message carries the full reasoning; this file does not repeat it.
 | `npx turbo lint` | 0 errors, 5 warnings (all pre-existing in `apps/web`) |
 
 The integration suite replays the migration journal into a fresh schema, so it also
-proves `0021`–`0023` apply cleanly. It needs Docker running (testcontainers).
+proves `0021`–`0022` apply cleanly — `0023` is gone, see B8. It needs Docker running
+(testcontainers).
 
 **`npx turbo typecheck` does not cover `apps/mobile`** — that script is
 `echo 'skipped: …'`. The real check is `cd apps/mobile && npx tsc --noEmit -p
-tsconfig.json`, which reports **5 errors**: 4 pre-existing `Belt`-typing issues, and
-one this PR introduced with the TypeScript 6.0.3 bump (`app/_layout.tsx(1,8) TS2882`,
-the `global.css` side-effect import). None are mine; the count was 5 before this
-session and is 5 now.
+tsconfig.json`, which reports **4 errors**, all pre-existing `Belt`-typing issues.
+
+**Correction to the first session's note:** it recorded 5, counting
+`app/_layout.tsx(1,8) TS2882` on the `global.css` side-effect import. That error does
+not reproduce. Measured against the branch point with `git stash`: 4 before, 4 after.
 
 ---
 
-## Remaining blockers
+## Blockers
 
-### B6 — Students see raw error codes on the only payment rail
+### B6 — Students see raw error codes on the only payment rail — **FIXED** (`6e270ed`)
 
-`apps/mobile/components/PixPaymentView.tsx:122-128`
+`PixPaymentView` now calls `describeApiError`, so `PAYOUT_ACCOUNT_REQUIRED` and
+`CPF_REQUIRED` render their Portuguese sentences instead of the identifier.
 
-```js
-const message =
-  error instanceof Error && error.message
-    ? error.message
-    : "Não foi possível gerar o QR Code. Tente novamente.";
-```
+**The prescribed fix was incomplete.** The import alone left the third symptom in
+place: a 409 still rendered `Payment already exists for this period` in English,
+because an *uncoded* `HttpError` answers the same string in both response fields and
+`describeApiError` returned `detail` before consulting its `TRANSLATED` map. Four of
+that map's six entries were unreachable for the same reason — only the two sent by
+middleware, which omits `message`, ever fired. The lookup now runs first. That also
+fixes the 409 in the 9 screens that already used the helper.
 
-`middleware/error-handler.ts:16` sets the response `error` field to
-`err.details?.code ?? err.message`, and `lib/api.ts` maps that field onto
-`ApiError.message`. So any coded failure renders the identifier.
-
-The charge is generated on mount, so a student at an academy that has not finished
-Asaas onboarding is greeted by an alert reading **`PAYOUT_ACCOUNT_REQUIRED`**. That is
-reachable today: enrolment is gated by `PAYOUT_ACCOUNT_REQUIRED`, which
-`packages/config/src/env.ts:74` defaults to `false`, while the charge gate at
-`payment.service.ts:326` is unconditional. Card is flag-off, so Pix is the only rail
-this can happen on. Same shape for `CPF_REQUIRED`, and a 409 renders as
-`Payment already exists for this period`.
-
-**Fix:** `import { describeApiError } from "@/lib/api-error-message"` and replace the
-block with `describeApiError(error, "Não foi possível gerar o QR Code. Tente
-novamente.")`. That helper ships in this same PR and is already wired into 8 other
-screens — this is the one that was missed. It reads `ApiError.detail`, which is where
-the Portuguese sentence lives.
+Found while verifying and **not fixed**: `middleware/validate.ts:9` answers
+`{ error: <zod flatten object> }`, so a schema rejection reaches the user as
+`[object Object]`. Different path, and no payment screen posts a body that can fail
+that way.
 
 ### B7 — A manager who cancels and resubscribes is billed for nothing
 
@@ -145,60 +150,35 @@ key, not the guard, is what makes two concurrent checkouts safe.** Do not fix it
 making the key unique per request. Add a coarse time component
 (`…:${yyyy-mm-ddThh}`) or a per-attempt nonce, and derive the URLs server-side.
 
-### B8 — Migration 0023 has no safe window and no rollback
+### B8 — Migration 0023 has no safe window and no rollback — **CLOSED by removal** (`691fd7a`)
 
-`packages/db/drizzle/0023_rename_stripe_to_card.sql`
+Not fixed: **withdrawn.** `1511ba3` is reverted, `0023` and its snapshot are deleted,
+the journal closes at `0022`, and the branch stores `stripe` for a card payment again.
+Nothing in this PR is irreversible now, and the release no longer has an ordering
+constraint between the deploy and a migration.
 
-`ALTER TYPE … RENAME VALUE` is the right technique — it rewrites no rows, holds a brief
-lock on the type only, and is transaction-safe on PG 16.13. The hand-edited snapshot is
-verifiably truthful: `meta/0023_snapshot.json` differs from `0022` in exactly that one
-value, `prevId` is chained correctly, and `npx drizzle-kit check` reports
-"Everything's fine". **The SQL is not the problem. The choreography is.**
+The audit under-stated the blast radius, which is what settled it. The failure is a
+**literal coercion, not a row comparison** — verified in Postgres 16.13, not reasoned
+about. A table with 2 pix rows, 1 manual and **no card payment at all** still answers
+`ERROR: invalid input value for enum payment_method: "stripe"` to the deployed image's
+query after the rename, and `SELECT 'stripe'::payment_method` fails without touching a
+table. So the admin dashboard and the daily summary break for *every* academy,
+including the Pix-only ones. Against that: the value exists on 2 historical rows, and
+card is the rail this release disables.
 
-There is no moment when both labels are valid, no down migration, and the reverse
-statement is written nowhere in the repo.
+Two things were kept rather than reverted, so the rename is cheaper later than it was
+here:
 
-- Migrations are **manual** (`pnpm db:migrate`, a `drizzle-kit migrate`), *not* run by
-  the container — `Dockerfile.api:61` is `CMD node … server.js`. And `main` is
-  deploy-on-merge. So merging starts the window with nothing closing it.
-- Apply early and the running image's `'stripe'` literals break — 6 sites in
-  `admin.repository.postgres.ts`, plus `platform-summary.repository.postgres.ts:134`.
-- Deploy early and the new code's `'card'` literals break identically.
-- Postgres raises `invalid input value for enum payment_method` rather than returning
-  false, so either direction takes out the admin dashboard and the daily summary job.
-- **After 0023 commits, rolling the API back is an outage, not a retreat.**
+- `paymentMethodLabel` (`apps/mobile/lib/format/payment-method.ts`) maps **both**
+  spellings to "Cartão" and replaces the ternary in both history screens. This is the
+  one part that cannot be bought after the fact — without `expo-updates`, a published
+  build that knows one spelling makes any future rename wait on a store release. 2.1.3
+  was still unsubmitted, so it was free.
+- A comment on `paymentMethodEnum` records why the misnomer stays.
 
-Also user-visible: the 2.1.2 build on the stores renders
-`item.method === "pix" ? "PIX" : item.method === "stripe" ? "Cartão" : "Manual"`
-(`dependent-payment-history.tsx:90`). Post-rename a card payment falls through to
-**"Manual"** — asserting the academy took cash — and there is no OTA channel
-(`expo-updates` is not installed) to correct it.
-
-**Fix, three parts:**
-
-1. Make 0023 idempotent so a replay cannot poison a batch. Drizzle runs the batch in
-   one transaction, and this repo already has `__drizzle_migrations` bookkeeping holes
-   recorded in `tat-104/tasks.md:189-205`:
-   ```sql
-   DO $$ BEGIN
-     IF EXISTS (SELECT 1 FROM pg_enum e JOIN pg_type t ON t.oid = e.enumtypid
-                WHERE t.typname = 'payment_method' AND e.enumlabel = 'stripe') THEN
-       ALTER TYPE "public"."payment_method" RENAME VALUE 'stripe' TO 'card';
-     END IF;
-   END $$;
-   ```
-2. Confirm Coolify does a **stop-then-start** swap for the API, not a rolling one. A
-   rolling update opens the window by design: the new container migrates while the old
-   one is still serving.
-3. Write the reverse `ALTER TYPE "public"."payment_method" RENAME VALUE 'card' TO
-   'stripe'` into a runbook. There is no `docs/deployment.md` — the ordering knowledge
-   currently lives only in a feature spec that will be archived. Creating that file is
-   part of this fix.
-
-For the mobile side, decide deliberately: either map `card` → `stripe` for callers
-below `MIN_MOBILE_VERSION` (the version header is already read in `router.ts:33`), or
-accept the regression and raise `MIN_MOBILE_VERSION` as part of this deploy rather
-than after adoption.
+Carried to **TAT-190**, scheduled with TAT-189, which rewrites this rail anyway. That
+issue holds the idempotent SQL, the deploy order, the reverse statement and the
+Coolify question. Restoring the work is `git revert 691fd7a`.
 
 ---
 
@@ -231,6 +211,11 @@ this list exists so a future session does not "fix" them.
   `POST /payments/checkout/pix` and `GET /payments/pix-status/:id` are what the 2.1.2
   build on the stores calls. `api.smoke.test.ts:28` fails by name if they are deleted
   early. Removal is tracked in **TAT-187**.
+- **`payments.method` still stores `stripe` for a card payment, and that is not an
+  oversight.** The rename was written, tested and reverted — see B8, and the comment on
+  `paymentMethodEnum` says so at the definition. It belongs to TAT-190/TAT-189. The
+  clients already accept both spellings, so re-doing it is a database-plus-API change
+  with no store dependency.
 - **`CARD_PAYMENT_ENABLED = false`** hides the card rail in the app; the API is
   untouched. TAT-189 replaces it with an Asaas subscription. `constants/payment.ts:16`
   annotates the constant `: boolean` on purpose, so the gated branches stay
@@ -261,12 +246,35 @@ Stated plainly so they are not mistaken for coverage.
   three requirements whose only stated evidence is a device walkthrough that has not
   happened — worth reconciling.
 
+### Second session (2026-10-01)
+
+- **The mobile changes have no automated proof.** `apps/mobile` has no test runner, so
+  B6's two fixes, `paymentMethodLabel`, the removal of the chave PIX card and the
+  repointed dashboard warning are all verified only by `tsc` and by reading. Four
+  behaviours worth a device walkthrough: a student at an unapproved academy opening the
+  Pix screen (should read Portuguese, not `PAYOUT_ACCOUNT_REQUIRED`); paying a month
+  twice (should read "O pagamento deste mês já foi registrado"); a payment history row
+  for a card payment (should read "Cartão", from the stored `stripe`); and a Pro manager
+  with no payout account on the dashboard (should be warned about the conta de
+  recebimento, and the warning should clear on pull-to-refresh after approval).
+- **The legal copy is drafted, not published.** `legal-copy-draft.md`, next to this
+  file, rewrites both documents in full — 14 terms sections against today's 8, 12
+  privacy sections against 7 — because the terms have no clause about the money a
+  student pays and the privacy policy names no operator and discloses none of the KYC
+  set. `apps/web/app/(site)/termos/page.tsx` and `privacidade/page.tsx` are
+  deliberately untouched: `main` deploys on merge. It needs 5 placeholders filled and
+  legal review of the payments block before it goes anywhere near a page.
+- **The landing page corrections only become true on deploy.** `8f3caca` says Pix-only;
+  2.1.2 on the stores can still pay by card until `MIN_MOBILE_VERSION` rises (step 7).
+  The site understates the methods in the meantime, which is the safe direction.
+
 ---
 
 ## Release sequence still pending
 
-Unchanged from the audit except step 5, which is now done in code. Step 6 is the
-irreversible one.
+Steps 5 and 6 changed. **No step is irreversible any more** — `0023` is gone (B8), so
+the deploy and the migrations no longer have to be simultaneous. Step 2 is now the one
+that decides whether the release works at all.
 
 1. Generate `ASAAS_PAYMENT_WEBHOOK_TOKEN` (32–255 chars, **distinct per environment**)
    and set it in Coolify. It falls back to `ASAAS_WEBHOOK_TOKEN`, but sharing the value
@@ -284,8 +292,9 @@ irreversible one.
    open.
 5. ~~Bump `apps/mobile` past 2.1.2~~ — done in `c56212e` (2.1.3, `buildNumber` 2,
    `versionCode` 2). Submitting the store build is still pending.
-6. Deploy the API and apply `0021`–`0023` as close to simultaneously as possible.
-   **Irreversible** — see B8. `0021`/`0022` are additive and safe to run ahead.
+6. Apply `0021`/`0022` and deploy the API. Both migrations are **additive**, so they
+   are safe to run ahead of the deploy and safe to leave applied if the deploy is rolled
+   back. `0023` was removed (B8) and is tracked as TAT-190.
 7. Once the new build is adopted, raise `MIN_MOBILE_VERSION` to 2.1.3. This is what
    unblocks TAT-187 stage 1. Blocked on step 5. **Do not do it early** — it locks out
    everyone still on 2.1.2.
@@ -364,6 +373,19 @@ Carried forward from the audit, untouched. Roughly by value.
   `src/lib/abacatepay.ts`, deleted in this PR. (Line 15's
   `abacatepay-webhook.handler.ts` is still correct — that handler is intentionally
   alive.)
+- **No link to the Terms or the Privacy Policy anywhere in the app.** The site has
+  them on `/cadastro`; no mobile screen does. The stores ask for it and 2.1.3 is not
+  submitted yet. Where to put it is a design call.
+- **No record of who accepted which version of the terms.** Nothing stores an
+  acceptance. With payment in the flow that acquires evidentiary value. Not this PR's
+  work, but nothing tracks it either.
+- **A free-plan academy sees the "Conta de recebimento" card** on the finances screen,
+  although `payment.service.ts:281` refuses automatic payment for `free`.
+  `PayoutAccountCard` has never been gated by plan — pre-dates this PR.
+- **`middleware/validate.ts:9` answers `{ error: <zod flatten object> }`**, so a schema
+  rejection renders as `[object Object]` on any screen using `describeApiError`. No
+  payment screen posts a body that can fail that way, which is why it is here and not
+  in B6.
 - **`academy-membership.integration.test.ts` is flaky**, passing on `retry x1` under the
   `retry: 2` in `vitest.config.ts`. Pre-existing, not from this PR, but it makes a red
   CI run there noise-prone.
