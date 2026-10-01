@@ -22,7 +22,6 @@ export default defineConfig({
         "src/migrate.ts",
         "src/env-bootstrap.ts",
         "src/router.ts",
-        "src/lib/abacatepay.ts",
         "src/lib/clerk.ts",
         "src/lib/db.ts",
         "src/lib/lock.ts",
