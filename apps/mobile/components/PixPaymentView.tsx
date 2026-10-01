@@ -1,4 +1,5 @@
 import { FormInput } from "@/components/FormInput";
+import { describeApiError } from "@/lib/api-error-message";
 import { CPF_DIGITS, formatCpf, onlyDigits } from "@/lib/format/document";
 import {
   currentReferenceMonth,
@@ -120,11 +121,13 @@ export function PixPaymentView({
       // the next charge.
       queryClient.invalidateQueries({ queryKey: ["user", "me"] });
     } catch (error) {
-      const message =
-        error instanceof Error && error.message
-          ? error.message
-          : "Não foi possível gerar o QR Code. Tente novamente.";
-      Alert.alert("Erro", message);
+      Alert.alert(
+        "Erro",
+        describeApiError(
+          error,
+          "Não foi possível gerar o QR Code. Tente novamente.",
+        ),
+      );
     }
   }, [createCharge, subscriptionId, document, needsDocument, queryClient]);
 

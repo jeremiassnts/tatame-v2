@@ -46,12 +46,18 @@ export function describeApiError(error: unknown, fallback: string): string {
     return error instanceof Error && error.message ? error.message : fallback;
   }
 
+  // Before `detail`, not after. An uncoded `HttpError` answers the same string
+  // in both fields — the error handler only swaps `error` for a code when there
+  // is one — so returning `detail` first made this map unreachable for exactly
+  // the guards it was written for. `TRANSLATED` is an allowlist of strings the
+  // API is known to answer in English, so a coded failure (whose `message` is
+  // the code) and Asaas prose both miss it and fall through untouched.
+  const translated = TRANSLATED[error.message];
+  if (translated) return translated;
+
   // The API's human sentence, when it sent one — for Asaas this is the whole
   // value, since it names the field the Receita refused.
   if (error.detail) return error.detail;
-
-  const translated = TRANSLATED[error.message];
-  if (translated) return translated;
 
   if (error.message && !isCode(error.message)) return error.message;
 
