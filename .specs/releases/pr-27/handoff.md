@@ -1,11 +1,11 @@
 # PR #27 — release handoff
 
 **PR:** #27, `dev` → `main`, "Asaas payment split, Expo SDK 57 e correções de dependentes"
-**Written:** 2026-09-30 · **Updated:** 2026-10-01 (second session)
+**Written:** 2026-09-30 · **Updated:** 2026-10-01 (third session)
 **Base of the audit:** `554e92e` (merge-base with `main`: `2876166`)
-**State:** 12 commits since the audit base, 6 of them from the second session.
-**Not pushed.** Working tree clean. Full gates green on `691fd7a`, the last commit
-that touches code; `361598a` is docs-only.
+**State:** 17 commits since the audit base, 4 of them from the third session.
+**Not pushed.** Working tree clean. Full gates green on `8fbed7f`, including the
+integration suite.
 
 This picks up from a five-reviewer audit of the branch. Eight blockers were found.
 **Seven are fixed, one is open: B7**, and the operator has parked it deliberately. B6
@@ -25,9 +25,14 @@ for you. The useful work, roughly by value:
 
 1. Nothing in B7 until the `past_due` question below is answered. Do not guess it: both
    answers are defensible and the wrong one strands a paying customer.
-2. The *Worth fixing, not blocking* list, top-down. The first three — no HTTP timeout on
-   any Asaas call, an orphan charge being invisible, no unique constraint behind the
-   duplicate-month guard — are all on the money path and all have their fix written out.
+2. The *Worth fixing, not blocking* list, top-down. The three that were on the money
+   path — no HTTP timeout, an invisible orphan charge, no unique constraint behind the
+   duplicate-month guard — were done in the third session, along with the legacy rail's
+   missing H6 fix. What now heads that list is **the H3 damage, and it is live in
+   production today**: `existsForSubscriptionReferenceMonth` is keyed by subscription
+   while `replaceActiveSubscriptionForAcademy` always creates a new row, so a student
+   who switches plan mid-month after paying can be charged twice. That one is not this
+   PR's doing and does not block it, but it is happening now rather than later.
 3. The device walkthrough in *Gaps → Second session*. `apps/mobile` has no test runner,
    so four behaviours from this session exist only as read code. That file lists exactly
    what to open and what it should say.
@@ -83,21 +88,42 @@ legal question, not a technical one, and the draft flags it rather than answerin
 | `6e270ed` | `[tat-104]` **B6** — stop showing students raw error codes on the Pix rail |
 | `691fd7a` | `[tat-104]` **B8** — postpone the `stripe` → `card` enum rename |
 
+### Third session (2026-10-01)
+
+Four items off the *Worth fixing* list, chosen because they are the ones this PR
+introduces rather than inherits. B7 was deliberately left open — see its section.
+
+| SHA | What |
+| --- | --- |
+| `a6ac03b` | `[tat-104]` bound every Asaas call (10s) so a hung one cannot stall the webhook queue |
+| `33ef286` | `[tat-104]` charge the caller's own plan on the legacy Pix rail (H6) |
+| `9e3bd36` | `[tat-104]` stop an Asaas charge outliving the row that reconciles it — orphan + the `0023` unique index |
+| `8fbed7f` | `chore(api)` drop the coverage exclude for a deleted file |
+
+`9e3bd36` is deliberately not two commits. `createPendingAsaas` was an untargeted
+`onConflictDoNothing`, so adding the index under it would have made the loser of a
+race a silent no-op — converting a double charge into an orphan charge, which is
+strictly worse. The target and the index are only correct together.
+
 Each commit message carries the full reasoning; this file does not repeat it.
 
-### Gates, re-run on `691fd7a`
+### Gates, re-run on `8fbed7f`
 
 | Gate | Result |
 | --- | --- |
 | `npx turbo build` | 8/8 |
-| `npx turbo test:unit` | **730**/730, 42 files (was 716 at `554e92e`) |
-| `pnpm --filter @tatame/api test:integration` | **128**/128, 16 files (was 126) |
+| `npx turbo test:unit` | **737**/737, 42 files (was 730, 716 at `554e92e`) |
+| `pnpm --filter @tatame/api test:integration` | **129**/129, 16 files (was 128) |
 | `npx turbo typecheck` | 13/13 |
 | `npx turbo lint` | 0 errors, 5 warnings (all pre-existing in `apps/web`) |
 
 The integration suite replays the migration journal into a fresh schema, so it also
-proves `0021`–`0022` apply cleanly — `0023` is gone, see B8. It needs Docker running
-(testcontainers).
+proves `0021`–`0023` apply cleanly. It needs Docker running (testcontainers).
+
+**`0023` is a different migration now.** The enum rename that used to hold that number
+was reverted in `691fd7a` (B8); the current `0023_lame_boomer.sql` is the unique index
+on `pending_asaas_payments`. Anywhere below that says "`0023` was removed" means the
+enum rename, which is TAT-190's to redo under whatever number is free then.
 
 **`npx turbo typecheck` does not cover `apps/mobile`** — that script is
 `echo 'skipped: …'`. The real check is `cd apps/mobile && npx tsc --noEmit -p
@@ -152,9 +178,24 @@ ignores the Pro session entirely, because it requires
 4. The academy stays `canceled` while Stripe bills the manager. Every later event for
    `sub_B` is refused the same way, permanently.
 
-**This needs a decision before code.** The spec contradicts itself: DUP-03 says a
-cancelled manager may resubscribe; the webhook's AC-2 says a row already linked to a
-different subscription is left untouched. AC-2 was written against the original
+**This is a regression this PR introduces, not inherited debt.** Verified against
+`main` in the third session: there the handler reads
+`findByStripeSubscriptionId(sub.id) ?? findByStripeCustomerId(stripeCustomerId)` and
+updates that row with the new `sub.id`, so **a manager who cancels and resubscribes
+works in production right now**. The TAT-185 guard (`c33e351`, in this PR) is what
+creates the dead end. It fixes the original incident — two concurrently live
+subscriptions — and breaks the other case.
+
+That splits the fix in two, and **only one half needs the decision**. Restoring
+`main`'s behaviour for `canceled` is the regression, and it is unambiguous. The
+`past_due` question is a new policy call that was never settled either way, so it can
+be answered later without leaving the regression in place. The operator chose to leave
+both for now: the only customer who cancelled has not come back, so the path is
+unreachable today.
+
+**This needs a decision before code** — for the `past_due` half. The spec contradicts
+itself: DUP-03 says a cancelled manager may resubscribe; the webhook's AC-2 says a row
+already linked to a different subscription is left untouched. AC-2 was written against the original
 incident — two *concurrently live* subscriptions — and the implementation resolved the
 contradiction in the direction that strands a paying customer.
 
@@ -187,12 +228,16 @@ key, not the guard, is what makes two concurrent checkouts safe.** Do not fix it
 making the key unique per request. Add a coarse time component
 (`…:${yyyy-mm-ddThh}`) or a per-attempt nonce, and derive the URLs server-side.
 
-### B8 — Migration 0023 has no safe window and no rollback — **CLOSED by removal** (`691fd7a`)
+### B8 — The enum-rename migration had no safe window and no rollback — **CLOSED by removal** (`691fd7a`)
 
-Not fixed: **withdrawn.** `1511ba3` is reverted, `0023` and its snapshot are deleted,
-the journal closes at `0022`, and the branch stores `stripe` for a card payment again.
-Nothing in this PR is irreversible now, and the release no longer has an ordering
-constraint between the deploy and a migration.
+Not fixed: **withdrawn.** `1511ba3` is reverted, the enum-rename migration and its
+snapshot are deleted, and the branch stores `stripe` for a card payment again. Nothing
+in this PR is irreversible now, and the release no longer has an ordering constraint
+between the deploy and a migration.
+
+**The number `0023` was reused.** When this was written the journal closed at `0022`;
+the third session added a new `0023` for the `pending_asaas_payments` unique index.
+Every reference to "`0023`" in this section means the enum rename, not that file.
 
 The audit under-stated the blast radius, which is what settled it. The failure is a
 **literal coercion, not a row comparison** — verified in Postgres 16.13, not reasoned
@@ -305,6 +350,26 @@ Stated plainly so they are not mistaken for coverage.
   2.1.2 on the stores can still pay by card until `MIN_MOBILE_VERSION` rises (step 7).
   The site understates the methods in the meantime, which is the safe direction.
 
+### From the third session
+
+- **The unique index found an unreachable test fixture on its first run.**
+  `platform-summary.integration.test.ts` stacked three `pending_asaas_payments` rows on
+  one subscription and month — unpaid, settled, and a card checkout — to exercise the
+  three branches of `unpaidPixPerAcademy` at once. The index refused it, correctly: the
+  service deletes the open row before opening another and the webhook deletes it on
+  settlement, so that arrangement cannot occur. The fixture now uses one subscription
+  per state; all three branches stay covered and the assertion is unchanged. Worth
+  knowing because it is the kind of fixture sameness that hid half of B2.
+- **Every fix was verified by reverting it.** Each of the eight new tests was watched
+  failing with its fix backed out and passing with it in — including the integration
+  test for the index, checked by neutralising `0023`'s SQL so the testcontainer came up
+  without it. That is the standard the rest of this file's claims were held to.
+- **The money path still has no end-to-end proof of the orphan undo against Asaas.**
+  `persistPendingCharge` cancels through the fake client in unit tests and the index is
+  proven against real Postgres, but nothing has watched a real `deletePayment` land
+  after a real persist failure. The window is hard to force and the event is on the
+  record either way; stated so it is not mistaken for coverage.
+
 ---
 
 ## Release sequence still pending
@@ -329,9 +394,14 @@ that decides whether the release works at all.
    open.
 5. ~~Bump `apps/mobile` past 2.1.2~~ — done in `c56212e` (2.1.3, `buildNumber` 2,
    `versionCode` 2). Submitting the store build is still pending.
-6. Apply `0021`/`0022` and deploy the API. Both migrations are **additive**, so they
+6. Apply `0021`/`0022`/`0023` and deploy the API. All three are **additive**, so they
    are safe to run ahead of the deploy and safe to leave applied if the deploy is rolled
-   back. `0023` was removed (B8) and is tracked as TAT-190.
+   back. `0023` is the `pending_asaas_payments` unique index, written idempotent and
+   carrying its own reverse statement; the enum rename that used to be `0023` was
+   removed (B8) and is tracked as TAT-190. If `0023` ever fails with "could not create
+   unique index" the table holds two open charges for one month — real money. Read both
+   ids out, cancel the loser in Asaas, then delete that row. Do not delete a row to
+   make the migration pass.
 7. Once the new build is adopted, raise `MIN_MOBILE_VERSION` to 2.1.3. This is what
    unblocks TAT-187 stage 1. Blocked on step 5. **Do not do it early** — it locks out
    everyone still on 2.1.2.
@@ -344,39 +414,24 @@ that decides whether the release works at all.
 
 ## Worth fixing, not blocking
 
-Carried forward from the audit, untouched. Roughly by value.
+Carried forward from the audit. Roughly by value.
 
-- **No HTTP timeout on any Asaas call.** `lib/asaas.ts:542` is a bare `fetch`; nothing
-  in `apps/api` sets `AbortSignal` or a dispatcher, so the default is ~300s. Worst
-  shape is the webhook: the first `PAYMENT_*` after boot resolves the root account id,
-  and because that promise is cached, every concurrent delivery awaits the same hung
-  call. Fix with `signal: AbortSignal.timeout(10_000)`; the existing `catch` already
-  maps it to a 502.
-- **An orphan charge is invisible.** In `payment.service.ts:427` and `:655` the Asaas
-  call is wrapped and emits `payment.charge_failed`; the *next* line is a DB write whose
-  failure emits nothing and surfaces as a generic 500. What is left behind is a live,
-  split, payable charge with no row that can ever reconcile it — a guaranteed future
-  `NO_PENDING_CHARGE`. Wrap it, emit with `stage: "persist_pending"`, and best-effort
-  cancel the charge before rethrowing. Pair this with the timeout above, which makes
-  the partial-failure window more frequent.
-- **No unique constraint behind the duplicate-month guard.**
-  `pending_asaas_payments` has `subscription_id` and `reference_month`
-  (`schema/index.ts:519-528`) and no constraint on the pair, so two concurrent
-  `POST /payments/pix` calls can both open a live split charge. D9 rejected a
-  constraint on `payments` because it would block re-paying after a refund — but the
-  service guard already 409s that month on every path, so that cost is already being
-  paid. A constraint on `pending_asaas_payments` cannot create the dead end D9 feared,
-  because those rows are deleted on settlement and on manual confirmation.
+**Five are done** — the three money-path items, the legacy rail's H6 fix and the stale
+coverage exclude, in the third session's four commits. What remains is below, untouched.
+
 - **The webhook token split has no overlap window.** `tokensFor` returns only the
   payment token for `PAYMENT_*` events, and the Asaas-side `PUT` and the env change
   cannot be simultaneous — either order 401s live deliveries, and Asaas interrupts a
   repeatedly-failing queue until it is manually reactivated. Accept both values for one
   release, then drop the fallback and require the split token in production.
-- **The legacy rail did not get the H6 fix.** `payment.service.ts:516` uses
-  `subs.find(s => s.subscription.status === "active")` with no `!dependentId`, where
-  `openChargeContext:306` has it. Same one-line shape as B2. Low risk today because the
-  shipped app always sends `subscriptionId`, but a guardian on 2.1.2 who omits it can
-  still be handed a dependent's charge.
+
+  **This release escapes it, if the steps are ordered.** Step 2 registers a *new*
+  webhook rather than editing an existing one, and `ASAAS_PAYMENT_WEBHOOK_TOKEN` is
+  `.optional()` in `packages/config/src/env.ts:55` with a fallback to
+  `ASAAS_WEBHOOK_TOKEN`, so the deploy does not need it to boot. Set the token in
+  Coolify first, deploy, then register the webhook: there are no live deliveries to
+  401 in between. The overlap problem is a *rotation* problem, and it arrives the first
+  time this token changes.
 - **The old bug's damage is unremediated and still billable.** Guardians who changed
   their own plan under the H3 bug have dependents sitting `cancelled` with a paid month
   attached — identifiable as `student_subscriptions` rows where
@@ -406,10 +461,6 @@ Carried forward from the audit, untouched. Roughly by value.
   in B9" when it was restored in this same PR — that is what whoever executes TAT-187
   will read; and `payout-account.service.ts:65,122` still exposes `canUploadInApp`,
   which no UI reads now that the uploader is gone.
-- **Two stale coverage excludes** in `apps/api/vitest.config.ts:25` name
-  `src/lib/abacatepay.ts`, deleted in this PR. (Line 15's
-  `abacatepay-webhook.handler.ts` is still correct — that handler is intentionally
-  alive.)
 - **No link to the Terms or the Privacy Policy anywhere in the app.** The site has
   them on `/cadastro`; no mobile screen does. The stores ask for it and 2.1.3 is not
   submitted yet. Where to put it is a design call.
