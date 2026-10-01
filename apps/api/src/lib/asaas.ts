@@ -20,6 +20,17 @@ import { HttpError } from "./http-error.js";
 
 const API_PREFIX = "/v3";
 
+/**
+ * Every Asaas call is bounded by this. Node's default is no timeout at all
+ * (~300s at the socket), and the shape that makes it matter is the payment
+ * webhook: the first `PAYMENT_*` delivery after boot resolves the root
+ * account id, and because that promise is cached every concurrent delivery
+ * awaits the same call. One hung request there stalls the whole queue — and
+ * Asaas interrupts a queue that keeps failing until an operator reactivates
+ * it by hand, so the payments stop being recorded silently.
+ */
+const REQUEST_TIMEOUT_MS = 10_000;
+
 export type AsaasPersonType = "FISICA" | "JURIDICA";
 export type AsaasCompanyType = "MEI" | "LIMITED" | "INDIVIDUAL" | "ASSOCIATION";
 
@@ -543,6 +554,7 @@ export class AsaasClient {
         method,
         headers,
         body: opts.json !== undefined ? JSON.stringify(opts.json) : undefined,
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       });
     } catch {
       // The cause is a socket-level message with the upstream host in it —

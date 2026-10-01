@@ -129,6 +129,29 @@ describe("AsaasClient", () => {
     });
   });
 
+  describe("timeout", () => {
+    it("bounds every request, so a hung Asaas cannot stall the webhook queue", async () => {
+      fetchMock.mockResolvedValue(jsonResponse(200, { data: [] }));
+
+      await AsaasClient.root().getFees();
+
+      const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(init.signal).toBeInstanceOf(AbortSignal);
+    });
+
+    it("answers 502 when the request is aborted, like any other transport failure", async () => {
+      fetchMock.mockRejectedValue(
+        new DOMException("The operation was aborted due to timeout", "TimeoutError"),
+      );
+
+      const error = (await AsaasClient.root()
+        .getFees()
+        .catch((e: unknown) => e)) as HttpError;
+      expect(error).toBeInstanceOf(HttpError);
+      expect(error.statusCode).toBe(502);
+    });
+  });
+
   describe("error mapping", () => {
     it("surfaces an Asaas 400 description verbatim as a 400", async () => {
       fetchMock.mockResolvedValue(
