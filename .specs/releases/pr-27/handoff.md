@@ -1,32 +1,69 @@
 # PR #27 — release handoff
 
 **PR:** #27, `dev` → `main`, "Asaas payment split, Expo SDK 57 e correções de dependentes"
-**Written:** 2026-09-30
+**Written:** 2026-09-30 · **Updated:** 2026-10-01 (second session)
 **Base of the audit:** `554e92e` (merge-base with `main`: `2876166`)
-**State:** 10 commits on `dev`, **not pushed**. Working tree clean.
-**Updated:** 2026-10-01 — second session. Read *Where to start* again; it changed.
+**State:** 12 commits since the audit base, 6 of them from the second session.
+**Not pushed.** Working tree clean. Full gates green on `691fd7a`, the last commit
+that touches code; `361598a` is docs-only.
 
 This picks up from a five-reviewer audit of the branch. Eight blockers were found.
-**Seven are fixed, one is open: B7.** B6 was fixed in `6e270ed`; B8 was closed by
-**removing its cause** — the enum rename is reverted and deferred to TAT-190 — so
-nothing in this PR is irreversible any more.
+**Seven are fixed, one is open: B7**, and the operator has parked it deliberately. B6
+was fixed in `6e270ed`; B8 was closed by **removing its cause** — the enum rename is
+reverted and deferred to TAT-190 — so **nothing in this PR is irreversible any more**
+and the deploy no longer has to be simultaneous with a migration.
 
 ---
 
 ## Where to start
 
-**B7 is the only blocker left**, and it needs a product decision before code — the
-operator has parked it for now. Everything else on the list below is done.
+The code is in a releasable state. What is left is **not blockers but the release
+sequence**, plus four decisions that belong to the operator.
 
-What is left is not blockers but the *release sequence*, and step 2 is the one that
-decides whether any student payment is ever recorded. Read that section next.
+**If you are picking this up to write code,** nothing on the critical path is waiting
+for you. The useful work, roughly by value:
 
-Then re-read *Decisions not to undo* before touching the payment or reporting code —
-several things that look like oversights are deliberate and say so in comments.
+1. Nothing in B7 until the `past_due` question below is answered. Do not guess it: both
+   answers are defensible and the wrong one strands a paying customer.
+2. The *Worth fixing, not blocking* list, top-down. The first three — no HTTP timeout on
+   any Asaas call, an orphan charge being invisible, no unique constraint behind the
+   duplicate-month guard — are all on the money path and all have their fix written out.
+3. The device walkthrough in *Gaps → Second session*. `apps/mobile` has no test runner,
+   so four behaviours from this session exist only as read code. That file lists exactly
+   what to open and what it should say.
+
+**If you are picking this up to ship,** go straight to *Release sequence still pending*.
+**Step 2 is the one that decides whether the release works at all** — without the
+root-account webhook registered by hand, no student payment is ever recorded, and
+nothing in the code will tell you.
+
+**Before touching the payment or reporting code,** read *Decisions not to undo*. Several
+things that look like oversights are deliberate and say so in comments — including
+`payments.method` still storing `stripe` for a card payment.
 
 ---
 
-## Commits in this session
+## Waiting on the operator
+
+Four decisions. None blocks a deploy; the first two block work that is otherwise ready.
+
+| # | Decision | What it unblocks |
+| --- | --- | --- |
+| 1 | **Is a `past_due` manager subscription adoptable** when they resubscribe, the way a `canceled` one is? Both answers defensible; see B7 for why it matters. | B7's fix and its test. Write the answer into the spec first — the spec is what contradicts itself. |
+| 2 | **The 5 placeholders in `legal-copy-draft.md`**, plus legal review of the payments block (Terms §6–§8 and §11). | Publishing the rewritten Terms and Privacy Policy. The draft is complete otherwise; the pages are deliberately untouched because `main` deploys on merge. |
+| 3 | **Where the in-app link to the Terms and the Privacy Policy goes.** A design call. The stores ask for it and 2.1.3 is not submitted yet, so the window is still open. | Submitting 2.1.3 without a known gap. |
+| 4 | **Should `PayoutAccountCard` be gated on the Pro plan?** A free academy sees a receiving-account card for a feature `payment.service.ts:281` refuses it. Pre-dates this PR. | Nothing. Cosmetic; listed so it is a choice rather than a leftover. |
+
+Item 2 has a hard edge worth stating: the liability cap in Terms §11 is ~R$ 600
+(12 × R$ 49,90). That covered a management app. The service now touches an academy's
+whole monthly revenue through our own Asaas account. Whether the cap survives that is a
+legal question, not a technical one, and the draft flags it rather than answering it.
+
+---
+
+## Commits
+
+### First session (2026-09-30)
 
 | SHA | What |
 | --- | --- |
@@ -36,7 +73,7 @@ several things that look like oversights are deliberate and say so in comments.
 | `3f7db7c` | `[tat-181]` resolve a guardian's own plan from their own subscription |
 | `515d91d` | `[tat-104]` alert on the money events the Asaas rails actually emit |
 
-### Commits in the second session (2026-10-01)
+### Second session (2026-10-01)
 
 | SHA | What |
 | --- | --- |
@@ -223,7 +260,7 @@ this list exists so a future session does not "fix" them.
 
 ---
 
-## Gaps in this session's own work
+## Gaps in this work's own coverage
 
 Stated plainly so they are not mistaken for coverage.
 
@@ -246,7 +283,7 @@ Stated plainly so they are not mistaken for coverage.
   three requirements whose only stated evidence is a device walkthrough that has not
   happened — worth reconciling.
 
-### Second session (2026-10-01)
+### From the second session
 
 - **The mobile changes have no automated proof.** `apps/mobile` has no test runner, so
   B6's two fixes, `paymentMethodLabel`, the removal of the chave PIX card and the
