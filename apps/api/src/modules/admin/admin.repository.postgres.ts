@@ -51,7 +51,7 @@ export class PostgresAdminRepository implements IAdminRepository {
     const [row] = await this.db
       .select({ total: sum(payments.amountCents) })
       .from(payments)
-      .where(sql`${payments.method} IN ('card', 'pix')`);
+      .where(sql`${payments.method} IN ('stripe', 'pix')`);
     return Number(row?.total ?? 0);
   }
 

@@ -57,7 +57,7 @@ describe("splitMoney", () => {
   it("charges the card fixed fee once per transaction", () => {
     // 3 card payments totalling R$300,00: 3,99% of the total + 3 × R$0,39.
     const money = splitMoney([
-      { method: "card", count: 3, amountCents: 30_000 },
+      { method: "stripe", count: 3, amountCents: 30_000 },
     ]);
     expect(money.grossCents).toBe(30_000);
     expect(money.feeCents).toBe(Math.round(30_000 * 0.0399) + 39 * 3);
@@ -118,7 +118,7 @@ describe("PlatformSummaryService.buildReport", () => {
     repo.setDay(DAY, {
       payments: [
         { academyId: "a1", method: "manual", count: 1, amountCents: 5_000 },
-        { academyId: "a1", method: "card", count: 1, amountCents: 10_000 },
+        { academyId: "a1", method: "stripe", count: 1, amountCents: 10_000 },
       ],
     });
 
@@ -128,7 +128,7 @@ describe("PlatformSummaryService.buildReport", () => {
     expect(report.revenue.feeCents).toBe(Math.round(10_000 * 0.0399) + 39);
     expect(report.academies[0]!.paymentsCount).toBe(2);
     expect(report.academies[0]!.byMethod.map((m) => m.method)).toEqual([
-      "card",
+      "stripe",
       "manual",
     ]);
   });

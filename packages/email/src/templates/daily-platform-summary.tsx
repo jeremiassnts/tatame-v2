@@ -12,7 +12,7 @@ export type SummaryMoney = {
 export type SummaryDelta = { value: number; previous: number };
 
 export type SummaryMethodTotal = {
-  method: "manual" | "card" | "pix";
+  method: "manual" | "stripe" | "pix";
   count: number;
   amountCents: number;
 };
@@ -52,7 +52,7 @@ export type DailyPlatformSummaryProps = {
 
 const METHOD_LABEL: Record<SummaryMethodTotal["method"], string> = {
   pix: "Pix",
-  card: "Cartão",
+  stripe: "Cartão",
   manual: "Manual",
 };
 

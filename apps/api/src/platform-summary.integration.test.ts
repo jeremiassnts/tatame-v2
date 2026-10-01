@@ -80,7 +80,7 @@ describe("PostgresPlatformSummaryRepository", () => {
       makePayment({ ...base, method: "pix", amountCents: 5_000, paidAt: EARLY_BRT }),
       makePayment({
         ...base,
-        method: "card",
+        method: "stripe",
         amountCents: 20_000,
         paidAt: INSIDE,
       }),
@@ -95,7 +95,7 @@ describe("PostgresPlatformSummaryRepository", () => {
 
     const rows = await repo.paymentsPerAcademy(window);
     const pix = rows.find((r) => r.method === "pix");
-    const card = rows.find((r) => r.method === "card");
+    const card = rows.find((r) => r.method === "stripe");
 
     expect(pix).toMatchObject({ count: 2, amountCents: 15_000 });
     expect(card).toMatchObject({ count: 1, amountCents: 20_000 });

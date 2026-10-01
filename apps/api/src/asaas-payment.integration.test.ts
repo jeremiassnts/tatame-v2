@@ -292,7 +292,7 @@ describe("Asaas payment webhook integration", () => {
     expect(listed.body.items[0]).toMatchObject({
       subscriptionId,
       amountCents: 15_000,
-      method: "card",
+      method: "stripe",
       asaasPaymentId: "pay_from_checkout",
       referenceMonth: currentReferenceMonth(),
     });

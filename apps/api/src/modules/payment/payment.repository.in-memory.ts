@@ -14,7 +14,7 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
     userId: string;
     academyId: string;
     amountCents: number;
-    method: "manual" | "card" | "pix";
+    method: "manual" | "stripe" | "pix";
     confirmedBy: string | null;
     stripePaymentId: string | null;
     referenceMonth: string;

@@ -36,14 +36,27 @@ export const subscriptionStatusEnum = pgEnum("subscription_status", [
 ]);
 
 /**
- * How the student paid, never through which provider — that is what
- * `asaas_payment_id` and `stripe_payment_id` are for. `card` was called
- * `stripe` until the Asaas cutover, when the name stopped matching the two
- * rows that had it and every card payment since.
+ * How the student paid, never through which provider — `asaas_payment_id` and
+ * `stripe_payment_id` record that.
+ *
+ * `stripe` is a misnomer: it has meant "card, in the app" since before Stripe
+ * left, and the card rail is Asaas now. Renaming it to `card` was written,
+ * tested and then **deliberately postponed** — see TAT-104's handoff (B8).
+ * `ALTER TYPE … RENAME VALUE` has no overlap window: Postgres rejects the whole
+ * query, not the row, for a label that no longer exists, so the deployed
+ * image's `IN ('stripe', 'pix')` and the new image's `IN ('card', 'pix')` can
+ * never both be valid. With migrations run by hand and `main` deploying on
+ * merge, that window opens by itself and takes out the admin dashboard and the
+ * daily summary for *every* academy, including the ones that never took a card
+ * payment. The rename buys a better label on 2 historical rows; it is not worth
+ * that, and it belongs to TAT-189, which rewrites this rail anyway.
+ *
+ * The clients already tolerate both labels, so whoever does it then only has to
+ * coordinate the database with the API.
  */
 export const paymentMethodEnum = pgEnum("payment_method", [
   "manual",
-  "card",
+  "stripe",
   "pix",
 ]);
 

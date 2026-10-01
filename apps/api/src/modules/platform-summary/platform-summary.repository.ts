@@ -1,4 +1,4 @@
-export type PaymentMethod = "manual" | "card" | "pix";
+export type PaymentMethod = "manual" | "stripe" | "pix";
 
 /**
  * A BRT calendar day expressed as a half-open UTC interval.

@@ -87,11 +87,11 @@ export const PIX_FEE_CENTS = 80; // R$ 0,80
 
 /** `manual` is cash the academy took directly — no processor, no fee. */
 export function processorFeeCents(
-  method: "manual" | "card" | "pix",
+  method: "manual" | "stripe" | "pix",
   amountCents: number,
 ): number {
   switch (method) {
-    case "card":
+    case "stripe":
       return Math.round((amountCents * CARD_FEE_PERCENT_BPS) / 10_000) + CARD_FEE_FIXED_CENTS;
     case "pix":
       return PIX_FEE_CENTS;

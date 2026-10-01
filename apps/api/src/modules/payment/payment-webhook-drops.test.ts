@@ -588,7 +588,7 @@ describe("Asaas refunds and chargebacks", () => {
       userId: "u1",
       academyId: "a1",
       amountCents: 15000,
-      method: "card",
+      method: "stripe",
       confirmedBy: null,
       stripePaymentId: null,
       asaasPaymentId: "pay_aalcgxwj24pkd6m5",

@@ -159,7 +159,7 @@ function TransactionsTable({ payments }: { payments: Payment[] }) {
                     {formatCurrency(p.amountCents)}
                   </td>
                   <td className="px-4 py-3 text-text-secondary capitalize">
-                    {p.method === "manual" ? "Manual" : p.method === "card" ? "Cartão" : "PIX"}
+                    {p.method === "manual" ? "Manual" : p.method === "stripe" ? "Cartão" : "PIX"}
                   </td>
                   <td className="px-4 py-3 text-text-secondary">
                     {p.referenceMonth?.slice(0, 7)}
