@@ -1,0 +1,14 @@
+-- One open Asaas charge per subscription per month.
+--
+-- Additive and safe to run ahead of the deploy: the old image never writes a
+-- second row for a month (its read-then-write guard refuses one on every
+-- sequential path), so the index only ever rejects the concurrent case the new
+-- image is written to handle.
+--
+-- Reverse: DROP INDEX IF EXISTS "pending_asaas_payments_subscription_month_unique";
+--
+-- If this fails with "could not create unique index" the table already holds
+-- two open charges for one month — real money, two payable Asaas charges. Do
+-- not delete a row to make it pass: read both ids out, cancel the loser in
+-- Asaas, then delete that row.
+CREATE UNIQUE INDEX IF NOT EXISTS "pending_asaas_payments_subscription_month_unique" ON "pending_asaas_payments" USING btree ("subscription_id","reference_month");

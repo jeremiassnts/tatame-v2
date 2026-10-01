@@ -138,6 +138,45 @@ describe("PaymentService.createCheckout", () => {
     expect(sent.customerData).toBeUndefined();
   });
 
+  // Same window as the Pix rail, except what is left behind is a payable link
+  // rather than a QR.
+  it("cancels the checkout it just opened when the pending row cannot be written", async () => {
+    vi.spyOn(ctx.payRepo, "createPendingAsaas").mockRejectedValue(
+      new Error("connection terminated unexpectedly"),
+    );
+
+    await expect(
+      ctx.service.createCheckout(ctx.studentId, ctx.academyId, PUBLIC_URL),
+    ).rejects.toThrow("connection terminated unexpectedly");
+
+    expect(ctx.client.cancelCheckout).toHaveBeenCalledWith(CHECKOUT.id);
+  });
+
+  it("cancels the loser's checkout and 409s when another request won the month", async () => {
+    await ctx.payRepo.createPendingAsaas({
+      asaasPaymentId: "pay_winner",
+      kind: "payment",
+      subscriptionId: ctx.subscriptionId,
+      userId: ctx.studentId,
+      academyId: ctx.academyId,
+      referenceMonth: currentReferenceMonth(),
+      amountCents: 15000,
+    });
+    vi.spyOn(
+      ctx.payRepo,
+      "findPendingAsaasBySubscriptionMonth",
+    ).mockResolvedValue(undefined);
+
+    await expect(
+      ctx.service.createCheckout(ctx.studentId, ctx.academyId, PUBLIC_URL),
+    ).rejects.toMatchObject({ statusCode: 409 });
+
+    expect(ctx.client.cancelCheckout).toHaveBeenCalledWith(CHECKOUT.id);
+    expect(
+      await ctx.payRepo.findPendingAsaasByPaymentId("pay_winner"),
+    ).toMatchObject({ asaasPaymentId: "pay_winner" });
+  });
+
   it("refuses an academy that cannot receive yet", async () => {
     const pending = await setup({ accountStatus: "pending" });
 

@@ -137,8 +137,23 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
   private pendingAsaas = new Map<string, PendingAsaasPayment>();
 
   async createPendingAsaas(data: PendingAsaasPayment): Promise<void> {
-    // Mirrors `onConflictDoNothing`: the first write for an id wins.
+    // Mirrors the targeted `onConflictDoNothing`: the first write for an id
+    // wins silently...
     if (this.pendingAsaas.has(data.asaasPaymentId)) return;
+    // ...but a second open charge for the same subscription and month is the
+    // unique index raising 23505, not a no-op. Same shape as
+    // `CheckinRepositoryInMemory`, so the service's handling is exercised by
+    // unit tests and not only against Postgres.
+    const clash = [...this.pendingAsaas.values()].some(
+      (p) =>
+        p.subscriptionId === data.subscriptionId &&
+        p.referenceMonth === data.referenceMonth,
+    );
+    if (clash) {
+      const err = new Error("duplicate pending asaas charge");
+      (err as NodeJS.ErrnoException).code = "23505";
+      throw err;
+    }
     this.pendingAsaas.set(data.asaasPaymentId, data);
   }
 

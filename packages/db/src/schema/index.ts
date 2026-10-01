@@ -522,28 +522,51 @@ export const pendingPixPayments = pgTable("pending_pix_payments", {
  * `kind` says so. The payment a checkout produces carries `checkoutSession`,
  * which is what leads back here.
  */
-export const pendingAsaasPayments = pgTable("pending_asaas_payments", {
-  /**
-   * The Asaas handle this row is found by: a payment id when `kind` is
-   * `payment`, a checkout session id when it is `checkout`.
-   */
-  asaasPaymentId: text("asaas_payment_id").primaryKey(),
-  kind: pendingAsaasKindEnum("kind").notNull().default("payment"),
-  subscriptionId: uuid("subscription_id")
-    .notNull()
-    .references(() => studentSubscriptions.id, { onDelete: "cascade" }),
-  userId: uuid("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  academyId: uuid("academy_id")
-    .notNull()
-    .references(() => academies.id, { onDelete: "cascade" }),
-  referenceMonth: date("reference_month").notNull(),
-  amountCents: integer("amount_cents").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-});
+export const pendingAsaasPayments = pgTable(
+  "pending_asaas_payments",
+  {
+    /**
+     * The Asaas handle this row is found by: a payment id when `kind` is
+     * `payment`, a checkout session id when it is `checkout`.
+     */
+    asaasPaymentId: text("asaas_payment_id").primaryKey(),
+    kind: pendingAsaasKindEnum("kind").notNull().default("payment"),
+    subscriptionId: uuid("subscription_id")
+      .notNull()
+      .references(() => studentSubscriptions.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    academyId: uuid("academy_id")
+      .notNull()
+      .references(() => academies.id, { onDelete: "cascade" }),
+    referenceMonth: date("reference_month").notNull(),
+    amountCents: integer("amount_cents").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (t) => ({
+    /**
+     * One open charge per subscription per month, enforced by the database
+     * rather than by the service's read-then-write guard — two concurrent
+     * `POST /payments/pix` calls both pass that guard and both open a live,
+     * split, payable charge for the same month.
+     *
+     * D9 refused a constraint on `payments` because it would block re-paying
+     * a refunded month. That cost does not apply here: these rows are deleted
+     * on settlement and on manual confirmation, so the dead end D9 feared
+     * cannot form behind them.
+     *
+     * The loser of the race has to *fail* rather than be ignored, which is
+     * why `createPendingAsaas` targets the primary key explicitly — see
+     * `persistPendingCharge`, which cancels the orphaned charge.
+     */
+    oneOpenChargePerMonth: uniqueIndex(
+      "pending_asaas_payments_subscription_month_unique",
+    ).on(t.subscriptionId, t.referenceMonth),
+  }),
+);
 
 export const beltPromotions = pgTable(
   "belt_promotions",

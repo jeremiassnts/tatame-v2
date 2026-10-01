@@ -37,6 +37,12 @@ export interface CreateCheckoutInput {
  */
 const CHECKOUT_EXPIRY_MINUTES = 60;
 
+/** Same shape as `CheckinService`: Postgres wraps the code one level deep. */
+function isPostgresUniqueViolation(err: unknown): boolean {
+  const e = err as { code?: string; cause?: { code?: string } };
+  return e?.code === "23505" || e?.cause?.code === "23505";
+}
+
 export interface PixChargeView {
   paymentId: string;
   encodedImage: string;
@@ -424,15 +430,18 @@ export class PaymentService {
     // charge with no pending row behind it is one a retry cannot find — it
     // would open a second charge for the same month. This way the retry reuses
     // the charge that already exists.
-    await this.paymentRepo.createPendingAsaas({
-      asaasPaymentId: charge.id,
-      kind: "payment",
-      subscriptionId: subscription.id,
-      userId: studentUserId,
-      academyId,
-      referenceMonth,
-      amountCents: plan.priceCents,
-    });
+    await this.persistPendingCharge(
+      {
+        asaasPaymentId: charge.id,
+        kind: "payment",
+        subscriptionId: subscription.id,
+        userId: studentUserId,
+        academyId,
+        referenceMonth,
+        amountCents: plan.priceCents,
+      },
+      () => asaas.root().deletePayment(charge.id),
+    );
 
     const qr = await this.fetchPixQrCode(asaas, charge.id, academyId);
 
@@ -660,17 +669,68 @@ export class PaymentService {
     // to exist even if the student never comes back. Without it the webhook
     // arrives with a payment whose `checkoutSession` matches nothing, and the
     // money has no subscription or month to be recorded against.
-    await this.paymentRepo.createPendingAsaas({
-      asaasPaymentId: checkout.id,
-      kind: "checkout",
-      subscriptionId: subscription.id,
-      userId: studentUserId,
-      academyId,
-      referenceMonth,
-      amountCents: plan.priceCents,
-    });
+    await this.persistPendingCharge(
+      {
+        asaasPaymentId: checkout.id,
+        kind: "checkout",
+        subscriptionId: subscription.id,
+        userId: studentUserId,
+        academyId,
+        referenceMonth,
+        amountCents: plan.priceCents,
+      },
+      () => asaas.root().cancelCheckout(checkout.id),
+    );
 
     return { checkoutUrl: checkout.link };
+  }
+
+  /**
+   * The window between a live Asaas charge and the row that makes it
+   * reconcilable. Both callers above have already created a payable, split
+   * charge; if this write fails the charge stays live with nothing that can
+   * ever reconcile it — invisible on the money signal, and a guaranteed
+   * future `NO_PENDING_CHARGE` when the student pays it. So the failure says
+   * so on `payment.charge_failed`, the charge is undone, and only then does
+   * the error propagate.
+   *
+   * A unique violation is the concurrency case rather than a broken database:
+   * another request won the race for this subscription and month, and its
+   * charge is the one that stays. The loser's is cancelled and the caller
+   * gets the same 409 the service's own duplicate-month guard answers, so a
+   * retry is handed the winner's charge by `findPendingAsaasBySubscriptionMonth`.
+   */
+  private async persistPendingCharge(
+    row: PendingAsaasPayment,
+    undoCharge: () => Promise<void>,
+  ): Promise<void> {
+    try {
+      await this.paymentRepo.createPendingAsaas(row);
+    } catch (error) {
+      const duplicate = isPostgresUniqueViolation(error);
+      emitEvent("payment.charge_failed", {
+        userId: row.userId,
+        academyId: row.academyId,
+        subscriptionId: row.subscriptionId,
+        extra: {
+          stage: "persist_pending",
+          kind: row.kind,
+          asaasPaymentId: row.asaasPaymentId,
+          referenceMonth: row.referenceMonth,
+          duplicate,
+          message: error instanceof Error ? error.message : String(error),
+        },
+      });
+      // Best effort by necessity: if the undo fails too, the charge is still
+      // live and still orphaned — but the event above already records which
+      // charge it is, which is the whole difference from the generic 500 this
+      // used to be. Swallowed so the original cause is what reaches the caller.
+      await undoCharge().catch(() => {});
+      if (duplicate) {
+        throw new HttpError(409, "Payment already exists for this period");
+      }
+      throw error;
+    }
   }
 
   async listForManager(

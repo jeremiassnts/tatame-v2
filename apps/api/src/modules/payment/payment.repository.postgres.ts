@@ -253,10 +253,17 @@ export class PostgresPaymentRepository implements IPaymentRepository {
   }
 
   async createPendingAsaas(data: PendingAsaasPayment): Promise<void> {
+    // The target is explicit on purpose. An untargeted `onConflictDoNothing`
+    // would also swallow a collision on
+    // `pending_asaas_payments_subscription_month_unique`, which is the one
+    // conflict the caller has to see: it means a concurrent request already
+    // opened a charge for this month, and the charge this call just created
+    // has to be cancelled rather than left live with no row behind it.
+    // Writing the same Asaas id twice is still a no-op.
     await this.db
       .insert(pendingAsaasPayments)
       .values(data)
-      .onConflictDoNothing();
+      .onConflictDoNothing({ target: pendingAsaasPayments.asaasPaymentId });
   }
 
   async findPendingAsaasByPaymentId(

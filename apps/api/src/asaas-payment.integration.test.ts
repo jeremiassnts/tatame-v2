@@ -1,3 +1,4 @@
+import { pendingAsaasPayments } from "@tatame/db";
 import request from "supertest";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { setDbForTest } from "./lib/db.js";
@@ -300,6 +301,40 @@ describe("Asaas payment webhook integration", () => {
 
   // Once the month is paid, the charge paths must refuse rather than open a
   // second one — which is only true if the webhook really wrote the row.
+  // The service's duplicate-month guard is a read-then-write with no lock, so
+  // two concurrent `POST /payments/pix` calls both pass it and both open a
+  // live, split, payable charge. Only the database can refuse the second, and
+  // only a real one proves the index survived the journal replay.
+  it("refuses a second open charge for a month already being charged", async () => {
+    const { academyId, subscriptionId } = await seedEnrolledStudent();
+
+    asClerkUser(CLERK_STUDENT);
+    const charge = await request(app)
+      .post("/v1/payments/pix")
+      .send({ cpfCnpj: "41763193640" });
+    expect(charge.status).toBe(200);
+
+    // What the loser of the race would be writing, having read the month as
+    // open a moment before the winner's row existed.
+    const second = ctx.db.insert(pendingAsaasPayments).values({
+      asaasPaymentId: "pay_int_race",
+      kind: "payment",
+      subscriptionId,
+      userId: (
+        await ctx.db.query.users.findFirst({
+          where: (u, { eq }) => eq(u.clerkUserId, CLERK_STUDENT),
+        })
+      )!.id,
+      academyId,
+      referenceMonth: currentReferenceMonth(),
+      amountCents: 15_000,
+    });
+
+    await expect(second).rejects.toMatchObject({
+      constraint_name: "pending_asaas_payments_subscription_month_unique",
+    });
+  });
+
   it("closes the month to new charges once the payment lands", async () => {
     await seedEnrolledStudent();
 

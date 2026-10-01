@@ -162,6 +162,13 @@
       "when": 1790692441889,
       "tag": "0022_awesome_masque",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1790870199852,
+      "tag": "0023_lame_boomer",
+      "breakpoints": true
     }
   ]
 }

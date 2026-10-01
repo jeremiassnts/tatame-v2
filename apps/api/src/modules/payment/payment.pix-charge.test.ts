@@ -100,6 +100,56 @@ describe("PaymentService.createPixCharge", () => {
     expect(view.amountCents).toBe(15000);
   });
 
+  // The charge is live before the row exists. These two pin what happens in
+  // that window, which used to be a generic 500 over a payable, split charge
+  // that nothing could ever reconcile.
+  it("cancels the charge it just opened when the pending row cannot be written", async () => {
+    vi.spyOn(ctx.payRepo, "createPendingAsaas").mockRejectedValue(
+      new Error("connection terminated unexpectedly"),
+    );
+
+    await expect(
+      ctx.service.createPixCharge(ctx.studentId, ctx.academyId, {
+        cpfCnpj: "41763193640",
+      }),
+    ).rejects.toThrow("connection terminated unexpectedly");
+
+    expect(ctx.client.deletePayment).toHaveBeenCalledWith("pay_new");
+    // Not a QR for a charge the student could still pay.
+    expect(ctx.client.getPixQrCode).not.toHaveBeenCalled();
+  });
+
+  it("cancels the loser's charge and 409s when another request won the month", async () => {
+    // The real race: the month lookup saw nothing, and by the time the row was
+    // written a concurrent request had already opened a charge for it. The
+    // winner's row is what the unique index defends.
+    await ctx.payRepo.createPendingAsaas({
+      asaasPaymentId: "pay_winner",
+      kind: "payment",
+      subscriptionId: ctx.subscriptionId,
+      userId: ctx.studentId,
+      academyId: ctx.academyId,
+      referenceMonth: currentReferenceMonth(),
+      amountCents: 15000,
+    });
+    vi.spyOn(
+      ctx.payRepo,
+      "findPendingAsaasBySubscriptionMonth",
+    ).mockResolvedValue(undefined);
+
+    await expect(
+      ctx.service.createPixCharge(ctx.studentId, ctx.academyId, {
+        cpfCnpj: "41763193640",
+      }),
+    ).rejects.toMatchObject({ statusCode: 409 });
+
+    expect(ctx.client.deletePayment).toHaveBeenCalledWith("pay_new");
+    // The winner's charge is untouched and still the one a retry is handed.
+    expect(
+      await ctx.payRepo.findPendingAsaasByPaymentId("pay_winner"),
+    ).toMatchObject({ asaasPaymentId: "pay_winner" });
+  });
+
   it("refuses an academy that cannot receive yet", async () => {
     const pending = await setup({ accountStatus: "pending" });
 

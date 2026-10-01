@@ -155,14 +155,25 @@ describe("PostgresPlatformSummaryRepository", () => {
     const { owner, academy } = await seedAcademy();
     const plan = makeSubscriptionPlan({ academyId: academy.id });
     await ctx.db.insert(subscriptionPlans).values(plan);
-    const sub = makeStudentSubscription({ userId: owner.id, planId: plan.id });
-    await ctx.db.insert(studentSubscriptions).values(sub);
+    // One subscription per state, not three rows on one. The three arrangements
+    // below cannot share a subscription and a month —
+    // `pending_asaas_payments_subscription_month_unique` forbids it, and the
+    // service deletes the open row before opening another — so stacking them
+    // would be asserting against a state production cannot reach. What the
+    // query has to tell apart is still exercised: unpaid, settled, and a
+    // checkout that is not a Pix at all.
+    const unpaid = makeStudentSubscription({ userId: owner.id, planId: plan.id });
+    const settled = makeStudentSubscription({ userId: owner.id, planId: plan.id });
+    const card = makeStudentSubscription({ userId: owner.id, planId: plan.id });
+    await ctx.db
+      .insert(studentSubscriptions)
+      .values([unpaid, settled, card]);
 
     await ctx.db.insert(pendingAsaasPayments).values([
       {
         asaasPaymentId: "pay_unpaid",
         kind: "payment",
-        subscriptionId: sub.id,
+        subscriptionId: unpaid.id,
         userId: owner.id,
         academyId: academy.id,
         referenceMonth: "2026-09-01",
@@ -172,7 +183,7 @@ describe("PostgresPlatformSummaryRepository", () => {
       {
         asaasPaymentId: "pay_paid",
         kind: "payment",
-        subscriptionId: sub.id,
+        subscriptionId: settled.id,
         userId: owner.id,
         academyId: academy.id,
         referenceMonth: "2026-09-01",
@@ -184,7 +195,7 @@ describe("PostgresPlatformSummaryRepository", () => {
       {
         asaasPaymentId: "sess_card",
         kind: "checkout",
-        subscriptionId: sub.id,
+        subscriptionId: card.id,
         userId: owner.id,
         academyId: academy.id,
         referenceMonth: "2026-09-01",
@@ -194,7 +205,7 @@ describe("PostgresPlatformSummaryRepository", () => {
     ]);
     await ctx.db.insert(payments).values(
       makePayment({
-        subscriptionId: sub.id,
+        subscriptionId: settled.id,
         userId: owner.id,
         academyId: academy.id,
         confirmedBy: null,
