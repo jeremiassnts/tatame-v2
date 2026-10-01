@@ -507,13 +507,21 @@ export class PaymentService {
       studentUserId,
       academyId,
     );
+    // Same reading as `openChargeContext`: a guardian's own subscriptions and
+    // their dependents' all carry this `user_id`, so with no id to go on the
+    // only safe meaning of "pay my plan" is the caller's own row. The shipped
+    // 2.1.2 build always sends `subscriptionId`, but a client that omits it
+    // could otherwise be handed a dependent's charge at a dependent's price.
     const active = opts?.subscriptionId
       ? subs.find(
           (s) =>
             s.subscription.id === opts.subscriptionId &&
             s.subscription.status === "active",
         )
-      : subs.find((s) => s.subscription.status === "active");
+      : subs.find(
+          (s) =>
+            s.subscription.status === "active" && !s.subscription.dependentId,
+        );
 
     if (!active) {
       throw new HttpError(404, "No active subscription found");
