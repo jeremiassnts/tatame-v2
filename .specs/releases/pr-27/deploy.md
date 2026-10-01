@@ -1,98 +1,97 @@
-# PR #27 — manual deploy steps
+# PR #27 — passos manuais de deploy
 
-Every step that is not done by merging. Run them in this order.
+Tudo o que o merge não faz sozinho. Execute nesta ordem.
 
-`main` deploys on merge, so **steps 1–3 happen before the merge.**
+A `main` deploya no merge, então **os passos 1 a 3 acontecem antes do merge.**
 
-Reference values: `{ROOT_KEY}` is the production Asaas root API key,
-`{API_PUBLIC_URL}` is the API's public base URL (same value as the env var),
-`{TOKEN}` is what step 1 generates. Asaas production base URL is
-`https://api.asaas.com`.
+Valores de referência: `{ROOT_KEY}` é a API key de produção da conta raiz do Asaas,
+`{API_PUBLIC_URL}` é a URL pública da API (o mesmo valor da env var), `{TOKEN}` é o que
+o passo 1 gera. A base URL de produção do Asaas é `https://api.asaas.com`.
 
 ---
 
-## Before the merge
+## Antes do merge
 
-### 1. Set the payment webhook token in Coolify
+### 1. Definir o token do webhook de pagamento no Coolify
 
 ```bash
-openssl rand -hex 32     # 64 chars, inside the 32–255 the schema allows
+openssl rand -hex 32     # 64 caracteres, dentro dos 32–255 que o schema aceita
 ```
 
-Set `ASAAS_PAYMENT_WEBHOOK_TOKEN` to that value on the API service in Coolify.
+Defina `ASAAS_PAYMENT_WEBHOOK_TOKEN` com esse valor no serviço da API no Coolify.
 
-- **Use a value distinct from `ASAAS_WEBHOOK_TOKEN` and distinct per environment.**
-  It falls back to `ASAAS_WEBHOOK_TOKEN` when unset, but sharing the value defeats the
-  reason it was split: the account token is written into every academy subaccount,
-  where an operator can read it.
-- It is optional in the schema, so the deploy will not fail without it. Setting it
-  first is what avoids a window where live deliveries 401.
+- **Use um valor diferente do `ASAAS_WEBHOOK_TOKEN` e diferente por ambiente.** Ele cai
+  para o `ASAAS_WEBHOOK_TOKEN` quando não está definido, mas compartilhar o valor anula
+  a razão de ter sido separado: o token de conta é gravado em toda subconta de academia,
+  onde um operador consegue ler.
+- É opcional no schema, então o deploy não falha sem ele. Definir primeiro é o que evita
+  uma janela em que entregas reais tomam 401.
 
-### 2. Confirm a Pix key exists on the root account
+### 2. Confirmar que existe uma chave Pix na conta raiz
 
 ```bash
 curl -s -H "access_token: {ROOT_KEY}" https://api.asaas.com/v3/pix/addressKeys
 ```
 
-Expect at least one key with `"status": "ACTIVE"`.
+Espere pelo menos uma chave com `"status": "ACTIVE"`.
 
-- If the list is empty, create one in the Asaas dashboard and wait — Asaas provisions
-  keys asynchronously.
-- **Until a key is ACTIVE every Pix QR fetch fails** with `400 invalid_action`
-  ("Você não possui uma chave Pix cadastrada para recebimentos").
+- Se a lista vier vazia, crie uma no painel do Asaas e aguarde — o Asaas provisiona
+  chaves de forma assíncrona.
+- **Enquanto nenhuma chave estiver ACTIVE, toda busca de QR code Pix falha** com
+  `400 invalid_action` ("Você não possui uma chave Pix cadastrada para recebimentos").
 
-### 3. Confirm the evaluation caps fit
+### 3. Confirmar que os limites da avaliação cabem
 
-The first 60 days of a production Asaas account allow **10 subaccounts** and
-**R$ 2.000 per charge**. Check the current subaccount count:
+Os primeiros 60 dias de uma conta de produção do Asaas permitem **10 subcontas** e
+**R$ 2.000 por cobrança**. Confira a contagem atual de subcontas:
 
 ```bash
 curl -s -H "access_token: {ROOT_KEY}" "https://api.asaas.com/v3/accounts?limit=100" \
   | grep -o '"totalCount":[0-9]*'
 ```
 
-One subaccount per academy. If the rollout needs more than the remaining headroom, ask
-Asaas to lift the cap before onboarding academies — a refusal arrives as a 400 with the
-reason in Portuguese, which the app shows verbatim.
+Uma subconta por academia. Se o rollout precisar de mais do que a folga restante, peça
+ao Asaas para subir o limite antes de onboardar academias — a recusa chega como um 400
+com o motivo em português, que o app mostra literalmente.
 
 ---
 
-## Merge and deploy
+## Merge e deploy
 
-### 4. Merge PR #27
+### 4. Fazer o merge do PR #27
 
-Manual. The merge triggers the `main` deploy.
+Manual. O merge dispara o deploy da `main`.
 
-### 5. Apply the migrations
+### 5. Aplicar as migrations
 
-`0021`, `0022`, `0023`. All three are additive — safe to run before the deploy, and
-safe to leave applied if the deploy is rolled back. No ordering constraint against the
-API version.
+`0021`, `0022` e `0023`. As três são aditivas — seguras de rodar antes do deploy, e
+seguras de deixar aplicadas se o deploy for revertido. Não há restrição de ordem em
+relação à versão da API.
 
 ```bash
 pnpm --filter @tatame/db migrate
 ```
 
-- `0021` — `pending_asaas_payments` table, `payments.asaas_payment_id` (unique),
+- `0021` — tabela `pending_asaas_payments`, `payments.asaas_payment_id` (unique),
   `users.asaas_customer_id`
-- `0022` — `pending_asaas_kind` enum on `pending_asaas_payments`
-- `0023` — unique index on `pending_asaas_payments (subscription_id, reference_month)`
+- `0022` — enum `pending_asaas_kind` em `pending_asaas_payments`
+- `0023` — índice único em `pending_asaas_payments (subscription_id, reference_month)`
 
-`0021` and `0022` were already applied to the Coolify database by hand, and both are
-written to be re-runnable, so applying the set again is a no-op for them.
+A `0021` e a `0022` já foram aplicadas no banco do Coolify à mão, e as duas são
+reexecutáveis, então aplicar o conjunto de novo é no-op para elas.
 
-**If `0023` fails** with `could not create unique index`: the table holds two open
-charges for one month, which is two payable Asaas charges and real money. Read both
-ids, cancel the loser in Asaas, delete that row, re-run. Do not delete a row to make
-the migration pass.
+**Se a `0023` falhar** com `could not create unique index`: a tabela tem duas cobranças
+abertas para o mesmo mês, o que significa duas cobranças pagáveis no Asaas e dinheiro
+real. Leia os dois ids, cancele a perdedora no Asaas, apague aquela linha e rode de
+novo. Não apague uma linha só para a migration passar.
 
-Reverse, if ever needed:
+Reverso, se um dia precisar:
 
 ```sql
 DROP INDEX IF EXISTS "pending_asaas_payments_subscription_month_unique";
 ```
 
-### 6. Register the root-account webhook — the step that decides the release
+### 6. Registrar o webhook da conta raiz — o passo que decide o release
 
 ```bash
 curl -X POST https://api.asaas.com/v3/webhooks \
@@ -118,70 +117,73 @@ curl -X POST https://api.asaas.com/v3/webhooks \
   }'
 ```
 
-- **Without this, no student payment is ever recorded, and nothing in the code says so.**
-  A subaccount is not notified of a split it merely receives, so the only account that
-  hears about a student's payment is the root one.
-- Run it **after** the deploy, so the URL already answers.
-- `authToken` must be the step 1 value. A wrong token **401s in silence**, and Asaas
-  interrupts a repeatedly-failing queue until it is manually reactivated.
-- `sendType: SEQUENTIALLY` keeps `PAYMENT_CONFIRMED` from overtaking `PAYMENT_RECEIVED`.
-- `PAYMENT_DELETED` is deliberately not registered. The handler tolerates it; we cause
-  it ourselves on every manual settlement, and alerting on it would make a manager
-  taking cash at the counter look like a dropped payment.
+- **Sem isso, nenhum pagamento de aluno é registrado, e nada no código avisa.** Uma
+  subconta não é notificada de um split que ela apenas recebe, então a única conta que
+  fica sabendo do pagamento de um aluno é a raiz.
+- Rode **depois** do deploy, para a URL já responder.
+- O `authToken` tem que ser o valor do passo 1. Um token errado **dá 401 em silêncio**, e
+  o Asaas interrompe uma fila que falha repetidamente até alguém reativar à mão.
+- `sendType: SEQUENTIALLY` é o que impede o `PAYMENT_CONFIRMED` de passar na frente do
+  `PAYMENT_RECEIVED`.
+- O `PAYMENT_DELETED` fica de fora de propósito. O handler tolera; nós mesmos causamos
+  esse evento em toda baixa manual, e alertar nele faria um manager recebendo dinheiro no
+  balcão parecer pagamento perdido.
 
-Confirm it exists:
+Confirme que ficou registrado:
 
 ```bash
 curl -s -H "access_token: {ROOT_KEY}" https://api.asaas.com/v3/webhooks
 ```
 
-Check `enabled: true` and `interrupted: false`.
+Confira `enabled: true` e `interrupted: false`.
 
 ---
 
-## Verify on production
+## Verificar em produção
 
-### 7. One real payment, end to end
+### 7. Um pagamento real, ponta a ponta
 
-1. A student at an academy with an **approved** payout account opens the Pix screen.
-2. The QR renders (proves step 2).
-3. Pay it for real, small amount.
-4. Within seconds the payment appears in the manager's Financeiro, and the money is in
-   the **academy's** Asaas wallet, not ours (proves steps 1 and 6).
+1. Um aluno de uma academia com conta de recebimento **aprovada** abre a tela do Pix.
+2. O QR code aparece (prova o passo 2).
+3. Pague de verdade, valor pequeno.
+4. Em segundos o pagamento aparece no Financeiro do manager, e o dinheiro está na
+   carteira Asaas **da academia**, não na nossa (prova os passos 1 e 6).
 
-If the QR renders but the payment never appears, the webhook is the cause, not the
-charge — re-check step 6.
+Se o QR code aparece mas o pagamento nunca entra, a causa é o webhook e não a cobrança —
+revise o passo 6.
 
 ```sql
--- should be empty once the payment lands; a row left behind means the webhook never arrived
+-- deve ficar vazia depois que o pagamento entra; uma linha sobrando significa
+-- que o webhook nunca chegou
 select * from pending_asaas_payments;
 ```
 
 ---
 
-## After the release
+## Depois do release
 
-### 8. Submit the 2.1.3 store build
+### 8. Submeter o build 2.1.3 nas lojas
 
-Version and build numbers are already bumped (`c56212e`: 2.1.3, `buildNumber` 2,
-`versionCode` 2). Only the submission is pending.
+Versão e build numbers já estão incrementados (`c56212e`: 2.1.3, `buildNumber` 2,
+`versionCode` 2). Só a submissão está pendente.
 
-The stores ask for a Terms and Privacy Policy link, and **no mobile screen has one**.
-Decide where it goes before submitting, or expect a review question.
+As lojas pedem link para os Termos e a Política de Privacidade, e **nenhuma tela do app
+tem um**. Decida onde fica antes de submeter, ou espere uma pergunta na revisão.
 
-### 9. Raise `MIN_MOBILE_VERSION` to 2.1.3 — only after adoption
+### 9. Subir o `MIN_MOBILE_VERSION` para 2.1.3 — só depois da adoção
 
-Blocked on step 8. **Do not do it early:** it locks out everyone still on 2.1.2.
+Depende do passo 8. **Não faça antes:** isso tranca todo mundo que ainda está no 2.1.2.
 
-This is what unblocks TAT-187 stage 1 (deleting the legacy AbacatePay Pix rail) and
-makes the landing page's "Pix only" copy true — 2.1.2 can still pay by card until then.
+É o que destrava a etapa 1 do TAT-187 (apagar o rail Pix legado da AbacatePay) e o que
+torna verdadeiro o "só Pix" da landing page — o 2.1.2 ainda consegue pagar com cartão até
+então.
 
-### 10. Later: turn on `PAYOUT_ACCOUNT_REQUIRED`
+### 10. Mais pra frente: ligar o `PAYOUT_ACCOUNT_REQUIRED`
 
-Set it to `true` once the onboarding build is adopted. TAT-179's acceptance criterion
-claims this gate is live; it is not, and no issue tracks the flip.
+Mude para `true` quando o build com o onboarding tiver sido adotado. O critério de aceite
+do TAT-179 afirma que esse gate está ativo; não está, e nenhuma issue acompanha a virada.
 
-Before TAT-187 stage 2, check both tables have drained:
+Antes da etapa 2 do TAT-187, confirme que as duas tabelas drenaram:
 
 ```sql
 select count(*) from pending_asaas_payments;
@@ -190,17 +192,19 @@ select count(*) from pending_pix_payments;
 
 ---
 
-## Not required, but know about it
+## Não é obrigatório, mas é bom saber
 
-- **Rotating `ASAAS_PAYMENT_WEBHOOK_TOKEN` later has no overlap window.** `tokensFor`
-  returns only the payment token for `PAYMENT_*` events, and the Asaas-side
-  `PUT /v3/webhooks/{id}` and the env change cannot be simultaneous — either order 401s
-  live deliveries. This release escapes it because step 6 creates a new webhook rather
-  than editing one. The first rotation does not.
-- **A student who switches plan mid-month after paying can be charged twice.** Live in
-  production today, predates this PR: `existsForSubscriptionReferenceMonth` is keyed by
-  subscription while `replaceActiveSubscriptionForAcademy` always creates a new row. Not
-  this release's doing and not fixed by it.
-- **A manager who cancels Pro and resubscribes will be billed for nothing** once this
-  merges — B7 in `handoff.md`. It works on `main` today; the TAT-185 guard in this PR
-  breaks it. Deliberately left open: the only customer who cancelled has not come back.
+- **Rotacionar o `ASAAS_PAYMENT_WEBHOOK_TOKEN` depois não tem janela de sobreposição.** O
+  `tokensFor` devolve só o token de pagamento para eventos `PAYMENT_*`, e o
+  `PUT /v3/webhooks/{id}` no lado do Asaas e a mudança da env var não podem ser
+  simultâneos — qualquer ordem dá 401 em entregas reais. Este release escapa porque o
+  passo 6 cria um webhook novo em vez de editar um existente. A primeira rotação não
+  escapa.
+- **Um aluno que troca de plano no meio do mês depois de pagar pode ser cobrado duas
+  vezes.** Está vivo em produção hoje e é anterior a este PR: o
+  `existsForSubscriptionReferenceMonth` é chaveado por subscription enquanto o
+  `replaceActiveSubscriptionForAcademy` sempre cria uma linha nova. Não é obra deste
+  release e não é corrigido por ele.
+- **Um manager que cancelar o Pro e assinar de novo vai ser cobrado por nada** depois
+  deste merge — é o B7 no `handoff.md`. Funciona na `main` hoje; o guard do TAT-185 neste
+  PR é o que quebra. Deixado aberto de propósito: o único cliente que cancelou não voltou.
