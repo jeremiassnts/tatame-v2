@@ -59,9 +59,17 @@ export interface ISubscriptionPlanRepository {
 }
 
 export interface IStudentSubscriptionRepository {
+  /**
+   * A dependent's subscription carries the guardian's `user_id`, so filtering
+   * on the user alone returns the caller's own row *and* every dependent's.
+   * Anything answering "what is this account holder's plan?" wants
+   * `withoutDependent`; three of the four callers had to remember that
+   * separately and one forgot, which is why it is an option here now.
+   */
   listWithPlanByUserAndAcademy(
     userId: string,
     academyId: string,
+    opts?: { withoutDependent?: boolean },
   ): Promise<StudentSubscriptionWithPlan[]>;
 
   findByIdWithPlan(

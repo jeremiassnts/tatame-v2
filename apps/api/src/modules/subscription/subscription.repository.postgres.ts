@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import {
   dependents,
   payments,
@@ -108,7 +108,16 @@ export class PostgresStudentSubscriptionRepository
   async listWithPlanByUserAndAcademy(
     userId: string,
     academyId: string,
+    opts: { withoutDependent?: boolean } = {},
   ): Promise<StudentSubscriptionWithPlan[]> {
+    const conditions = [
+      eq(studentSubscriptions.userId, userId),
+      eq(subscriptionPlans.academyId, academyId),
+    ];
+    if (opts.withoutDependent) {
+      conditions.push(isNull(studentSubscriptions.dependentId));
+    }
+
     const rows = await this.db
       .select({
         subscription: studentSubscriptions,
@@ -119,12 +128,7 @@ export class PostgresStudentSubscriptionRepository
         subscriptionPlans,
         eq(studentSubscriptions.planId, subscriptionPlans.id),
       )
-      .where(
-        and(
-          eq(studentSubscriptions.userId, userId),
-          eq(subscriptionPlans.academyId, academyId),
-        ),
-      )
+      .where(and(...conditions))
       .orderBy(desc(studentSubscriptions.createdAt));
 
     return rows;
@@ -148,6 +152,13 @@ export class PostgresStudentSubscriptionRepository
     return row;
   }
 
+  /**
+   * The caller's *own* subscription only. A dependent's subscription carries
+   * the guardian's `user_id`, so without the `dependent_id IS NULL` clause
+   * changing your own plan cancelled every dependent you pay for — including
+   * months already paid, which then became billable a second time under the
+   * new subscription id.
+   */
   async cancelActiveForUserInAcademy(
     userId: string,
     academyId: string,
@@ -166,6 +177,7 @@ export class PostgresStudentSubscriptionRepository
         and(
           eq(studentSubscriptions.userId, userId),
           eq(studentSubscriptions.status, "active"),
+          isNull(studentSubscriptions.dependentId),
           inArray(studentSubscriptions.planId, planIds),
         ),
       );

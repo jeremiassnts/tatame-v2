@@ -4,14 +4,16 @@ import type { ConfirmManualPaymentBody } from "@tatame/validators";
 import {
   confirmManualPaymentBodySchema,
   createCheckoutBodySchema,
+  createPixChargeBodySchema,
   listPaymentsQuerySchema,
   type CreateCheckoutBody,
+  type CreatePixChargeBody,
 } from "@tatame/validators";
 import { Router } from "express";
+import { AsaasClient } from "../../lib/asaas.js";
 import { getDb } from "../../lib/db.js";
 import { HttpError } from "../../lib/http-error.js";
 import { emitEvent } from "../../telemetry/events.js";
-import { getStripe } from "../../lib/stripe.js";
 import {
   attachActiveAcademyContext,
   requireActiveAcademy,
@@ -30,7 +32,9 @@ import { PostgresNotificationRepository } from "../notification/notification.rep
 import { NotificationService } from "../notification/notification.service.js";
 import { PostgresPushTokenRepository } from "../push-token/push-token.repository.postgres.js";
 import { PostgresStudentSubscriptionRepository } from "../subscription/subscription.repository.postgres.js";
+import { PostgresPayoutAccountRepository } from "../payout-account/payout-account.repository.postgres.js";
 import { PostgresUserRepository } from "../user/user.repository.postgres.js";
+import { AsaasCustomerService } from "./asaas-customer.service.js";
 import { PostgresDependentRepository } from "../dependent/dependent.repository.postgres.js";
 import { PostgresGraduationRepository } from "../graduation/graduation.repository.postgres.js";
 import { DependentService } from "../dependent/dependent.service.js";
@@ -71,12 +75,19 @@ const dependentService = new DependentService(
   new PostgresStudentSubscriptionRepository(db),
 );
 
+const payoutAccountRepo = new PostgresPayoutAccountRepository(db);
+
 const paymentService = new PaymentService(
   new PostgresPaymentRepository(db),
   new PostgresStudentSubscriptionRepository(db),
   academyRepo,
   buildDispatcher(db),
   managerSubRepo,
+  payoutAccountRepo,
+  // `AsaasClient` itself is the factory; `root()` throws when the keys are
+  // absent, which `requireAsaas` turns into a 503 rather than a 500.
+  AsaasClient,
+  new AsaasCustomerService(userRepo, AsaasClient),
 );
 
 paymentRouter.post(
@@ -129,6 +140,14 @@ paymentRouter.post(
   },
 );
 
+/**
+ * The card checkout, now an Asaas one split whole into the academy's wallet.
+ *
+ * The path and the `{ checkoutUrl }` shape are unchanged from the Stripe
+ * version this replaces, which is the point — mobile changes provider without
+ * changing its own contract. The Stripe webhook handler stays, since it
+ * is what records sessions already in flight.
+ */
 paymentRouter.post(
   "/checkout",
   authorize(Role.Student, Role.Guardian),
@@ -138,25 +157,13 @@ paymentRouter.post(
   async (req, res, next) => {
     try {
       const env = loadEnv();
-      if (!env.STRIPE_SECRET_KEY) {
-        throw new HttpError(503, "Stripe is not configured");
-      }
-
       const body = req.validatedBody as CreateCheckoutBody;
       const studentUserId = req.appAuth!.userId;
       const academyId = req.appAuth!.activeAcademyId!;
-      const stripe = getStripe();
 
-      const student = await userRepo.findById(studentUserId);
-      if (!student) {
-        throw new HttpError(404, "Student not found");
-      }
-
-      const result = await paymentService.createCheckoutSession(
+      const result = await paymentService.createCheckout(
         studentUserId,
         academyId,
-        student.email,
-        stripe,
         `${(env.API_PUBLIC_URL ?? `http://localhost:${env.API_PORT}`).replace(/\/$/, "")}/v1`,
         { subscriptionId: body.subscriptionId },
       );
@@ -165,7 +172,7 @@ paymentRouter.post(
         userId: studentUserId,
         academyId,
         subscriptionId: body.subscriptionId,
-        extra: { method: "stripe" },
+        extra: { method: "card", provider: "asaas" },
       });
       res.json(result);
     } catch (e) {
@@ -174,6 +181,52 @@ paymentRouter.post(
   },
 );
 
+/**
+ * The Asaas Pix charge, split whole into the academy's wallet. The rail the
+ * current app calls. `/checkout/pix` and `/pix-status/:id` are the AbacatePay
+ * pair the shipped build still calls and are live alongside this one for one
+ * release — see the note above them.
+ */
+paymentRouter.post(
+  "/pix",
+  authorize(Role.Student, Role.Guardian),
+  attachActiveAcademyContext,
+  requireActiveAcademy,
+  validateBody(createPixChargeBodySchema),
+  async (req, res, next) => {
+    try {
+      const body = req.validatedBody as CreatePixChargeBody;
+      const studentUserId = req.appAuth!.userId;
+      const academyId = req.appAuth!.activeAcademyId!;
+
+      const result = await paymentService.createPixCharge(
+        studentUserId,
+        academyId,
+        { subscriptionId: body.subscriptionId, cpfCnpj: body.cpfCnpj },
+      );
+
+      emitEvent("payment.checkout_started", {
+        userId: studentUserId,
+        academyId,
+        subscriptionId: body.subscriptionId,
+        extra: { method: "pix", provider: "asaas" },
+      });
+      res.json(result);
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+/**
+ * The AbacatePay Pix rail, restored after B9 deleted it. `POST /payments/pix`
+ * is what the current app calls; these two are what the build on the stores
+ * calls, and it cannot be updated over the air. The API has to deploy before a
+ * new build clears Apple review, so for one release both are live.
+ *
+ * **Delete both once `MIN_MOBILE_VERSION` is past the build that stopped
+ * calling them.** `api.smoke.test.ts` fails if they go early.
+ */
 paymentRouter.post(
   "/checkout/pix",
   authorize(Role.Student, Role.Guardian),
@@ -210,20 +263,6 @@ paymentRouter.post(
     }
   },
 );
-
-paymentRouter.get("/checkout-result", (_req, res) => {
-  const success = _req.query.status === "success";
-  res.setHeader("Content-Type", "text/html");
-  res.send(`<!DOCTYPE html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<style>body{background:#0C0C0C;color:#fff;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;text-align:center}
-.card{padding:40px 24px}.icon{font-size:48px;margin-bottom:16px}h1{font-size:20px;margin:0 0 8px}p{color:#ABABAB;font-size:14px;margin:0}</style>
-</head><body><div class="card">
-<div class="icon">${success ? "✅" : "❌"}</div>
-<h1>${success ? "Pagamento realizado!" : "Pagamento cancelado"}</h1>
-<p>${success ? "Você já pode fechar esta página e voltar ao app." : "Nenhuma cobrança foi feita. Feche esta página para voltar ao app."}</p>
-</div></body></html>`);
-});
 
 paymentRouter.get(
   "/pix-status/:pixQrCodeId",
@@ -263,6 +302,47 @@ paymentRouter.get(
     }
   },
 );
+
+/**
+ * Where Asaas sends the student's browser when the checkout ends. `expired` is
+ * its own outcome because Asaas closes a session after an hour and tells the
+ * student nothing about why the link stopped working.
+ */
+const CHECKOUT_RESULTS = {
+  success: {
+    icon: "✅",
+    title: "Pagamento realizado!",
+    body: "Você já pode fechar esta página e voltar ao app.",
+  },
+  expired: {
+    icon: "⏱️",
+    title: "O prazo para pagar expirou",
+    body: "Nenhuma cobrança foi feita. Volte ao app e gere um novo pagamento.",
+  },
+  cancel: {
+    icon: "❌",
+    title: "Pagamento cancelado",
+    body: "Nenhuma cobrança foi feita. Feche esta página para voltar ao app.",
+  },
+} as const;
+
+paymentRouter.get("/checkout-result", (req, res) => {
+  const status = typeof req.query.status === "string" ? req.query.status : "";
+  const result =
+    status in CHECKOUT_RESULTS
+      ? CHECKOUT_RESULTS[status as keyof typeof CHECKOUT_RESULTS]
+      : CHECKOUT_RESULTS.cancel;
+  res.setHeader("Content-Type", "text/html");
+  res.send(`<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>body{background:#0C0C0C;color:#fff;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;text-align:center}
+.card{padding:40px 24px}.icon{font-size:48px;margin-bottom:16px}h1{font-size:20px;margin:0 0 8px}p{color:#ABABAB;font-size:14px;margin:0}</style>
+</head><body><div class="card">
+<div class="icon">${result.icon}</div>
+<h1>${result.title}</h1>
+<p>${result.body}</p>
+</div></body></html>`);
+});
 
 paymentRouter.get(
   "/dependent/:dependentId",

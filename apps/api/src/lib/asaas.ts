@@ -20,6 +20,17 @@ import { HttpError } from "./http-error.js";
 
 const API_PREFIX = "/v3";
 
+/**
+ * Every Asaas call is bounded by this. Node's default is no timeout at all
+ * (~300s at the socket), and the shape that makes it matter is the payment
+ * webhook: the first `PAYMENT_*` delivery after boot resolves the root
+ * account id, and because that promise is cached every concurrent delivery
+ * awaits the same call. One hung request there stalls the whole queue — and
+ * Asaas interrupts a queue that keeps failing until an operator reactivates
+ * it by hand, so the payments stop being recorded silently.
+ */
+const REQUEST_TIMEOUT_MS = 10_000;
+
 export type AsaasPersonType = "FISICA" | "JURIDICA";
 export type AsaasCompanyType = "MEI" | "LIMITED" | "INDIVIDUAL" | "ASSOCIATION";
 
@@ -36,20 +47,6 @@ export type AsaasDocumentStatus =
   | "APPROVED"
   | "REJECTED"
   | "IGNORED";
-
-export type AsaasDocumentType =
-  | "ALLOW_BANK_ACCOUNT_DEPOSIT_STATEMENT"
-  | "CUSTOM"
-  | "EMANCIPATION_OF_MINORS"
-  | "ENTREPRENEUR_REQUIREMENT"
-  | "IDENTIFICATION_SELFIE"
-  | "IDENTIFICATION"
-  | "INVOICE"
-  | "MEI_CERTIFICATE"
-  | "MINUTES_OF_CONSTITUTION"
-  | "MINUTES_OF_ELECTION"
-  | "POWER_OF_ATTORNEY"
-  | "SOCIAL_CONTRACT";
 
 export interface AsaasWebhookInput {
   name: string;
@@ -115,8 +112,8 @@ export interface AsaasAccountStatus {
 export interface AsaasDocumentGroup {
   id: string;
   status: AsaasDocumentStatus;
-  /** An `AsaasDocumentType` in practice, but left open: this is a display
-   *  field, and a new Asaas type must not break parsing. */
+  /** One of Asaas's document types, left open: this is a display field, and a
+   *  type we have never seen must not break parsing. */
   type: string;
   title: string;
   description: string;
@@ -126,7 +123,12 @@ export interface AsaasDocumentGroup {
    */
   onboardingUrl: string | null;
   onboardingUrlExpirationDate?: string | null;
-  documents: { id: string; status: AsaasDocumentStatus }[];
+  /**
+   * Absent — not empty — for a group nothing has been uploaded to yet, which is
+   * the state every freshly created subaccount is in. Optional here so the
+   * normalisation below is the only place that has to know.
+   */
+  documents?: { id: string; status: AsaasDocumentStatus }[];
 }
 
 export interface AsaasDocumentsResponse {
@@ -134,15 +136,151 @@ export interface AsaasDocumentsResponse {
   data: AsaasDocumentGroup[];
 }
 
-export interface AsaasUploadedDocument {
+export interface CreateAsaasCustomerInput {
+  name: string;
+  /**
+   * Required to *charge* the customer, though not to create one: Asaas happily
+   * creates a customer with only a name and then refuses the charge with
+   * "Para criar esta cobrança é necessário preencher o CPF ou CNPJ do cliente."
+   * Verified against the sandbox on 2026-09-29, so it is required here — the
+   * useless half of that pair is not worth being able to express.
+   */
+  cpfCnpj: string;
+  email?: string;
+  mobilePhone?: string;
+  /**
+   * The Tatame user id. The only way back to a customer whose id we failed to
+   * persist — Asaas has no lookup by our own key otherwise.
+   */
+  externalReference?: string;
+  /** Asaas bills the customer by e-mail and SMS on its own unless this is set. */
+  notificationDisabled?: boolean;
+}
+
+export interface AsaasCustomer {
   id: string;
-  status: AsaasDocumentStatus;
+  name: string;
+  cpfCnpj: string | null;
+  email?: string | null;
+  externalReference?: string | null;
+}
+
+interface AsaasCustomerList {
+  data?: AsaasCustomer[];
+}
+
+/**
+ * Where a charge's money goes. `percentualValue: 100` is the whole feature:
+ * Asaas splits over `netValue`, so the academy receives the charge minus the
+ * Asaas fee and the platform nets exactly zero (D1/D3).
+ */
+export interface AsaasSplitInput {
+  walletId: string;
+  percentualValue?: number;
+  fixedValue?: number;
+}
+
+export interface CreateAsaasPaymentInput {
+  /** The Asaas customer id, not ours. */
+  customer: string;
+  billingType: "PIX" | "CREDIT_CARD" | "UNDEFINED";
+  value: number;
+  /** `YYYY-MM-DD`. */
+  dueDate: string;
+  description?: string;
+  externalReference?: string;
+  split?: AsaasSplitInput[];
+}
+
+/**
+ * A checkout's split, which is **not** the payment one. `POST /v3/checkouts`
+ * rejects `percentualValue` — the spelling `POST /v3/payments` requires — and
+ * demands one of `percentageValue`, `fixedValue` or `totalFixedValue`. Asaas
+ * then echoes the stored split back under the payments spelling. Verified
+ * against the sandbox on 2026-09-29; the two endpoints really do disagree.
+ */
+export interface AsaasCheckoutSplitInput {
+  walletId: string;
+  percentageValue?: number;
+  fixedValue?: number;
+  totalFixedValue?: number;
+}
+
+export interface AsaasCheckoutItemInput {
+  name: string;
+  quantity: number;
+  value: number;
+  description?: string;
+}
+
+/**
+ * Where Asaas sends the student's browser when it is done. All three are
+ * ordinary URLs — nothing has to be pre-registered — but `successUrl` and
+ * `cancelUrl` are both required and the request is refused without them.
+ */
+export interface AsaasCheckoutCallbackInput {
+  successUrl: string;
+  cancelUrl: string;
+  expiredUrl?: string;
+}
+
+export interface CreateAsaasCheckoutInput {
+  billingTypes: ("CREDIT_CARD" | "PIX" | "BOLETO")[];
+  chargeTypes: ("DETACHED" | "RECURRENT" | "INSTALLMENT")[];
+  /** Asaas closes the session after this long, and the link stops working. */
+  minutesToExpire: number;
+  items: AsaasCheckoutItemInput[];
+  callback: AsaasCheckoutCallbackInput;
+  /** Plural here; the response echoes it back as `split`. */
+  splits?: AsaasCheckoutSplitInput[];
+  /**
+   * Stored on the checkout and **not** inherited by the payment it produces.
+   * The way back from a paid checkout is `payment.checkoutSession`, not this.
+   */
+  externalReference?: string;
+}
+
+export interface AsaasCheckout {
+  id: string;
+  link: string;
+  status: string;
+}
+
+export interface AsaasPayment {
+  id: string;
+  status: string;
+  value: number;
+  /** Absent until Asaas has priced the charge. */
+  netValue?: number | null;
+  billingType?: string;
+  dueDate?: string;
+  deleted?: boolean;
+  invoiceUrl?: string;
+  /**
+   * The checkout session that produced this payment, on payments that came
+   * from one. It is the only link back: the checkout's `externalReference`
+   * is *not* copied onto the payment, and a checkout cannot be read back at
+   * all (`GET /v3/checkouts/{id}` answers 404).
+   */
+  checkoutSession?: string | null;
+}
+
+export interface AsaasPixQrCode {
+  encodedImage: string;
+  payload: string;
+  expirationDate: string | null;
 }
 
 export interface AsaasFees {
   payment: {
     pix: {
       fixedFeeValue: number;
+      /**
+       * The promotional rate Asaas actually charges until `discountExpiration`.
+       * It is reported next to the standard rate, not instead of it.
+       */
+      fixedFeeValueWithDiscount?: number | null;
+      discountExpiration?: string | null;
       percentageFee: number;
       minimumFeeValue: number;
       maximumFeeValue: number;
@@ -152,6 +290,10 @@ export interface AsaasFees {
     creditCard: {
       operationValue: number;
       oneInstallmentPercentage: number;
+      discountOneInstallmentPercentage?: number | null;
+      /** Asaas's own verdict on whether the promotional rate is in force. */
+      hasValidDiscount?: boolean;
+      discountExpiration?: string | null;
       daysToReceive: number;
     };
   };
@@ -235,27 +377,156 @@ export class AsaasClient {
     return { rejectReasons: body.rejectReasons ?? null, data: body.data ?? [] };
   }
 
-  uploadDocument(
-    groupId: string,
-    input: {
-      type: AsaasDocumentType;
-      file: { buffer: Buffer; filename: string; contentType: string };
-    },
-  ): Promise<AsaasUploadedDocument> {
-    const form = new FormData();
-    form.append("type", input.type);
-    form.append(
-      "documentFile",
-      new File([new Uint8Array(input.file.buffer)], input.file.filename, {
-        type: input.file.contentType,
-      }),
-    );
-    // No Content-Type header: fetch has to set it so the multipart boundary matches.
-    return this.request<AsaasUploadedDocument>(
+
+  async createCustomer(
+    input: CreateAsaasCustomerInput,
+  ): Promise<AsaasCustomer> {
+    const body = await this.request<Partial<AsaasCustomer>>(
       "POST",
-      `/myAccount/documents/${encodeURIComponent(groupId)}`,
-      { form },
+      "/customers",
+      { json: input },
     );
+    if (!body.id) {
+      throw new HttpError(502, "Asaas não retornou o cliente criado");
+    }
+    return { ...body, id: body.id, name: body.name ?? input.name, cpfCnpj: body.cpfCnpj ?? null };
+  }
+
+  /**
+   * The recovery path: a customer was created and the id never reached our
+   * database. Creating a second one would work, but it scatters a student's
+   * charges across two customers at Asaas for no reason.
+   */
+  async findCustomerByExternalReference(
+    externalReference: string,
+  ): Promise<AsaasCustomer | undefined> {
+    const body = await this.request<AsaasCustomerList>("GET", "/customers", {
+      query: { externalReference },
+    });
+    return body.data?.[0];
+  }
+
+  async createPayment(input: CreateAsaasPaymentInput): Promise<AsaasPayment> {
+    const body = await this.request<Partial<AsaasPayment>>(
+      "POST",
+      "/payments",
+      { json: input },
+    );
+    if (!body.id) {
+      throw new HttpError(502, "Asaas não retornou a cobrança criada");
+    }
+    return { ...body, id: body.id, status: body.status ?? "PENDING", value: body.value ?? input.value };
+  }
+
+  /**
+   * The QR code for a Pix charge.
+   *
+   * Two traps live here. The charge belongs to the **root** account, so this
+   * fails until *that* account has a Pix key — a 400 whose message is the only
+   * thing that explains it, and which Asaas provisions asynchronously so a
+   * fresh account fails for its first minutes. And a **deleted** charge still
+   * answers 200 with a perfectly valid-looking QR, so a caller reusing a stored
+   * charge id cannot learn from here that the charge was cancelled.
+   */
+  async getPixQrCode(paymentId: string): Promise<AsaasPixQrCode> {
+    const body = await this.request<Partial<AsaasPixQrCode>>(
+      "GET",
+      `/payments/${paymentId}/pixQrCode`,
+    );
+    if (!body.encodedImage || !body.payload) {
+      throw new HttpError(502, "Asaas não retornou o QR code da cobrança");
+    }
+    return {
+      encodedImage: body.encodedImage,
+      payload: body.payload,
+      expirationDate: body.expirationDate ?? null,
+    };
+  }
+
+  /**
+   * A charge as Asaas currently holds it, or `undefined` if it no longer
+   * exists. The `deleted` flag is the only way to learn a stored charge was
+   * cancelled — `getPixQrCode` answers 200 with a valid-looking QR either way.
+   */
+  async findPayment(paymentId: string): Promise<AsaasPayment | undefined> {
+    try {
+      const body = await this.request<Partial<AsaasPayment>>(
+        "GET",
+        `/payments/${paymentId}`,
+      );
+      if (!body.id) return undefined;
+      return { ...body, id: body.id, status: body.status ?? "PENDING", value: body.value ?? 0 };
+    } catch (error) {
+      if (error instanceof HttpError && error.statusCode === 404) return undefined;
+      throw error;
+    }
+  }
+
+  /**
+   * Cancels an open charge. Idempotent at Asaas — deleting twice answers 200 —
+   * and a charge that is already gone is the outcome the caller wanted, so a
+   * 404 is success here rather than an error to handle.
+   */
+  async deletePayment(paymentId: string): Promise<void> {
+    try {
+      await this.request<{ deleted?: boolean }>(
+        "DELETE",
+        `/payments/${paymentId}`,
+      );
+    } catch (error) {
+      if (error instanceof HttpError && error.statusCode === 404) return;
+      throw error;
+    }
+  }
+
+  /**
+   * A hosted card checkout, split the same way a Pix charge is.
+   *
+   * It does **not** answer a payment id: the payment is only created when the
+   * student pays, and it carries `checkoutSession` pointing back here. There
+   * is also no way to read a checkout back, so this response is the only look
+   * at it a caller ever gets.
+   *
+   * Binding an existing `customer` is deliberately not offered. Asaas demands
+   * a full address on any customer or `customerData` passed here, and the
+   * platform holds no address for a student (D7) — so the student identifies
+   * themselves on the Asaas page, which is what the page is for.
+   */
+  async createCheckout(input: CreateAsaasCheckoutInput): Promise<AsaasCheckout> {
+    const body = await this.request<Partial<AsaasCheckout>>(
+      "POST",
+      "/checkouts",
+      { json: input },
+    );
+    if (!body.id || !body.link) {
+      throw new HttpError(502, "Asaas não retornou o checkout criado");
+    }
+    return { id: body.id, link: body.link, status: body.status ?? "ACTIVE" };
+  }
+
+  /**
+   * Closes an open checkout so its link stops being payable.
+   *
+   * Unlike `deletePayment`, Asaas is **not** idempotent here: a second cancel
+   * answers 400 `invalid_action`, and so does cancelling one already paid or
+   * expired. Every one of those means the session is no longer active, which
+   * is what the caller asked for — so they are success, not failures to
+   * handle. A 404 is the same story for an id that never existed.
+   */
+  async cancelCheckout(checkoutId: string): Promise<void> {
+    try {
+      await this.request<{ status?: string }>(
+        "POST",
+        `/checkouts/${checkoutId}/cancel`,
+      );
+    } catch (error) {
+      if (!(error instanceof HttpError)) throw error;
+      if (error.statusCode === 404) return;
+      if (error.statusCode === 400 && error.details?.code === "invalid_action") {
+        return;
+      }
+      throw error;
+    }
   }
 
   getFees(): Promise<AsaasFees> {
@@ -263,11 +534,14 @@ export class AsaasClient {
   }
 
   private async request<T>(
-    method: "GET" | "POST",
+    method: "GET" | "POST" | "DELETE",
     path: string,
-    opts: { json?: unknown; form?: FormData } = {},
+    opts: { json?: unknown; query?: Record<string, string> } = {},
   ): Promise<T> {
-    const url = `${this.baseUrl.replace(/\/+$/, "")}${API_PREFIX}${path}`;
+    const search = opts.query
+      ? `?${new URLSearchParams(opts.query).toString()}`
+      : "";
+    const url = `${this.baseUrl.replace(/\/+$/, "")}${API_PREFIX}${path}${search}`;
     const headers: Record<string, string> = {
       access_token: this.accessToken,
       accept: "application/json",
@@ -279,7 +553,8 @@ export class AsaasClient {
       response = await fetch(url, {
         method,
         headers,
-        body: opts.form ?? (opts.json !== undefined ? JSON.stringify(opts.json) : undefined),
+        body: opts.json !== undefined ? JSON.stringify(opts.json) : undefined,
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       });
     } catch {
       // The cause is a socket-level message with the upstream host in it —

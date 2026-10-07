@@ -650,16 +650,30 @@ such blind spot — it counts the response, not the code path that produced it. 
 event is still the better *debugging* tool, and the alert's description says so: it
 carries the LogQL to run next.
 
-### The payment rules, and the one that is still missing
+### The payment rules
 
 The task this came from proposed alerting on `payment.*` with
-`event_outcome="failed"`. No such event exists, and it cannot: every `payment.*` entry
-in the catalog is an `outcome: success`, because both webhook handlers process only
-the success event and `return` on anything else. There is no failure path in the code
-to report from. Adding `payment.failed` means first *handling* the failure event types
-the providers already send (`payment_intent.payment_failed`, `checkout.session.expired`
-and AbacatePay's equivalents), which is a product decision — whether the student hears
-about an expired Pix — before it is an observability one. It is not done.
+`event_outcome="failed"`. At the time no such event existed: every `payment.*` entry in
+the catalog was an `outcome: success`, because both webhook handlers processed only the
+success event and `return`ed on anything else. There was no failure path in the code to
+report from.
+
+TAT-104 changed that. The Asaas rails added two events that are not successes, and both
+have rules:
+
+| Event | Outcome | Means |
+| --- | --- | --- |
+| `payment.charge_failed` | `failed` | A student tried to pay and Asaas refused to open the charge, or to show its QR code |
+| `payment.reversed` | `rejected` | A refund or a chargeback — and because the split already paid the academy, the money comes out of *their* wallet |
+
+Both are deliberately one broad signal with the Asaas code and sentence in `extra`,
+rather than a reason per cause: the causes are Asaas's to invent, and an enumeration
+here would always be one release behind the one that actually fires.
+
+What is still not done is telling a student their Pix expired. That needs the provider
+failure event types to be *handled* first (`payment_intent.payment_failed`,
+`checkout.session.expired` and the Asaas equivalents), which is a product decision
+before it is an observability one.
 
 What was wrong with the original framing is that it looked in the wrong place. The
 dangerous gap was not the failure path; it was the **success** path. Both handlers had
@@ -668,18 +682,29 @@ recorded:
 
 | Drop | Reason | What it costs |
 | --- | --- | --- |
-| `billing.paid` whose `pixQrCodeId` matches no pending row | `NO_PENDING_PIX` | Pix paid, no payment row, student still overdue |
+| An Asaas charge matching no pending row | `NO_PENDING_CHARGE` | Paid, no payment row, student still overdue |
+| `billing.paid` whose `pixQrCodeId` matches no pending row | `NO_PENDING_PIX` | Same, on the retired AbacatePay rail |
 | `checkout.session.completed` with no metadata | `MISSING_REFERENCE` | Same, via Stripe |
+| The month already had a payment row | `DUPLICATE_MONTH` | Nothing lost — but the student paid twice and someone must decide about a refund |
+| The delivery's Asaas account is not ours | `FOREIGN_ACCOUNT` | Two environments sharing a webhook url or token; the *sender* recorded nothing |
 | student or academy cannot be loaded | `USER_OR_ACADEMY_NOT_FOUND` | Payment recorded, confirmation email lost |
 | academy owner cannot be loaded | `OWNER_NOT_FOUND` | Payment recorded, manager email lost |
-| AbacatePay event type we do not handle | `UNKNOWN_EVENT_TYPE` | Nothing — normal traffic, filtered out of the rules |
+| Provider event type we do not handle | `UNKNOWN_EVENT_TYPE` | Nothing — normal traffic, the one reason deliberately left unalerted |
 
 None of these produced any signal at all: the route answers `{received: true}` with
 200 and the provider considers the webhook delivered. `manager_subscription` already
 reported its equivalent through `manager_subscription.webhook_unhandled`; these two
 handlers had simply been left out. They now emit `payment.webhook_unhandled`, and the
-first two reasons are the only rule in this folder with a **threshold of zero** — one
-lost payment is already worth an email.
+three reasons that mean a payment was lost share the one **critical** rule with a
+**threshold of zero** — one lost payment is already worth an email. `DUPLICATE_MONTH`
+and `FOREIGN_ACCOUNT` have their own zero-threshold rules at `warning`, because each
+occurrence needs a person without anybody being woken up.
+
+`NO_PENDING_CHARGE` is the reason to keep in mind when reading these rules. It is the
+Asaas spelling of `NO_PENDING_PIX`, and for one release the rule matched only the two
+legacy reasons — so after the cutover the reason a lost payment *actually* reports had
+no rule at all. `catalog-coverage.test.ts` now fails if any money reason is missing
+from the `expr:` lines in `rules.yml`, which is the check that would have caught it.
 
 One asymmetry worth knowing: the AbacatePay handler reports `UNKNOWN_EVENT_TYPE` and
 the Stripe one does not. `/webhooks/stripe` runs `StripeCheckoutWebhookHandler` and

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   makeAcademy,
   makePayment,
@@ -15,6 +15,10 @@ import { InMemoryPaymentRepository } from "./payment.repository.in-memory.js";
 import { PaymentService } from "./payment.service.js";
 
 describe("PaymentService", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("confirmManual creates payment when manager owns academy", async () => {
     const managerId = randomUUID();
     const academy = makeAcademy({ ownerId: managerId });
@@ -44,6 +48,178 @@ describe("PaymentService", () => {
     });
     expect(row.amountCents).toBe(5000);
     expect(payRows).toHaveLength(1);
+  });
+
+  // The gap this closes: `createPixCharge` and `createCheckout` both ask
+  // `existsForSubscriptionReferenceMonth` through `openChargeContext`, and
+  // `confirmManual` never did. So the one path a human drives by hand was the
+  // one that could bill a month twice.
+  it("confirmManual returns 409 when the month already has a payment", async () => {
+    const managerId = randomUUID();
+    const academy = makeAcademy({ ownerId: managerId });
+    const planRows = [makeSubscriptionPlan({ academyId: academy.id })];
+    const planRepo = new InMemorySubscriptionPlanRepository(planRows);
+    const subRows = [
+      makeStudentSubscription({
+        userId: randomUUID(),
+        planId: planRows[0]!.id,
+        status: "active",
+      }),
+    ];
+    const subRepo = new InMemoryStudentSubscriptionRepository(planRepo, subRows);
+    const payRows = [
+      makePayment({
+        subscriptionId: subRows[0]!.id,
+        academyId: academy.id,
+        referenceMonth: "2026-03-01",
+      }),
+    ];
+    const payRepo = new InMemoryPaymentRepository(payRows);
+    const svc = new PaymentService(
+      payRepo,
+      subRepo,
+      new InMemoryAcademyRepository([academy]),
+    );
+
+    await expect(
+      svc.confirmManual(managerId, academy.id, {
+        subscriptionId: subRows[0]!.id,
+        amountCents: 5000,
+        referenceMonth: "2026-03-01",
+        notes: null,
+      }),
+    ).rejects.toMatchObject({ statusCode: 409 });
+    expect(payRows).toHaveLength(1);
+  });
+
+  // A different month on the same subscription is the normal case, and the
+  // guard must not be a subscription-wide block.
+  it("confirmManual still records a month the subscription has not paid", async () => {
+    const managerId = randomUUID();
+    const academy = makeAcademy({ ownerId: managerId });
+    const planRows = [makeSubscriptionPlan({ academyId: academy.id })];
+    const planRepo = new InMemorySubscriptionPlanRepository(planRows);
+    const subRows = [
+      makeStudentSubscription({
+        userId: randomUUID(),
+        planId: planRows[0]!.id,
+        status: "active",
+      }),
+    ];
+    const subRepo = new InMemoryStudentSubscriptionRepository(planRepo, subRows);
+    const payRows = [
+      makePayment({
+        subscriptionId: subRows[0]!.id,
+        academyId: academy.id,
+        referenceMonth: "2026-03-01",
+      }),
+    ];
+    const payRepo = new InMemoryPaymentRepository(payRows);
+    const svc = new PaymentService(
+      payRepo,
+      subRepo,
+      new InMemoryAcademyRepository([academy]),
+    );
+
+    const row = await svc.confirmManual(managerId, academy.id, {
+      subscriptionId: subRows[0]!.id,
+      amountCents: 5000,
+      referenceMonth: "2026-04-01",
+      notes: null,
+    });
+    expect(row.referenceMonth).toBe("2026-04-01");
+    expect(payRows).toHaveLength(2);
+  });
+
+  // The restored AbacatePay rail has to obey D9 like the other three. It always
+  // did — this pins it, because the rail is scheduled for deletion and the
+  // guard is the part that must not be lost on the way out.
+  it("createPixQrCode returns 409 when the month already has a payment", async () => {
+    const studentId = randomUUID();
+    const academy = makeAcademy({ ownerId: randomUUID() });
+    const planRows = [makeSubscriptionPlan({ academyId: academy.id })];
+    const planRepo = new InMemorySubscriptionPlanRepository(planRows);
+    const subRows = [
+      makeStudentSubscription({
+        userId: studentId,
+        planId: planRows[0]!.id,
+        status: "active",
+      }),
+    ];
+    const subRepo = new InMemoryStudentSubscriptionRepository(planRepo, subRows);
+    const referenceMonth = new Date().toISOString().slice(0, 7) + "-01";
+    const payRows = [
+      makePayment({
+        subscriptionId: subRows[0]!.id,
+        academyId: academy.id,
+        referenceMonth,
+      }),
+    ];
+    const payRepo = new InMemoryPaymentRepository(payRows);
+    const svc = new PaymentService(
+      payRepo,
+      subRepo,
+      new InMemoryAcademyRepository([academy]),
+    );
+
+    await expect(
+      svc.createPixQrCode(studentId, academy.id, "key_test", {
+        subscriptionId: subRows[0]!.id,
+      }),
+    ).rejects.toMatchObject({ statusCode: 409 });
+    // It must reject before it opens a charge at AbacatePay, not after.
+    expect(payRows).toHaveLength(1);
+  });
+
+  // H6 on the rail that still serves the installed 2.1.2 build. `openChargeContext`
+  // has had this since B2; this path did not, so a client that omitted
+  // `subscriptionId` could be handed a dependent's charge at a dependent's price.
+  it("createPixQrCode charges the caller's own plan, not a dependent's", async () => {
+    const studentId = randomUUID();
+    const academy = makeAcademy({ ownerId: randomUUID() });
+    const adult = makeSubscriptionPlan({ academyId: academy.id, priceCents: 15000 });
+    const kids = makeSubscriptionPlan({ academyId: academy.id, priceCents: 9000 });
+    const planRepo = new InMemorySubscriptionPlanRepository([adult, kids]);
+    // Both rows carry the guardian's `user_id`; the dependent's is the more
+    // recent, so "the first active subscription" was the dependent's.
+    const own = makeStudentSubscription({
+      userId: studentId,
+      planId: adult.id,
+      status: "active",
+    });
+    const dependent = makeStudentSubscription({
+      userId: studentId,
+      planId: kids.id,
+      status: "active",
+      dependentId: randomUUID(),
+    });
+    const subRepo = new InMemoryStudentSubscriptionRepository(planRepo, [
+      own,
+      dependent,
+    ]);
+    const referenceMonth = new Date().toISOString().slice(0, 7) + "-01";
+    // Only the guardian's own month is settled. Picking their own row means a
+    // 409 before any network call; picking the dependent's means a charge.
+    const payRepo = new InMemoryPaymentRepository([
+      makePayment({
+        subscriptionId: own.id,
+        academyId: academy.id,
+        referenceMonth,
+      }),
+    ]);
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockRejectedValue(new Error("the legacy rail should not have been called"));
+    const svc = new PaymentService(
+      payRepo,
+      subRepo,
+      new InMemoryAcademyRepository([academy]),
+    );
+
+    await expect(
+      svc.createPixQrCode(studentId, academy.id, "key_test"),
+    ).rejects.toMatchObject({ statusCode: 409 });
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   it("confirmManual returns 404 when subscription in another academy", async () => {

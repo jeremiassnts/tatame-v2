@@ -16,7 +16,12 @@ export async function managerFetch<T>(
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.error || `API error ${res.status}`);
+    // The API puts a machine-readable code in `error` whenever it has one and
+    // the sentence for the reader in `message`, so reading `error` first is how
+    // a refusal like ALREADY_SUBSCRIBED used to reach the screen as its own
+    // code. Errors that carry no code repeat the sentence in both fields, so
+    // preferring `message` changes nothing for them.
+    throw new Error(body.message || body.error || `API error ${res.status}`);
   }
 
   return res.json();

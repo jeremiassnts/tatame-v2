@@ -294,6 +294,13 @@ subscriptionRouter.post(
       }
       const userId = req.appAuth!.userId;
       const academyId = req.appAuth!.activeAcademyId!;
+      // Nothing downstream ties the dependent to the caller: `selectPlan`
+      // writes the caller's `user_id` and whatever `dependent_id` it was
+      // handed, so an unchecked id let any student enrol — and later pay for —
+      // someone else's dependent.
+      if (dependentId) {
+        await dependentService.assertGuardianOwnership(userId, dependentId);
+      }
       const result = await subscriptionService.selectPlan(userId, academyId, planId, {
         dependentId: dependentId ?? null,
       });

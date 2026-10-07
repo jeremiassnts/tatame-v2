@@ -43,6 +43,11 @@ export const CATALOG = {
       "DUPLICATE",
       "LOCK_BUSY",
       "MISSING_DEPENDENT",
+      // Someone asked to check in a dependent who is not theirs, or who
+      // belongs to another academy. Both are the caller reaching past their
+      // own household, so they are worth telling apart from a plain 403.
+      "DEPENDENT_NOT_OWNED",
+      "DEPENDENT_OTHER_ACADEMY",
     ],
   },
 
@@ -85,16 +90,58 @@ export const CATALOG = {
       // payment is lost until someone reconciles by hand; the last two mean the
       // payment *was* recorded and only its emails were skipped.
       "NO_PENDING_PIX",
+      // The same meaning on the Asaas rail, where a charge is not always a
+      // Pix. `NO_PENDING_PIX` goes with AbacatePay in B9 and this is what is
+      // left.
+      "NO_PENDING_CHARGE",
       "MISSING_REFERENCE",
+      // The month already has a payment — a manual confirmation usually got
+      // there first, and `cancelCheckout` cannot tell an already-paid session
+      // from an expired one, so the card payment still arrives. Unlike the two
+      // above, the money is not lost: the split already put it in the academy's
+      // wallet. What is wrong is that the student paid the same month twice,
+      // and only a human can decide whether that gets refunded.
+      "DUPLICATE_MONTH",
+      // A delivery from an Asaas account that is not ours — the same webhook
+      // url or token configured in two environments. Without it, one
+      // environment's payments raise `NO_PENDING_CHARGE` in another.
+      "FOREIGN_ACCOUNT",
       "USER_OR_ACADEMY_NOT_FOUND",
       "OWNER_NOT_FOUND",
-      // Only AbacatePay's. Stripe's unknown types are already reported by
+      // AbacatePay's and Asaas's. Stripe's unknown types are already reported by
       // `manager_subscription.webhook_unhandled` — see the note at the top of
       // stripe-checkout-webhook.handler.ts.
       "UNKNOWN_EVENT_TYPE",
     ],
   },
-  "payment.transferred": { domain: "payment", outcome: "success" },
+  /**
+   * A student tried to pay and Asaas refused to open the charge, or to show its
+   * QR code. Deliberately one broad signal with the Asaas code and sentence in
+   * `extra`, rather than a reason per cause: the causes are Asaas's to invent —
+   * the root account having no Pix key yet, the 60-day evaluation cap, a
+   * document it did not like — and an enumeration here would always be one
+   * release behind the one that actually fires.
+   */
+  "payment.charge_failed": { domain: "payment", outcome: "failed" },
+  /**
+   * Money went back: a refund, or any stage of a chargeback. One broad signal
+   * rather than a reason per stage, for the same argument as
+   * `payment.charge_failed` — the stages are Asaas's to invent, and the useful
+   * question is "whose money went back?", which the academy and payment ids on
+   * the record answer and an enumeration does not.
+   *
+   * The Asaas event name is `app.type`, and the split Asaas cancelled on the
+   * academy's side is `app.splitStatus` / `app.splitCancellationReason`. That
+   * split is the point: the platform nets zero on these charges, so a reversal
+   * comes out of the *academy's* wallet, and nothing else in the system says
+   * so. `SPLIT-05`.
+   *
+   * `rejected` rather than `failed`: nothing in the API broke. A refund is a
+   * normal thing a manager can ask Asaas for and a chargeback is the card
+   * network's decision — both want a warning, neither wants an error carrying a
+   * cause.
+   */
+  "payment.reversed": { domain: "payment", outcome: "rejected" },
 
   // --- payout_account (the academy's Asaas subaccount) --------------------
   "payout_account.created": { domain: "payout_account", outcome: "success" },
@@ -145,7 +192,18 @@ export const CATALOG = {
   "manager_subscription.webhook_unhandled": {
     domain: "manager_subscription",
     outcome: "rejected",
-    reasons: ["UNKNOWN_EVENT_TYPE", "NO_ACADEMY_OR_USER", "USER_NOT_FOUND", "NO_RECORD"],
+    reasons: [
+      "UNKNOWN_EVENT_TYPE",
+      "NO_ACADEMY_OR_USER",
+      "USER_NOT_FOUND",
+      "NO_RECORD",
+      // A second subscription on a Stripe Customer that already has one linked
+      // to an academy. `academy_id` and `stripe_subscription_id` are both
+      // unique, so only one of the two can ever be honoured — this is the signal
+      // that a duplicate exists and someone has to cancel it in Stripe. Before
+      // TAT-185 the handler simply repointed the row and said nothing.
+      "DUPLICATE_SUBSCRIPTION",
+    ],
   },
 
   // --- graduation ---------------------------------------------------------

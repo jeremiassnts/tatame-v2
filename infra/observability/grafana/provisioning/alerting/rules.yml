@@ -232,6 +232,12 @@ groups:
         # `for: 5m` still holds, and costs nothing: `count_over_time` over a
         # fifteen-minute window keeps a single occurrence above the threshold for
         # fifteen minutes, so one lost payment does send the email.
+        #
+        # `NO_PENDING_CHARGE` is the Asaas rail's spelling of `NO_PENDING_PIX`
+        # and has to be here: after the TAT-104 cutover it is the reason a lost
+        # student payment actually reports, so a rule matching only the two
+        # legacy reasons would have gone quiet exactly when the new rail became
+        # the only one the app calls.
         condition: B
         data:
           - refId: A
@@ -244,7 +250,7 @@ groups:
                 type: loki
                 uid: loki
               editorMode: code
-              expr: sum(count_over_time({service_name="tatame-api"} | event_name="payment.webhook_unhandled" | event_reason=~"NO_PENDING_PIX|MISSING_REFERENCE" [15m]))
+              expr: sum(count_over_time({service_name="tatame-api"} | event_name="payment.webhook_unhandled" | event_reason=~"NO_PENDING_PIX|NO_PENDING_CHARGE|MISSING_REFERENCE" [15m]))
               intervalMs: 60000
               maxDataPoints: 43200
               queryType: instant
@@ -274,8 +280,9 @@ groups:
           summary: A payment was taken and no record of it was written
           description: >-
             {{ $value }} paid webhook(s) in fifteen minutes that could not be tied
-            to anything of ours — either a Pix with no pending row
-            (`NO_PENDING_PIX`) or a completed Stripe session with no metadata
+            to anything of ours — an Asaas charge with no pending row
+            (`NO_PENDING_CHARGE`), the same on the retired AbacatePay rail
+            (`NO_PENDING_PIX`), or a completed Stripe session with no metadata
             (`MISSING_REFERENCE`). The money is with the provider and the student
             is still marked overdue. Reconcile by hand against the provider
             dashboard. Query, with the ids:
@@ -334,14 +341,240 @@ groups:
             The payment rows exist; the people they point at do not. `app.cause`
             on each event says which email was lost.
 
+      - uid: tatame-payment-charge-failed
+        title: Students cannot open a payment
+        # The student-facing half of the money path, which had no event before
+        # TAT-104. `payment.charge_failed` is one broad signal by design, with
+        # the Asaas code and sentence in `extra` — the causes are Asaas's to
+        # invent (no Pix key on the root account yet, the 60-day evaluation cap,
+        # a document it did not like) and enumerating them here would always be
+        # one release behind.
+        #
+        # Threshold above three, because a single failure is usually one
+        # student's own data being refused with a 400. A burst is the rail
+        # itself: with the card rail off, nobody can pay at all.
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 1800
+              to: 0
+            datasourceUid: loki
+            model:
+              datasource:
+                type: loki
+                uid: loki
+              editorMode: code
+              expr: sum(count_over_time({service_name="tatame-api"} | event_name="payment.charge_failed" [15m]))
+              intervalMs: 60000
+              maxDataPoints: 43200
+              queryType: instant
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              conditions:
+                - evaluator:
+                    params: [3]
+                    type: gt
+              expression: A
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: OK
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: More than 3 students failed to open a charge in 15 minutes
+          description: >-
+            {{ $value }} `payment.charge_failed` events in fifteen minutes. Pix is
+            the only rail the app offers, so this is students unable to pay at
+            all. `app.asaas.code` and `app.asaas.message` on each event carry what
+            Asaas said; check first whether the root account still has a Pix key
+            and whether the evaluation caps were hit. Query:
+            {service_name="tatame-api"} | event_name="payment.charge_failed"
+
+      - uid: tatame-payment-reversed
+        title: Money went back out of an academy wallet
+        # Threshold of zero, like the lost-payment rule, and for a related
+        # reason: the split means the platform nets nothing on these charges, so
+        # a refund or chargeback comes out of the *academy's* wallet and nothing
+        # else in the system tells anyone. Warning rather than critical because
+        # a refund is a normal thing a manager can ask Asaas for — but they
+        # should not be the last to know it happened.
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 3600
+              to: 0
+            datasourceUid: loki
+            model:
+              datasource:
+                type: loki
+                uid: loki
+              editorMode: code
+              expr: sum(count_over_time({service_name="tatame-api"} | event_name="payment.reversed" [30m]))
+              intervalMs: 60000
+              maxDataPoints: 43200
+              queryType: instant
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
+              expression: A
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: OK
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: A payment was refunded or charged back
+          description: >-
+            {{ $value }} `payment.reversed` event(s) in thirty minutes. The split
+            already paid the academy, so the money comes back out of their
+            wallet, not ours. `app.type` says whether it was a refund or which
+            stage of a chargeback, and `app.splitCancellationReason` says what
+            Asaas did to the split. Query:
+            {service_name="tatame-api"} | event_name="payment.reversed"
+
+      - uid: tatame-payment-duplicate-month
+        title: A student paid the same month twice
+        # Zero threshold because each occurrence needs a person: the money is
+        # not lost — the split put it in the academy's wallet — but the student
+        # paid a month they had already paid, and only a human can decide
+        # whether that gets refunded. Usually a manual confirmation landed first
+        # and `cancelCheckout` could not tell an already-paid session from an
+        # expired one, so the charge still arrived.
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 3600
+              to: 0
+            datasourceUid: loki
+            model:
+              datasource:
+                type: loki
+                uid: loki
+              editorMode: code
+              expr: sum(count_over_time({service_name="tatame-api"} | event_name="payment.webhook_unhandled" | event_reason="DUPLICATE_MONTH" [30m]))
+              intervalMs: 60000
+              maxDataPoints: 43200
+              queryType: instant
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
+              expression: A
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: OK
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: A student was charged twice for one reference month
+          description: >-
+            {{ $value }} paid webhook(s) in thirty minutes for a month that
+            already had a payment row. Nothing was lost and nothing was written
+            twice, but somebody paid twice and has to be told whether they are
+            getting it back. The event carries the academy and payment ids.
+            Query:
+            {service_name="tatame-api"} | event_name="payment.webhook_unhandled" | event_reason="DUPLICATE_MONTH"
+
+      - uid: tatame-payment-foreign-account
+        title: Payment webhooks arriving from another Asaas account
+        # Always a misconfiguration — the same webhook url or token set in two
+        # environments — and it is dangerous in the direction that is invisible
+        # from here: whichever environment *sent* the delivery recorded nothing,
+        # so its students show as overdue while this one quietly rejects their
+        # payments. Zero threshold, because one delivery already proves the
+        # misconfiguration exists.
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 3600
+              to: 0
+            datasourceUid: loki
+            model:
+              datasource:
+                type: loki
+                uid: loki
+              editorMode: code
+              expr: sum(count_over_time({service_name="tatame-api"} | event_name="payment.webhook_unhandled" | event_reason="FOREIGN_ACCOUNT" [30m]))
+              intervalMs: 60000
+              maxDataPoints: 43200
+              queryType: instant
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
+              expression: A
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: OK
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: A payment delivery came from an Asaas account that is not ours
+          description: >-
+            {{ $value }} delivery(ies) in thirty minutes whose Asaas account id
+            did not match this environment's root account. Two environments are
+            sharing a webhook url or token. Check which one, because the sender
+            recorded no payment for those students. Query:
+            {service_name="tatame-api"} | event_name="payment.webhook_unhandled" | event_reason="FOREIGN_ACCOUNT"
+
       - uid: tatame-subscription-payment-failing
         title: Pro subscription payments failing
-        # `manager_subscription.past_due` carries reason PAYMENT_FAILED and is the
-        # only genuine payment-failure event the catalog has. Student payments
-        # have none: every `payment.*` entry is an `outcome: success`, because
-        # both webhook handlers process only the success event and return
-        # silently on anything else. A student payment that breaks server-side
-        # therefore shows up as a 5xx, which the rules above already cover.
+        # `manager_subscription.past_due` carries reason PAYMENT_FAILED and is
+        # the manager side of a failed payment. The student side used to have no
+        # event at all — every `payment.*` entry was an `outcome: success` —
+        # which is no longer true: TAT-104 added `payment.charge_failed` and
+        # `payment.reversed`, and both have rules of their own above.
         condition: B
         data:
           - refId: A

@@ -5,6 +5,7 @@ import { CheckinLockBusyError, withCheckinLock } from "../../lib/lock.js";
 import { emitEvent, type EventFields, type EventReason } from "../../telemetry/events.js";
 import { requireRedisForCheckin } from "../../lib/redis.js";
 import type { ClassRow, IClassRepository } from "../class/class.repository.js";
+import type { IDependentRepository } from "../dependent/dependent.repository.js";
 import type { IMembershipRepository } from "../membership/membership.repository.js";
 import type { NotificationDispatcher } from "../notification/notification-dispatcher.js";
 import type { EngagementService } from "../engagement/engagement.service.js";
@@ -154,6 +155,13 @@ export class CheckinService {
     private readonly studentSubRepo: IStudentSubscriptionRepository,
     private readonly paymentRepo: IPaymentRepository,
     private readonly checkinRepo: ICheckinRepository,
+    /**
+     * Only ever read to answer "is this dependent the caller's own?". The
+     * check lives in this service rather than in `checkin.routes.ts` so that
+     * every caller of `checkIn` inherits it — the bug this closes was a route
+     * that forwarded a client-supplied `dependentId` without asking.
+     */
+    private readonly dependentRepo: IDependentRepository,
     private readonly dispatcher?: NotificationDispatcher,
     private readonly engagementService?: EngagementService,
   ) { }
@@ -189,6 +197,36 @@ export class CheckinService {
         "Responsável deve informar o dependente para check-in",
         actor,
       );
+    }
+
+    // `dependentId` arrives from the request body, so nothing so far proves it
+    // belongs to the caller. Without this, any student or guardian could spend
+    // another family's weekly allowance and — because the dependent's unique
+    // index is keyed on the dependent alone — leave the real guardian's own
+    // check-in refused as a duplicate. Ownership is settled before any of the
+    // work below reads the dependent's plan.
+    if (opts.dependentId) {
+      const dependent = await this.dependentRepo.findById(opts.dependentId);
+      if (!dependent || dependent.guardianId !== opts.userId) {
+        // Same answer for "does not exist" and "is not yours": telling the two
+        // apart would confirm another family's dependent id to a stranger.
+        reject(
+          "DEPENDENT_NOT_OWNED",
+          403,
+          "Você não é responsável por este dependente",
+          actor,
+        );
+      }
+      // A guardian who belongs to two academies must not spend a plan bought
+      // at one of them on a class held at the other.
+      if (dependent.academyId !== opts.academyId) {
+        reject(
+          "DEPENDENT_OTHER_ACADEMY",
+          403,
+          "Este dependente não pertence a esta academia",
+          actor,
+        );
+      }
     }
 
     const membership = await this.membershipRepo.findActiveByUserAndAcademy(
@@ -278,7 +316,10 @@ export class CheckinService {
           );
         }
 
-        if (this.engagementService) {
+        // Own check-ins only. Milestones celebrate what the account holder
+        // trained, so taking a dependent to class must not advance the
+        // guardian's count (TAT-181).
+        if (this.engagementService && !opts.dependentId) {
           void this.engagementService.checkMilestone(opts.userId);
         }
 
@@ -436,9 +477,15 @@ export class CheckinService {
     plan: { weeklyCheckinLimit: number | null };
     warnings: CheckinWarnings;
   }> {
+    // Own rows only. A dependent's subscription carries the guardian's
+    // `user_id` and is created after theirs, so it sorted first and won the
+    // `find` below: a guardian with no plan of their own could check *themselves*
+    // in on a dependent's plan, and one who had a plan got the dependent's
+    // weekly limit and overdue warning measured against their own check-ins.
     const rows = await this.studentSubRepo.listWithPlanByUserAndAcademy(
       userId,
       academyId,
+      { withoutDependent: true },
     );
 
     for (const row of rows) {

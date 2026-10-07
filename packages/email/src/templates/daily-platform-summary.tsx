@@ -30,7 +30,6 @@ export type AcademySummary = {
   byMethod: SummaryMethodTotal[];
   unpaidPixCount: number;
   unpaidPixCents: number;
-  pendingTransfer: SummaryMoney;
   subscriptionsCreated: number;
   subscriptionsExpiringIn7Days: number;
   subscriptionsCanceled: number;
@@ -44,7 +43,6 @@ export type DailyPlatformSummaryProps = {
   referenceDate: string;
   revenue: SummaryMoney;
   revenuePreviousGrossCents: number;
-  pendingTransfer: SummaryMoney;
   newUsers: SummaryDelta;
   newAcademies: string[];
   managerSubscriptions: { pro: number; free: number; newProToday: number };
@@ -112,23 +110,6 @@ function Stat({
   );
 }
 
-function MoneyBreakdown({
-  title,
-  money,
-}: {
-  title: string;
-  money: SummaryMoney;
-}) {
-  return (
-    <>
-      <Text style={groupTitle}>{title}</Text>
-      <Stat label="Bruto" value={formatBRL(money.grossCents)} />
-      <Stat label="Taxa do processador" value={`− ${formatBRL(money.feeCents)}`} />
-      <Stat label="Líquido a repassar" value={formatBRL(money.netCents)} />
-    </>
-  );
-}
-
 function AcademyBlock({ academy }: { academy: AcademySummary }) {
   const plan =
     academy.managerPlan === "pro"
@@ -192,11 +173,6 @@ function AcademyBlock({ academy }: { academy: AcademySummary }) {
         }
       />
 
-      <MoneyBreakdown
-        title="A repassar (acumulado)"
-        money={academy.pendingTransfer}
-      />
-
       <Text style={groupTitle}>Planos</Text>
       <Stat label="Novas matrículas" value={String(academy.subscriptionsCreated)} />
       <Stat
@@ -231,7 +207,6 @@ export function DailyPlatformSummary({
   referenceDate,
   revenue,
   revenuePreviousGrossCents,
-  pendingTransfer,
   newUsers,
   newAcademies,
   managerSubscriptions,
@@ -255,11 +230,6 @@ export function DailyPlatformSummary({
           value={`− ${formatBRL(revenue.feeCents)}`}
         />
         <Stat label="Líquido dos managers" value={formatBRL(revenue.netCents)} />
-
-        <MoneyBreakdown
-          title="A repassar (acumulado, todas as academias)"
-          money={pendingTransfer}
-        />
 
         <Text style={groupTitle}>Receita Tatame</Text>
         <Stat

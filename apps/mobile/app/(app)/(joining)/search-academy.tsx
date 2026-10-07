@@ -1,4 +1,5 @@
 import { AcademySearchCard } from "@/components/AcademySearchCard";
+import { SignOutButton } from "@/components/SignOutButton";
 import { useSearchAcademies } from "@/lib/hooks/use-membership";
 import { useCurrentUser } from "@/lib/hooks/use-user";
 import { useRouter } from "expo-router";
@@ -53,7 +54,7 @@ export default function SearchAcademyScreen() {
   const isDebouncing = query !== debouncedQuery;
 
   return (
-    <SafeAreaView className="flex-1 bg-background pt-6" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-background pt-6" edges={["top", "bottom"]}>
       <View className="flex-1" style={{ paddingHorizontal: 24, paddingTop: 8, gap: 20 }}>
         <View>
           <Text className="font-poppins-bold text-primary"
@@ -119,6 +120,10 @@ export default function SearchAcademyScreen() {
         ) : (
           <View className="flex-1" />
         )}
+      </View>
+
+      <View style={{ paddingHorizontal: 24 }}>
+        <SignOutButton />
       </View>
     </SafeAreaView>
   );

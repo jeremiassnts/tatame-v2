@@ -54,6 +54,7 @@ TRUNCATE TABLE
   notification_preferences,
   notifications,
   payments,
+  pending_asaas_payments,
   pending_pix_payments,
   push_tokens,
   student_subscriptions,

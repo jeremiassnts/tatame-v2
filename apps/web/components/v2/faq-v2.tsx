@@ -32,7 +32,12 @@ const faqItems = [
   {
     question: "Meus alunos podem pagar diretamente no app?",
     answer:
-      "Sim. O aluno paga pelo app via Pix ou cartão, e o valor cai direto na sua conta através da chave Pix cadastrada.",
+      "Sim. O aluno paga a mensalidade pelo app via Pix e o valor cai na conta de recebimento da sua academia, descontada a tarifa da transação. Você saca para a sua conta bancária quando quiser. O Tatame não retém nada do que o seu aluno paga.",
+  },
+  {
+    question: "Preciso fazer algum cadastro para receber os pagamentos dos alunos?",
+    answer:
+      "Sim. O Tatame abre para você uma conta de recebimento no Asaas, nosso parceiro de pagamentos. Você informa os dados da academia, envia os documentos pelo Asaas e, assim que a conta é aprovada, seus alunos já podem pagar pelo app. Enquanto a aprovação não sai, você registra os pagamentos manualmente e nada deixa de ser controlado.",
   },
 ];
 

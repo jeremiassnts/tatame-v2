@@ -35,3 +35,22 @@ export const createCheckoutBodySchema = z.object({
 });
 
 export type CreateCheckoutBody = z.infer<typeof createCheckoutBodySchema>;
+
+export const createPixChargeBodySchema = z.object({
+  subscriptionId: z.string().uuid().optional(),
+  /**
+   * Asaas refuses to charge a customer with no document, and the platform
+   * stores none (D7), so the student types it — but only the first time, and
+   * the service decides whether it is actually needed. Shape only here; Asaas
+   * validates the digits and its message is what reaches the screen.
+   */
+  cpfCnpj: z
+    .string()
+    .transform((v) => v.replace(/\D/g, ""))
+    .refine((v) => v.length === 0 || v.length === 11 || v.length === 14, {
+      message: "CPF deve ter 11 dígitos e CNPJ 14",
+    })
+    .optional(),
+});
+
+export type CreatePixChargeBody = z.infer<typeof createPixChargeBodySchema>;

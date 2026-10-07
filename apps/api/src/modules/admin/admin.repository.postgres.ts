@@ -1,4 +1,4 @@
-import { and, count, eq, sql, sum, isNull, desc, inArray } from "drizzle-orm";
+import { and, count, eq, sql, sum, isNull, desc } from "drizzle-orm";
 import {
   academies,
   academyMemberships,
@@ -55,32 +55,6 @@ export class PostgresAdminRepository implements IAdminRepository {
     return Number(row?.total ?? 0);
   }
 
-  async sumTransferredCents(): Promise<number> {
-    const [row] = await this.db
-      .select({ total: sum(payments.amountCents) })
-      .from(payments)
-      .where(
-        and(
-          sql`${payments.method} IN ('stripe', 'pix')`,
-          sql`${payments.transferredAt} IS NOT NULL`,
-        ),
-      );
-    return Number(row?.total ?? 0);
-  }
-
-  async sumPendingTransferCents(): Promise<number> {
-    const [row] = await this.db
-      .select({ total: sum(payments.amountCents) })
-      .from(payments)
-      .where(
-        and(
-          sql`${payments.method} IN ('stripe', 'pix')`,
-          isNull(payments.transferredAt),
-        ),
-      );
-    return Number(row?.total ?? 0);
-  }
-
   async getDailyCheckins(days: number): Promise<DailyCheckinCount[]> {
     const rows = await this.db
       .select({
@@ -122,21 +96,9 @@ export class PostgresAdminRepository implements IAdminRepository {
           ),
         );
 
-      const [pendingRow] = await this.db
-        .select({ total: sum(payments.amountCents) })
-        .from(payments)
-        .where(
-          and(
-            eq(payments.academyId, row.id),
-            sql`${payments.method} IN ('stripe', 'pix')`,
-            isNull(payments.transferredAt),
-          ),
-        );
-
       result.push({
         ...row,
         studentCount: studentsRow?.count ?? 0,
-        pendingTransferCents: Number(pendingRow?.total ?? 0),
       });
     }
 
@@ -188,34 +150,6 @@ export class PostgresAdminRepository implements IAdminRepository {
     return Number(row?.total ?? 0);
   }
 
-  async sumAcademyTransferredCents(academyId: string): Promise<number> {
-    const [row] = await this.db
-      .select({ total: sum(payments.amountCents) })
-      .from(payments)
-      .where(
-        and(
-          eq(payments.academyId, academyId),
-          sql`${payments.method} IN ('stripe', 'pix')`,
-          sql`${payments.transferredAt} IS NOT NULL`,
-        ),
-      );
-    return Number(row?.total ?? 0);
-  }
-
-  async sumAcademyPendingTransferCents(academyId: string): Promise<number> {
-    const [row] = await this.db
-      .select({ total: sum(payments.amountCents) })
-      .from(payments)
-      .where(
-        and(
-          eq(payments.academyId, academyId),
-          sql`${payments.method} IN ('stripe', 'pix')`,
-          isNull(payments.transferredAt),
-        ),
-      );
-    return Number(row?.total ?? 0);
-  }
-
   async listAcademyPayments(
     academyId: string,
     opts: { limit: number; offset: number },
@@ -233,7 +167,6 @@ export class PostgresAdminRepository implements IAdminRepository {
         method: payments.method,
         referenceMonth: payments.referenceMonth,
         paidAt: payments.paidAt,
-        transferredAt: payments.transferredAt,
       })
       .from(payments)
       .innerJoin(users, eq(payments.userId, users.id))
@@ -243,23 +176,5 @@ export class PostgresAdminRepository implements IAdminRepository {
       .offset(opts.offset);
 
     return { items, total: totalRow?.count ?? 0 };
-  }
-
-  async markTransferred(paymentIds: string[]): Promise<number> {
-    if (paymentIds.length === 0) return 0;
-
-    const result = await this.db
-      .update(payments)
-      .set({ transferredAt: new Date() })
-      .where(
-        and(
-          inArray(payments.id, paymentIds),
-          sql`${payments.method} IN ('stripe', 'pix')`,
-          isNull(payments.transferredAt),
-        ),
-      )
-      .returning({ id: payments.id });
-
-    return result.length;
   }
 }

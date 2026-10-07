@@ -1,4 +1,6 @@
 import { BackButton } from "@/components/BackButton";
+import { CARD_PAYMENT_ENABLED } from "@/constants/payment";
+import { describeApiError } from "@/lib/api-error-message";
 import { useWeeklyCheckinCount } from "@/lib/hooks/use-checkin";
 import { useCreateCheckout, useMyPayments, useMySubscription } from "@/lib/hooks/use-subscription";
 import { useQueryClient } from "@tanstack/react-query";
@@ -8,6 +10,7 @@ import { Calendar, ChevronRight, CreditCard, QrCode } from "lucide-react-native"
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -85,14 +88,17 @@ export default function MySubscriptionScreen() {
       // After browser closes (user returns), show banner and refresh
       setShowProcessingBanner(true);
       queryClient.invalidateQueries({ queryKey: ["payments", "me"] });
-    } catch {
-      // Checkout creation failed
+    } catch (e) {
+      Alert.alert(
+        "Erro",
+        describeApiError(e, "Não foi possível iniciar o pagamento."),
+      );
     }
   };
 
   const handlePayPix = () => {
     router.push({
-      pathname: "/(app)/(student)/(subscription)/pix-payment",
+      pathname: "/(app)/pix-payment",
       params: {
         subscriptionId: subscription!.id,
         planName: plan!.name,
@@ -300,23 +306,25 @@ export default function MySubscriptionScreen() {
                         Pix
                       </Text>
                     </Pressable>
-                    <Pressable
-                      onPress={handlePay}
-                      disabled={createCheckout.isPending}
-                      className="flex-1 flex-row items-center justify-center rounded-xl"
-                      style={{ height: 48, gap: 8, backgroundColor: "#6C63FF" }}
-                    >
-                      {createCheckout.isPending ? (
-                        <ActivityIndicator color="#FFFFFF" size="small" />
-                      ) : (
-                        <>
-                          <CreditCard size={18} color="#FFFFFF" />
-                          <Text className="font-poppins-semibold text-sm text-white">
-                            Cartão
-                          </Text>
-                        </>
-                      )}
-                    </Pressable>
+                    {CARD_PAYMENT_ENABLED && (
+                      <Pressable
+                        onPress={handlePay}
+                        disabled={createCheckout.isPending}
+                        className="flex-1 flex-row items-center justify-center rounded-xl"
+                        style={{ height: 48, gap: 8, backgroundColor: "#6C63FF" }}
+                      >
+                        {createCheckout.isPending ? (
+                          <ActivityIndicator color="#FFFFFF" size="small" />
+                        ) : (
+                          <>
+                            <CreditCard size={18} color="#FFFFFF" />
+                            <Text className="font-poppins-semibold text-sm text-white">
+                              Cartão
+                            </Text>
+                          </>
+                        )}
+                      </Pressable>
+                    )}
                   </View>
                 )}
               </View>

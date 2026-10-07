@@ -6,6 +6,7 @@ import {
   beltPromotions,
   checkins,
   classes,
+  dependents,
   engagementMilestones,
   managerSubscriptions,
   notifications,
@@ -23,6 +24,7 @@ export type AcademyRow = InferSelectModel<typeof academies>;
 export type MembershipRow = InferSelectModel<typeof academyMemberships>;
 export type ClassRow = InferSelectModel<typeof classes>;
 export type CheckinRow = InferSelectModel<typeof checkins>;
+export type DependentRow = InferSelectModel<typeof dependents>;
 export type SubscriptionPlanRow = InferSelectModel<typeof subscriptionPlans>;
 export type StudentSubscriptionRow = InferSelectModel<
   typeof studentSubscriptions
@@ -76,6 +78,7 @@ export function makeUser(overrides: Partial<UserRow> = {}): UserRow {
     deletedAt: null,
     pendingStripeCustomerId: null,
     pendingStripeSubscriptionId: null,
+    asaasCustomerId: null,
     ...overrides,
   };
 }
@@ -221,6 +224,23 @@ export function makeStudentSubscription(
   };
 }
 
+export function makeDependent(
+  overrides: Partial<DependentRow> = {},
+): DependentRow {
+  const t = faker.date.recent({ days: 14 });
+  return {
+    id: rid(),
+    guardianId: rid(),
+    academyId: rid(),
+    name: faker.person.firstName(),
+    birthDate: utcIsoDate(faker.date.birthdate({ min: 5, max: 15, mode: "age" })),
+    createdAt: t,
+    updatedAt: t,
+    deletedAt: null,
+    ...overrides,
+  };
+}
+
 export function makeManagerSubscription(
   overrides: Partial<ManagerSubscriptionRow> = {},
 ): ManagerSubscriptionRow {
@@ -255,6 +275,7 @@ export function makePayment(overrides: Partial<PaymentRow> = {}): PaymentRow {
     method: "manual",
     confirmedBy: rid(),
     stripePaymentId: null,
+    asaasPaymentId: null,
     referenceMonth: utcIsoDate(
       new Date(Date.UTC(ref.getUTCFullYear(), ref.getUTCMonth(), 1)),
     ),

@@ -1,6 +1,13 @@
 import { BackButton } from "@/components/BackButton";
 import { DatePickerField } from "@/components/DatePickerField";
 import { FormInput } from "@/components/FormInput";
+import {
+  CNPJ_DIGITS,
+  CPF_DIGITS,
+  formatCnpj,
+  formatCpf,
+  onlyDigits,
+} from "@/lib/format/document";
 import { ModalSelect } from "@/components/ModalSelect";
 import { PhoneInput } from "@/components/PhoneInput";
 import { useAcademyContext } from "@/lib/academy-context";
@@ -51,24 +58,35 @@ const COMPANY_TYPE_OPTIONS = [
   { value: "ASSOCIATION", label: "Associação" },
 ];
 
-const onlyDigits = (value: string) => value.replace(/\D/g, "");
 
-/** CPF while there are 11 digits or fewer, CNPJ from the 12th on. */
-function formatCpfCnpj(value: string): string {
-  const digits = onlyDigits(value).slice(0, 14);
+const ACCENT = "#A078E8";
 
-  if (digits.length <= 11) {
-    return digits
-      .replace(/^(\d{3})(\d)/, "$1.$2")
-      .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
-      .replace(/^(\d{3})\.(\d{3})\.(\d{3})(\d)/, "$1.$2.$3-$4");
-  }
+/**
+ * Which registration Asaas opens. The manager states it up front instead of it
+ * being read out of the document, because the two paths diverge in what Asaas
+ * then demands: a CPF account is asked for photo ID, a CNPJ account for the
+ * company's incorporation papers.
+ */
+type PersonType = "FISICA" | "JURIDICA";
 
-  return digits
-    .replace(/^(\d{2})(\d)/, "$1.$2")
-    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
-    .replace(/^(\d{2})\.(\d{3})\.(\d{3})(\d)/, "$1.$2.$3/$4")
-    .replace(/^(\d{2})\.(\d{3})\.(\d{3})\/(\d{4})(\d)/, "$1.$2.$3/$4-$5");
+const PERSON_TYPE_OPTIONS: { value: PersonType; label: string }[] = [
+  { value: "FISICA", label: "Pessoa física" },
+  { value: "JURIDICA", label: "Empresa" },
+];
+
+const DOCUMENT_DIGITS: Record<PersonType, number> = {
+  FISICA: CPF_DIGITS,
+  JURIDICA: CNPJ_DIGITS,
+};
+
+/**
+ * The mask follows the chosen type, never the digits typed so far. Guessing
+ * from the length reformats the field while it is being filled in, and at the
+ * fourteenth digit a CPF would silently turn into a CNPJ.
+ */
+function formatDocument(value: string, personType: PersonType): string {
+  const digits = onlyDigits(value).slice(0, DOCUMENT_DIGITS[personType]);
+  return personType === "FISICA" ? formatCpf(digits) : formatCnpj(digits);
 }
 
 function formatPostalCode(value: string): string {
@@ -89,6 +107,8 @@ const schema = z
   .object({
     name: z.string().trim().min(1, "Informe o nome"),
     email: z.string().trim().email("E-mail inválido"),
+    /** Chosen, not derived — it decides the mask, the fields and the rules. */
+    personType: z.enum(["FISICA", "JURIDICA"]),
     cpfCnpj: z.string(),
     mobilePhone: z.string(),
     /** Kept as the raw cents string the currency mask produces. */
@@ -104,11 +124,14 @@ const schema = z
   .superRefine((value, ctx) => {
     const document = onlyDigits(value.cpfCnpj);
 
-    if (document.length !== 11 && document.length !== 14) {
+    if (document.length !== DOCUMENT_DIGITS[value.personType]) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["cpfCnpj"],
-        message: "Informe um CPF (11 dígitos) ou CNPJ (14 dígitos)",
+        message:
+          value.personType === "FISICA"
+            ? "Informe um CPF (11 dígitos)"
+            : "Informe um CNPJ (14 dígitos)",
       });
     }
 
@@ -139,14 +162,14 @@ const schema = z
 
     // Asaas splits the registration by person type: a CPF account needs a
     // birth date, a CNPJ account needs the company type.
-    if (document.length === 14 && !value.companyType) {
+    if (value.personType === "JURIDICA" && !value.companyType) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["companyType"],
         message: "Informe o tipo de empresa",
       });
     }
-    if (document.length !== 14 && !value.birthDate) {
+    if (value.personType === "FISICA" && !value.birthDate) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["birthDate"],
@@ -251,6 +274,7 @@ function PayoutAccountOnboardingForm({ defaults }: { defaults: Defaults }) {
     defaultValues: {
       name: defaults.name,
       email: defaults.email,
+      personType: "FISICA",
       cpfCnpj: "",
       mobilePhone: defaults.mobilePhone,
       incomeValue: "",
@@ -264,8 +288,24 @@ function PayoutAccountOnboardingForm({ defaults }: { defaults: Defaults }) {
     },
   });
 
-  const document = onlyDigits(watch("cpfCnpj"));
-  const isCompany = document.length === 14;
+  const personType = watch("personType");
+  const isCompany = personType === "JURIDICA";
+
+  /**
+   * Switching wipes the document and the field belonging to the other type. A
+   * half-typed CPF re-read as a CNPJ is not a document, and the previous mask
+   * had already capped it below the length the new type needs. The prefilled
+   * birth date comes back when the manager returns to pessoa física.
+   */
+  const selectPersonType = useCallback(
+    (next: PersonType, onChange: (value: PersonType) => void) => {
+      onChange(next);
+      setValue("cpfCnpj", "");
+      setValue("companyType", "");
+      setValue("birthDate", next === "FISICA" ? defaults.birthDate : "");
+    },
+    [setValue, defaults.birthDate],
+  );
 
   const lastLookup = useRef("");
 
@@ -313,7 +353,7 @@ function PayoutAccountOnboardingForm({ defaults }: { defaults: Defaults }) {
     setSubmitError(null);
 
     const cpfCnpj = onlyDigits(data.cpfCnpj);
-    const company = cpfCnpj.length === 14;
+    const company = data.personType === "JURIDICA";
     const complement = data.complement.trim();
 
     const body: CreatePayoutAccountInput = {
@@ -412,16 +452,58 @@ function PayoutAccountOnboardingForm({ defaults }: { defaults: Defaults }) {
 
             <Controller
               control={control}
+              name="personType"
+              render={({ field: { onChange, value } }) => (
+                <View style={{ gap: 6 }}>
+                  <Text className="font-poppins-medium text-[13px] text-muted">
+                    Tipo de conta
+                  </Text>
+                  <View className="flex-row" style={{ gap: 8 }}>
+                    {PERSON_TYPE_OPTIONS.map((option) => {
+                      const selected = value === option.value;
+                      return (
+                        <Pressable
+                          key={option.value}
+                          onPress={() => {
+                            if (!selected) selectPersonType(option.value, onChange);
+                          }}
+                          className="h-[52px] flex-1 items-center justify-center rounded-xl border border-surface-border bg-surface"
+                          style={
+                            selected
+                              ? { borderColor: ACCENT, backgroundColor: `${ACCENT}1A` }
+                              : undefined
+                          }
+                        >
+                          <Text
+                            className={`font-poppins-medium text-[13px] ${
+                              selected ? "" : "text-muted"
+                            }`}
+                            style={selected ? { color: ACCENT } : undefined}
+                          >
+                            {option.label}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+              )}
+            />
+
+            <Controller
+              control={control}
               name="cpfCnpj"
               render={({ field: { onChange, onBlur, value } }) => (
                 <FormInput
-                  label="CPF ou CNPJ"
-                  placeholder="000.000.000-00"
-                  value={formatCpfCnpj(value)}
-                  onChangeText={(text) => onChange(onlyDigits(text).slice(0, 14))}
+                  label={isCompany ? "CNPJ" : "CPF"}
+                  placeholder={isCompany ? "00.000.000/0000-00" : "000.000.000-00"}
+                  value={formatDocument(value, personType)}
+                  onChangeText={(text) =>
+                    onChange(onlyDigits(text).slice(0, DOCUMENT_DIGITS[personType]))
+                  }
                   onBlur={onBlur}
                   keyboardType="number-pad"
-                  maxLength={18}
+                  maxLength={isCompany ? 18 : 14}
                   error={errors.cpfCnpj?.message}
                 />
               )}

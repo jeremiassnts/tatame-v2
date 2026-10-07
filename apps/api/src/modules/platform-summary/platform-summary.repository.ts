@@ -64,8 +64,6 @@ export interface IPlatformSummaryRepository {
     referenceMonth: string,
     today: string,
   ): Promise<AcademyCount[]>;
-  /** Untransferred `pix`/`stripe` payments — what the platform still owes. */
-  pendingTransfersPerAcademy(): Promise<AcademyMethodAmount[]>;
   activeSubscriptionsPerAcademy(today: string): Promise<AcademyCount[]>;
   expiringSubscriptionsPerAcademy(
     from: string,

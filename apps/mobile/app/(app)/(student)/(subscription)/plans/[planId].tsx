@@ -1,4 +1,5 @@
 import { BackButton } from "@/components/BackButton";
+import { describeApiError } from "@/lib/api-error-message";
 import { useDependentSubscription } from "@/lib/hooks/use-dependents";
 import { useMySubscription, useSelectPlan } from "@/lib/hooks/use-subscription";
 import { useSubscriptionPlan } from "@/lib/hooks/use-subscription-plans";
@@ -65,12 +66,15 @@ export default function PlanDetailScreen() {
         } else {
           router.replace("/(app)/(student)/(subscription)");
         }
-      } catch {
+      } catch (e) {
         Alert.alert(
           "Erro",
-          hasActiveSubscription
-            ? "Não foi possível trocar de plano. Tente novamente."
-            : "Não foi possível concluir a assinatura. Tente novamente.",
+          describeApiError(
+            e,
+            hasActiveSubscription
+              ? "Não foi possível trocar de plano. Tente novamente."
+              : "Não foi possível concluir a assinatura. Tente novamente.",
+          ),
         );
       }
     };

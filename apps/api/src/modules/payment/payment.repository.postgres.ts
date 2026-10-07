@@ -1,10 +1,27 @@
-import { and, desc, eq, sum } from "drizzle-orm";
-import { payments, pendingPixPayments, users, type Database } from "@tatame/db";
+import { and, desc, eq, isNull, sum } from "drizzle-orm";
+import {
+  payments,
+  pendingAsaasPayments,
+  pendingPixPayments,
+  users,
+  type Database,
+} from "@tatame/db";
 import type {
   IPaymentRepository,
   PaymentRow,
   PaymentWithUser,
+  PendingAsaasPayment,
 } from "./payment.repository.js";
+
+const PENDING_ASAAS_COLUMNS = {
+  asaasPaymentId: pendingAsaasPayments.asaasPaymentId,
+  kind: pendingAsaasPayments.kind,
+  subscriptionId: pendingAsaasPayments.subscriptionId,
+  userId: pendingAsaasPayments.userId,
+  academyId: pendingAsaasPayments.academyId,
+  referenceMonth: pendingAsaasPayments.referenceMonth,
+  amountCents: pendingAsaasPayments.amountCents,
+};
 
 export class PostgresPaymentRepository implements IPaymentRepository {
   constructor(private readonly db: Database) {}
@@ -21,6 +38,7 @@ export class PostgresPaymentRepository implements IPaymentRepository {
     notes: string | null;
     paidAt: Date;
     dependentId?: string | null;
+    asaasPaymentId?: string | null;
   }): Promise<PaymentRow> {
     const [row] = await this.db
       .insert(payments)
@@ -36,6 +54,7 @@ export class PostgresPaymentRepository implements IPaymentRepository {
         notes: data.notes,
         paidAt: data.paidAt,
         dependentId: data.dependentId ?? null,
+        asaasPaymentId: data.asaasPaymentId ?? null,
       })
       .returning();
     if (!row) throw new Error("Failed to create payment");
@@ -55,7 +74,12 @@ export class PostgresPaymentRepository implements IPaymentRepository {
 
   async findByAcademy(
     academyId: string,
-    opts: { subscriptionId?: string; userId?: string; limit?: number },
+    opts: {
+      subscriptionId?: string;
+      userId?: string;
+      limit?: number;
+      withoutDependent?: boolean;
+    },
   ): Promise<PaymentRow[]> {
     const conditions = [eq(payments.academyId, academyId)];
     if (opts.subscriptionId) {
@@ -63,6 +87,9 @@ export class PostgresPaymentRepository implements IPaymentRepository {
     }
     if (opts.userId) {
       conditions.push(eq(payments.userId, opts.userId));
+    }
+    if (opts.withoutDependent) {
+      conditions.push(isNull(payments.dependentId));
     }
     const whereClause =
       conditions.length === 1 ? conditions[0]! : and(...conditions);
@@ -77,6 +104,7 @@ export class PostgresPaymentRepository implements IPaymentRepository {
         method: payments.method,
         confirmedBy: payments.confirmedBy,
         stripePaymentId: payments.stripePaymentId,
+        asaasPaymentId: payments.asaasPaymentId,
         referenceMonth: payments.referenceMonth,
         notes: payments.notes,
         paidAt: payments.paidAt,
@@ -116,6 +144,7 @@ export class PostgresPaymentRepository implements IPaymentRepository {
         method: payments.method,
         confirmedBy: payments.confirmedBy,
         stripePaymentId: payments.stripePaymentId,
+        asaasPaymentId: payments.asaasPaymentId,
         referenceMonth: payments.referenceMonth,
         notes: payments.notes,
         paidAt: payments.paidAt,
@@ -197,6 +226,80 @@ export class PostgresPaymentRepository implements IPaymentRepository {
       .where(eq(pendingPixPayments.pixQrCodeId, pixQrCodeId));
   }
 
+  async findByAsaasPaymentId(
+    asaasPaymentId: string,
+  ): Promise<PaymentRow | undefined> {
+    const [row] = await this.db
+      .select({
+        id: payments.id,
+        subscriptionId: payments.subscriptionId,
+        userId: payments.userId,
+        academyId: payments.academyId,
+        dependentId: payments.dependentId,
+        amountCents: payments.amountCents,
+        method: payments.method,
+        confirmedBy: payments.confirmedBy,
+        stripePaymentId: payments.stripePaymentId,
+        asaasPaymentId: payments.asaasPaymentId,
+        referenceMonth: payments.referenceMonth,
+        notes: payments.notes,
+        paidAt: payments.paidAt,
+        createdAt: payments.createdAt,
+      })
+      .from(payments)
+      .where(eq(payments.asaasPaymentId, asaasPaymentId))
+      .limit(1);
+    return row;
+  }
+
+  async createPendingAsaas(data: PendingAsaasPayment): Promise<void> {
+    // The target is explicit on purpose. An untargeted `onConflictDoNothing`
+    // would also swallow a collision on
+    // `pending_asaas_payments_subscription_month_unique`, which is the one
+    // conflict the caller has to see: it means a concurrent request already
+    // opened a charge for this month, and the charge this call just created
+    // has to be cancelled rather than left live with no row behind it.
+    // Writing the same Asaas id twice is still a no-op.
+    await this.db
+      .insert(pendingAsaasPayments)
+      .values(data)
+      .onConflictDoNothing({ target: pendingAsaasPayments.asaasPaymentId });
+  }
+
+  async findPendingAsaasByPaymentId(
+    asaasPaymentId: string,
+  ): Promise<PendingAsaasPayment | undefined> {
+    const [row] = await this.db
+      .select(PENDING_ASAAS_COLUMNS)
+      .from(pendingAsaasPayments)
+      .where(eq(pendingAsaasPayments.asaasPaymentId, asaasPaymentId))
+      .limit(1);
+    return row;
+  }
+
+  async findPendingAsaasBySubscriptionMonth(
+    subscriptionId: string,
+    referenceMonth: string,
+  ): Promise<PendingAsaasPayment | undefined> {
+    const [row] = await this.db
+      .select(PENDING_ASAAS_COLUMNS)
+      .from(pendingAsaasPayments)
+      .where(
+        and(
+          eq(pendingAsaasPayments.subscriptionId, subscriptionId),
+          eq(pendingAsaasPayments.referenceMonth, referenceMonth),
+        ),
+      )
+      .limit(1);
+    return row;
+  }
+
+  async deletePendingAsaas(asaasPaymentId: string): Promise<void> {
+    await this.db
+      .delete(pendingAsaasPayments)
+      .where(eq(pendingAsaasPayments.asaasPaymentId, asaasPaymentId));
+  }
+
   async findByDependentId(dependentId: string): Promise<PaymentRow[]> {
     return this.db
       .select({
@@ -209,6 +312,7 @@ export class PostgresPaymentRepository implements IPaymentRepository {
         method: payments.method,
         confirmedBy: payments.confirmedBy,
         stripePaymentId: payments.stripePaymentId,
+        asaasPaymentId: payments.asaasPaymentId,
         referenceMonth: payments.referenceMonth,
         notes: payments.notes,
         paidAt: payments.paidAt,

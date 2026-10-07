@@ -27,18 +27,15 @@
   "devDependencies": {
     "husky": "9.1.7",
     "lint-staged": "17.0.5",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
     "turbo": "2.8.20",
     "typescript": "5.9.3"
   },
   "pnpm": {
-    "patchedDependencies": {
-      "expo-modules-core@3.0.29": "patches/expo-modules-core@3.0.29.patch"
-    },
     "overrides": {
-      "react": "19.1.0",
-      "react-dom": "19.1.0",
+      "react": "19.2.3",
+      "react-dom": "19.2.3",
       "@opentelemetry/api": "1.9.1"
     }
   }

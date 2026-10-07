@@ -14,11 +14,18 @@ export const pendingQuerySchema = z.object({
   academyId: z.string().uuid(),
 });
 
+/**
+ * `guardian` belongs here: `academy_memberships.role` is the full app role
+ * enum and a guardian holds a membership like anyone else. Leaving it out made
+ * every `role === "guardian"` check in the app dead code the compiler could not
+ * flag as reachable — which is how the manager's member screen stopped showing
+ * a guardian's dependents.
+ */
 export const membershipResponseSchema = z.object({
   id: z.string().uuid(),
   academyId: z.string().uuid(),
   userId: z.string().uuid(),
-  role: z.enum(["manager", "instructor", "student"]),
+  role: z.enum(["manager", "instructor", "student", "guardian"]),
   status: z.enum(["pending", "active", "rejected", "blocked"]),
   isActive: z.boolean(),
   joinedAt: z.coerce.date().nullable(),
@@ -47,7 +54,7 @@ export type ListMembersQuery = z.infer<typeof listMembersQuerySchema>;
 export const memberListItemSchema = z.object({
   id: z.string().uuid(),
   userId: z.string().uuid(),
-  role: z.enum(["manager", "instructor", "student"]),
+  role: z.enum(["manager", "instructor", "student", "guardian"]),
   status: z.enum(["pending", "active", "rejected", "blocked"]),
   joinedAt: z.coerce.date().nullable(),
   createdAt: z.coerce.date(),
@@ -65,7 +72,7 @@ export type MemberListItem = z.infer<typeof memberListItemSchema>;
 export const memberDetailResponseSchema = z.object({
   id: z.string().uuid(),
   userId: z.string().uuid(),
-  role: z.enum(["manager", "instructor", "student"]),
+  role: z.enum(["manager", "instructor", "student", "guardian"]),
   status: z.enum(["pending", "active", "rejected", "blocked"]),
   joinedAt: z.coerce.date().nullable(),
   createdAt: z.coerce.date(),
@@ -78,7 +85,7 @@ export const memberDetailResponseSchema = z.object({
   history: z.array(
     z.object({
       id: z.string().uuid(),
-      role: z.enum(["manager", "instructor", "student"]),
+      role: z.enum(["manager", "instructor", "student", "guardian"]),
       status: z.enum(["pending", "active", "rejected", "blocked"]),
       joinedAt: z.coerce.date().nullable(),
       leftAt: z.coerce.date().nullable(),

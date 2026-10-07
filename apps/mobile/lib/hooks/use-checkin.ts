@@ -56,7 +56,15 @@ export function useCheckin() {
       queryClient.invalidateQueries({
         queryKey: ["checkins", variables.classId, variables.date],
       });
-      queryClient.invalidateQueries({ queryKey: ["checkins", "me"] });
+      // The API counts a dependent's check-ins against the dependent, never
+      // against the account holder, so refresh whichever side just trained —
+      // invalidating `me` for a dependent's session left their own weekly
+      // count and history stale.
+      queryClient.invalidateQueries({
+        queryKey: variables.dependentId
+          ? ["checkins", variables.dependentId]
+          : ["checkins", "me"],
+      });
     },
   });
 }

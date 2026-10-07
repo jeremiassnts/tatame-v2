@@ -85,30 +85,3 @@ export const createPayoutAccountBodySchema = z
 export type CreatePayoutAccountBody = z.infer<
   typeof createPayoutAccountBodySchema
 >;
-
-export const asaasDocumentTypeSchema = z.enum([
-  "ALLOW_BANK_ACCOUNT_DEPOSIT_STATEMENT",
-  "CUSTOM",
-  "EMANCIPATION_OF_MINORS",
-  "ENTREPRENEUR_REQUIREMENT",
-  "IDENTIFICATION_SELFIE",
-  "IDENTIFICATION",
-  "INVOICE",
-  "MEI_CERTIFICATE",
-  "MINUTES_OF_CONSTITUTION",
-  "MINUTES_OF_ELECTION",
-  "POWER_OF_ATTORNEY",
-  "SOCIAL_CONTRACT",
-]);
-
-export const uploadPayoutDocumentBodySchema = z.object({
-  type: asaasDocumentTypeSchema,
-});
-
-export type UploadPayoutDocumentBody = z.infer<
-  typeof uploadPayoutDocumentBodySchema
->;
-
-export const payoutAccountGroupIdParamSchema = z.object({
-  groupId: z.string().min(1),
-});

@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error-message";
 import { DatePickerField } from "@/components/DatePickerField";
 import { FormInput } from "@/components/FormInput";
 import { GradientButton } from "@/components/GradientButton";
@@ -65,8 +66,14 @@ export default function RegisterDependentScreen() {
         onSuccess: () => {
           setSucceeded(true);
         },
-        onError: () => {
-          Alert.alert("Erro", "Não foi possível cadastrar o dependente. Tente novamente.");
+        onError: (error) => {
+          Alert.alert(
+            "Erro",
+            describeApiError(
+              error,
+              "Não foi possível cadastrar o dependente. Tente novamente.",
+            ),
+          );
         },
       },
     );

@@ -99,6 +99,174 @@ describe("ManagerSubscriptionService", () => {
     });
   });
 
+  /**
+   * TAT-185. Two subscriptions ended up on one Stripe Customer because nothing
+   * in the checkout path ever read `manager_subscriptions`. This is the read the
+   * route's 409 and the web's eligibility check both go through, so the button
+   * and the endpoint can never disagree about who may subscribe.
+   */
+  describe("hasSubscriptionInFlight", () => {
+    it("is true when an owned academy is trialing", async () => {
+      const ownerId = randomUUID();
+      const academy = makeAcademy({ ownerId });
+      const sub = makeManagerSubscription({
+        academyId: academy.id,
+        status: "trialing",
+      });
+      const { svc } = makeSvc({ academies: [academy], subscriptions: [sub] });
+
+      await expect(svc.hasSubscriptionInFlight(ownerId, null)).resolves.toBe(
+        true,
+      );
+    });
+
+    it("is true when an owned academy is active", async () => {
+      const ownerId = randomUUID();
+      const academy = makeAcademy({ ownerId });
+      const sub = makeManagerSubscription({
+        academyId: academy.id,
+        status: "active",
+      });
+      const { svc } = makeSvc({ academies: [academy], subscriptions: [sub] });
+
+      await expect(svc.hasSubscriptionInFlight(ownerId, null)).resolves.toBe(
+        true,
+      );
+    });
+
+    it("is true when the user has a pending subscription and no academy yet", async () => {
+      const { svc } = makeSvc({});
+
+      await expect(
+        svc.hasSubscriptionInFlight(randomUUID(), "sub_pending_123"),
+      ).resolves.toBe(true);
+    });
+
+    it("is false for a user with nothing at all", async () => {
+      const { svc } = makeSvc({});
+
+      await expect(
+        svc.hasSubscriptionInFlight(randomUUID(), null),
+      ).resolves.toBe(false);
+    });
+
+    // Resubscribing has to keep working. `past_due` is on this list on purpose:
+    // a manager whose card failed needs a way back in, not a locked door.
+    it.each(["canceled", "incomplete", "past_due"] as const)(
+      "is false when the only subscription is %s",
+      async (status) => {
+        const ownerId = randomUUID();
+        const academy = makeAcademy({ ownerId });
+        const sub = makeManagerSubscription({ academyId: academy.id, status });
+        const { svc } = makeSvc({ academies: [academy], subscriptions: [sub] });
+
+        await expect(svc.hasSubscriptionInFlight(ownerId, null)).resolves.toBe(
+          false,
+        );
+      },
+    );
+
+    it("is true when any one of several owned academies is active", async () => {
+      const ownerId = randomUUID();
+      const canceled = makeAcademy({ ownerId });
+      const live = makeAcademy({ ownerId });
+      const { svc } = makeSvc({
+        academies: [canceled, live],
+        subscriptions: [
+          makeManagerSubscription({
+            academyId: canceled.id,
+            status: "canceled",
+          }),
+          makeManagerSubscription({ academyId: live.id, status: "active" }),
+        ],
+      });
+
+      await expect(svc.hasSubscriptionInFlight(ownerId, null)).resolves.toBe(
+        true,
+      );
+    });
+
+    it("ignores academies the user does not own", async () => {
+      const academy = makeAcademy({ ownerId: randomUUID() });
+      const sub = makeManagerSubscription({
+        academyId: academy.id,
+        status: "active",
+      });
+      const { svc } = makeSvc({ academies: [academy], subscriptions: [sub] });
+
+      await expect(
+        svc.hasSubscriptionInFlight(randomUUID(), null),
+      ).resolves.toBe(false);
+    });
+  });
+
+  /**
+   * TAT-185. Without a key, a double-submit or a retried request opens a second
+   * Checkout Session, and each session Stripe completes is another subscription.
+   */
+  describe("createCheckoutSession", () => {
+    function stripeSpy() {
+      const calls: { params: unknown; options: unknown }[] = [];
+      return {
+        calls,
+        stripe: {
+          customers: {
+            list: async () => ({ data: [{ id: "cus_1" }] }),
+            create: async () => ({ id: "cus_1" }),
+          },
+          checkout: {
+            sessions: {
+              create: async (params: unknown, options: unknown) => {
+                calls.push({ params, options });
+                return { url: "https://checkout.stripe.test/s_1" };
+              },
+            },
+          },
+        },
+      };
+    }
+
+    it("passes an idempotency key scoped to the caller and the price", async () => {
+      const { calls, stripe } = stripeSpy();
+      const { svc } = makeSvc({ stripe });
+
+      await svc.createCheckoutSession(
+        "user_clerk_1",
+        "manager@example.com",
+        "price_pro",
+        "https://app.test/ok",
+        "https://app.test/cancel",
+      );
+
+      expect(calls).toHaveLength(1);
+      expect(calls[0]!.options).toEqual({
+        idempotencyKey: "manager-checkout:user_clerk_1:price_pro",
+      });
+    });
+
+    it("gives two different callers two different keys", async () => {
+      const { calls, stripe } = stripeSpy();
+      const { svc } = makeSvc({ stripe });
+
+      await svc.createCheckoutSession(
+        "user_a",
+        "a@example.com",
+        "price_pro",
+        "https://app.test/ok",
+        "https://app.test/cancel",
+      );
+      await svc.createCheckoutSession(
+        "user_b",
+        "b@example.com",
+        "price_pro",
+        "https://app.test/ok",
+        "https://app.test/cancel",
+      );
+
+      expect(calls[0]!.options).not.toEqual(calls[1]!.options);
+    });
+  });
+
   describe("cancelSubscription", () => {
     it("throws 503 when Stripe is not configured", async () => {
       const academy = makeAcademy();

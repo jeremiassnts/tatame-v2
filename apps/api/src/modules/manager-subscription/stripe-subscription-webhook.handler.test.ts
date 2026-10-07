@@ -1,12 +1,27 @@
 import { randomUUID } from "node:crypto";
 import flexibleSubscriptionCreated from "./__fixtures__/subscription-created.flexible.json" with { type: "json" };
 import type Stripe from "stripe";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { makeAcademy, makeUser } from "../../testing/factories/index.js";
 import { InMemoryAcademyRepository } from "../academy/academy.repository.in-memory.js";
 import { InMemoryUserRepository } from "../user/user.repository.in-memory.js";
 import { InMemoryManagerSubscriptionRepository } from "./manager-subscription.repository.in-memory.js";
 import { StripeSubscriptionWebhookHandler } from "./stripe-subscription-webhook.handler.js";
+
+const { emitted } = vi.hoisted(() => ({
+  emitted: [] as { name: string; fields: Record<string, unknown> }[],
+}));
+
+vi.mock("../../telemetry/events.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../telemetry/events.js")>()),
+  emitEvent: (name: string, fields: Record<string, unknown>) => {
+    emitted.push({ name, fields });
+  },
+}));
+
+beforeEach(() => {
+  emitted.length = 0;
+});
 
 const CLERK_USER_ID = "user_webhook_test";
 const PERIOD_END_SECONDS = 1_800_000_000;
@@ -212,5 +227,146 @@ describe("the production payload that failed", () => {
     expect(saved!.stripePriceId).toBe("price_1RX97RKxAZnjqqVoKL414xu8");
     expect(saved!.currentPeriodEnd).toEqual(new Date(ITEM_PERIOD_END * 1000));
     expect(saved!.trialEndsAt).toEqual(new Date(ITEM_PERIOD_END * 1000));
+  });
+});
+
+
+/**
+ * TAT-185. A manager subscribed twice on one Stripe Customer. The handler looked
+ * the subscription up by id and, on a miss, fell back to the customer id — then
+ * overwrote whatever row it found with the event's subscription. With two
+ * subscriptions sharing a Customer, every event from either one repointed the
+ * academy's row, and which subscription the app honoured was decided by whoever
+ * emitted last.
+ *
+ * `academy_id` and `stripe_subscription_id` are both unique, so there is no
+ * version of this where both subscriptions are recorded. The row that is already
+ * linked wins, and the duplicate is reported instead of applied.
+ */
+describe("a second subscription on the same Stripe Customer", () => {
+  const CUSTOMER = "cus_shared";
+
+  function updatedEvent(subscriptionId: string, status = "canceled"): Stripe.Event {
+    return {
+      type: "customer.subscription.updated",
+      data: {
+        object: {
+          id: subscriptionId,
+          customer: CUSTOMER,
+          status,
+          trial_end: null,
+          cancel_at: 1_700_000_000,
+          metadata: { clerkUserId: CLERK_USER_ID },
+          items: { data: [{ id: "si_1", price: { id: "price_1" } }] },
+        },
+      },
+    } as unknown as Stripe.Event;
+  }
+
+  async function seedLinkedAcademy() {
+    const user = makeUser({ clerkUserId: CLERK_USER_ID });
+    const academy = makeAcademy({ ownerId: user.id });
+    const subRepo = new InMemoryManagerSubscriptionRepository([]);
+    await subRepo.create({
+      academyId: academy.id,
+      plan: "pro",
+      status: "trialing",
+      stripeCustomerId: CUSTOMER,
+      stripeSubscriptionId: "sub_first",
+      stripePriceId: "price_1",
+      currentPeriodEnd: null,
+      trialEndsAt: null,
+    });
+    const userRepo = new InMemoryUserRepository([user]);
+    const handler = new StripeSubscriptionWebhookHandler(
+      subRepo,
+      new InMemoryAcademyRepository([academy]),
+      userRepo,
+      null,
+    );
+    return { handler, subRepo, userRepo, user, academy };
+  }
+
+  it("leaves the linked row untouched when a different subscription reports", async () => {
+    const { handler, subRepo, academy } = await seedLinkedAcademy();
+
+    await handler.handleEvent(updatedEvent("sub_duplicate"));
+
+    const saved = await subRepo.findByAcademyId(academy.id);
+    expect(saved!.stripeSubscriptionId).toBe("sub_first");
+    expect(saved!.status).toBe("trialing");
+    expect(saved!.canceledAt).toBeNull();
+  });
+
+  it("reports the duplicate instead of applying it", async () => {
+    const { handler } = await seedLinkedAcademy();
+
+    await handler.handleEvent(updatedEvent("sub_duplicate"));
+
+    expect(emitted).toContainEqual(
+      expect.objectContaining({
+        name: "manager_subscription.webhook_unhandled",
+        fields: expect.objectContaining({
+          reason: "DUPLICATE_SUBSCRIPTION",
+          stripeSubscriptionId: "sub_duplicate",
+        }),
+      }),
+    );
+  });
+
+  /**
+   * Falling through to the pending-on-user branch would park the duplicate on
+   * the user row, and `linkPendingSubscription` would then overwrite the academy
+   * row the moment an academy is created — the same hijack, just deferred.
+   */
+  it("does not park the duplicate as the user's pending subscription", async () => {
+    const { handler, userRepo, user } = await seedLinkedAcademy();
+
+    await handler.handleEvent(updatedEvent("sub_duplicate"));
+
+    const saved = await userRepo.findById(user.id);
+    expect(saved!.pendingStripeSubscriptionId).toBeNull();
+  });
+
+  it("still applies an event that matches the row's own subscription id", async () => {
+    const { handler, subRepo, academy } = await seedLinkedAcademy();
+
+    await handler.handleEvent(updatedEvent("sub_first"));
+
+    const saved = await subRepo.findByAcademyId(academy.id);
+    expect(saved!.stripeSubscriptionId).toBe("sub_first");
+    expect(saved!.status).toBe("canceled");
+  });
+
+  /**
+   * The fallback exists for the pending-academy path: a row created with a
+   * customer id but no subscription id yet. Narrowing it must not close that.
+   */
+  it("still adopts the event when the matched row has no subscription id yet", async () => {
+    const user = makeUser({ clerkUserId: CLERK_USER_ID });
+    const academy = makeAcademy({ ownerId: user.id });
+    const subRepo = new InMemoryManagerSubscriptionRepository([]);
+    await subRepo.create({
+      academyId: academy.id,
+      plan: "pro",
+      status: "incomplete",
+      stripeCustomerId: CUSTOMER,
+      stripeSubscriptionId: null,
+      stripePriceId: null,
+      currentPeriodEnd: null,
+      trialEndsAt: null,
+    });
+    const handler = new StripeSubscriptionWebhookHandler(
+      subRepo,
+      new InMemoryAcademyRepository([academy]),
+      new InMemoryUserRepository([user]),
+      null,
+    );
+
+    await handler.handleEvent(updatedEvent("sub_first", "active"));
+
+    const saved = await subRepo.findByAcademyId(academy.id);
+    expect(saved!.stripeSubscriptionId).toBe("sub_first");
+    expect(saved!.status).toBe("active");
   });
 });

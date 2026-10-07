@@ -47,3 +47,68 @@ describe("every catalog entry has a call site", () => {
     expect(callSites).toContain(`"${reason}"`);
   });
 });
+
+/**
+ * The mirror of the checks above, and the one that was missing. A reason with
+ * no call site reads as coverage and never fires; a reason that fires and no
+ * alert rule matches is worse, because it looks handled and nobody is told.
+ *
+ * That is not hypothetical: the lost-payment rule matched only
+ * `NO_PENDING_PIX|MISSING_REFERENCE`, so when TAT-104 moved student Pix onto
+ * Asaas the reason a lost payment actually reports — `NO_PENDING_CHARGE` — had
+ * no rule at all, on the one event that means money arrived and was not
+ * recorded. Nothing failed, because nothing was watching the watchers.
+ *
+ * A text scan again, for the same reason as above: it checks the string the
+ * rule file is actually provisioned from. It reads only the `expr:` lines,
+ * never the whole file — a reason named in a comment or in an email
+ * description is documentation, not a query, and matching those would let this
+ * pass on prose while the rule stayed blind. (Checked: it does fail when the
+ * reason is removed from the query but left in the description.)
+ */
+const RULES = join(
+  SRC,
+  "../../../infra/observability/grafana/provisioning/alerting/rules.yml",
+);
+
+/**
+ * Reasons that are deliberately not alerted. Each one needs an argument, not
+ * just an entry — adding a name here is how you say "this is normal traffic".
+ */
+const UNALERTED: Record<string, string> = {
+  // Providers send dozens of event types the handlers have no reason to care
+  // about. Counting them would make the rule fire forever.
+  UNKNOWN_EVENT_TYPE: "ordinary provider chatter, filtered out of the rules",
+};
+
+describe("every money event a rule should catch is matched by one", () => {
+  /** Only the LogQL/PromQL queries — see the note above. */
+  const queries = readFileSync(RULES, "utf8")
+    .split("\n")
+    .filter((line) => line.trimStart().startsWith("expr:"))
+    .join("\n");
+
+  /** The events that mean money moved, or failed to. */
+  const MONEY_EVENTS = [
+    "payment.webhook_unhandled",
+    "payment.charge_failed",
+    "payment.reversed",
+  ] as const;
+
+  it.each(MONEY_EVENTS)("%s is queried by an alert rule", (name) => {
+    expect(queries).toContain(`event_name="${name}"`);
+  });
+
+  const moneyReasons = MONEY_EVENTS.flatMap((name) => {
+    const entry = CATALOG[name];
+    return "reasons" in entry
+      ? entry.reasons
+          .filter((reason) => !(reason in UNALERTED))
+          .map((reason) => [name, reason] as const)
+      : [];
+  });
+
+  it.each(moneyReasons)("%s reason %s is matched by an alert query", (_name, reason) => {
+    expect(queries).toContain(reason);
+  });
+});

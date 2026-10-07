@@ -35,6 +35,25 @@ export const subscriptionStatusEnum = pgEnum("subscription_status", [
   "cancelled",
 ]);
 
+/**
+ * How the student paid, never through which provider — `asaas_payment_id` and
+ * `stripe_payment_id` record that.
+ *
+ * `stripe` is a misnomer: it has meant "card, in the app" since before Stripe
+ * left, and the card rail is Asaas now. Renaming it to `card` was written,
+ * tested and then **deliberately postponed** — see TAT-104's handoff (B8).
+ * `ALTER TYPE … RENAME VALUE` has no overlap window: Postgres rejects the whole
+ * query, not the row, for a label that no longer exists, so the deployed
+ * image's `IN ('stripe', 'pix')` and the new image's `IN ('card', 'pix')` can
+ * never both be valid. With migrations run by hand and `main` deploying on
+ * merge, that window opens by itself and takes out the admin dashboard and the
+ * daily summary for *every* academy, including the ones that never took a card
+ * payment. The rename buys a better label on 2 historical rows; it is not worth
+ * that, and it belongs to TAT-189, which rewrites this rail anyway.
+ *
+ * The clients already tolerate both labels, so whoever does it then only has to
+ * coordinate the database with the API.
+ */
 export const paymentMethodEnum = pgEnum("payment_method", [
   "manual",
   "stripe",
@@ -79,6 +98,19 @@ export const payoutAccountStatusEnum = pgEnum("payout_account_status", [
   "approved",
   "rejected",
   "suspended",
+]);
+
+/**
+ * Which Asaas handle a pending row holds. A Pix charge is created as a payment
+ * and is cancelled with `DELETE /v3/payments/{id}`; a card checkout has no
+ * payment id until the student pays, so the row holds the checkout session id
+ * and is cancelled with `POST /v3/checkouts/{id}/cancel`. Calling one on the
+ * other answers 404, which both wrappers read as success — so a row that could
+ * not say which it is would leave a live charge behind every time.
+ */
+export const pendingAsaasKindEnum = pgEnum("pending_asaas_kind", [
+  "payment",
+  "checkout",
 ]);
 
 export const pixKeyTypeEnum = pgEnum("pix_key_type", [
@@ -136,6 +168,12 @@ export const users = pgTable("users", {
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   pendingStripeCustomerId: text("pending_stripe_customer_id"),
   pendingStripeSubscriptionId: text("pending_stripe_subscription_id"),
+  /**
+   * The Asaas customer this student is charged as, reused across every charge.
+   * Asaas keys a payment to a customer, so without this the same student would
+   * accumulate one customer per month.
+   */
+  asaasCustomerId: text("asaas_customer_id"),
 });
 
 export const userRoles = pgTable(
@@ -437,6 +475,14 @@ export const payments = pgTable("payments", {
     onDelete: "set null",
   }),
   stripePaymentId: text("stripe_payment_id"),
+  /**
+   * Reconciliation key for charges created on Asaas. Unique because Asaas
+   * delivers at least once and sends `PAYMENT_CONFIRMED` before
+   * `PAYMENT_RECEIVED` for the same money — the constraint, not a check inside
+   * the handler, is what keeps that to one row. Nullable, and Postgres does not
+   * compare NULLs under a unique constraint, so every legacy row still fits.
+   */
+  asaasPaymentId: text("asaas_payment_id").unique(),
   referenceMonth: date("reference_month").notNull(),
   notes: text("notes"),
   paidAt: timestamp("paid_at", { withTimezone: true }).notNull(),
@@ -463,6 +509,64 @@ export const pendingPixPayments = pgTable("pending_pix_payments", {
     .defaultNow()
     .notNull(),
 });
+
+/**
+ * What a paid Asaas charge is reconciled against. The webhook carries the Asaas
+ * payment id and nothing else we can trust, so the subscription, student,
+ * academy and reference month have to be written at charge creation — the same
+ * role `pendingPixPayments` plays for AbacatePay, keyed by the Asaas id instead
+ * of a Pix QR code id. Rows are deleted once the payment is recorded.
+ *
+ * A card checkout has no payment id to be keyed by — `POST /v3/checkouts`
+ * answers only a checkout session id — so those rows hold that instead and
+ * `kind` says so. The payment a checkout produces carries `checkoutSession`,
+ * which is what leads back here.
+ */
+export const pendingAsaasPayments = pgTable(
+  "pending_asaas_payments",
+  {
+    /**
+     * The Asaas handle this row is found by: a payment id when `kind` is
+     * `payment`, a checkout session id when it is `checkout`.
+     */
+    asaasPaymentId: text("asaas_payment_id").primaryKey(),
+    kind: pendingAsaasKindEnum("kind").notNull().default("payment"),
+    subscriptionId: uuid("subscription_id")
+      .notNull()
+      .references(() => studentSubscriptions.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    academyId: uuid("academy_id")
+      .notNull()
+      .references(() => academies.id, { onDelete: "cascade" }),
+    referenceMonth: date("reference_month").notNull(),
+    amountCents: integer("amount_cents").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (t) => ({
+    /**
+     * One open charge per subscription per month, enforced by the database
+     * rather than by the service's read-then-write guard — two concurrent
+     * `POST /payments/pix` calls both pass that guard and both open a live,
+     * split, payable charge for the same month.
+     *
+     * D9 refused a constraint on `payments` because it would block re-paying
+     * a refunded month. That cost does not apply here: these rows are deleted
+     * on settlement and on manual confirmation, so the dead end D9 feared
+     * cannot form behind them.
+     *
+     * The loser of the race has to *fail* rather than be ignored, which is
+     * why `createPendingAsaas` targets the primary key explicitly — see
+     * `persistPendingCharge`, which cancels the orphaned charge.
+     */
+    oneOpenChargePerMonth: uniqueIndex(
+      "pending_asaas_payments_subscription_month_unique",
+    ).on(t.subscriptionId, t.referenceMonth),
+  }),
+);
 
 export const beltPromotions = pgTable(
   "belt_promotions",

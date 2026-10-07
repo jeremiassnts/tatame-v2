@@ -2,17 +2,11 @@
   "expo": {
     "name": "Tatame",
     "slug": "tatame",
-    "version": "2.1.2",
+    "version": "2.1.3",
     "orientation": "portrait",
     "scheme": "tatame",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
     "icon": "./assets/images/icon.png",
-    "splash": {
-      "image": "./assets/images/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0C0C0C"
-    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.anonymous.tatame",
@@ -27,7 +21,7 @@
           "pt-BR"
         ]
       },
-      "buildNumber": "1"
+      "buildNumber": "2"
     },
     "android": {
       "googleServicesFile": "./google-services.json",
@@ -36,8 +30,8 @@
         "monochromeImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0C0C0C"
       },
-      "edgeToEdgeEnabled": true,
       "package": "com.anonymous.tatame",
+      "versionCode": 2,
       "permissions": [
         "android.permission.CAMERA"
       ]
@@ -58,7 +52,18 @@
           "merchantIdentifier": []
         }
       ],
-      "expo-notifications"
+      "expo-notifications",
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#0C0C0C",
+          "enableFullScreenImage_legacy": true
+        }
+      ],
+      "expo-web-browser"
     ],
     "extra": {
       "router": {},

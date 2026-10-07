@@ -75,10 +75,12 @@ export {
 export {
   confirmManualPaymentBodySchema,
   createCheckoutBodySchema,
+  createPixChargeBodySchema,
   listPaymentsQuerySchema,
   referenceMonthSchema,
   type ConfirmManualPaymentBody,
   type CreateCheckoutBody,
+  type CreatePixChargeBody,
 } from "./payment.schema.js";
 export {
   checkinHistoryQuerySchema,
@@ -114,10 +116,6 @@ export * from "./announcement.schema.js";
 export * from "./dependent.schema.js";
 export {
   asaasCompanyTypeSchema,
-  asaasDocumentTypeSchema,
   createPayoutAccountBodySchema,
-  payoutAccountGroupIdParamSchema,
-  uploadPayoutDocumentBodySchema,
   type CreatePayoutAccountBody,
-  type UploadPayoutDocumentBody,
 } from "./payout-account.schema.js";

@@ -53,6 +53,7 @@ export class InMemoryUserRepository implements IUserRepository {
       deletedAt: null,
       pendingStripeCustomerId: null,
       pendingStripeSubscriptionId: null,
+      asaasCustomerId: null,
     });
   }
 
@@ -160,6 +161,17 @@ export class InMemoryUserRepository implements IUserRepository {
     if (user) {
       user.pendingStripeCustomerId = null;
       user.pendingStripeSubscriptionId = null;
+      user.updatedAt = new Date();
+    }
+  }
+
+  async updateAsaasCustomerId(
+    id: string,
+    asaasCustomerId: string,
+  ): Promise<void> {
+    const user = this.users.find((u) => u.id === id && !u.deletedAt);
+    if (user) {
+      user.asaasCustomerId = asaasCustomerId;
       user.updatedAt = new Date();
     }
   }

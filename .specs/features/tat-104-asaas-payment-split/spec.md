@@ -67,22 +67,25 @@ gate for plan creation, enrollment and split.
 
 ### P1: Manager completes and tracks document review ⭐ MVP
 
-**User Story**: As a manager, I want to send my documents and see where my account
-stands so that I know when I can start receiving.
+**User Story**: As a manager, I want to know which documents Asaas wants, where to
+send them and where my account stands, so that I know when I can start receiving.
 
 **Why P1**: An account that is created but never approved cannot receive a split, so
 the manager needs a path to `APPROVED` that does not go through support.
 
+**Revised 2026-09-29** — the app no longer collects documents; see D6. It reports
+what Asaas wants and sends the manager to Asaas to submit.
+
 **Acceptance Criteria**:
 
-1. WHEN a payout account exists THEN the system SHALL list the pending document groups with title, description and status
-2. WHEN a document group has no `onboardingUrl` THEN the app SHALL let the manager pick a file and upload it in-app, showing progress and the resulting status
-3. WHEN a document group has an `onboardingUrl` THEN the app SHALL open that link instead of attempting an upload, because Asaas refuses API uploads for those groups
+1. WHEN a payout account exists THEN the system SHALL list the document groups with title, status and where that group is submitted
+2. WHEN the account is not yet approved THEN the app SHALL name the Asaas e-mail as the way to set the account password and SHALL open the Asaas login, rather than accepting a file
+3. WHEN a document group has an `onboardingUrl` THEN the app SHALL open that link, because Asaas refuses any other channel for those groups
 4. WHEN Asaas sends an `ACCOUNT_STATUS_*` webhook THEN the system SHALL update the stored status and, on `ACCOUNT_STATUS_GENERAL_APPROVAL_APPROVED`, mark the account `approved` and stamp `approvedAt`
-5. WHEN a status becomes rejected THEN the system SHALL store and display the rejection reason and allow resubmission
-6. WHEN the manager pulls to refresh THEN the system SHALL re-read the live status from Asaas rather than trusting only the webhook
+5. WHEN a status becomes rejected THEN the system SHALL store and display the rejection reason
+6. WHEN the manager opens the screen on an account still mid-flight, or pulls to refresh THEN the system SHALL re-read the live status from Asaas rather than trusting the cached one
 
-**Independent Test**: Upload a sandbox document, then force the approval webhook and see the card turn green.
+**Independent Test**: Open the screen on a pending account and watch the status settle from Asaas without pulling; confirm the screen offers Asaas and never a file picker.
 
 ---
 
@@ -140,6 +143,8 @@ receives the money directly.
 4. WHEN a charge already exists and is unpaid for the same subscription and reference month THEN the system SHALL return the existing charge instead of creating a duplicate
 5. WHEN the payment for the reference month was already confirmed THEN the system SHALL return 409
 6. WHEN the academy has no approved payout account THEN the system SHALL return 403 with code `PAYOUT_ACCOUNT_REQUIRED`
+7. WHEN the student has no Asaas customer yet THEN the system SHALL require their CPF/CNPJ, answering 400 with code `CPF_REQUIRED` when it is absent, since Asaas refuses to charge a customer without a document (D7)
+8. WHEN the student already has an Asaas customer THEN the system SHALL NOT ask for the document again, and the platform SHALL NOT store it at any point
 
 **Independent Test**: Pay the sandbox QR code and see the payment row appear with the split recorded.
 
@@ -159,6 +164,8 @@ migration (D4).
 2. WHEN the checkout succeeds, is canceled or expires THEN Asaas SHALL return the student to the corresponding callback URL
 3. WHEN the checkout is created THEN the system SHALL persist enough reference (subscription, reference month, academy) to reconcile the webhook without trusting the client
 4. WHEN the academy has no approved payout account THEN the system SHALL return 403 with code `PAYOUT_ACCOUNT_REQUIRED`
+5. WHEN the month already has a charge open on either rail THEN the system SHALL cancel it before opening the checkout, since a link cannot be handed back the way a Pix QR can and two live charges make the month payable twice
+6. WHEN a student requests a card payment THEN the system SHALL NOT ask for their CPF/CNPJ: Asaas refuses to bind a customer without a full address, which the platform does not hold, so the student identifies themselves on the Asaas page (D8)
 
 **Independent Test**: Open the returned link in sandbox, pay with a test card, and see the payment recorded.
 
@@ -225,19 +232,19 @@ and see statements.
 | --- | --- | --- | --- | --- |
 | PAYOUT-01 | P1: Manager creates a receiving account | TAT-179 | Implemented | Done |
 | PAYOUT-02 | P1: Manager creates a receiving account (webhooks + persistence) | TAT-179 | Implemented | Done |
-| PAYOUT-03 | P1: Document submission in-app | TAT-179 | Implemented | Done |
+| PAYOUT-03 | P1: Document submission — **superseded by D6**, the app points at Asaas | TAT-179 | Removed | Done |
 | PAYOUT-04 | P1: Document submission via onboarding link | TAT-179 | Implemented | Done |
 | PAYOUT-05 | P1: Account status tracking + webhook | TAT-179 | Implemented | Done |
 | PAYOUT-06 | P1: Fee disclosure on plan creation | TAT-179 | Implemented | Done |
 | PAYOUT-07 | P1: Gate plan creation and enrollment | TAT-179 | Implemented | Done |
 | PAYOUT-08 | P2: Financeiro dashboard card | TAT-179 | Implemented | Done |
 | PAYOUT-09 | P3: Link to the Asaas account | TAT-179 | Implemented | Done |
-| SPLIT-01 | P1: Asaas customer per student | TAT-104 | Design | Pending |
-| SPLIT-02 | P1: Pix charge with 100% split | TAT-104 | Design | Pending |
-| SPLIT-03 | P1: Card checkout with 100% split | TAT-104 | Design | Pending |
-| SPLIT-04 | P1: Webhook reconciliation and idempotency | TAT-104 | Design | Pending |
-| SPLIT-05 | P1: Refund and chargeback visibility | TAT-104 | Design | Pending |
-| SPLIT-06 | P1: Retire AbacatePay and Stripe student checkout | TAT-104 | Design | Pending |
+| SPLIT-01 | P1: Asaas customer per student | TAT-104 | Implemented | Service done (B3), no caller until B4 |
+| SPLIT-02 | P1: Pix charge with 100% split | TAT-104 | Implemented | `POST /v1/payments/pix` (B4) |
+| SPLIT-03 | P1: Card checkout with 100% split | TAT-104 | Implemented | `POST /v1/payments/checkout` (B5) |
+| SPLIT-04 | P1: Webhook reconciliation and idempotency | TAT-104 | Implemented | `asaas-payment.handler.ts` + the dispatch in `POST /v1/webhooks/asaas` (B6, B8) |
+| SPLIT-05 | P1: Refund and chargeback visibility | TAT-104 | Implemented | `payment.reversed` from `asaas-payment.handler.ts` (B7) |
+| SPLIT-06 | P1: Retire AbacatePay and Stripe student checkout | TAT-104 | Partial | Stripe student checkout retired (B5). The AbacatePay Pix rail stays live for one release — the shipped 2.1.2 calls it and has no OTA. Removal tracked in **TAT-187** |
 
 **Coverage:** 15 total, mapped in `tasks.md`.
 

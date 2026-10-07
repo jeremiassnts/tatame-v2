@@ -259,16 +259,27 @@ export function PlanPayoutAccountNotice({ blocking }: { blocking: boolean }) {
 
   return (
     <CardShell>
-      <View className="flex-row items-center justify-between">
+      <View style={{ gap: 8 }}>
         <View className="flex-row items-center" style={{ gap: 8 }}>
           <Landmark size={16} color={AMBER} />
           <Text className="font-poppins-semibold text-sm text-primary">
             Conta de recebimento
           </Text>
         </View>
+        {/*
+          The label runs as long as "Nenhuma conta cadastrada", which does not
+          fit beside the title on a phone, so it takes its own line.
+          `alignSelf` keeps the pill hugging its text instead of stretching
+          across the card.
+        */}
         <View
           className="rounded-full"
-          style={{ paddingHorizontal: 10, paddingVertical: 3, backgroundColor: `${AMBER}20` }}
+          style={{
+            alignSelf: "flex-start",
+            paddingHorizontal: 10,
+            paddingVertical: 3,
+            backgroundColor: `${AMBER}20`,
+          }}
         >
           <Text className="font-poppins-medium text-[10px]" style={{ color: AMBER }}>
             {label}
