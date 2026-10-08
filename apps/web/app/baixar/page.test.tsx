@@ -13,6 +13,9 @@ vi.mock("next/headers", () => ({
 // not about how the logo is optimised.
 vi.mock("next/image", () => ({
   default: ({ alt, src }: { alt: string; src: string }) => (
+    // A stub for `next/image`, which needs a Next build context a bare test
+    // has not.
+    // eslint-disable-next-line @next/next/no-img-element
     <img alt={alt} src={src} />
   ),
 }));
