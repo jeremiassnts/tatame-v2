@@ -3,7 +3,11 @@
 Profile: standard
 Plan: `.specs/features/tat-176-public-invite-page/plan.md`
 
-33 checks in 5 slices · 4 one-way doors · 1 open, of which 0 block
+37 checks in 5 slices · 4 one-way doors · 1 open, of which 0 block
+
+C36 and C37 were **added after verification round 1**, which found a surviving mutant: the
+`surface` variant of `StoreButtons` was a decision with no row and no proof anywhere. They are
+additions, not rewrites — no approved check changed.
 
 Every proof runs from the repository root. `pnpm install` first; the workspace packages must be
 built (`pnpm build`) before the API integration project, because `@tatame/config` and
@@ -65,8 +69,24 @@ Proof: `pnpm --filter @tatame/web exec vitest run components/store-buttons.test.
 **C12** - Exactly one file under `apps/web` contains the string `ios.apptatame.com.br`, and exactly one contains `android.apptatame.com.br` (AC 9)
 Proof: `bash -c '[ "$(git grep -l ios.apptatame.com.br -- apps/web | wc -l | tr -d " ")" = 1 ] && [ "$(git grep -l android.apptatame.com.br -- apps/web | wc -l | tr -d " ")" = 1 ]'`
 
-**C13** - Each of `app/assinatura-confirmada/page.tsx`, `app/conta/(dashboard)/layout.tsx`, `app/baixar/page.tsx` and `app/convite/[academyId]/page.tsx` imports `StoreButtons` — 4 members, each asserted by name (AC 10)
+**C13** - Each of `app/assinatura-confirmada/page.tsx`, `app/conta/(dashboard)/layout.tsx`, `app/baixar/page.tsx` and `app/convite/[academyId]/page.tsx` imports `StoreButtons` and inlines no store URL — 4 members, each asserted by name (AC 10)
 Proof: `pnpm --filter @tatame/web exec vitest run components/store-buttons.test.tsx -t "is the only store markup every consumer renders"`
+
+> **This proof reads the four files' bytes, which is weaker than AC 10's "SHALL
+> render" for two of them.** `/baixar` and `/convite/[academyId]` are rendered by
+> C14 and C20-C27, and `assinatura-confirmada` by C37, so three of the four are
+> covered at the render level. The fourth, `conta/(dashboard)/layout.tsx`, stays
+> at the grep: it is a `"use client"` component whose store buttons appear only
+> in the `pending-academy` branch, reached through `useAuth`, `usePathname` and
+> an effect that calls `managerFetch`. Rendering it would need those four doubled
+> to assert one import, which is a bigger test surface than the claim.
+> Recorded as a precision gap rather than closed.
+
+**C36** - `surface="background"` renders both buttons with `bg-background hover:bg-surface` and `surface="surface"` with `bg-surface hover:bg-white/5`, and the two renders are not byte-identical — 2 members, table-driven (AC 10)
+Proof: `pnpm --filter @tatame/web exec vitest run components/store-buttons.test.tsx -t "puts each consumer's buttons on the surface it sits on"`
+
+**C37** - `await AssinaturaConfirmadaPage()` renders both store `href`s and `bg-background hover:bg-surface`, and does not render `hover:bg-white/5` (AC 10)
+Proof: `pnpm --filter @tatame/web exec vitest run app/assinatura-confirmada/page.test.tsx -t "renders the shared store buttons on the card's surface"`
 
 ### S3 — A member-facing download page · 2 files · 4 KB · ~1k
 
@@ -157,7 +177,8 @@ Proof: `pnpm --filter @tatame/web exec vitest run middleware.test.ts -t "does ru
 | user-agent platform classes (4) | iPhone/iPad/iPod C7 · Android C8 · desktop C9 · absent C9 | - |
 | `StoreButtons` highlight states (3) | `"ios"` C10, C11 · `"android"` C10, C11 · `null` C10, C11 | - |
 | `logoUrl` presence (2) | non-null C21 · null C21 | - |
-| `StoreButtons` consumers (4) | `assinatura-confirmada` C13 · `conta/(dashboard)/layout` C13 · `/baixar` C13, C14 · `/convite/[academyId]` C13, C26 | - |
+| `StoreButtons` consumers (4) | `assinatura-confirmada` C13, C37 · `conta/(dashboard)/layout` C13 · `/baixar` C13, C14 · `/convite/[academyId]` C13, C26 | - |
+| `StoreButtons` surface variants (2) | `background` C36, C37 · `surface` C36 | - |
 | copy forbidden on `/convite`, 5 strings × 3 outcomes (15) | C27, table-driven over all 15 pairs — the enumeration lives in the test's own fixture arrays | - |
 | marketing components barred from `/baixar` (4) | `HeroV2` C15 · `FeaturesV2` C15 · `PricingV2` C15 · `FaqV2` C15 | - |
 | one-way doors (4) | door 1 C5, C2 · door 2 C7-C11, C14-C32 (every web proof exists only because the runner does) · door 3 C17, C18 · door 4 C28, C30, C31, C32 | - |
@@ -200,8 +221,10 @@ Evidence:
   points -> decides
 - `apps/web/lib/store-links.ts#detectPlatform`: dispatches over 4 user-agent classes, 4 branch
   points -> decides
-- `apps/web/components/store-buttons.tsx`: one conditional per button on `highlight`, 2 branch
-  points -> decides. Thin, and it still decides which store a visitor's eye lands on
+- `apps/web/components/store-buttons.tsx`: one conditional per button on `highlight` plus a
+  2-row `SURFACE_CLASSES` lookup, 4 branch points -> decides. Thin, and it still decides which
+  store a visitor's eye lands on and whether a button is visible against what it sits on. The
+  surface row is the one round 1 found unproven
 - `apps/web/app/.well-known/*/route.ts` (2 files): one env-presence branch each, 2 branch points
   -> decides
 - `apps/web/app/baixar/page.tsx`: no conditional, forwards nothing -> instrumentation, covered by
@@ -258,6 +281,23 @@ roughly 25 KB of new files — 78 KB / 4 ≈ **~21k tokens**.
 proven against env vars with the `404`-when-unset branch (C30, C32); the maintainer fills the real
 values in the deployment environment, and `.env.example` documents both. Until then TAT-177's
 universal links fall back to the browser — recorded as `blocks go-live` in the plan.
+
+### Round 1 fixes
+
+Verification round 1 returned FAIL on one finding wearing three hats: an unmet `Test policy`
+row 1, a coverage set with no row at all, and a surviving mutant. Collapsing `background` onto
+`surface` in `SURFACE_CLASSES` left all 28 `apps/web` tests green, and `surface="background"` is
+a live argument at `assinatura-confirmada/page.tsx:84` that no test ever rendered — so the one
+call site the plan's `Impact` table warned about ("one of the two call sites changes appearance")
+was the one with nothing watching it.
+
+- C36 asserts both rows of the surface table and that the two renders differ.
+- C37 renders `assinatura-confirmada` itself, so the live `background` argument is exercised
+  where it is actually passed rather than only where it is defined.
+- Mutant re-checked by hand: collapsing `background` onto `surface` now fails C36.
+- Round 1's second finding — C13 proving two consumers by grep rather than by render — is closed
+  for `assinatura-confirmada` by C37 and recorded as a named precision gap for
+  `conta/(dashboard)/layout.tsx`, with the reason beside C13.
 
 ### Builder's close
 

@@ -7,10 +7,17 @@ import { StoreButtons } from "./store-buttons";
 
 const HIGHLIGHTS: Array<Platform | null> = ["ios", "android", null];
 
+/**
+ * The opening `<a>` tag carrying this href, and nothing after it. Bounded by
+ * the tag's own `>` rather than by a character count, so it can never bleed
+ * into the sibling button and report its attributes as this one's.
+ */
 function hrefBlock(html: string, href: string) {
   const start = html.indexOf(`href="${href}"`);
-  expect(start).toBeGreaterThan(-1);
-  return html.slice(start, start + 200);
+  expect(start, `no anchor for ${href}`).toBeGreaterThan(-1);
+  const end = html.indexOf(">", start);
+  expect(end, `unterminated anchor for ${href}`).toBeGreaterThan(start);
+  return html.slice(start, end);
 }
 
 describe("StoreButtons", () => {
@@ -44,6 +51,36 @@ describe("StoreButtons", () => {
         `data-highlighted="${android}"`,
       );
     }
+  });
+
+  it("puts each consumer's buttons on the surface it sits on", () => {
+    // Both rows of the surface table, asserted. The variant exists because the
+    // two existing consumers genuinely differ: `assinatura-confirmada` is a
+    // `surface` card, so its buttons have to be darker than it, while the
+    // `conta` dashboard is `background`, so its buttons have to be lighter.
+    // Collapse the two and one of them renders the same colour as what it sits
+    // on, which is the failure the plan's Impact table named in advance.
+    const expected: Array<["background" | "surface", string, string]> = [
+      ["background", "bg-background", "hover:bg-surface"],
+      ["surface", "bg-surface", "hover:bg-white/5"],
+    ];
+
+    for (const [surface, background, hover] of expected) {
+      const html = renderToStaticMarkup(<StoreButtons surface={surface} />);
+
+      for (const href of [STORE_LINKS.ios, STORE_LINKS.android]) {
+        const block = hrefBlock(html, href);
+        expect(block, `${surface} must use ${background}`).toContain(
+          ` ${background} `,
+        );
+        expect(block, `${surface} must use ${hover}`).toContain(hover);
+      }
+    }
+
+    // And the two are not the same markup, which a shared substring would hide.
+    expect(renderToStaticMarkup(<StoreButtons surface="background" />)).not.toBe(
+      renderToStaticMarkup(<StoreButtons surface="surface" />),
+    );
   });
 
   it("is the only store markup every consumer renders", () => {
