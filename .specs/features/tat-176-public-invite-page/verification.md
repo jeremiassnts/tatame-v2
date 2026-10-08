@@ -1,223 +1,217 @@
 # TAT-176 — Public invite page, download page and public academy endpoint verification
 
-**Verdict**: FAIL
+**Verdict**: PASS
 **Profile**: standard
-**Diff range**: a2d512ddb366e0827b30364f0022bcba8083ae49..acaca3219c71d31437eeb262a7cc9fc6f955b6f6
-**Round**: 1 - full
+**Diff range**: a2d512ddb366e0827b30364f0022bcba8083ae49..fb9383110bf93b6c0db02e147bd2a9a868061c9c
+**Round**: 2 - scoped
 **Verifier**: independent sub-agent (author != verifier)
 
-One gap, and it is narrow: all 35 checks are proven with located evidence and every proof was
-re-run green at `acaca32`, but a 2-member decision table this feature introduced —
-`SURFACE_CLASSES` in `apps/web/components/store-buttons.tsx` — has no asserted member in any of
-the 28 `apps/web` tests, and the mutant that collapses it **survived** the full suite. That is the
-exact regression the plan's `Impact` table named in advance ("the shared component carries a
-surface variant **or one of the two call sites changes appearance**"), and it is the only thing
-standing between this report and a PASS.
+Round 1 returned FAIL on one finding wearing three hats: the `SURFACE_CLASSES` decision table in
+`apps/web/components/store-buttons.tsx` had no asserted member, no coverage row, and its collapse
+survived the whole suite. `fb93831` adds C36 (both rows of the table, at the component's own
+layer) and C37 (the live `surface="background"` argument, exercised where it is actually passed).
+Re-injecting the round-1 survivor now **fails** C36, the new surface C37 created has been made to
+fail once, and the shared `hrefBlock` helper the fix rewrote was re-checked against the
+`data-highlighted` surface it also serves. All 37 checks are proven with located evidence, every
+proof re-ran green at `fb93831`, and the one open item — C13's grep-level proof for
+`conta/(dashboard)/layout.tsx` — is a named, enumerated, structurally-forced precision gap rather
+than a blanket exemption. Reasoning for that judgment is below; it does not carry a FAIL.
+
+Scope of this round, per `verify.md` "Re-verifying after a fix": the fix's diff is
+`acaca32..fb93831`, which touched **no production source** — only
+`apps/web/components/store-buttons.test.tsx`, the new `apps/web/app/assinatura-confirmada/page.test.tsx`
+and `.specs/`. Proofs re-ran in full; everything else is scoped to that diff plus round 1's
+non-PASS verdicts, and each section says where it came from.
 
 ## Binding sources
 
-Step 1 is `ui`-only and did not run: the plan records that no design source exists for either new
-page (`Assumptions` → "Design reference for the two new pages | none exists … `design.pen` carries
-no `/convite` or `/baixar` screen, and the Pencil MCP app is not running in this environment"), so
-there is no binding artifact to compare the checks against. Nothing was recorded as opened.
+`verified at fb93831` (unchanged from round 1). Step 1 is `ui`-only and does not run: the plan
+records that no design source exists for either new page (`Assumptions` → "Design reference for
+the two new pages | none exists … `design.pen` carries no `/convite` or `/baixar` screen"). No
+binding artifact to compare against, nothing recorded as opened.
 
 ## Checks
 
+Proofs re-run **in full** at `fb93831` (`verified at fb93831`, four invocations, see `## Gate`).
+Citations for `components/store-buttons.test.tsx` are refreshed because the fix moved its lines
+(C10, C11, C13, plus the new C36); C37 is new. Every other citation is `carried from acaca32` and
+still exact — the fix changed no other file, and each named test was shown individually as having
+run and passed at the new HEAD.
+
 | Check | Claim | Proof run | Evidence | Result |
 | --- | --- | --- | --- | --- |
-| C1 | public endpoint `200` with seeded name and logo | `vitest run --project integration src/academy-membership.integration.test.ts` exit 0 — named test shown individually | `apps/api/src/academy-membership.integration.test.ts:301` `expect(res.status).toBe(200)` · `:302` `expect(res.body.name).toBe("Academia do Convite")` · `:303` `expect(res.body.logoUrl).toBe("https://cdn.example/logo-convite.png")` | PASS |
-| C2 | body key list `== ["id","logoUrl","name"]` by array equality | same invocation, exit 0 | `apps/api/src/academy-membership.integration.test.ts:326` `expect(Object.keys(res.body).sort()).toEqual(["id", "logoUrl", "name"])` — preceded by `:318` `expect(patched.status).toBe(200)` seeding `contactEmail`/`contactPhone`/`address` | PASS |
-| C3 | non-uuid id → `400 "Invalid academy id"` | same invocation, exit 0 | `apps/api/src/academy-membership.integration.test.ts:333` `expect(res.status).toBe(400)` · `:334` `expect(res.body.error).toBe("Invalid academy id")` | PASS |
-| C4 | unseeded uuid → `404 "Academy not found"` | same invocation, exit 0 | `apps/api/src/academy-membership.integration.test.ts:343` `expect(res.status).toBe(404)` · `:344` `expect(res.body.error).toBe("Academy not found")` | PASS |
-| C5 | public `200` while the guarded sibling `401`, same test, no session | same invocation, exit 0 | `apps/api/src/academy-membership.integration.test.ts:359` `expect(publicRes.status).toBe(200)` · `:360` `expect(guardedRes.status).toBe(401)` | PASS |
-| C6 | `getPublicById` → 3-field projection, `null` when absent | `vitest run --project unit src/modules/academy/academy.service.test.ts` exit 0 | `apps/api/src/modules/academy/academy.service.test.ts:76` `expect(publicView).toEqual({ id: row.id, name: "Academia Tatame", logoUrl: "https://cdn.example/logo.png" })` · `:88` `expect(await svc.getPublicById(randomUUID())).toBeNull()` | PASS |
-| C7 | iPhone, iPad, iPod → `"ios"` | `vitest run` (`apps/web`) exit 0 | `apps/web/lib/store-links.test.ts:20` `expect(detectPlatform(ua)).toBe("ios")` over `[IPHONE, IPAD, IPOD]` at `:19` | PASS |
-| C8 | Android UA → `"android"` | same invocation, exit 0 | `apps/web/lib/store-links.test.ts:25` `expect(detectPlatform(ANDROID)).toBe("android")` | PASS |
-| C9 | macOS, Windows, `""`, `undefined` → `null` | same invocation, exit 0 | `apps/web/lib/store-links.test.ts:32-35` `expect(detectPlatform(MACOS)).toBeNull()` · `(WINDOWS)` · `("")` · `(undefined)` | PASS |
-| C10 | both hrefs under all 3 highlight states | same invocation, exit 0 | `apps/web/components/store-buttons.test.tsx:22` `expect(html).toContain(\`href="${STORE_LINKS.ios}"\`)` · `:23` android — loop over `HIGHLIGHTS = ["ios","android",null]` at `:8`,`:18` | PASS |
-| C11 | highlight marks exactly one store, all 3 states | same invocation, exit 0 | `apps/web/components/store-buttons.test.tsx:40` `expect(hrefBlock(html, STORE_LINKS.ios)).toContain(\`data-highlighted="${ios}"\`)` · `:43` android — table `{ios:["true","false"],android:["false","true"],none:["false","false"]}` at `:28-33` | PASS |
-| C12 | exactly 1 file under `apps/web` holds each store URL | `bash -c '[ "$(git grep -l ios.apptatame.com.br -- apps/web \| wc -l \| tr -d " ")" = 1 ] && …'` exit 0 (re-run by verifier) | `apps/web/lib/store-links.ts:7-8` `ios: "https://ios.apptatame.com.br"` / `android: "https://android.apptatame.com.br"` — the single hit; `git grep -l apptatame.com.br -- apps/web` returns 8 files, none of the other 7 carrying either store subdomain | PASS |
-| C13 | 4 consumers each name `StoreButtons`, none inlines a URL | `vitest run` (`apps/web`) exit 0 | `apps/web/components/store-buttons.test.tsx:59` `expect(source, \`${relative} must import StoreButtons\`).toContain("StoreButtons")` · `:63` `.not.toContain("apptatame.com.br")` over the 4 paths at `:50-55` | PASS (precision gap — see below) |
-| C14 | `await BaixarPage()` renders both hrefs | same invocation, exit 0 | `apps/web/app/baixar/page.test.tsx:35-36` `expect(html).toContain(\`href="${STORE_LINKS.ios}"\`)` / android, over `renderToStaticMarkup(await BaixarPage())` at `:27` | PASS |
-| C15 | 4 marketing strings absent from `/baixar` | same invocation, exit 0 | `apps/web/app/baixar/page.test.tsx:50` `expect(html, …).not.toContain(phrase)` over `barred` at `:43-48` (HeroV2 h1, FeaturesV2 h2, PricingV2 h2, FaqV2 h2) | PASS |
-| C16 | found academy → `academyName` in the view | same invocation, exit 0 | `apps/web/lib/invite.test.ts:51` `expect(view).toEqual({ kind: "ok", academy: ACADEMY, role: "instructor" })` | PASS |
-| C17 | 3 `papel` tokens → 3 roles | same invocation, exit 0 | `apps/web/lib/invite.test.ts:26-28` `expect(resolveInviteRole("aluno")).toBe("student")` · `("instrutor")→"instructor"` · `("responsavel")→"guardian"` | PASS |
-| C18 | 5 unusable `papel` inputs → `null` | same invocation, exit 0 | `apps/web/lib/invite.test.ts:35-39` `toBeNull()` for `undefined`, `""`, `"xyz"`, `"ALUNO"`, `"a".repeat(64)` | PASS |
-| C19 | 5 endpoint outcomes → 3 view kinds | same invocation, exit 0 | `apps/web/lib/invite.test.ts:59-61` `toMatchObject({ kind: "ok" })` · `:64-66` `400 → toEqual({kind:"not-found"})` · `:67-69` `404 → same` · `:73-75` `500 → toEqual({kind:"unavailable", role:"student"})` · `:76-79` thrown fetch → same | PASS |
-| C20 | page renders the academy's name | same invocation, exit 0 | `apps/web/app/convite/[academyId]/page.test.tsx:61` `expect(html).toContain("Academia Gracie Centro")` over `renderToStaticMarkup(await ConvitePage({params, searchParams}))` at `:46-50` | PASS |
-| C21 | logo src = URL, else `/icon.png` | same invocation, exit 0 | `apps/web/app/convite/[academyId]/page.test.tsx:66` `expect(withLogo).toContain('src="https://cdn.example/logo.png"')` · `:72` `expect(withoutLogo).toContain('src="/icon.png"')` · `:73` `.not.toContain("cdn.example")` | PASS |
-| C22 | 3 tokens → `Aluno`/`Instrutor`/`Responsável` in the heading | same invocation, exit 0 | `apps/web/app/convite/[academyId]/page.test.tsx:85-87` `expect(html, \`?papel=${papel} must name ${label}\`).toContain(\`>${label}</span>\`)` over the table at `:77-81`, accented form included | PASS |
-| C23 | absent and `xyz` name no kind of member | same invocation, exit 0 | `apps/web/app/convite/[academyId]/page.test.tsx:96-99` `expect(html, …).not.toContain(label)` for `["Aluno","Instrutor","Responsável"]`, plus `:94` `toContain("Academia Gracie Centro")` proving the page still resolved | PASS |
-| C24 | re-tap sentence under 3 outcomes | same invocation, exit 0 | `apps/web/app/convite/[academyId]/page.test.tsx:107-109` `expect(await render("aluno")).toContain(RE_TAP)` · `render(undefined)` · `render("aluno", {status:500})`, `RE_TAP` literal at `:14-15` | PASS |
-| C25 | `400`/`404` → `notFound()`; not-found page carries no academy name | same invocation, exit 0 | `apps/web/app/convite/[academyId]/page.test.tsx:114-117` `await expect(render("aluno", {status}), …).rejects.toThrow(/NEXT_HTTP_ERROR_FALLBACK;404\|NEXT_NOT_FOUND/)` over `[400, 404]` · `apps/web/app/convite/[academyId]/not-found.test.tsx:20` `toContain("Convite inválido")` · `:23` `.not.toContain("Academia Gracie Centro")` | PASS |
-| C26 | `500` and thrown fetch resolve with no name, both hrefs, the sentence | same invocation, exit 0 | `apps/web/app/convite/[academyId]/page.test.tsx:127` `.not.toContain("Academia Gracie Centro")` · `:128-129` both hrefs · `:130` `toContain(RE_TAP)` · `:133` `toContain(">Instrutor</span>")`, over `[{status:500},{throws:true}]` at `:122-125` | PASS |
-| C27 | 5 phrases × 3 rendered outcomes absent | same invocation, exit 0 | `apps/web/app/convite/[academyId]/page.test.tsx:157` `expect(html, \`${name} must not say "${phrase}"\`).not.toContain(phrase)` over `barred` (`:138-144`) × `outcomes` (`:145-149`); the 3 outcomes differ — `papel=aluno`+`200`, `papel=undefined`+`200`, `papel=aluno`+`500` — via the papel switch at `:152-155` | PASS |
-| C28 | AASA `200`, json, `appIDs == [IOS_APP_ID]` | same invocation, exit 0 | `apps/web/app/.well-known/apple-app-site-association/route.test.ts:15` `expect(res.status).toBe(200)` · `:16` `expect(res.headers.get("content-type")).toBe("application/json")` · `:21` `expect(body.applinks.details[0]!.appIDs).toEqual([APP_ID])` | PASS |
-| C29 | `components` lists `/convite/*` and `/baixar` | same invocation, exit 0 | `apps/web/app/.well-known/apple-app-site-association/route.test.ts:32` `expect(paths).toContain("/convite/*")` · `:33` `toContain("/baixar")` | PASS |
-| C30 | `IOS_APP_ID` unset → `404` | same invocation, exit 0 | `apps/web/app/.well-known/apple-app-site-association/route.test.ts:40` `expect(GET().status).toBe(404)` after `:37` `delete process.env.IOS_APP_ID` | PASS |
-| C31 | assetlinks `200`, json, one statement, relation / package / both fingerprints in order | same invocation, exit 0 | `apps/web/app/.well-known/assetlinks.json/route.test.ts:28` `toBe(200)` · `:29` `toBe("application/json")` · `:32` `toHaveLength(1)` · `:33-35` `relation toEqual(["delegate_permission/common.handle_all_urls"])` · `:37` `package_name toBe("com.anonymous.tatame")` · `:41-44` `sha256_cert_fingerprints toEqual([UPLOAD_CERT, PLAY_CERT])` | PASS |
-| C32 | fingerprints unset → `404` | same invocation, exit 0 | `apps/web/app/.well-known/assetlinks.json/route.test.ts:50` `expect(GET().status).toBe(404)` after `:48` `delete process.env.ANDROID_SHA256_CERT_FINGERPRINTS` | PASS |
-| C33 | real `next build` manifest holds 4 feature routes + live sibling, AASA with no extension | `bash -c 'pnpm --filter @tatame/web build >/dev/null && node scripts/assert-web-routes.mjs'` → `assert-web-routes: 5 route(s) served`, exit 0 (re-run by verifier) | `scripts/assert-web-routes.mjs:33-39` `REQUIRED = ["/.well-known/apple-app-site-association", "/.well-known/assetlinks.json", "/baixar", "/convite/[academyId]", "/assinatura-confirmada"]` · `:54` `const missing = REQUIRED.filter((route) => !served.has(route))` · `:56-62` exit 1 when non-empty; manifest read at `:43` holds `"/.well-known/apple-app-site-association/route": "/.well-known/apple-app-site-association"` | PASS |
-| C34 | `isProtectedRoute` false for 4 public paths, true for `/conta/assinatura` | `vitest run` (`apps/web`) exit 0 | `apps/web/middleware.test.ts:20-23` `expect(isProtectedRoute(at(pathname)), \`${pathname} must stay public\`).toBe(false)` over `PUBLIC_PATHS` (`:10-15`) · `:28` `expect(isProtectedRoute(at("/conta/assinatura"))).toBe(true)` | PASS |
-| C35 | `config.matcher[0]` **does** match `assetlinks.json` (ticket claim false) | same invocation, exit 0 | `apps/web/middleware.test.ts:38` `expect(matcher.test("/.well-known/assetlinks.json")).toBe(true)` · `:40` `expect(matcher.test("/icon.png")).toBe(false)` | PASS |
+| C1 | public endpoint `200` with seeded name and logo | `vitest run --project integration src/academy-membership.integration.test.ts` exit 0 at `fb93831` | `apps/api/src/academy-membership.integration.test.ts:301` `expect(res.status).toBe(200)` · `:302` `expect(res.body.name).toBe("Academia do Convite")` · `:303` `expect(res.body.logoUrl).toBe("https://cdn.example/logo-convite.png")` | PASS (carried from acaca32) |
+| C2 | body key list `== ["id","logoUrl","name"]` by array equality | same invocation, exit 0 | `apps/api/src/academy-membership.integration.test.ts:326` `expect(Object.keys(res.body).sort()).toEqual(["id", "logoUrl", "name"])`, after `:318` seeds `contactEmail`/`contactPhone`/`address` | PASS (carried from acaca32) |
+| C3 | non-uuid id → `400 "Invalid academy id"` | same invocation, exit 0 | `apps/api/src/academy-membership.integration.test.ts:333` `toBe(400)` · `:334` `expect(res.body.error).toBe("Invalid academy id")` | PASS (carried from acaca32) |
+| C4 | unseeded uuid → `404 "Academy not found"` | same invocation, exit 0 | `apps/api/src/academy-membership.integration.test.ts:343` `toBe(404)` · `:344` `expect(res.body.error).toBe("Academy not found")` | PASS (carried from acaca32) |
+| C5 | public `200` while the guarded sibling `401`, same test, no session | same invocation, exit 0 | `apps/api/src/academy-membership.integration.test.ts:359` `expect(publicRes.status).toBe(200)` · `:360` `expect(guardedRes.status).toBe(401)` | PASS (carried from acaca32) |
+| C6 | `getPublicById` → 3-field projection, `null` when absent | `vitest run --project unit` exit 0 at `fb93831` | `apps/api/src/modules/academy/academy.service.test.ts:76` `expect(publicView).toEqual({ id: row.id, name: "Academia Tatame", logoUrl: "https://cdn.example/logo.png" })` · `:88` `expect(await svc.getPublicById(randomUUID())).toBeNull()` | PASS (carried from acaca32) |
+| C7 | iPhone, iPad, iPod → `"ios"` | `vitest run` (`apps/web`) exit 0 at `fb93831` | `apps/web/lib/store-links.test.ts:20` `expect(detectPlatform(ua)).toBe("ios")` over `[IPHONE, IPAD, IPOD]` at `:19` | PASS (carried from acaca32) |
+| C8 | Android UA → `"android"` | same invocation, exit 0 | `apps/web/lib/store-links.test.ts:25` `expect(detectPlatform(ANDROID)).toBe("android")` | PASS (carried from acaca32) |
+| C9 | macOS, Windows, `""`, `undefined` → `null` | same invocation, exit 0 | `apps/web/lib/store-links.test.ts:32-35` `toBeNull()` ×4 | PASS (carried from acaca32) |
+| C10 | both hrefs under all 3 highlight states | same invocation, exit 0 | `apps/web/components/store-buttons.test.tsx:29` `expect(html).toContain(\`href="${STORE_LINKS.ios}"\`)` · `:30` android — loop over `HIGHLIGHTS = ["ios","android",null]` (`:8`, `:25`) | PASS (citations refreshed at fb93831) |
+| C11 | highlight marks exactly one store, all 3 states | same invocation, exit 0 | `apps/web/components/store-buttons.test.tsx:47-49` `expect(hrefBlock(html, STORE_LINKS.ios)).toContain(\`data-highlighted="${ios}"\`)` · `:50-52` android — table at `:35-40`; helper now bounded by the anchor's own `>` at `:18-20` | PASS (citations refreshed at fb93831) |
+| C12 | exactly 1 file under `apps/web` holds each store URL | the `git grep -l` / `wc -l` equality command, verbatim in `## Gate` — exit 0, re-run at `fb93831` | `apps/web/lib/store-links.ts:7-8` — still the single hit, and the fix's new test file references `STORE_LINKS.ios` rather than the literal, which is what keeps this green | PASS (re-verified at fb93831) |
+| C13 | 4 consumers each name `StoreButtons`, none inlines a URL | `vitest run` (`apps/web`) exit 0 | `apps/web/components/store-buttons.test.tsx:96-98` `expect(source, \`${relative} must import StoreButtons\`).toContain("StoreButtons")` · `:100-102` `.not.toContain("apptatame.com.br")` over the 4 paths at `:87-92` | PASS — precision gap narrowed to 1 of 4 files (see the note below) |
+| C36 | `surface="background"` → `bg-background hover:bg-surface`, `surface="surface"` → `bg-surface hover:bg-white/5`, and the two renders differ | `vitest run components/store-buttons.test.tsx -t "puts each consumer's buttons on the surface it sits on"` exit 0; named test shown individually in the full run | `apps/web/components/store-buttons.test.tsx:73-75` `expect(block, …).toContain(\` ${background} \`)` · `:76` `expect(block, …).toContain(hover)` — over the 2-row table at `:63-66`, for **both** hrefs (`:71`) · `:81-83` `expect(renderToStaticMarkup(<StoreButtons surface="background" />)).not.toBe(renderToStaticMarkup(<StoreButtons surface="surface" />))` | PASS (verified at fb93831) |
+| C37 | `assinatura-confirmada` renders both hrefs and `bg-background hover:bg-surface`, and not `hover:bg-white/5` | `vitest run app/assinatura-confirmada/page.test.tsx -t "renders the shared store buttons on the card's surface"` exit 0 | `apps/web/app/assinatura-confirmada/page.test.tsx:26-27` both `href` assertions · `:30` `expect(html).toContain("bg-background hover:bg-surface")` · `:31` `expect(html).not.toContain("hover:bg-white/5")`, over `renderToStaticMarkup(<AssinaturaConfirmadaPage />)` at `:24` | PASS (verified at fb93831) |
+| C14 | `await BaixarPage()` renders both hrefs | `vitest run` (`apps/web`) exit 0 | `apps/web/app/baixar/page.test.tsx:35-36`, over `renderToStaticMarkup(await BaixarPage())` at `:27` | PASS (carried from acaca32) |
+| C15 | 4 marketing strings absent from `/baixar` | same invocation, exit 0 | `apps/web/app/baixar/page.test.tsx:50` `.not.toContain(phrase)` over `barred` at `:43-48` | PASS (carried from acaca32) |
+| C16 | found academy → `academyName` in the view | same invocation, exit 0 | `apps/web/lib/invite.test.ts:51` `expect(view).toEqual({ kind: "ok", academy: ACADEMY, role: "instructor" })` | PASS (carried from acaca32) |
+| C17 | 3 `papel` tokens → 3 roles | same invocation, exit 0 | `apps/web/lib/invite.test.ts:26-28` `toBe("student")` / `"instructor"` / `"guardian"` | PASS (carried from acaca32) |
+| C18 | 5 unusable `papel` inputs → `null` | same invocation, exit 0 | `apps/web/lib/invite.test.ts:35-39` `toBeNull()` ×5 | PASS (carried from acaca32) |
+| C19 | 5 endpoint outcomes → 3 view kinds | same invocation, exit 0 | `apps/web/lib/invite.test.ts:59-61`, `:64-66`, `:67-69`, `:73-75`, `:76-79` | PASS (carried from acaca32) |
+| C20 | page renders the academy's name | same invocation, exit 0 | `apps/web/app/convite/[academyId]/page.test.tsx:61` `toContain("Academia Gracie Centro")`, over `await ConvitePage(...)` at `:46-50` | PASS (carried from acaca32) |
+| C21 | logo src = URL, else `/icon.png` | same invocation, exit 0 | `apps/web/app/convite/[academyId]/page.test.tsx:66`, `:72`, `:73` | PASS (carried from acaca32) |
+| C22 | 3 tokens → accented labels in the heading | same invocation, exit 0 | `apps/web/app/convite/[academyId]/page.test.tsx:85-87` `.toContain(\`>${label}</span>\`)` over the table at `:77-81` | PASS (carried from acaca32) |
+| C23 | absent and `xyz` name no kind of member | same invocation, exit 0 | `apps/web/app/convite/[academyId]/page.test.tsx:96-99` `.not.toContain(label)` ×3, plus `:94` proving the page resolved | PASS (carried from acaca32) |
+| C24 | re-tap sentence under 3 outcomes | same invocation, exit 0 | `apps/web/app/convite/[academyId]/page.test.tsx:107-109` | PASS (carried from acaca32) |
+| C25 | `400`/`404` → `notFound()`; not-found page carries no name | same invocation, exit 0 | `apps/web/app/convite/[academyId]/page.test.tsx:114-117` `.rejects.toThrow(…)` against a regex alternating `NEXT_HTTP_ERROR_FALLBACK;404` and `NEXT_NOT_FOUND`, over `[400, 404]` · `apps/web/app/convite/[academyId]/not-found.test.tsx:20`, `:23` | PASS (carried from acaca32) |
+| C26 | `500` and thrown fetch resolve degraded | same invocation, exit 0 | `apps/web/app/convite/[academyId]/page.test.tsx:127`, `:128-129`, `:130`, `:133`, over `[{status:500},{throws:true}]` at `:122-125` | PASS (carried from acaca32) |
+| C27 | 5 phrases × 3 rendered outcomes absent | same invocation, exit 0 | `apps/web/app/convite/[academyId]/page.test.tsx:157` `.not.toContain(phrase)` over `:138-144` × `:145-149`, the 3 outcomes differing via `:152-155` | PASS (carried from acaca32) |
+| C28 | AASA `200`, json, `appIDs == [IOS_APP_ID]` | same invocation, exit 0 | `apps/web/app/.well-known/apple-app-site-association/route.test.ts:15`, `:16`, `:21` | PASS (carried from acaca32) |
+| C29 | `components` lists `/convite/*` and `/baixar` | same invocation, exit 0 | `apps/web/app/.well-known/apple-app-site-association/route.test.ts:32-33` | PASS (carried from acaca32) |
+| C30 | `IOS_APP_ID` unset → `404` | same invocation, exit 0 | `apps/web/app/.well-known/apple-app-site-association/route.test.ts:40` after `:37` | PASS (carried from acaca32) |
+| C31 | assetlinks `200`, json, relation / package / both fingerprints in order | same invocation, exit 0 | `apps/web/app/.well-known/assetlinks.json/route.test.ts:28`, `:29`, `:32`, `:33-35`, `:37`, `:41-44` | PASS (carried from acaca32) |
+| C32 | fingerprints unset → `404` | same invocation, exit 0 | `apps/web/app/.well-known/assetlinks.json/route.test.ts:50` after `:48` | PASS (carried from acaca32) |
+| C33 | real `next build` manifest holds 4 feature routes + live sibling | `bash -c 'pnpm --filter @tatame/web build >/dev/null && node scripts/assert-web-routes.mjs'` → `5 route(s) served`, exit 0, re-run at `fb93831` | `scripts/assert-web-routes.mjs:33-39` `REQUIRED` · `:54` `REQUIRED.filter((route) => !served.has(route))` · `:56-62` exit 1 when non-empty | PASS (re-verified at fb93831) |
+| C34 | `isProtectedRoute` false for 4 public paths, true for `/conta/assinatura` | `vitest run` (`apps/web`) exit 0 | `apps/web/middleware.test.ts:20-23` `.toBe(false)` over `PUBLIC_PATHS` (`:10-15`) · `:28` `.toBe(true)` | PASS (carried from acaca32) |
+| C35 | `config.matcher[0]` **does** match `assetlinks.json` | same invocation, exit 0 | `apps/web/middleware.test.ts:38` `.toBe(true)` · `:40` `/icon.png` `.toBe(false)` | PASS (carried from acaca32) |
 
-Scrutiny the brief asked for, settled against the code rather than the author's note:
+**The fix's own soundness, checked rather than taken on trust** (`verified at fb93831`):
 
-- **C2 does settle the 9-member row.** `packages/db/src/schema/index.ts:200-220` gives `academies`
-  exactly 12 columns; minus `id`, `name`, `logoUrl` that is exactly the 9 the plan names
-  (`ownerId`, `address`, `contactEmail`, `contactPhone`, `foundedAt`, `pixKey`, `pixKeyType`,
-  `createdAt`, `updatedAt`). `Object.keys(res.body).sort()` under `toEqual` fails on any one of
-  them appearing, and fault 1 below proves it does.
-- **C5's `401` is the session guard, not something else.** `asAnonymous()`
-  (`apps/api/src/testing/integration-clerk-mock.ts:36-38`) makes `getAuth` return
-  `{ userId: null }`; `apps/api/src/middleware/require-session.ts:17-20` is the only `401` on that
-  path and it is mounted on the sibling at `apps/api/src/modules/academy/academy.routes.ts:58`
-  (`academyRouter.get("/:academyId", requireSession, …)`) and absent from the public route at
-  `:78`. `apps/api/src/router.ts:77` mounts the router with no blanket guard, and the same test's
-  `200` on the public route under the same mock rules out "no session was removed". A missing
-  `CLERK_SECRET_KEY` would have produced `503`, not `401` (`require-session.ts:12-15`).
-- **C33 cannot pass vacuously.** Independently controlled: with
-  `/.well-known/apple-app-site-association/route` deleted from the built manifest (untracked build
-  output, restored immediately) the script printed `1 route(s) the build did not produce` and
-  exited 1; restored, it exits 0. An unreadable or empty manifest also exits 1 (`:44-51`, `:54`).
-- **C35's direction is right.** Reading the matcher at `apps/web/middleware.ts:23` by hand: for
-  `/.well-known/assetlinks.json` no alternative of the exclusion group matches the final `.json`
-  (`js(?!on)` fails on `json`), so the negative lookahead succeeds and the pattern matches — the
-  middleware does run, and the pass-through is `isProtectedRoute`'s. For `/icon.png` the `png`
-  alternative matches, so the pattern does not. Both are what the test asserts.
-- **C19/C26 split.** All 5 members are asserted at the lib layer (`invite.test.ts:59-79`) and the
-  page-level proof genuinely reaches the degraded path: `page.test.tsx:122-125` renders under
-  `{status:500}` and `{throws:true}` and asserts the absence of the name together with both hrefs,
-  the sentence and the surviving role label.
-- **C27's three outcomes really differ.** `page.test.tsx:152-155` switches `papel` between
-  `undefined` and `"aluno"`, so the two `200` rows render different headings, and the third is a
-  `500`. No outcome is the same render twice.
-- **Mocks do not make anything vacuous.** `next/headers` is mocked in
-  `page.test.tsx:7-9` and `baixar/page.test.tsx:7-9` only to supply a user-agent; no claim's value
-  comes from it. `next/image` is mocked in `baixar/page.test.tsx:14-21` and
-  `not-found.test.tsx:5-12`, and neither file asserts anything the stub produces — the convite
-  page's logo (C21) is a plain `<img>` and is not mocked at all.
+- **C36 pins values, not merely difference.** The assertion is `toContain(\` ${background} \`)`
+  with the space delimiters, so it cannot be satisfied by the `hover:bg-surface` occurrence of the
+  same token — which is what makes the `background` row genuinely distinguishable from the
+  `surface` row. The `not.toBe` at `:81-83` is a second, weaker net, not the one carrying the
+  claim. Both hrefs are checked per row (`:71`), so a variant applied to one button only fails.
+- **The rewritten `hrefBlock` widened the slice rather than narrowing it.** Fault 1's failure
+  output shows the returned block for one anchor in full:
+  `href="…" target="_blank" rel="noopener noreferrer" data-highlighted="false" class="flex h-[52px] … bg-surface hover:bg-white/5 border-border hover:border-border-light"`
+  — so the slice still contains `data-highlighted` (C10, C11) and now reaches `class`, which the
+  old fixed 200-character bound truncated mid-token. Fault 3 confirms C11 still bites.
+- **C37 covers something C36 structurally cannot.** With the live argument flipped to
+  `surface="surface"` at the call site (fault 2), `components/store-buttons.test.tsx` stayed green
+  — `4 passed (4)` — while C37 failed. The two checks are not redundant.
+- **Wording note, not a finding:** C37's claim says `await AssinaturaConfirmadaPage()`, while
+  `page.tsx:4` exports a synchronous component and the test renders `<AssinaturaConfirmadaPage />`
+  at `page.test.tsx:24`. Same assertion surface, same rendered markup; only the claim's phrasing
+  is off, and the `await` would be a no-op.
 
-**Precision gap (C13).** The claim says "imports `StoreButtons`" and the assertion is
-`toContain("StoreButtons")` over the file's source text, so the check and its proof agree — but
-the AC behind it (AC 10) is about *rendering*. For `/baixar` and `/convite/[academyId]` a render
-proof exists anyway (C14, C26). For the two pre-existing consumers,
-`app/assinatura-confirmada/page.tsx` and `app/conta/(dashboard)/layout.tsx`, the entire proof that
-this refactor did not break them is a source-text grep: nothing renders either page in any test.
-That is the same soft spot the Coverage gap below reports from the other side.
+**C13's precision gap — judged, and accepted as named rather than carrying a FAIL.** Round 1
+reported that C13 proves two consumers by reading their bytes. One of the two,
+`assinatura-confirmada`, is now render-proven by C37. For the remaining one the exemption in
+`checks.md` is acceptable on four grounds, each checked against the code:
 
-**Artifact note, not a finding against the code:** `checks.md`'s header reads "33 checks in 5
-slices" while the body defines 35 (`C1`–`C35`, counted). All 35 were verified.
+1. **It enumerates.** It names exactly one file, exactly one claim (the import), and the reason —
+   not a blanket "rendering is unproven" clause.
+2. **The cited reason is true.** `apps/web/app/conta/(dashboard)/layout.tsx:1` is `"use client"`;
+   `:22` `usePathname()`, `:24` `useAuth()`, and the effect at `:28-52` calls
+   `managerFetch("/users/me", token)` to set `userStatus`; `<StoreButtons />` sits at `:129`
+   inside the `userStatus === "pending-academy"` branch opened at `:108`.
+3. **The approved runner structurally cannot reach it.** `apps/web/vitest.config.ts:10` is
+   `environment: "node"`, and `renderToStaticMarkup` never runs effects — `userStatus` stays
+   `"loading"` and the component returns the spinner at `:53-59`. Reaching `:129` needs jsdom plus
+   React Testing Library, which door 2 rejected explicitly and the maintainer approved.
+4. **The behaviour at stake is proven elsewhere.** That call site passes no `surface`, so what it
+   depends on is the default `"surface"` row — now asserted by C36. What the grep alone covers is
+   one JSX element's presence in one branch, bounded on the regression side by
+   `:100-102` `.not.toContain("apptatame.com.br")`.
 
 ## Coverage
 
-Recomputed from the authority over each set, not read back from `checks.md`.
+Rows for the `StoreButtons` surface variants and consumers are `verified at fb93831`, recomputed
+from the code; every other row is `carried from acaca32`, where it was recomputed from its own
+authority, and the fix touched none of those authorities (no production file changed).
 
 | Set (size) | Recomputed from | Member -> proof | Unproven |
 | --- | --- | --- | --- |
+| `StoreButtons` surface variants (2) — **verified at fb93831** | `apps/web/components/store-buttons.tsx:3` — `type Surface`, whose two members are `"background"` and `"surface"` — plus `:5-11` `SURFACE_CLASSES`, selected at `:80`; `git grep -n "<StoreButtons" -- apps/web` for the live arguments | `"background"` → C36 (`store-buttons.test.tsx:73-76`, row 1 of the table at `:64`) **and** C37 at the one call site that passes it (`assinatura-confirmada/page.test.tsx:30-31`) · `"surface"` → C36 (row 2 at `:65`), the default taken by `conta/(dashboard)/layout.tsx:129`, `convite/[academyId]/not-found.tsx:26` | - |
+| `StoreButtons` consumers (4) — **verified at fb93831** | `git grep -n "<StoreButtons" -- apps/web` → `assinatura-confirmada/page.tsx:84`, `conta/(dashboard)/layout.tsx:129`, `baixar/page.tsx:43`, `convite/[academyId]/page.tsx:104` (+ `not-found.tsx:26`, beyond the claim) | `assinatura-confirmada` C13 **+ render C37** · `conta/(dashboard)/layout` C13 (grep level — precision gap named above) · `/baixar` C13, C14 · `/convite/[academyId]` C13, C26 | - |
 | `GET /v1/academies/:academyId/public` statuses (3) | `apps/api/src/modules/academy/academy.routes.ts:78-92` — `400` at `:82`, `404` at `:86`, `res.json(row)` otherwise | `200` C1 · `400` C3 · `404` C4 | - |
-| academy fields withheld from the public body (9) | `packages/db/src/schema/index.ts:200-220` — 12 columns, minus the 3 projected | `ownerId` · `address` · `contactEmail` · `contactPhone` · `foundedAt` · `pixKey` · `pixKeyType` · `createdAt` · `updatedAt` — all 9 by the one array equality C2, reinforced at the service layer by C6 | - |
-| `GET /convite/<academyId>` statuses (2) | `apps/web/app/convite/[academyId]/page.tsx:72` `if (view.kind === "not-found") notFound();` else render | `200` C20, C26 · `404` C25 | - |
-| `GET /baixar` statuses (1) | `apps/web/app/baixar/page.tsx:19` — no conditional, no data fetch | `200` C14 | - |
+| academy fields withheld from the public body (9) | `packages/db/src/schema/index.ts:200-220` — 12 columns minus the 3 projected | all 9 (`ownerId`, `address`, `contactEmail`, `contactPhone`, `foundedAt`, `pixKey`, `pixKeyType`, `createdAt`, `updatedAt`) by the single array equality C2, reinforced by C6 | - |
+| `GET /convite/<academyId>` statuses (2) | `apps/web/app/convite/[academyId]/page.tsx:72` `if (view.kind === "not-found") notFound();` | `200` C20, C26 · `404` C25 | - |
+| `GET /baixar` statuses (1) | `apps/web/app/baixar/page.tsx:19` — no conditional | `200` C14 | - |
 | AASA statuses (2) | `apps/web/app/.well-known/apple-app-site-association/route.ts:17-19` / `:35` | `200` C28 · `404` C30 | - |
 | assetlinks statuses (2) | `apps/web/app/.well-known/assetlinks.json/route.ts:19-21` / `:35` | `200` C31 · `404` C32 | - |
-| AASA body fields named in plan `Surface` (2) | plan `Surface` row — `applinks.details[].appIDs`, `…[].components` | `appIDs` C28 · `components` C29 | - |
-| assetlinks body fields named in plan `Surface` (3) | plan `Surface` row | `relation` C31 · `target.package_name` C31 · `target.sha256_cert_fingerprints` C31 | - |
-| `papel` token vocabulary (4 classes) | `apps/web/lib/invite.ts:16-20` `PAPEL_TO_ROLE` + the `?? null` fallthrough at `:38` | `aluno` C17, C22 · `instrutor` C17, C22 · `responsavel` C17, C22 · anything else C18, C23 | - |
-| `papel` unusable inputs (5) | the plan's AC 17 enumeration (absent, empty, other) widened by the checks | `undefined` · `""` · `"xyz"` · `"ALUNO"` · 64 chars — all 5 individually C18 | - |
-| endpoint outcome -> page view (5) | `apps/web/lib/invite.ts:62-79` — `catch`, `400\|404`, `!res.ok`, json `catch`, ok | `200` C19, C20 · `400` C19, C25 · `404` C19, C25 · `500` C19, C26 · thrown fetch C19, C26 | - |
-| `ROLE_LABELS` (3) | `apps/web/lib/invite.ts:22-26` | `Aluno` · `Instrutor` · `Responsável` — all 3 rendered and asserted C22 | - |
-| user-agent platform classes (4) | `apps/web/lib/store-links.ts:21-24` — falsy, iOS regex, Android regex, fallthrough | iPhone/iPad/iPod C7 · Android C8 · desktop C9 · absent/empty C9 | - |
-| `StoreButtons` highlight states (3) | `apps/web/components/store-buttons.tsx:115`, `:123` — `highlight === "ios"` / `=== "android"` | `"ios"` C10, C11 · `"android"` C10, C11 · `null` C10, C11 | - |
-| **`StoreButtons` surface variants (2)** | `apps/web/components/store-buttons.tsx:3` `type Surface = "background" \| "surface"` + `:5-11` `SURFACE_CLASSES`, selected at `:80`; named in the plan's `Impact` row ("the shared component carries a surface variant **or one of the two call sites changes appearance**") and used at `apps/web/app/assinatura-confirmada/page.tsx:84` `<StoreButtons surface="background" />` | `"surface"` — rendered by C10/C11 but no assertion touches the class it produces · `"background"` — **never rendered in any of the 28 `apps/web` tests** (`git grep -n "<StoreButtons" -- apps/web` shows `surface=` only at the call site, never in a test) | **both members: `surface="background"` and `surface="surface"`** |
-| `logoUrl` presence (2) | `apps/web/app/convite/[academyId]/page.tsx:77-78` `view.academy.logoUrl ?? FALLBACK_LOGO` | non-null C21 · null C21 | - |
-| `StoreButtons` consumers (4) | `git grep -n "<StoreButtons" -- apps/web` → `assinatura-confirmada/page.tsx:84`, `conta/(dashboard)/layout.tsx:129`, `baixar/page.tsx:43`, `convite/[academyId]/page.tsx:104` (+ `not-found.tsx:26`, beyond the claim) | `assinatura-confirmada` C13 (source text only) · `conta/(dashboard)/layout` C13 (source text only) · `/baixar` C13, C14 · `/convite/[academyId]` C13, C26 | - (see the C13 precision gap) |
-| copy forbidden on `/convite` (5 × 3 = 15) | plan AC 21's 5 strings × the 3 outcomes the page renders | all 15 pairs C27, enumerated in the test's own arrays at `page.test.tsx:138-149` | - |
-| marketing components barred from `/baixar` (4) | plan AC 12 — `HeroV2`, `FeaturesV2`, `PricingV2`, `FaqV2` | all 4 C15, one identifying string each | - |
-| middleware paths that must not be challenged (5) | `apps/web/middleware.ts:13` `createRouteMatcher(["/conta(.*)"])` against the 4 new paths + a live sibling | `/convite/<uuid>` · `/baixar` · AASA · `assetlinks.json` · `/conta/assinatura` — all 5 C34 | - |
-| `.well-known` env vars, absent (2) | `route.ts:16` `process.env.IOS_APP_ID` · `route.ts:14` `process.env.ANDROID_SHA256_CERT_FINGERPRINTS` | `IOS_APP_ID` C30 · fingerprints C32 | - |
+| AASA body fields named in plan `Surface` (2) | plan `Surface` row | `appIDs` C28 · `components` C29 | - |
+| assetlinks body fields named in plan `Surface` (3) | plan `Surface` row | `relation` · `target.package_name` · `target.sha256_cert_fingerprints` — all C31 | - |
+| `papel` token vocabulary (4 classes) | `apps/web/lib/invite.ts:16-20` + `?? null` at `:38` | `aluno` C17, C22 · `instrutor` C17, C22 · `responsavel` C17, C22 · anything else C18, C23 | - |
+| `papel` unusable inputs (5) | plan AC 17, widened by the checks | `undefined` · `""` · `"xyz"` · `"ALUNO"` · 64 chars — all C18 | - |
+| endpoint outcome -> page view (5) | `apps/web/lib/invite.ts:62-79` | `200` C19, C20 · `400` C19, C25 · `404` C19, C25 · `500` C19, C26 · thrown fetch C19, C26 | - |
+| `ROLE_LABELS` (3) | `apps/web/lib/invite.ts:22-26` | `Aluno` · `Instrutor` · `Responsável` — all C22 | - |
+| user-agent platform classes (4) | `apps/web/lib/store-links.ts:21-24` | iPhone/iPad/iPod C7 · Android C8 · desktop C9 · absent/empty C9 | - |
+| `StoreButtons` highlight states (3) | `apps/web/components/store-buttons.tsx:115`, `:123` | `"ios"` C10, C11 · `"android"` C10, C11 · `null` C10, C11 | - |
+| `logoUrl` presence (2) | `apps/web/app/convite/[academyId]/page.tsx:77-78` | non-null C21 · null C21 | - |
+| copy forbidden on `/convite` (5 × 3 = 15) | plan AC 21 × the 3 rendered outcomes | all 15 pairs C27 | - |
+| marketing components barred from `/baixar` (4) | plan AC 12 | all 4 C15 | - |
+| middleware paths that must not be challenged (5) | `apps/web/middleware.ts:13` + a live sibling | all 5 C34 | - |
+| `.well-known` env vars, absent (2) | `route.ts:16` · `route.ts:14` | `IOS_APP_ID` C30 · fingerprints C32 | - |
 | one-way doors (4) | plan `Landing` | door 1 C2, C5 · door 2 `apps/web/vitest.config.ts:4-24` + every `apps/web` proof · door 3 C17, C18 · door 4 C28, C30, C31, C32 | - |
-| startup config: Next route registration (2 assemblies) | `apps/web/.next/app-path-routes-manifest.json` from a real build (read directly) · direct component/handler calls | manifest C33 (19 entries, the 5 required among them) · direct calls C14, C20, C28, C31 | - |
-| startup config: the public academy route is mounted (1 assembly) | `apps/api/src/app.ts:51` `createApp()`, used by `apps/api/src/server.ts:46` and by the integration harness at `academy-membership.integration.test.ts:24-25` — one assembly, read directly, so the collapse in `checks.md` is correct | `createApp()` C1-C5 | - |
+| startup config: Next route registration (2 assemblies) | `apps/web/.next/app-path-routes-manifest.json` from a real build · direct component/handler calls | manifest C33 · direct calls C14, C20, C28, C31, C37 | - |
+| startup config: the public academy route is mounted (1 assembly) | `apps/api/src/app.ts:51` `createApp()`, used by `server.ts:46` and the harness at `academy-membership.integration.test.ts:24-25` | `createApp()` C1-C5 | - |
 
-`Swept` rows that resolve to **existing** were re-read against the code and hold: the uuid
-constraint C3 cites is `academyIdParamSchema.safeParse(req.params)` at
-`academy.routes.ts:80`; the exact-match constraint C18 cites is `PAPEL_TO_ROLE[papel] ?? null` at
-`invite.ts:38` with the `typeof papel !== "string"` guard at `:37`; the authorization constraint C5
-cites is `requireSession` at `academy.routes.ts:58`, still present on every other academy route in
-the diff. The `n/a` rows (idempotency, concurrency, data lifecycle, state transitions,
-observability) are policy — and consistent with the code: all five new routes are `GET`, and the
-diff contains no write, no schema change and no telemetry call.
+`Swept` rows resolving to **existing** were re-read in round 1 and hold unchanged (`carried from
+acaca32`): the uuid constraint at `academy.routes.ts:80`, the exact-match constraint at
+`invite.ts:37-38`, and `requireSession` at `academy.routes.ts:58`. The `n/a` rows remain policy,
+and the fix introduced no write, schema change or telemetry call.
 
 ## Test policy rows
 
-Judged against the 5 rows in `checks.md` (the two `AGENTS.md` rows it adopts live on the TAT-187
-branch and are not on this one — confirmed: this branch's `AGENTS.md` carries no `### Test policy`
-section).
+Rows 1 and 3 are `verified at fb93831` (row 1 was the unmet one; both classify a file the fix
+touched). Rows 2, 4 and 5 are `carried from acaca32`. `checks.md`'s evidence for
+`store-buttons.tsx` was also corrected by the fix, from 2 branch points to 4 — which matches what
+the code does.
 
 | Row | Files it classifies | Required proof | Expectation met |
 | --- | --- | --- | --- |
-| Decides, in a module reachable without a request | `apps/web/lib/invite.ts`, `apps/web/lib/store-links.ts`, `apps/api/src/modules/academy/academy.service.ts` | own layer: C16-C19 · C7-C9 · C6 | yes — every row of all three decision tables asserted (4 token classes, 5 outcomes, 4 UA classes, 2 service branches) |
-| Decides, in a module reachable without a request | `apps/web/components/store-buttons.tsx` | own layer: C10, C11 | **no** — the `highlight` table's 3 rows are asserted, but the `SURFACE_CLASSES` table (`store-buttons.tsx:5-11`, 2 rows) has **no asserted case**: `"background"` is never rendered in a test and no assertion reads the class either variant produces. The row demands "one asserted case per row of the decision table" |
-| Decides, inside a route handler returning a `Response` | `apps/web/app/.well-known/apple-app-site-association/route.ts`, `apps/web/app/.well-known/assetlinks.json/route.ts` | call the exported `GET` directly: C28-C30, C31-C32 | yes — the `200` branch of each asserts status, `content-type` and body together (`route.test.ts:15,16,21` / `:28,29,32-44`); the `404` branch returns a bodyless `Response`, so status is the whole of it (`:40` / `:50`) |
-| A server component composing a decided view model into markup | `apps/web/app/convite/[academyId]/page.tsx`, `apps/web/app/convite/[academyId]/not-found.tsx` | `await Page(props)` through `react-dom/server`: C20-C27, C25 | yes — `renderToStaticMarkup(await ConvitePage(...))` at `page.test.tsx:46-50` covers all four rendered outcomes and asserts reader-visible text; `not-found.tsx` is synchronous and propless, rendered at `not-found.test.tsx:18` |
-| An app-router route's existence | the 4 new app-router paths + `/assinatura-confirmada` | one over `.next/app-path-routes-manifest.json` from a real `next build`: C33 | yes — re-run by the verifier against a fresh build, and negative-controlled (a dropped entry exits 1) |
-| Instrumentation — presentational markup with no conditional | `apps/web/app/baixar/page.tsx` | none of its own; covered by its consumer | yes — C14 and C15 render it and assert both the links and the absent marketing |
+| Decides, in a module reachable without a request | `apps/web/components/store-buttons.tsx` | own layer: C10, C11, **C36** | yes — **verified at fb93831**: the `highlight` table's 3 rows (`store-buttons.test.tsx:47-52`) and now both rows of `SURFACE_CLASSES` (`:73-76`, table at `:63-66`) each have an asserted case. Round 1's single finding sat on this row, and C36 closes it |
+| Decides, in a module reachable without a request | `apps/web/lib/invite.ts`, `apps/web/lib/store-links.ts`, `apps/api/src/modules/academy/academy.service.ts` | own layer: C16-C19 · C7-C9 · C6 | yes — carried from acaca32; all rows of all three decision tables asserted (4 token classes, 5 outcomes, 4 UA classes, 2 service branches) |
+| A server component composing a decided view model into markup | `apps/web/app/convite/[academyId]/page.tsx`, `not-found.tsx`, **`apps/web/app/assinatura-confirmada/page.tsx`** | `react-dom/server` render: C20-C27, C25, **C37** | yes — **verified at fb93831**: `assinatura-confirmada` now has its own render proof (`page.test.tsx:24-31`) asserting reader-visible output, where round 1 found only a grep. The convite rows carry forward |
+| Decides, inside a route handler returning a `Response` | the two `app/.well-known/*/route.ts` | call the exported `GET` directly: C28-C30, C31-C32 | yes — carried from acaca32; each `200` branch asserts status, `content-type` and body together, each `404` branch its bodyless status |
+| An app-router route's existence | the 4 new app-router paths + `/assinatura-confirmada` | one over a real `next build` manifest: C33 | yes — carried from acaca32, and the proof was re-run at `fb93831` |
+| Instrumentation — presentational markup with no conditional | `apps/web/app/baixar/page.tsx` | none of its own; covered by its consumer | yes — carried from acaca32; C14 and C15 render it |
 
 ## Faults injected
 
-Deviation from `verify.md` step 4, recorded as instructed: the harness refuses to point git at
-another directory and a fresh worktree would need its own `pnpm install`, so faults were applied
-to the real tree at `acaca32` and reverted with `git checkout -- <path>`. `git status --porcelain`
-was empty before the first fault and verified empty after every revert; `git stash` was never used.
-Cap of five observed, so three surfaces went unmutated (see below).
+`verified at fb93831`. Same deviation from `verify.md` step 4 as round 1, recorded again: the
+harness refuses to point git at another directory and a fresh worktree would need its own
+`pnpm install`, so faults were applied to the real tree and reverted with `git checkout -- <path>`.
+`git status --porcelain` was empty before the first fault (confirmed; round 1's three untracked
+`.specs/` files are committed in `fb93831`) and verified empty after every revert. `git stash` was
+never used. Scoped to the surfaces the fix touched plus the surface it created, per
+"Re-verifying after a fix".
 
 | Mutation | Location | Narrowest covering proof | Killed |
 | --- | --- | --- | --- |
-| public projection gains `ownerId` | `apps/api/src/modules/academy/academy.service.ts:52` | `--project integration … -t "exposes nothing beyond id, name and logoUrl"` → failed at `academy-membership.integration.test.ts:326`, diff showed `+ "ownerId"` | yes |
-| `res.status === 400 \|\| res.status === 404` narrowed to `=== 404` | `apps/web/lib/invite.ts:71` | `vitest run lib/invite.test.ts -t "turns each endpoint outcome into its own view"` → failed at `invite.test.ts:66`, `not-found` vs `unavailable` | yes |
-| re-tap sentence reworded | `apps/web/app/convite/[academyId]/page.tsx:107` | `vitest run 'app/convite/[academyId]/page.test.tsx' -t "closes the loop with the re-tap sentence"` → failed at `page.test.tsx:107` | yes |
-| `isProtectedRoute` widened to `["/conta(.*)", "/convite(.*)"]` | `apps/web/middleware.ts:13` | `vitest run middleware.test.ts -t "challenges only the manager account area"` → failed at `middleware.test.ts:23` | yes |
-| `SURFACE_CLASSES.background` collapsed onto the `surface` classes (`"bg-background hover:bg-surface"` -> `"bg-surface hover:bg-white/5"`) | `apps/web/components/store-buttons.tsx:9` | whole `apps/web` suite — `9 passed (9) / 28 passed (28)`, nothing failed | **no — survived** |
+| round 1's survivor, re-injected: `SURFACE_CLASSES.background` collapsed onto the `surface` classes | `apps/web/components/store-buttons.tsx:9` | `vitest run components/store-buttons.test.tsx -t "puts each consumer's buttons on the surface it sits on"` → failed at `store-buttons.test.tsx:73`, expected `" bg-background "` | yes |
+| the live surface argument flipped: `surface="background"` -> `surface="surface"` (the new surface C37 created) | `apps/web/app/assinatura-confirmada/page.tsx:84` | `vitest run app/assinatura-confirmada/page.test.tsx -t "renders the shared store buttons on the card's surface"` → failed at `page.test.tsx:30`; `components/store-buttons.test.tsx` stayed green `4 passed (4)`, so only C37 covers it | yes |
+| android highlight predicate changed to `highlight === "ios"` (the `data-highlighted` surface whose helper the fix rewrote) | `apps/web/components/store-buttons.tsx:123` | `vitest run components/store-buttons.test.tsx -t "marks exactly the store matching the platform"` → failed at `store-buttons.test.tsx:50` | yes |
 
-Non-counted vacuity control on C33 (the manifest is untracked build output, so the tracked tree was
-never touched): deleting `/.well-known/apple-app-site-association/route` from
-`apps/web/.next/app-path-routes-manifest.json` made `node scripts/assert-web-routes.mjs` print
-`1 route(s) the build did not produce` and exit 1; restoring it returned exit 0.
-
-Unmutated surfaces, named because the cap bound rather than because they looked safe:
-`detectPlatform` (C7-C9), the `highlight` branch of `StoreButtons` (C10, C11), and the
-`.well-known` route handlers' bodies (C28-C32). Their assertions read concrete values at the
-assertion site (`toBe("ios")`, `data-highlighted="true"` scoped to the matching href block,
-`toEqual([UPLOAD_CERT, PLAY_CERT])`), so the vacuity risk there is low; the surviving mutant above
-consumed the budget that would otherwise have gone to one of them.
+Round 1's other four faults are `carried from acaca32` — the public projection gaining `ownerId`
+(killed at `academy-membership.integration.test.ts:326`), `invite.ts:71`'s `400 || 404` narrowed to
+`404` (killed at `invite.test.ts:66`), the re-tap sentence reworded (killed at
+`page.test.tsx:107`), and `isProtectedRoute` widened (killed at `middleware.test.ts:23`). The fix
+touched none of those surfaces. The C33 vacuity control from round 1 also carries forward; C33's
+command was nonetheless re-run green at `fb93831`.
 
 ## Gate
 
 `pnpm --filter @tatame/api exec vitest run --project unit` - 739 passed, 0 failed
-`pnpm --filter @tatame/api exec vitest run --project integration src/academy-membership.integration.test.ts` - 12 passed, 0 failed
-`pnpm --filter @tatame/web exec vitest run --reporter=verbose` - 28 passed, 0 failed (every named test shown individually)
+`pnpm --filter @tatame/api exec vitest run --project integration src/academy-membership.integration.test.ts --reporter=verbose` - 12 passed, 0 failed
+`pnpm --filter @tatame/web exec vitest run --reporter=verbose` - 30 passed, 0 failed (every named test shown individually, including the two new ones)
 `bash -c 'pnpm --filter @tatame/web build >/dev/null && node scripts/assert-web-routes.mjs'` - exit 0, `5 route(s) served`
 `bash -c '[ "$(git grep -l ios.apptatame.com.br -- apps/web | wc -l | tr -d " ")" = 1 ] && [ "$(git grep -l android.apptatame.com.br -- apps/web | wc -l | tr -d " ")" = 1 ]'` - exit 0
 
-Tree state after the run: `git status --porcelain` empty, `HEAD` = `acaca3219c71d31`.
+Tree state after the run: `git status --porcelain` empty, `HEAD` = `fb9383110bf93b6c`. `checks.md`
+now declares 37 checks and defines 37 (`C1`-`C37`, counted) — round 1's header discrepancy is
+closed.
 
-## Ranked gaps
+## Residual, carried openly rather than as a verdict
 
-1. **The `Surface` variant of `StoreButtons` is decided but never asserted — surviving mutant.**
-   `apps/web/components/store-buttons.tsx:5-11` (`SURFACE_CLASSES`), selected at `:80`, with
-   `surface="background"` live at `apps/web/app/assinatura-confirmada/page.tsx:84` and the default
-   `"surface"` live at `apps/web/app/conta/(dashboard)/layout.tsx:129`. Collapsing the two entries
-   leaves all 28 `apps/web` tests green, which is exactly the "one of the two call sites changes
-   appearance" failure the plan's `Impact` table wrote down in advance: `assinatura-confirmada`'s
-   buttons would render `bg-surface` on a `bg-surface` card. Unmet `Test policy` row 1, unproven
-   2-member coverage set, surviving mutant — one finding wearing three hats.
-   *Smallest fix:* extend `components/store-buttons.test.tsx` with one table-driven case per
-   `Surface` value asserting the class each produces (and, optionally, a coverage row for the
-   2-member set). Nothing in the product has to change.
-2. **Secondary, not verdict-deciding — the two pre-existing consumers are proven by source text
-   only.** `apps/web/components/store-buttons.test.tsx:59` asserts
-   `toContain("StoreButtons")` against the file's bytes for
-   `app/assinatura-confirmada/page.tsx` and `app/conta/(dashboard)/layout.tsx`; neither page is
-   rendered anywhere in the suite, so AC 10's "SHALL render" is, for those two, proven at the
-   level of a grep. Recorded as a precision gap in the checks rather than a defect in the code.
+- **C13 for `conta/(dashboard)/layout.tsx`** stays at grep level, for the four reasons set out
+  under `## Checks`. Closing it means jsdom + React Testing Library in `apps/web`, which reverses
+  door 2 — a maintainer decision, not a fix.
+- **Open, non-blocking (unchanged from the plan):** the Apple Team ID and the Android SHA-256
+  fingerprints are unset, so both `/.well-known/*` routes answer `404` in every environment until
+  the maintainer fills them. C30 and C32 prove that branch deliberately.

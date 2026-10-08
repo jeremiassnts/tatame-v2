@@ -85,7 +85,7 @@ Proof: `pnpm --filter @tatame/web exec vitest run components/store-buttons.test.
 **C36** - `surface="background"` renders both buttons with `bg-background hover:bg-surface` and `surface="surface"` with `bg-surface hover:bg-white/5`, and the two renders are not byte-identical — 2 members, table-driven (AC 10)
 Proof: `pnpm --filter @tatame/web exec vitest run components/store-buttons.test.tsx -t "puts each consumer's buttons on the surface it sits on"`
 
-**C37** - `await AssinaturaConfirmadaPage()` renders both store `href`s and `bg-background hover:bg-surface`, and does not render `hover:bg-white/5` (AC 10)
+**C37** - `AssinaturaConfirmadaPage` renders both store `href`s and `bg-background hover:bg-surface`, and does not render `hover:bg-white/5` (AC 10)
 Proof: `pnpm --filter @tatame/web exec vitest run app/assinatura-confirmada/page.test.tsx -t "renders the shared store buttons on the card's surface"`
 
 ### S3 — A member-facing download page · 2 files · 4 KB · ~1k
