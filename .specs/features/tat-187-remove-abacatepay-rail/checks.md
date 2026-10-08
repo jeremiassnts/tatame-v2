@@ -157,7 +157,17 @@ finished work.
   `unpaidPixPerAcademy` reduced to the Asaas query, the harness and seed truncate lists updated
 - **C3, C15** — closed: the alert's LogQL query, its email description and
   `docs/observability.md` no longer name the retired reason or the provider
-- open: C16, which is the gate and runs once over the whole feature
+- **C16** — closed: `typecheck` 13/13, `lint` 8/8, unit 730 passed in 42 files, integration 130
+  passed in 17 files, all exit 0 at `ea6347c`
+
+**Environment note, not a code finding.** The integration project starts Postgres through
+testcontainers, and on this machine Docker Desktop intermittently fails to resolve
+`postgres:16-alpine` by tag while `docker images` still lists it and `docker image inspect
+<id>` resolves it. When the tag lookup fails, testcontainers concludes the image is absent
+and falls through to `Pulling image`, which never returns because the registry is unreachable
+here — so the run hangs at startup with no container and no output rather than failing. The
+remedy is to confirm `docker image inspect postgres:16-alpine` exits 0 before running the
+project, and to retry if it does not. Nothing in this feature touches it.
 
 ## Handoff
 
