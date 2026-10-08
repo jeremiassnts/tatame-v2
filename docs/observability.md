@@ -604,7 +604,7 @@ All nine live in the `Tatame Alerts` folder, in one group evaluated every minute
 | API not reporting | `target_info` for `tatame-api` is missing from Prometheus | 3m | critical |
 | API returning 5xx | more than 5 responses with a 5xx status in 5 minutes | 2m | critical |
 | API 5xx ratio above 20% | over 20% of requests are 5xx, with at least 0.05 req/s of traffic | 5m | critical |
-| Student payment received and not recorded | **any** `payment.webhook_unhandled` with `NO_PENDING_PIX` or `MISSING_REFERENCE` in 15 minutes | 5m | critical |
+| Student payment received and not recorded | **any** `payment.webhook_unhandled` with `NO_PENDING_CHARGE` or `MISSING_REFERENCE` in 15 minutes | 5m | critical |
 | Payment recorded but its emails were skipped | more than 3 with `USER_OR_ACADEMY_NOT_FOUND` or `OWNER_NOT_FOUND` in 30 minutes | 5m | warning |
 | Pro subscription payments failing | more than 3 `manager_subscription.past_due` in 15 minutes | 5m | warning |
 | Stripe webhooks received and ignored | more than 3 `webhook_unhandled` in 30 minutes, excluding `UNKNOWN_EVENT_TYPE` | 5m | warning |
@@ -641,7 +641,7 @@ if (err instanceof HttpError) {
 }
 ```
 
-So the 502 that `payment.service.ts` raises when AbacatePay is unreachable is a
+So the 502 that `payment.service.ts` raises when Asaas is unreachable is a
 server error the caller sees and the event catalog never records. Alerting on the
 event would miss exactly the class of failure worth waking up for.
 
@@ -683,7 +683,6 @@ recorded:
 | Drop | Reason | What it costs |
 | --- | --- | --- |
 | An Asaas charge matching no pending row | `NO_PENDING_CHARGE` | Paid, no payment row, student still overdue |
-| `billing.paid` whose `pixQrCodeId` matches no pending row | `NO_PENDING_PIX` | Same, on the retired AbacatePay rail |
 | `checkout.session.completed` with no metadata | `MISSING_REFERENCE` | Same, via Stripe |
 | The month already had a payment row | `DUPLICATE_MONTH` | Nothing lost — but the student paid twice and someone must decide about a refund |
 | The delivery's Asaas account is not ours | `FOREIGN_ACCOUNT` | Two environments sharing a webhook url or token; the *sender* recorded nothing |
@@ -695,26 +694,29 @@ None of these produced any signal at all: the route answers `{received: true}` w
 200 and the provider considers the webhook delivered. `manager_subscription` already
 reported its equivalent through `manager_subscription.webhook_unhandled`; these two
 handlers had simply been left out. They now emit `payment.webhook_unhandled`, and the
-three reasons that mean a payment was lost share the one **critical** rule with a
+two reasons that mean a payment was lost share the one **critical** rule with a
 **threshold of zero** — one lost payment is already worth an email. `DUPLICATE_MONTH`
 and `FOREIGN_ACCOUNT` have their own zero-threshold rules at `warning`, because each
 occurrence needs a person without anybody being woken up.
 
-`NO_PENDING_CHARGE` is the reason to keep in mind when reading these rules. It is the
-Asaas spelling of `NO_PENDING_PIX`, and for one release the rule matched only the two
-legacy reasons — so after the cutover the reason a lost payment *actually* reports had
-no rule at all. `catalog-coverage.test.ts` now fails if any money reason is missing
-from the `expr:` lines in `rules.yml`, which is the check that would have caught it.
+`NO_PENDING_CHARGE` is the reason to keep in mind when reading these rules. The rail
+that preceded Asaas had its own spelling for the same drop, and for one release the
+rule matched only that one — so after the cutover the reason a lost payment *actually*
+reports had no rule at all. `catalog-coverage.test.ts` now fails if any money reason is
+missing from the `expr:` lines in `rules.yml`, which is the check that would have
+caught it. TAT-187 removed the retired spelling from the catalog and the query
+together, which is the shape to copy when a rail is next retired: a reason the code can
+no longer emit still reads as coverage here.
 
-One asymmetry worth knowing: the AbacatePay handler reports `UNKNOWN_EVENT_TYPE` and
-the Stripe one does not. `/webhooks/stripe` runs `StripeCheckoutWebhookHandler` and
-then `StripeSubscriptionWebhookHandler` on the same event, and the second already
-reports unknown types from its default branch. Reporting in both would double-count
-every Stripe event the account sends.
+One asymmetry worth knowing: the Asaas handler reports `UNKNOWN_EVENT_TYPE` and the
+Stripe one does not. `/webhooks/stripe` runs `StripeCheckoutWebhookHandler` and then
+`StripeSubscriptionWebhookHandler` on the same event, and the second already reports
+unknown types from its default branch. Reporting in both would double-count every
+Stripe event the account sends.
 
 The two shapes of failure are complementary, which is why both sets of rules exist.
 The HTTP rules catch anything that *breaks* while taking a payment, including the 502
-`payment.service.ts` raises when AbacatePay refuses to create a QR code. The
+`payment.service.ts` raises when Asaas refuses to open a charge. The
 `payment.webhook_unhandled` rules catch the opposite: nothing broke, no error was
 raised, and the work silently did not happen.
 

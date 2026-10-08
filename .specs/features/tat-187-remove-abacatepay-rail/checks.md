@@ -143,7 +143,7 @@ already.
 - data lifecycle: C9 - the table and its production rows are destroyed by `0024`, which is the first `Landing` row and the decision the maintainer confirmed on 2026-10-08
 - dependency failure: n/a - this removes the codebase's only AbacatePay call; after C3 there is no remaining request whose failure could be handled
 - state transitions: n/a - no state machine changes; `pending_asaas_payments` keeps both `kind` values and C11 asserts each
-- observability: C10, C15 - the retired reason leaves the typed catalogue and the two documents that named it; the Grafana rule's query filters on `event_name` alone and keeps firing on the surviving reasons
+- observability: C10, C15 - the retired reason leaves the typed catalogue, the alert's LogQL query and the two documents that named it; the query keeps `NO_PENDING_CHARGE|MISSING_REFERENCE`, so the rule keeps firing, and `catalog-coverage.test.ts` fails if the three ever disagree
 
 ## Progress
 
@@ -155,7 +155,9 @@ finished work.
   schema entry)
 - **C4, C9, C11, C12, C13, C14** — closed: `pending_pix_payments` dropped by migration `0024`,
   `unpaidPixPerAcademy` reduced to the Asaas query, the harness and seed truncate lists updated
-- open: C3, C15, C16
+- **C3, C15** — closed: the alert's LogQL query, its email description and
+  `docs/observability.md` no longer name the retired reason or the provider
+- open: C16, which is the gate and runs once over the whole feature
 
 ## Handoff
 
