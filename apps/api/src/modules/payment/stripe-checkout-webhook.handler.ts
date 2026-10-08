@@ -18,7 +18,7 @@ export class StripeCheckoutWebhookHandler {
   ) {}
 
   async handleEvent(event: Stripe.Event): Promise<void> {
-    // No `UNKNOWN_EVENT_TYPE` here, unlike the AbacatePay handler. The
+    // No `UNKNOWN_EVENT_TYPE` here, unlike the Asaas handler. The
     // `/webhooks/stripe` route calls this handler and then
     // `StripeSubscriptionWebhookHandler` on *the same event*, and that one
     // already emits `manager_subscription.webhook_unhandled` from its default

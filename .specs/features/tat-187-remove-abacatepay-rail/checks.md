@@ -19,11 +19,22 @@ Proof: `pnpm --filter @tatame/api exec vitest run --project unit src/api.smoke.t
 **C2** - `GET /v1/payments/pix-status/pix_char_x` answers `404` (AC 2)
 Proof: `pnpm --filter @tatame/api exec vitest run --project unit src/api.smoke.test.ts -t "no longer serves the AbacatePay Pix rail"`
 
-**C3** - No tracked file under `apps`, `packages`, `infra` or `docs/observability.md` matches `abacatepay`, case-insensitive, outside `packages/db/drizzle` (AC 3)
-Proof: `bash -c '! git grep -il -e abacatepay -- apps packages infra docs/observability.md ":!packages/db/drizzle"'`
+**C3** - No tracked non-test file under `apps`, `packages`, `infra` or `docs/observability.md` matches `abacatepay`, case-insensitive, outside `packages/db/drizzle` (AC 3)
+Proof: `bash -c '! git grep -il -e abacatepay -- apps packages infra docs/observability.md ":!packages/db/drizzle" ":!*.test.ts"'`
 
-**C4** - No tracked file names `createPendingPix`, `findPendingPixByQrCodeId`, `deletePendingPix`, `pendingPixPayments`, `pending_pix_payments` or `createPixQrCode` (AC 3, AC 10)
-Proof: `bash -c '! git grep -l -e createPendingPix -e findPendingPixByQrCodeId -e deletePendingPix -e pendingPixPayments -e pending_pix_payments -e createPixQrCode -- apps packages infra docs/observability.md ":!packages/db/drizzle"'`
+**C4** - No tracked non-test file names `createPendingPix`, `findPendingPixByQrCodeId`, `deletePendingPix`, `pendingPixPayments`, `pending_pix_payments` or `createPixQrCode` (AC 3, AC 10)
+Proof: `bash -c '! git grep -l -e createPendingPix -e findPendingPixByQrCodeId -e deletePendingPix -e pendingPixPayments -e pending_pix_payments -e createPixQrCode -- apps packages infra docs/observability.md ":!packages/db/drizzle" ":!*.test.ts"'`
+
+> **Both narrowed to non-test files while building, and the reason is the point of
+> the checks rather than a concession.** A removal's proofs have to name what was
+> removed: `api.smoke.test.ts` asserts `404` under the title "no longer serves the
+> AbacatePay Pix rail", and `migrations.integration.test.ts` asks
+> `information_schema` for `pending_pix_payments` by name. Written repo-wide these
+> two claims forbade their own proofs. What they are about is a surviving **code
+> path**, and a test asserting an absence is not one. The symbols are still barred
+> from test files by other means: `pendingPixPayments` is a type, so C16's
+> `typecheck` fails on any reference, and a raw SQL string against the dropped
+> table fails the integration project.
 
 **C5** - `POST /v1/payments/pix` opens an Asaas charge whose split sends 100% to the academy wallet (AC 4)
 Proof: `pnpm --filter @tatame/api exec vitest run --project unit src/modules/payment/payment.pix-charge.test.ts -t "sends the whole split to the academy wallet"`
@@ -75,8 +86,8 @@ Proof: `pnpm typecheck && pnpm lint && pnpm test:unit && pnpm test:integration`
 | `unpaidPixPerAcademy` predicates (4) | inside the day window C11 · before the day window C12 · `kind = 'checkout'` excluded C11 · a settled row excluded C11 | - |
 | `unpaidPixPerAcademy` grouping (2) | one academy C11 · two academies kept apart C13 | - |
 | `payment.webhook_unhandled` reasons after the change (7) | C10, table-driven over all 7 as one array equality | - |
-| removal sites naming the provider (17 files) | C3, table-driven over all 17 tracked paths | - |
-| removal sites naming the table or its methods (13 files) | C4, table-driven over all 13 tracked paths | - |
+| removal sites naming the provider (14 non-test files) | C3, table-driven over all 14 tracked paths | - |
+| removal sites naming the table or its methods (10 non-test files) | C4, table-driven over all 10 tracked paths | - |
 | startup config: the assembled app under test (2 assemblies) | `createApp()` in the unit project C1, C8 · `createApp()` plus a migrated schema in the integration project C7, C14 | - |
 
 - Claims naming a status code or a route — C1, C2, C8 — are each proven through the assembled
@@ -133,6 +144,16 @@ already.
 - dependency failure: n/a - this removes the codebase's only AbacatePay call; after C3 there is no remaining request whose failure could be handled
 - state transitions: n/a - no state machine changes; `pending_asaas_payments` keeps both `kind` values and C11 asserts each
 - observability: C10, C15 - the retired reason leaves the typed catalogue and the two documents that named it; the Grafana rule's query filters on `event_name` alone and keeps firing on the surviving reasons
+
+## Progress
+
+Updated in the commit that closes each check, so a resume after a crash does not redo
+finished work.
+
+- **C1, C2, C5, C6, C7, C8, C10** — closed: the AbacatePay code path removed (routes, service
+  method, repository trio, webhook handler and its route, the retired event reason, the env
+  schema entry)
+- open: C3, C4, C9, C11, C12, C13, C14, C15, C16
 
 ## Handoff
 
