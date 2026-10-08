@@ -258,3 +258,28 @@ roughly 25 KB of new files — 78 KB / 4 ≈ **~21k tokens**.
 proven against env vars with the `404`-when-unset branch (C30, C32); the maintainer fills the real
 values in the deployment environment, and `.env.example` documents both. Until then TAT-177's
 universal links fall back to the browser — recorded as `blocks go-live` in the plan.
+
+### Builder's close
+
+- **Boundary:** C1-C35 closed. `a29e7f1` artifacts · `58bf5bf` S1 · `96e4634` door 2 ·
+  `4ec7696` S2 · `b4ab439` S3 · `ed1f646` S4 · `88711a5` S5. All proofs green at `88711a5`:
+  739 API unit, 134 API integration, 28 `apps/web`, `pnpm typecheck` and `pnpm lint` clean
+  repo-wide (5 pre-existing `apps/web` warnings, 2 fewer than before this feature; 0 new).
+- **Settled mid-build:** the profile (`standard`) and the env-var mechanism for the association
+  files, both answered by the maintainer at the plan stop and recorded as `Confirmed? y`
+  assumptions. Nothing else needed a decision.
+- **Abandoned:** a tautological extension check in `scripts/assert-web-routes.mjs` — it tested a
+  string literal against a regex, which can only ever pass. Apple's no-extension requirement is
+  carried instead by `/.well-known/apple-app-site-association` being spelled without one in
+  `REQUIRED`, so a build serving `…-association.json` fails the exact match. The script's
+  missing-route path was then negative-controlled with a bogus entry: exit 1, then exit 0 on
+  revert.
+
+Two things found while building that are **not** in a check and were deliberately left alone:
+
+- `/convite/<id>` carries no `robots: { index: false }`. The plan chose the `404` as the
+  mechanism against indexing invite pages for academies that do not exist, and a page-level
+  `noindex` is a second mechanism nobody reviewed. Worth one line in TAT-177 or TAT-191.
+- The invite page says nothing about what inviting a **guardian** means — that the parent
+  registers the child as a dependent afterwards. TAT-175 puts that obligation on manager-facing
+  copy, which is TAT-178's surface, so it is not added here.
