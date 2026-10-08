@@ -6,7 +6,21 @@
       "source": "local",
       "contentHash": "69867b0e19be1fb556d2e697f0f18f1de0363d1aa2de9d36754d5b107156357c",
       "installedAt": "2026-05-18T10:08:03.462Z",
-      "updatedAt": "2026-05-18T10:08:03.480Z",
+      "updatedAt": "2026-05-18T10:08:03.491Z",
+      "agents": [
+        "cursor",
+        "claude-code",
+        "windsurf"
+      ],
+      "method": "copy",
+      "global": false
+    },
+    "tlc-spec-lean": {
+      "name": "tlc-spec-lean",
+      "source": "local",
+      "contentHash": "28368cb86a9d441fce24426eb502a39a5e7f9ffe0ad5d682fead2ce76c5b085b",
+      "installedAt": "2026-10-08T10:49:39.648Z",
+      "updatedAt": "2026-10-08T10:49:39.677Z",
       "agents": [
         "cursor",
         "claude-code"
