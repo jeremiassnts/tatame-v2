@@ -125,6 +125,11 @@ these rows apply.
 | A closed set declared as data | one direct assertion over the whole collection | array equality, never a membership test, so a removal and an addition both show |
 | Instrumentation — a repository method forwarding one query | none of its own | covered by its consumer's proof |
 
+**Rows 1 and 2 were approved into `AGENTS.md` on 2026-10-08** and now bind every feature, not
+only this one. Those are the two with a real cost and a precedent in this repo. Rows 3 and 4 stay
+here: both are close enough to obvious that writing them into a file read every session buys less
+than it costs.
+
 Evidence:
 
 - `platform-summary.repository.postgres.ts#unpaidPixPerAcademy`: before this change, two queries,
