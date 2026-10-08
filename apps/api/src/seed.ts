@@ -61,7 +61,7 @@ async function seed() {
     sql`TRUNCATE TABLE
       notifications, custom_notification_sends, announcements,
       notification_preferences, engagement_milestones, push_tokens,
-      pending_pix_payments, payments, checkins, student_subscriptions,
+      payments, checkins, student_subscriptions,
       manager_subscriptions, classes, dependents, belt_promotions,
       academy_memberships, user_roles, academies, users
     CASCADE`,

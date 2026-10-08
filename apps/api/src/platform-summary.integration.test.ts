@@ -6,7 +6,6 @@ import {
   managerSubscriptions,
   payments,
   pendingAsaasPayments,
-  pendingPixPayments,
   studentSubscriptions,
   subscriptionPlans,
   users,
@@ -101,56 +100,10 @@ describe("PostgresPlatformSummaryRepository", () => {
     expect(card).toMatchObject({ count: 1, amountCents: 20_000 });
   });
 
-  it("counts a Pix QR code as unpaid only while no payment references it", async () => {
-    const { owner, academy } = await seedAcademy();
-    const plan = makeSubscriptionPlan({ academyId: academy.id });
-    await ctx.db.insert(subscriptionPlans).values(plan);
-    const sub = makeStudentSubscription({ userId: owner.id, planId: plan.id });
-    await ctx.db.insert(studentSubscriptions).values(sub);
-
-    await ctx.db.insert(pendingPixPayments).values([
-      {
-        pixQrCodeId: "pix_unpaid",
-        subscriptionId: sub.id,
-        userId: owner.id,
-        academyId: academy.id,
-        referenceMonth: "2026-09-01",
-        amountCents: 12_000,
-        createdAt: INSIDE,
-      },
-      {
-        pixQrCodeId: "pix_paid",
-        subscriptionId: sub.id,
-        userId: owner.id,
-        academyId: academy.id,
-        referenceMonth: "2026-09-01",
-        amountCents: 30_000,
-        createdAt: INSIDE,
-      },
-    ]);
-    await ctx.db.insert(payments).values(
-      makePayment({
-        subscriptionId: sub.id,
-        userId: owner.id,
-        academyId: academy.id,
-        confirmedBy: null,
-        method: "pix",
-        amountCents: 30_000,
-        stripePaymentId: "pix_paid",
-        paidAt: INSIDE,
-      }),
-    );
-
-    const rows = await repo.unpaidPixPerAcademy(window);
-
-    expect(rows).toEqual([
-      { academyId: academy.id, count: 1, amountCents: 12_000 },
-    ]);
-  });
-
-  // The rail this metric was written for is gone. `POST /payments/pix` writes
-  // `pending_asaas_payments` now, so a summary that reads only the AbacatePay
-  // table reports zero unpaid Pix forever while real ones pile up unseen.
+  // This metric already broke once by reading the rail that had stopped
+  // receiving charges, and reported zero unpaid Pix while real ones piled up in
+  // the other table. TAT-187 dropped that table; the three arrangements here are
+  // what the one surviving query has to tell apart.
   it("counts an unpaid Asaas Pix charge, the rail that replaced AbacatePay", async () => {
     const { owner, academy } = await seedAcademy();
     const plan = makeSubscriptionPlan({ academyId: academy.id });
@@ -224,40 +177,66 @@ describe("PostgresPlatformSummaryRepository", () => {
     ]);
   });
 
-  // The cutover is not instant: AbacatePay QR codes created before it are still
-  // payable, so for as long as any are open the number has to be both rails.
-  it("sums both rails while AbacatePay charges are still draining", async () => {
+  // The window predicate had no case of its own while the number was two rails
+  // summed, because no test ever put a pending row outside the day. Dropping
+  // either `gte`/`lt` would have left every test above green.
+  it("leaves an Asaas charge opened before the BRT day out", async () => {
     const { owner, academy } = await seedAcademy();
     const plan = makeSubscriptionPlan({ academyId: academy.id });
     await ctx.db.insert(subscriptionPlans).values(plan);
     const sub = makeStudentSubscription({ userId: owner.id, planId: plan.id });
     await ctx.db.insert(studentSubscriptions).values(sub);
 
-    await ctx.db.insert(pendingPixPayments).values({
-      pixQrCodeId: "pix_char_old",
-      subscriptionId: sub.id,
-      userId: owner.id,
-      academyId: academy.id,
-      referenceMonth: "2026-09-01",
-      amountCents: 7_000,
-      createdAt: INSIDE,
-    });
     await ctx.db.insert(pendingAsaasPayments).values({
-      asaasPaymentId: "pay_new",
+      asaasPaymentId: "pay_previous_day",
       kind: "payment",
       subscriptionId: sub.id,
       userId: owner.id,
       academyId: academy.id,
       referenceMonth: "2026-09-01",
       amountCents: 12_000,
-      createdAt: INSIDE,
+      createdAt: LATE_PREVIOUS_BRT,
     });
+
+    expect(await repo.unpaidPixPerAcademy(window)).toEqual([]);
+  });
+
+  // The per-academy grouping was carried by a merge over two result sets, which
+  // this change replaced with the `groupBy` alone. Two academies is what tells
+  // one row each from one row with both amounts added together.
+  it("keeps each academy's unpaid Pix on its own row", async () => {
+    const first = await seedAcademy({ name: "Academia Um" });
+    const second = await seedAcademy({ name: "Academia Dois" });
+
+    for (const [i, seeded] of [first, second].entries()) {
+      const plan = makeSubscriptionPlan({ academyId: seeded.academy.id });
+      await ctx.db.insert(subscriptionPlans).values(plan);
+      const sub = makeStudentSubscription({
+        userId: seeded.owner.id,
+        planId: plan.id,
+      });
+      await ctx.db.insert(studentSubscriptions).values(sub);
+      await ctx.db.insert(pendingAsaasPayments).values({
+        asaasPaymentId: `pay_academy_${i}`,
+        kind: "payment",
+        subscriptionId: sub.id,
+        userId: seeded.owner.id,
+        academyId: seeded.academy.id,
+        referenceMonth: "2026-09-01",
+        amountCents: 10_000 * (i + 1),
+        createdAt: INSIDE,
+      });
+    }
 
     const rows = await repo.unpaidPixPerAcademy(window);
 
-    expect(rows).toEqual([
-      { academyId: academy.id, count: 2, amountCents: 19_000 },
-    ]);
+    expect(rows).toHaveLength(2);
+    expect(rows).toEqual(
+      expect.arrayContaining([
+        { academyId: first.academy.id, count: 1, amountCents: 10_000 },
+        { academyId: second.academy.id, count: 1, amountCents: 20_000 },
+      ]),
+    );
   });
 
   it("counts a student as overdue only with no payment for the month", async () => {

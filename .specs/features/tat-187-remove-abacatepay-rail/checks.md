@@ -153,7 +153,9 @@ finished work.
 - **C1, C2, C5, C6, C7, C8, C10** — closed: the AbacatePay code path removed (routes, service
   method, repository trio, webhook handler and its route, the retired event reason, the env
   schema entry)
-- open: C3, C4, C9, C11, C12, C13, C14, C15, C16
+- **C4, C9, C11, C12, C13, C14** — closed: `pending_pix_payments` dropped by migration `0024`,
+  `unpaidPixPerAcademy` reduced to the Asaas query, the harness and seed truncate lists updated
+- open: C3, C15, C16
 
 ## Handoff
 
