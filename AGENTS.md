@@ -11,12 +11,14 @@
   The ticket number comes first, then the conventional-commit type. Work with no ticket
   (chores, tooling) may omit the bracket, but anything tied to a Linear issue must carry it.
 - **Branching** — Use classic git branches (`git checkout -b`). Do **not** use git worktrees unless explicitly requested.
-- **Branch and PR flow** — `main` is deploy-on-merge, so nothing is pushed straight to it.
+- **Branch and PR flow** — `main` is the release branch. Merging into it does **not** deploy:
+  auto-deploy on merge is **switched off** in Coolify, and the production deploy is triggered
+  manually there. Still, nothing is pushed straight to `main` without being asked.
 
   1. Branch off `dev` for each feature / ticket / bug fix.
   2. When the work is done, open the PR **against `dev`** — never against `main`.
   3. `dev` accumulates finished work; promoting `dev` to `main` is a **manual step the
-     maintainer does**, and triggers the production deploy.
+     maintainer does**.
 
   Never open a PR targeting `main` and never merge into `main` without being asked.
 - **Language** — All code (variables, functions, classes, comments, commits) must be written in **English**. User-facing content (labels, messages, placeholders, errors, toasts, etc.) must be in **Brazilian Portuguese** with correct accentuation.
