@@ -173,7 +173,9 @@ finished work.
 - **C16** — closed: `typecheck` 13/13, `lint` 8/8, unit 730 passed in 42 files, integration 130
   passed in 17 files, all exit 0 at `ea6347c`
 - **C17** — closed in round 2: the window's upper bound now has an asserted case at exactly
-  `window.end`, which is the one value that separates `lt` from `lte` and both from no bound
+  `window.end`, which is the one value that separates `lt` from `lte` and both from no bound.
+  Gate re-run at `bec7e9b`: `typecheck` 13/13, `lint` 8/8, unit 730 passed in 42 files,
+  integration 131 passed in 17 files, all exit 0
 
 **Environment note, not a code finding.** The integration project starts Postgres through
 testcontainers, and on this machine Docker Desktop intermittently fails to resolve
