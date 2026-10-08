@@ -58,3 +58,20 @@
 
   When a feature's behaviour appears to depend on a free tier, it does not. Treat the limits above
   as unreachable unless the product decision to reintroduce a free tier is made explicitly.
+
+## tlc-spec-lean
+
+profile: standard
+budget: 150k
+
+`standard` rather than the skill's `light` default, and it holds for every feature unless the
+maintainer asks for something else on that task. What it buys over `light` is the two failure
+classes `light` cannot see: a check whose test would stay green under a wrong implementation,
+and a set member nobody proved. The Verifier injects one fault per assertion surface and
+recomputes the `Coverage` join from the authority over each set, instead of reading the author's
+table back.
+
+The reason it is worth the cost here: this codebase's expensive bugs have been silent-zero bugs —
+a metric that keeps rendering and stops measuring (`unpaidPixPerAcademy` summing the wrong rail),
+a webhook branch that returns 200 and writes nothing. A green test proves nothing about either
+unless something deliberately breaks the implementation and watches the test react.
