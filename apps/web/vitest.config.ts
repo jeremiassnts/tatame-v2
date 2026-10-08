@@ -8,7 +8,11 @@ export default defineConfig({
     // `Response`; the components forward a view model into markup, and
     // `react-dom/server` renders them to a string without a DOM.
     environment: "node",
-    include: ["{app,lib,components}/**/*.test.{ts,tsx}"],
+    include: [
+      "{app,lib,components}/**/*.test.{ts,tsx}",
+      // `middleware.ts` lives at the package root, so it needs its own entry.
+      "*.test.{ts,tsx}",
+    ],
   },
   // Next compiles JSX with the automatic runtime; esbuild has to be told, or a
   // `.tsx` test fails with "React is not defined".
