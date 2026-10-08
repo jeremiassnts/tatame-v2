@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "promote_threshold": 2,
+  "window_days": 45,
+  "quarantine_threshold": 2,
+  "next_id": 3,
+  "lessons": [
+    {
+      "id": "L-001",
+      "key": "surviving_mutant::assert both ends of a time window predicate with their own excluded case not one row inside the window",
+      "text": "Assert both ends of a time-window predicate with their own excluded case, not one row inside the window",
+      "signal": "surviving_mutant",
+      "scope": "repo-layer",
+      "status": "candidate",
+      "features": [
+        "tat-187-remove-abacatepay-rail"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "apps/api/src/modules/platform-summary/platform-summary.repository.postgres.ts:250 (fault F1) (repo-layer)"
+      ],
+      "created": "2026-10-08T17:02:29Z",
+      "last_seen": "2026-10-08T17:02:29Z"
+    },
+    {
+      "id": "L-002",
+      "key": "ac_gap::recompute a predicate coverage row from the query the code builds and give every predicate its own excluded case",
+      "text": "Recompute a predicate coverage row from the query the code builds, and give every predicate its own excluded case",
+      "signal": "ac_gap",
+      "scope": "repo-layer",
+      "status": "candidate",
+      "features": [
+        "tat-187-remove-abacatepay-rail"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "checks.md Coverage row: unpaidPixPerAcademy predicates (4) (repo-layer)"
+      ],
+      "created": "2026-10-08T17:02:34Z",
+      "last_seen": "2026-10-08T17:02:34Z"
+    }
+  ]
+}

@@ -33,6 +33,14 @@ const INSIDE = new Date("2026-09-11T15:00:00Z");
 const EARLY_BRT = new Date("2026-09-11T04:00:00Z");
 /** 22:00 BRT on the 10th is 01:00 UTC on the 11th — the *previous* BRT day. */
 const LATE_PREVIOUS_BRT = new Date("2026-09-11T01:00:00Z");
+/**
+ * `window.end` exactly: `brtDayWindow` opens at 03:00 UTC and spans 24 hours, so
+ * the BRT day ends at 03:00 UTC the next day. The bound is `lt`, so a row at
+ * this instant belongs to the *next* day and must not be counted — which makes
+ * this the one value that tells `lt` from `lte` apart, and both of those from
+ * no upper bound at all.
+ */
+const WINDOW_END = new Date("2026-09-12T03:00:00Z");
 
 describe("PostgresPlatformSummaryRepository", () => {
   let ctx: Awaited<ReturnType<typeof setupIntegrationTest>>;
@@ -196,6 +204,33 @@ describe("PostgresPlatformSummaryRepository", () => {
       referenceMonth: "2026-09-01",
       amountCents: 12_000,
       createdAt: LATE_PREVIOUS_BRT,
+    });
+
+    expect(await repo.unpaidPixPerAcademy(window)).toEqual([]);
+  });
+
+  // The upper bound had no case either, and its absence is worse than the lower
+  // bound's: `collectDay` reads two windows to compare today against yesterday,
+  // so a query with no `window.end` makes both numbers "everything unpaid since
+  // `start`" — they grow without bound and the comparison stops meaning
+  // anything, with every other test in this file still green. Verified: the
+  // mutant that drops the bound survives the whole suite without this case.
+  it("leaves an Asaas charge opened at the exact end of the window out", async () => {
+    const { owner, academy } = await seedAcademy();
+    const plan = makeSubscriptionPlan({ academyId: academy.id });
+    await ctx.db.insert(subscriptionPlans).values(plan);
+    const sub = makeStudentSubscription({ userId: owner.id, planId: plan.id });
+    await ctx.db.insert(studentSubscriptions).values(sub);
+
+    await ctx.db.insert(pendingAsaasPayments).values({
+      asaasPaymentId: "pay_next_day",
+      kind: "payment",
+      subscriptionId: sub.id,
+      userId: owner.id,
+      academyId: academy.id,
+      referenceMonth: "2026-09-01",
+      amountCents: 12_000,
+      createdAt: WINDOW_END,
     });
 
     expect(await repo.unpaidPixPerAcademy(window)).toEqual([]);

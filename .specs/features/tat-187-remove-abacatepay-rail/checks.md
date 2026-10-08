@@ -3,7 +3,7 @@
 Profile: standard
 Plan: `.specs/features/tat-187-remove-abacatepay-rail/plan.md`
 
-16 checks in 2 slices · 3 one-way doors · 0 open, of which 0 block
+17 checks in 2 slices · 3 one-way doors · 0 open, of which 0 block
 
 Every proof runs from the repository root. The workspace packages must be built first
 (`pnpm build`), because `@tatame/config` and `@tatame/db` resolve through `dist/`; the
@@ -74,6 +74,19 @@ Proof: `bash -c '! git grep -l -e NO_PENDING_PIX -- docs/observability.md infra/
 **C16** - The repository gate is green: `typecheck`, `lint`, the unit project and the integration project (TAT-187 acceptance gate)
 Proof: `pnpm typecheck && pnpm lint && pnpm test:unit && pnpm test:integration`
 
+**C17** - `unpaidPixPerAcademy` reports nothing for an unpaid `kind = 'payment'` row created at exactly `window.end`, which is 03:00 UTC the day after the BRT day (AC 8)
+Proof: `pnpm --filter @tatame/api exec vitest run --project integration src/platform-summary.integration.test.ts -t "leaves an Asaas charge opened at the exact end of the window out"`
+
+> **Added in round 2, from a surviving mutant the Verifier found.** The upper bound
+> `lt(createdAt, window.end)` had no asserted case: removing it left C11, C12, C13, all
+> eight cases in that file and then the entire 860-test suite green. It is a production
+> defect and not only a coverage hole — `collectDay` reads two windows to compare the day
+> against the one before it, so with no upper bound both numbers become "everything unpaid
+> since `window.start`", grow without bound, and the comparison stops measuring. The same
+> silent-wrong class TAT-104 already fixed once in this function. The row in `Coverage`
+> went from four predicates to five; the fourth was never a member, which is why the join
+> did not catch it and fault injection did.
+
 ## Coverage
 
 | Set (size) | Member -> proof | Unproven |
@@ -83,7 +96,7 @@ Proof: `pnpm typecheck && pnpm lint && pnpm test:unit && pnpm test:integration`
 | `POST /v1/webhooks/abacatepay` statuses (1) | `404` C8 | - |
 | one-way doors in the plan's `Landing` (3) | table dropped C9 · routes withdrawn C1, C2, C8 · reason retired C10 | - |
 | entities in the plan's `Relations` (2) | `PendingPixPayment` removed C9 · `PendingAsaasPayment` kept C11 | - |
-| `unpaidPixPerAcademy` predicates (4) | inside the day window C11 · before the day window C12 · `kind = 'checkout'` excluded C11 · a settled row excluded C11 | - |
+| `unpaidPixPerAcademy` predicates (5) | inside the day window C11 · before `window.start` C12 · at `window.end` C17 · `kind = 'checkout'` excluded C11 · a settled row excluded C11 | - |
 | `unpaidPixPerAcademy` grouping (2) | one academy C11 · two academies kept apart C13 | - |
 | `payment.webhook_unhandled` reasons after the change (7) | C10, table-driven over all 7 as one array equality | - |
 | removal sites naming the provider (14 non-test files) | C3, table-driven over all 14 tracked paths | - |
@@ -159,6 +172,8 @@ finished work.
   `docs/observability.md` no longer name the retired reason or the provider
 - **C16** — closed: `typecheck` 13/13, `lint` 8/8, unit 730 passed in 42 files, integration 130
   passed in 17 files, all exit 0 at `ea6347c`
+- **C17** — closed in round 2: the window's upper bound now has an asserted case at exactly
+  `window.end`, which is the one value that separates `lt` from `lte` and both from no bound
 
 **Environment note, not a code finding.** The integration project starts Postgres through
 testcontainers, and on this machine Docker Desktop intermittently fails to resolve
