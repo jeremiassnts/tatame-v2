@@ -37,3 +37,22 @@
 - **Styling** — All styling must use **NativeWind** (mobile) and **Tailwind CSS** (web). Use `className` with utility classes, not inline `style` objects. Only fall back to `style` for truly dynamic values (e.g. colors from data, safe area insets) or features not available in NativeWind/Tailwind.
 - **Designs** — All UI designs live in `design.pen`. Always use the **Pencil MCP** tools (`batch_get`, `get_screenshot`, `get_guidelines`, etc.) to read designs — never use `Read` or `Grep` on `.pen` files.
 - **Custom skills** — The project has custom skills in `.agents/skills/`. When asked to use a skill not listed in the Skill tool's invocable list, always check `.agents/skills/<skill-name>/SKILL.md` before saying it doesn't exist. Read the `SKILL.md` and follow its instructions.
+- **Billing — there is no free plan** — Every manager subscribes. The first month is granted as a
+  **Stripe trial on the `pro` plan**, so a manager in their free month is `plan: "pro"` with
+  `trialEndsAt` set and has the **full feature set** — never a reduced one.
+
+  `plan` is only ever written as `"pro"` (`manager-subscription.service.ts`,
+  `stripe-subscription-webhook.handler.ts`). No code path writes `"free"`.
+
+  This makes the following **dead code** — do not reason about product behaviour from it:
+
+  - `FREE_PLAN_LIMITS` in `apps/api/src/modules/manager-subscription/plan-limits.ts`
+    (`maxStudents: 30`, `maxInstructors: 1`, …) — these limits **cannot be reached** by a
+    subscribed manager, and an academy with no subscription row is already rejected earlier by
+    `requireActivePlan` with `403 NO_SUBSCRIPTION`.
+  - Every `sub.plan === "free"` branch in the membership, class, payment and subscription
+    services — reachable only by legacy rows, if any.
+  - The synthesized `plan: "free"` fallback in `managerSubscriptionService.getLimits()`.
+
+  When a feature's behaviour appears to depend on a free tier, it does not. Treat the limits above
+  as unreachable unless the product decision to reintroduce a free tier is made explicitly.
