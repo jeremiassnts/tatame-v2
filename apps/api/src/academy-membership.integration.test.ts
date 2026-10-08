@@ -1,7 +1,9 @@
 import {
+  asAnonymous,
   asClerkUser,
   resetIntegrationClerkAuth,
 } from "./testing/integration-clerk-mock.js";
+import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { setDbForTest } from "./lib/db.js";
@@ -269,5 +271,93 @@ describe("Academy & membership integration", () => {
     expect(detail.body).toHaveProperty("userId");
     expect(detail.body).toHaveProperty("status");
     expect(detail.body).toHaveProperty("history");
+  });
+
+  /**
+   * The invite page at `/convite/<academyId>` has no logged-in user, so it reads
+   * this route and nothing else. What it is allowed to see is the whole point:
+   * `GET /v1/academies/:academyId` returns the full row, `pixKey` included.
+   */
+  describe("public academy projection", () => {
+    async function seedAcademy(name: string, logoUrl: string | null) {
+      await insertUserWithGlobalRole(ctx.db, CLERK_MANAGER, "manager");
+      asClerkUser(CLERK_MANAGER);
+      const created = await request(app)
+        .post("/v1/academies")
+        .send({ name, ...(logoUrl ? { logoUrl } : {}) });
+      expect(created.status).toBe(201);
+      return created.body.id as string;
+    }
+
+    it("serves an academy's name and logo with no session", async () => {
+      const academyId = await seedAcademy(
+        "Academia do Convite",
+        "https://cdn.example/logo-convite.png",
+      );
+
+      asAnonymous();
+      const res = await request(app).get(`/v1/academies/${academyId}/public`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.name).toBe("Academia do Convite");
+      expect(res.body.logoUrl).toBe("https://cdn.example/logo-convite.png");
+      expect(res.body.id).toBe(academyId);
+    });
+
+    it("exposes nothing beyond id, name and logoUrl", async () => {
+      const academyId = await seedAcademy("Academia Fechada", null);
+      // Populate the contact fields so the row genuinely carries something the
+      // public projection must not hand out.
+      const patched = await request(app)
+        .patch(`/v1/academies/${academyId}`)
+        .send({
+          contactEmail: "contato@example.com",
+          contactPhone: "+5511999999999",
+          address: "Rua Um, 100",
+        });
+      expect(patched.status).toBe(200);
+
+      asAnonymous();
+      const res = await request(app).get(`/v1/academies/${academyId}/public`);
+
+      expect(res.status).toBe(200);
+      // Array equality, not a set of `not.toHaveProperty` assertions: a key
+      // added later fails this too, which is what a leak looks like.
+      expect(Object.keys(res.body).sort()).toEqual(["id", "logoUrl", "name"]);
+    });
+
+    it("refuses an academy id that is not a uuid", async () => {
+      asAnonymous();
+      const res = await request(app).get("/v1/academies/not-a-uuid/public");
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe("Invalid academy id");
+    });
+
+    it("answers not found for an academy id nobody owns", async () => {
+      asAnonymous();
+      const res = await request(app).get(
+        `/v1/academies/${randomUUID()}/public`,
+      );
+
+      expect(res.status).toBe(404);
+      expect(res.body.error).toBe("Academy not found");
+    });
+
+    it("opens only the public projection to an anonymous caller", async () => {
+      const academyId = await seedAcademy("Academia Guardada", null);
+
+      asAnonymous();
+      const publicRes = await request(app).get(
+        `/v1/academies/${academyId}/public`,
+      );
+      // The live sibling on the same router, in the same test: a 404 on the
+      // public route could mean "route gone" or "router unmounted", and only a
+      // neighbour still answering tells those apart.
+      const guardedRes = await request(app).get(`/v1/academies/${academyId}`);
+
+      expect(publicRes.status).toBe(200);
+      expect(guardedRes.status).toBe(401);
+    });
   });
 });
