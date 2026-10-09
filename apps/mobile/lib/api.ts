@@ -1,4 +1,7 @@
 import { useAuth } from "@clerk/clerk-expo";
+import { ApiError } from "@/lib/api-error";
+
+export { ApiError } from "@/lib/api-error";
 
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001/v1";
@@ -42,28 +45,6 @@ async function request<T>(path: string, opts: FetchOptions = {}): Promise<T> {
 
   if (res.status === 204) return undefined as T;
   return res.json();
-}
-
-export class ApiError extends Error {
-  constructor(
-    public readonly status: number,
-    /**
-     * The API's `error` field. When the failure carries a code the server puts
-     * the code here, which is why call sites match on it — `PLAN_LIMIT_*`,
-     * `PAYOUT_ACCOUNT_REQUIRED`. It is an identifier, not something to show.
-     */
-    message: string,
-    /**
-     * The API's human sentence, when it sent one. A coded failure overwrites
-     * `message` with its code, so without this the prose is simply lost — and
-     * for Asaas that prose is the whole value: it says which field the Receita
-     * refused, in Portuguese, and no wording invented here can replace it.
-     */
-    public readonly detail?: string,
-  ) {
-    super(message);
-    this.name = "ApiError";
-  }
 }
 
 export type PublicAcademy = {
