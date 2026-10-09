@@ -1,6 +1,6 @@
 import { resolvePapelToRole } from "@tatame/types";
 import { describe, expect, it } from "vitest";
-import { parseInviteLink } from "@/lib/invite-link";
+import { isDownloadLink, parseInviteLink } from "@/lib/invite-link";
 
 const ID = "11111111-1111-1111-1111-111111111111";
 const HOST = "https://apptatame.com.br";
@@ -20,6 +20,14 @@ describe("resolvePapelToRole", () => {
     expect(resolvePapelToRole("")).toBeNull();
     expect(resolvePapelToRole(undefined)).toBeNull();
     expect(resolvePapelToRole(["aluno"])).toBeNull();
+  });
+
+  it("rejects a null papel", () => {
+    // Declared in the signature and reachable from any future consumer that
+    // reads a token out of something nullable. Named as its own member because
+    // "same branch as undefined" is an argument about the implementation, and
+    // the signature is what callers read.
+    expect(resolvePapelToRole(null)).toBeNull();
   });
 });
 
@@ -123,5 +131,40 @@ describe("parseInviteLink", () => {
       expect(() => parseInviteLink(url)).not.toThrow();
       expect(parseInviteLink(url)).toBeNull();
     }
+  });
+
+  it("returns null when the academy segment cannot be decoded", () => {
+    // A separate member from the five above, and the reason is the path it
+    // takes: those five die in `new URL` or at the segment guard, so none of
+    // them ever reaches the `decodeURIComponent` catch. This one does — the
+    // URL parses, the shape is right, and only the decode fails. Android's
+    // `pathPrefix: "/convite/"` delivers it.
+    const url = "https://apptatame.com.br/convite/%";
+    expect(new URL(url).pathname).toBe("/convite/%");
+    expect(() => parseInviteLink(url)).not.toThrow();
+    expect(parseInviteLink(url)).toBeNull();
+  });
+});
+
+describe("isDownloadLink", () => {
+  it("tells the download page apart from everything else", () => {
+    // The query string has to be stripped, and that is not cosmetic: a manager
+    // pastes `…/baixar?utm_source=whatsapp` and both Android's `path: "/baixar"`
+    // and iOS's `/baixar` component match on the path alone, so the OS does
+    // deliver it. Without the strip it falls through to the unmatched route.
+    expect(isDownloadLink("https://apptatame.com.br/baixar")).toBe(true);
+    expect(
+      isDownloadLink("https://apptatame.com.br/baixar?utm_source=whatsapp"),
+    ).toBe(true);
+    expect(isDownloadLink("tatame:///baixar")).toBe(true);
+    expect(isDownloadLink("/baixar")).toBe(true);
+
+    // Not the download page: a deeper path, a host this app never claims, and
+    // the invite link itself, which must reach the store rather than this.
+    expect(isDownloadLink("https://apptatame.com.br/baixar/extra")).toBe(false);
+    expect(isDownloadLink("https://example.com/baixar")).toBe(false);
+    expect(
+      isDownloadLink("https://apptatame.com.br/convite/11111111-1111-1111-1111-111111111111"),
+    ).toBe(false);
   });
 });

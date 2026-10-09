@@ -3,7 +3,13 @@
 Profile: standard
 Plan: `.specs/features/tat-177-universal-links/plan.md`
 
-28 checks in 4 slices · 5 one-way doors · 2 open, of which 0 block
+31 checks in 4 slices · 5 one-way doors · 2 open, of which 0 block
+
+C29, C30 and C31 were **added after verification round 1**, which returned FAIL on one
+surviving mutant and two coverage members named in this file's own prose with no proof
+anywhere. They are additions — no approved check was rewritten, and no assertion was
+weakened. The one approved criterion that did change is AC 26, which was unsatisfiable as
+written; the reason is recorded in `plan.md` beside it.
 
 Every proof runs from the repository root. `pnpm install` first, then `pnpm build` — `@tatame/types`
 resolves through `exports.import` to `dist/`, so both `apps/mobile`'s and `apps/web`'s tests read
@@ -82,6 +88,12 @@ Proof: `pnpm --filter @tatame/mobile exec vitest run lib/invite-link.test.ts -t 
 **C14** - `""`, `"not a url"`, `"://"`, `"tatame://"` and `"%"` each return `null` and the call does not throw — 5 members, table-driven (AC 15)
 Proof: `pnpm --filter @tatame/mobile exec vitest run lib/invite-link.test.ts -t "returns null instead of throwing on an unparseable url"`
 
+**C30** - `parseInviteLink("https://apptatame.com.br/convite/%")` returns `null` by way of the `decodeURIComponent` catch rather than any earlier guard, asserted together with `new URL(url).pathname === "/convite/%"` so the test fails if the URL stops reaching that line (AC 15)
+Proof: `pnpm --filter @tatame/mobile exec vitest run lib/invite-link.test.ts -t "returns null when the academy segment cannot be decoded"`
+
+**C31** - `resolvePapelToRole(null)` returns `null` (AC 25)
+Proof: `pnpm --filter @tatame/mobile exec vitest run lib/invite-link.test.ts -t "rejects a null papel"`
+
 > `http://apptatame.com.br/convite/<uuid>` is deliberately **accepted**, not rejected: the host is
 > the one this app claims, and AC 14 is about the host rather than the scheme. No operating system
 > can deliver an `http` link for a domain whose association files are only reachable over `https`,
@@ -117,6 +129,9 @@ Proof: `pnpm --filter @tatame/mobile exec vitest run lib/pending-invite.test.ts 
 **C23** - after `clearPendingInvite()`, `readPendingInvite()` returns `null` (AC 24)
 Proof: `pnpm --filter @tatame/mobile exec vitest run lib/pending-invite.test.ts -t "forgets the invite when cleared"`
 
+**C29** - `isDownloadLink` returns `true` for `https://apptatame.com.br/baixar`, `https://apptatame.com.br/baixar?utm_source=whatsapp`, `tatame:///baixar` and `/baixar`, and `false` for `https://apptatame.com.br/baixar/extra`, `https://example.com/baixar` and an invite link — 7 members (AC 18)
+Proof: `pnpm --filter @tatame/mobile exec vitest run lib/invite-link.test.ts -t "tells the download page apart from everything else"`
+
 ### S4 — one definition of the `papel` vocabulary · 4 existing files, 0 new · 10 KB · ~2k
 
 **C24** - `resolvePapelToRole` from `@tatame/types` returns `"student"` for `aluno`, `"instructor"` for `instrutor`, `"guardian"` for `responsavel`, and `null` for `"ALUNO"`, `" aluno"`, `""`, `undefined` and `["aluno"]` — 8 members, table-driven (AC 25)
@@ -141,18 +156,20 @@ Proof: `pnpm install --frozen-lockfile`
 | --- | --- | --- |
 | `papel` token vocabulary (4 classes) | `aluno` C8, C24 · `instrutor` C8, C24 · `responsavel` C8, C24 · anything else C9, C24 | - |
 | `papel` unusable inputs (6) | absent C9 · `""` C9 · `xyz` C9 · `ALUNO` C9, C24 · `%20aluno` C9 · repeated `papel` C9 | - |
-| shared resolver non-string inputs (3) | `undefined` C24 · `" aluno"` C24 · `["aluno"]` C24 | - |
+| shared resolver non-string inputs (4) | `undefined` C24 · `null` C31 · `" aluno"` C24 · `["aluno"]` C24 | - |
 | URL forms that must resolve to one invite (4) | `https` apex C7, C12 · `tatame:///` C12 · `exp://…/--/` C12 · bare path C12 | - |
 | URL forms the parser must refuse, by host and path (4) | `example.com` C13 · `www.apptatame.com.br` C13 · `apptatame.com.br.evil.com` C13 · apex with a non-invite path C13 | - |
 | invite path shapes refused (4) | `/convite/` C11 · `/convite` C11 · `/convite//` C11 · `/convite/<id>/extra` C11 | - |
 | unparseable inputs (5) | `""` C14 · `not a url` C14 · `://` C14 · `tatame://` C14 · `%` C14 | - |
+| where an unusable URL is refused (3 paths) | in `new URL` C14 · at the segment guard C11, C14 · in the `decodeURIComponent` catch C30 — round 1 found that none of C14's five inputs reaches the third | - |
 | `redirectSystemPath` URL classes (4) | invite C15, C16, C20 · `/baixar` C17, C18, C20 · `sso-callback` C18, C19, C20 · unknown C18, C19, C20 | - |
 | `initial` values (2) | `true` C20 · `false` C20 — table-driven over all 4 URL classes × both | - |
 | pending-invite store states (4) | empty C21 · written C15, C22 · overwritten C22 · cleared C23 | - |
+| `isDownloadLink` outcomes (7) | bare `/baixar` C29 · with a query string C29 · `tatame:///baixar` C29 · relative path C29 · deeper path C29 · foreign host C29 · an invite link C29, C16 | - |
 | `app.json` link claim, per platform (2) | iOS `associatedDomains` C1, C6 · Android `intentFilters` C2, C3, C4, C6 | - |
 | Android `data` items the claim needs (2) | `/convite/` by prefix C3 · `/baixar` exactly C4 | - |
 | Android filter attributes the OS requires (4) | `action: VIEW` C2 · `autoVerify: true` C2 · `category: BROWSABLE` C2 · `category: DEFAULT` C2 | - |
-| one-way doors (5) | door 1 C1-C6 · door 2 C15-C20 · door 3 C15, C21, C22, C23 · door 4 C1-C24, every mobile proof exists only because the runner does · door 5 C24, C25, C26, C27 | - |
+| one-way doors (5) | door 1 C1-C6 · door 2 C15-C20 · door 3 C15, C21, C22, C23 · door 4 C1-C31, every mobile proof exists only because the runner does · door 5 C24, C25, C26, C27 | - |
 | startup config: the Expo config resolution (1 assembly) | `expo config --type introspect` C1-C6 — collapsed deliberately: `eas build` and `expo prebuild` both resolve the config through the same `@expo/config`, so there is one assembly, and C6 is what proves the proof reached it rather than reading the file | - |
 | startup config: `apps/web`'s dependency graph (3 assemblies) | real `next build` C27 · `apps/web` vitest C26 · a clean install from the committed lockfile C28 | - |
 
@@ -198,6 +215,14 @@ Evidence:
 - `apps/mobile/lib/pending-invite.ts`: 3 functions over one `let`, no conditional in any body ->
   instrumentation **by shape**, and it still gets the transition row: last-write-wins is a
   decision nothing else in the repo records, and TAT-191 inherits the signatures (door 3)
+- `apps/mobile/lib/invite-link.ts#isDownloadLink`: **decides**, 2 branch points — the
+  query-string strip and the equality. Classified as instrumentation before round 1 and ruled
+  against: it is not a re-export, an alias or a forwarding wrapper, so row 1 governs it, and the
+  measured consequence was fault F5 surviving. C29 is its proof at its own layer
+- `apps/mobile/lib/invite-link.ts#extractLinkPath`: 4 URL-form branches plus a host guard, not
+  exported. Row 1 is met through `parseInviteLink` and `isDownloadLink` at the **same module's**
+  own layer — C12 names all four forms as members and C13 the host guard — rather than by
+  exporting a private function to test it
 - `apps/web/lib/invite.ts#resolveInviteRole`: becomes a re-export of the shared function ->
   instrumentation, covered by C26, which is TAT-176's own test re-running unchanged
 - closest analogue in the repo for rows 1 and 2: `apps/web/lib/store-links.ts#detectPlatform`
@@ -287,3 +312,50 @@ Two things found while building that are **not** in a check and were deliberatel
   string comparison over `extractLinkPath`'s output, reached only from `redirectSystemPath`, and
   C17 and C18 are its consumer's proofs — `Test policy` row 5. Named here because the
   classification is a judgment call a verifier should be able to contest rather than discover.
+
+### Round 1 fixes
+
+Verification round 1 returned FAIL on three findings, one of them wearing two hats. All three
+were things this file's own prose named and its tables did not carry — the failure mode the
+`Coverage` join exists to make visible, caught here by the Verifier recomputing it instead of
+reading it back.
+
+- **A surviving mutant, and an unmet `Test policy` row 1.** Deleting `.replace(/\?.*$/, "")`
+  from `isDownloadLink` left all 24 mobile tests green. The behaviour it changes is reachable:
+  `https://apptatame.com.br/baixar?utm_source=whatsapp` is exactly what a manager pastes, and
+  both Android's `path: "/baixar"` and iOS's `/baixar` component match on the path alone, so the
+  OS delivers it — and without the strip it falls through to the unmatched route. The builder's
+  close had classified the function as instrumentation covered by C17 and C18; the Verifier ruled
+  against that, and the mutant is the measurement. **C29** proves all 7 outcomes at the
+  function's own layer, and the evidence list above now classifies it as deciding.
+  Mutant re-checked by hand in an isolated worktree: deleting the strip now fails C29.
+- **An unproven member: the `decodeURIComponent` reject.** C14's five inputs all die earlier —
+  four in `new URL`, and `tatame://` at the segment guard — so the catch at
+  `invite-link.ts:91-95` had no proof. `https://apptatame.com.br/convite/%` is deliverable by
+  Android's `pathPrefix: "/convite/"`. **C30** reaches it, and asserts the URL still parses to
+  `/convite/%` so the test fails rather than passes if the input stops arriving at that line.
+- **An unproven member: `null` to `resolvePapelToRole`.** Declared in the signature, rejected by
+  the `typeof` guard, named nowhere. **C31**. It is the same branch as the proven `undefined`,
+  and the signature is what a future consumer reads, so it gets its own member rather than an
+  argument about the implementation.
+
+Two sharpenings the Verifier raised and this round **declines**, with the reason on the record:
+
+- **`expo prebuild` plus assertions over the generated `AndroidManifest.xml` and
+  `Tatame.entitlements`** would prove the native claim one level above `expo config`. Declined:
+  neither `.gitignore` covers `ios/` or `android/`, so a prebuild leaves untracked native
+  directories in a project that is deliberately managed, and `expo prebuild` is the step toward
+  the bare workflow — a real cost against a level the Verifier itself judged already met by
+  row 4 and C6. The plan's `Independent test` still names it as the manual check.
+- **A `test` task in `packages/types`.** Declined: the shared resolver's only decision is a
+  3-row table behind an exact-match guard, and C24 and C31 assert it directly, imported from
+  `@tatame/types` by a consumer's suite. A sixth package-level runner to hold two tests is
+  precedent bought for nothing.
+
+One fidelity note the Verifier recorded and this round keeps: `vitest.config.ts:12` includes
+`"*.test.ts"` beyond door 4's literal `include` shape. It is additive and `link-config.test.ts`
+needs it, since `app.json` is asserted from the package root — the same entry `apps/web` added
+for `middleware.test.ts`. Door 4's row is not rewritten.
+
+AC 6 stays as round 1 ratified it: enumerated, genuinely unprovable in this repository, and
+`blocks go-live` in the plan.

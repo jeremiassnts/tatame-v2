@@ -143,11 +143,18 @@ Both apps read the token through the same function, so the exact-match rule cann
 **Acceptance Criteria**
 
 25. The shared types package SHALL export `resolvePapelToRole`, returning `"student"` for `aluno`, `"instructor"` for `instrutor`, `"guardian"` for `responsavel`, and `null` for every other input including `ALUNO`, `" aluno"`, `""`, `undefined` and an array
-26. The repository SHALL hold the `papel` → role mapping in exactly one module, and no file under `apps/` SHALL contain the literal token `instrutor` paired with `instructor`
+26. The repository SHALL hold the `papel` → role mapping table in exactly one module under `apps/` or `packages/`
 27. WHEN `apps/web`'s `resolveInviteRole` is given any of the three tokens or an unrecognised one THEN it SHALL return the value it returned before this ticket, resolving through the shared module
 
 **Independent test:** `pnpm build && pnpm --filter @tatame/web exec vitest run lib/invite.test.ts`
 — TAT-176's own C17 and C18 pass unchanged against the shared implementation.
+
+> **AC 26 was corrected after verification round 1.** As approved it carried a second clause —
+> "no file under `apps/` SHALL contain the literal token `instrutor` paired with `instructor`" —
+> which is unsatisfiable: a test that asserts the mapping has to write both tokens next to each
+> other, and `apps/mobile/lib/invite-link.test.ts` and `apps/web/lib/invite.test.ts` both do. It
+> was also two behaviours in one criterion. The surviving clause is what C25 proves and what the
+> slice was always for: one table, one module.
 
 ## Out of scope
 
