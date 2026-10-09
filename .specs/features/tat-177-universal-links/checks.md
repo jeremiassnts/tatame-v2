@@ -342,11 +342,17 @@ reading it back.
 Two sharpenings the Verifier raised and this round **declines**, with the reason on the record:
 
 - **`expo prebuild` plus assertions over the generated `AndroidManifest.xml` and
-  `Tatame.entitlements`** would prove the native claim one level above `expo config`. Declined:
-  neither `.gitignore` covers `ios/` or `android/`, so a prebuild leaves untracked native
-  directories in a project that is deliberately managed, and `expo prebuild` is the step toward
-  the bare workflow — a real cost against a level the Verifier itself judged already met by
-  row 4 and C6. The plan's `Independent test` still names it as the manual check.
+  `Tatame.entitlements`** would prove the native claim one level above `expo config`. Declined
+  because `Test policy` row 4's bar is the config **as the toolchain resolves it**, which C1-C6
+  meet with C6 as the control — the Verifier judged row 4 met either way. The cost is a template
+  download and a full native generation per run, against no level the policy row asks for. The
+  plan's `Independent test` still names it as the manual check.
+
+  > **Round 1's stated reason for this decline was false and is corrected here.** It claimed
+  > neither `.gitignore` covers `ios/` or `android/`; `.gitignore:12-13` holds
+  > `apps/mobile/ios` and `apps/mobile/android`, so a prebuild would leave ignored directories,
+  > not untracked ones. Round 2 caught it. The decline survives on the ground above; the
+  > premise did not.
 - **A `test` task in `packages/types`.** Declined: the shared resolver's only decision is a
   3-row table behind an exact-match guard, and C24 and C31 assert it directly, imported from
   `@tatame/types` by a consumer's suite. A sixth package-level runner to hold two tests is
