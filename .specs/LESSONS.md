@@ -80,6 +80,30 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: apps/mobile/lib/api-error.test.ts:49 (mobile)
 - last seen: 2026-10-09T16:33:16Z
 
+### L-012 - A source-text gate assertion must pin the opening brace and the then-branch element (/\{flag \? \(\s*<Element/), because '!flag ?' contains 'flag ?' as a substring and a bare toContain cannot tell an inverted gate from a correct one.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `apps/mobile` · harmful: 0
+- features: tat-178-invite-actions
+- evidence: apps/mobile/components/MembersListContent.tsx:123 (apps/mobile)
+- last seen: 2026-10-09T21:01:25Z
+
+### L-013 - In apps/mobile a wiring proof that reads a definition proves nothing about the call site: assert over the useCallback body and over each prop binding at every mount site, or a swapped handler passes with the whole suite green.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `apps/mobile` · harmful: 0
+- features: tat-178-invite-actions
+- evidence: apps/mobile/lib/hooks/use-invite-share.ts:63 (apps/mobile)
+- last seen: 2026-10-09T21:01:25Z
+
+### L-014 - A callback a child hands UP (onSelect(option.role)) is a third wiring surface distinct from mount props and call sites; pinning what a screen passes down leaves it entirely unproven.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `apps/mobile` · harmful: 0
+- features: tat-178-invite-actions
+- evidence: apps/mobile/components/InviteRoleSheet.tsx:77 (apps/mobile)
+- last seen: 2026-10-09T21:01:25Z
+
+### L-015 - A source-text helper that pairs a handler with a glyph by ordinal position asserts order, not containment, and never covers the label; pair with both or the two buttons' labels can be swapped undetected.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `apps/mobile` · harmful: 0
+- features: tat-178-invite-actions
+- evidence: apps/mobile/lib/invite-share.test.ts:339 (apps/mobile)
+- last seen: 2026-10-09T21:01:25Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
