@@ -122,8 +122,8 @@ Proof: `pnpm --filter @tatame/mobile exec vitest run lib/pending-invite.test.ts 
 **C24** - `resolvePapelToRole` from `@tatame/types` returns `"student"` for `aluno`, `"instructor"` for `instrutor`, `"guardian"` for `responsavel`, and `null` for `"ALUNO"`, `" aluno"`, `""`, `undefined` and `["aluno"]` — 8 members, table-driven (AC 25)
 Proof: `pnpm --filter @tatame/mobile exec vitest run lib/invite-link.test.ts -t "resolves the shared papel vocabulary and nothing outside it"`
 
-**C25** - exactly one file in the repository contains the literal `instrutor: "instructor"`, and it is `packages/types/src/index.ts` (AC 26)
-Proof: `bash -c '[ "$(git grep -l "instrutor: \"instructor\"" | tr -d " ")" = "packages/types/src/index.ts" ]'`
+**C25** - exactly one file under `apps/` and `packages/` contains the literal `instrutor: "instructor"`, and it is `packages/types/src/index.ts` (AC 26)
+Proof: `bash -c '[ "$(git grep -l "instrutor: \"instructor\"" -- apps packages | tr -d " ")" = "packages/types/src/index.ts" ]'`
 
 **C26** - `apps/web`'s `resolveInviteRole` still maps the three tokens and still returns `null` for `undefined`, `""`, `"xyz"`, `"ALUNO"` and a 64-character string, now resolving through the shared module — TAT-176's own C17 and C18, re-run against the replaced implementation (AC 27)
 Proof: `pnpm --filter @tatame/web exec vitest run lib/invite.test.ts -t "maps each papel token to its role"`
@@ -158,7 +158,9 @@ Proof: `pnpm install --frozen-lockfile`
 
 - `validate_checks.py` warns that C25 and C28 name no test selector. Both are one-shot commands
   settling exactly one claim and nothing else, the same shape TAT-176 used for its C12: C25 is a
-  `git grep -l` equality against one path and fails the moment a second file spells the mapping,
+  `git grep -l` equality against one path and fails the moment a second source file spells the
+  mapping — scoped to `apps` and `packages`, which is AC 26's own scope and which keeps this very
+  file, where the literal appears in C25's own text, out of the result,
   and C28 is pnpm's own lockfile-vs-manifest comparison, which no test running inside the bundle
   can perform. Left as commands on purpose
 - Claims naming a config key, a URL or a returned string: C1-C6, C12, C13, C19, C25, C27 — each has a proof that crosses the boundary it claims. C1-C6 assert the config as `@expo/config` resolves it rather than as `app.json` spells it; C19 asserts string identity with `toBe`, not shape; C27 asserts a manifest a real `next build` produced
@@ -243,3 +245,45 @@ Android SHA-256 fingerprints, is `blocks go-live` and inherited from TAT-176 —
 satisfied on any device until the maintainer fills both in the deployment environment, and C1-C6
 are what is provable without them. Question 2, whether `ios.bundleIdentifier` stays
 `com.anonymous.tatame`, blocks nothing here.
+
+### Builder's close
+
+- **Boundary:** C1-C28 closed. `d7cb5a2` artifacts · `3346018` S1 + door 4 · `48ac7b4` S4 (doors 5
+  and the `@tatame/types` move) · `f0e39a4` S2 · `c7b85bd` S3. All 28 proofs green at `c7b85bd`,
+  each run individually by its own `-t` selector rather than only as part of a suite. Repo-wide:
+  873 API tests (739 unit, 134 integration, Docker up), 30 `apps/web`, 24 `apps/mobile` — 927
+  total. `pnpm typecheck` clean across all 13 tasks, `pnpm lint` 0 errors and 5 pre-existing
+  `apps/web` warnings, 0 new. `pnpm install --frozen-lockfile` green.
+- **Settled mid-build:** three answers from the maintainer, all at the plan or checks stop. The
+  `papel` vocabulary is **shared through `@tatame/types`**, overriding TAT-176's assumption that
+  it would be duplicated — that became door 5. The profile is `standard`. The five `Test policy`
+  rows stay in this file and do **not** go into `AGENTS.md`, so the build ran under them without
+  writing them. Nothing else needed a decision.
+- **Corrected before building:** C25's proof was scoped to `apps` and `packages`. As first
+  written, the `git grep` had no pathspec, so it matched this file — where the literal
+  `instrutor: "instructor"` appears inside C25's own text — and could never return one path. The
+  claim is unchanged and AC 26's scope is `apps/`; only the command's pathspec moved.
+- **Closed assumption:** `apps/web` needs **no** `transpilePackages: ["@tatame/types"]`. A real
+  `next build` consumes the ESM workspace package from `dist/` directly — 5 routes served,
+  C27 green. The plan's row said "add it only if the build complains"; it did not complain.
+- **Abandoned:** an `http`-scheme rejection branch in `parseInviteLink`. The host check already
+  refuses every host but the apex, and no operating system delivers an `http` link for a domain
+  whose association files are only reachable over `https`, so the branch would have been code no
+  proof could exercise — the same reason the plan gives for not accepting `www.`. Recorded beside
+  C14 instead.
+
+Two things found while building that are **not** in a check and were deliberately left alone:
+
+- **`apps/mobile` has no typecheck.** Its `typecheck` script is
+  `echo 'skipped: NativeWind className types need metro plugin'`, so nothing in CI typechecks the
+  four files this ticket adds. Run by hand, `tsc --noEmit` in `apps/mobile` reports 5 errors, all
+  pre-existing in files this ticket never touches — `(members)/[membershipId].tsx`,
+  `register-belt.tsx`, `DependentSelectionModal.tsx` and the `global.css` side-effect import — and
+  none in `invite-link.ts`, `pending-invite.ts`, `+native-intent.ts` or `link-config.test.ts`. The
+  plan put fixing the script out of scope, and the four new files being clean is a measurement, not
+  a check. Worth its own ticket: the 5 errors are a bounded list, and TAT-178 and TAT-191 both add
+  mobile code that nothing will typecheck either.
+- **`isDownloadLink` is classified as instrumentation** and has no proof of its own. It is one
+  string comparison over `extractLinkPath`'s output, reached only from `redirectSystemPath`, and
+  C17 and C18 are its consumer's proofs — `Test policy` row 5. Named here because the
+  classification is a judgment call a verifier should be able to contest rather than discover.
