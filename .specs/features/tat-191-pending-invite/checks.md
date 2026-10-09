@@ -3,7 +3,18 @@
 Profile: standard
 Plan: `.specs/features/tat-191-pending-invite/plan.md`
 
-45 checks in 5 slices · 5 one-way doors · 1 open question, which blocks go-live only
+46 checks in 5 slices · 6 one-way doors · 1 open question, which blocks go-live only
+
+Round 1 of verification came back FAIL and found four gaps, all of them about these artifacts
+rather than the code. They are fixed in place and marked `[round 1]`:
+
+- **C46 is new.** Door 6 was appended to the plan mid-build and `checks.md` never gained a check
+  for it, while this line still said "5 one-way doors" and the `Coverage` prose still listed
+  doors 1-5. The verifier's point was sharper than a missing row: `apps/mobile` has neither a real
+  `lint` nor a real `typecheck` - both scripts are `echo` stubs - so deleting one re-export line
+  breaks ten importers with the whole repository gate green.
+- **C16, C34 and C43 were each narrower than the criterion they carry.** Corrected to what they
+  meant, with the correction recorded beside each. No claim was weakened.
 
 Eight approved criteria have **no automated proof** and are covered by the manual roteiro in
 `## Manual`: AC 16, 33, 34, 35, the rendering halves of AC 41 and 42, AC 43's screen clause, and
@@ -59,8 +70,9 @@ Proof: `pnpm --filter @tatame/mobile exec vitest run lib/gatekeeper.test.ts -t "
 **C15** - Every combination of the 4 auth/role states x 4 membership states x 3 invite states returns a `string | null` route and a boolean, and throws on none of the 48 (AC 15)
 Proof: `pnpm --filter @tatame/mobile exec vitest run lib/gatekeeper.test.ts -t "never throws and always answers"`
 
-**C16** - Exactly one non-test file under `apps/mobile/app` and `apps/mobile/lib` imports `@/lib/gatekeeper`, and it is `app/(app)/index.tsx` (AC 17)
+**C16** - Exactly one non-test file under **every** source directory of `apps/mobile` - `app`, `components`, `constants`, `lib`, `scripts` - imports `@/lib/gatekeeper`, and it is `app/(app)/index.tsx` (AC 17)
 Proof: `pnpm --filter @tatame/mobile exec vitest run lib/gatekeeper.test.ts -t "has exactly one importer"`
+`[round 1]` The walk covered `app` and `lib` only, while AC 17 says "only importer". A second consumer appearing in `components/` - which already imports `ApiError` from `@/lib/api` - would not have been seen.
 
 ### S2 - the invite's lifetime · 4 files · 7 KB · ~2k
 
@@ -119,9 +131,10 @@ Proof: `pnpm --filter @tatame/mobile exec vitest run lib/invite-copy.test.ts -t 
 **C33** - A suggested role produces `"Você pode escolher outro perfil se preferir."` and no suggested role produces `"Selecione o seu perfil para continuar."` (AC 31)
 Proof: `pnpm --filter @tatame/mobile exec vitest run lib/invite-copy.test.ts -t "says the suggestion can be changed"`
 
-**C34** - `ROLE_LABELS` maps `student`, `instructor` and `guardian` to `"Aluno"`, `"Instrutor"` and `"Responsável"`, and `app/(onboarding)/user-type.tsx` reads that table instead of carrying any of the three literals (AC 32)
+**C34** - `ROLE_LABELS` maps `student`, `instructor` and `guardian` to `"Aluno"`, `"Instrutor"` and `"Responsável"`, and `app/(onboarding)/user-type.tsx` does not contain any of the three label texts **in any form** - quoted, templated, or as a bare JSX text node (AC 32)
 Proof: `pnpm --filter @tatame/mobile exec vitest run lib/invite-copy.test.ts -t "labels the three roles once"`
 Proof: `pnpm --filter @tatame/mobile exec vitest run lib/invite-copy.test.ts -t "is the only place the role step gets its labels"`
+`[round 1]` The search was for `"${label}"`, so a single-quoted literal or a JSX text node was a second copy it walked past. It now searches for the text itself.
 
 ### S4 - every dead end becomes a sentence in Brazilian Portuguese · 3 files · 7 KB · ~2k
 
@@ -149,8 +162,14 @@ Proof: `pnpm --filter @tatame/mobile exec vitest run lib/membership-errors.test.
 **C42** - Each of the 7 sentences contains at least one accented Brazilian Portuguese character, and none contains any substring of the English `HttpError` message the API sent in the same `ApiError` (AC 43)
 Proof: `pnpm --filter @tatame/mobile exec vitest run lib/membership-errors.test.ts -t "never leaks the API sentence"`
 
-**C43** - `app/(app)/(joining)/academy/[academyId].tsx` contains no `(joining)/pending-approval` destination, so both response statuses leave by `/(app)` (AC 44)
+**C43** - `academy/[academyId].tsx`'s `onSuccess` carries exactly one `router.replace`, it is `router.replace("/(app)")`, and the block mentions neither `data.status` nor `"active"` - so both response statuses leave by the same destination, and the screen contains no `(joining)/pending-approval` anywhere (AC 44)
 Proof: `pnpm --filter @tatame/mobile exec vitest run lib/membership-errors.test.ts -t "leaves the destination to the gatekeeper"`
+`[round 1]` The absence of the old destination was half the criterion: a screen that navigated nowhere on success would have passed it. The presence of exactly one destination, and the absence of any branch on the response status, are now asserted too.
+
+**C46** - `lib/api.ts`'s `ApiError` export is identical by reference to `lib/api-error.ts`'s class, `instanceof` holds in both directions across the two import paths, and at least 10 non-test files still import `ApiError` from `@/lib/api` (door 6)
+Proof: `pnpm --filter @tatame/mobile exec vitest run lib/api-error.test.ts -t "is the same class through lib/api as through lib/api-error"`
+Proof: `pnpm --filter @tatame/mobile exec vitest run lib/api-error.test.ts -t "keeps every existing importer compiling"`
+`[round 1]` New. Door 6 was appended to the plan mid-build and this file gained no check for it. `apps/mobile` has neither a real `lint` nor a real `typecheck` - `package.json:10` and `:11` are both `echo` stubs - so deleting the re-export line breaks ten importers while the whole repository gate stays green. `@clerk/clerk-expo` is doubled so `lib/api.ts` loads in the node harness at all, which proves the re-export behaviourally rather than by reading its bytes.
 
 ### S5 - what must not move · 0 new files · ~0k
 
@@ -184,6 +203,7 @@ Proof: `pnpm typecheck`
 | Brazilian Portuguese sentences (7) | C42, table-driven over all 7 | - |
 | AsyncStorage double, test assemblies (2) | `lib/pending-invite.test.ts` C17-C27 · `app/+native-intent.test.ts` C28 | - |
 | `+native-intent` outcomes still intact (3) | invite C28 · `/baixar` C28 · pass-through C28 | - |
+| door 6's two halves (2) | the class is one object through both paths C46 · the re-export that keeps 10 importers compiling C46 | - |
 
 - The plan's `Surface` is `None - nothing consumed outside`, so no route owes a status row. The two
   routes this feature calls, `GET /academies/:academyId/public` and `POST /memberships/requests`,
@@ -192,7 +212,8 @@ Proof: `pnpm typecheck`
 - `Relations` is `None - no stored-data shape change`, so no entity owes a check. Door 1's persisted
   shape is the one stored thing and it is covered by C18, C19 and C21
 - Every one-way door has a check: door 1 C18/C19/C21, door 2 C16, door 3 manual M1, door 4 manual M4,
-  door 5 the `clearInvite` row
+  door 5 the `clearInvite` row, door 6 C46. `[round 1]` This line stopped at door 5 while the plan
+  carried six - the omission the verifier found, and the reason C46 exists
 - No startup configuration changes. Nothing has to be true before the first render that is not true
   today; the one assembly-shaped set is the AsyncStorage double, and it has its row
 - Claims naming a status code: C35-C41, each proven by constructing the `ApiError` the mobile client
@@ -229,6 +250,13 @@ Evidence:
   6 branch points -> decides
 - `apps/mobile/lib/membership-errors.ts`: two dispatches, 6 classes and 3 classes, where the 409
   split turns on a second argument rather than on the status, 10 branch points -> decides
+- `apps/mobile/lib/api-error.ts`: a class with no conditional in it -> instrumentation by shape.
+  It still earns C46, because door 6's claim is not about behaviour inside the class but about the
+  re-export line that keeps ten importers compiling in a package whose `lint` and `typecheck` are
+  both `echo` stubs
+- `apps/mobile/lib/api-error-message.ts#describeApiError`: pre-existing, untouched, and
+  deliberately not reused - see the plan's `Flow`. Its own classification is not this feature's to
+  make
 - `apps/mobile/lib/hooks/use-pending-invite.ts`: forwards three store functions into
   `useSyncExternalStore` and kicks hydration in an effect, no conditional deciding a result ->
   instrumentation, covered by C17-C27

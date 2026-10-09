@@ -50,6 +50,30 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: .gitignore:12 (verification)
 - last seen: 2026-10-09T14:46:33Z
 
+### L-007 - Give every one-way door in the plan a check of its own, including a door discovered during the build after the checks were frozen
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `planning` · harmful: 0
+- features: tat-191-pending-invite
+- evidence: .specs/features/tat-191-pending-invite/plan.md Landing door 6 (planning)
+- last seen: 2026-10-09T16:18:26Z
+
+### L-008 - Never count pnpm lint or pnpm typecheck as a proof for apps/mobile: both scripts are echo stubs, so only its vitest files gate it
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `mobile` · harmful: 0
+- features: tat-191-pending-invite
+- evidence: apps/mobile/package.json:10 (mobile)
+- last seen: 2026-10-09T16:18:26Z
+
+### L-009 - Assert the destination a success path navigates to, not only the absence of the destination it replaced
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `mobile` · harmful: 0
+- features: tat-191-pending-invite
+- evidence: apps/mobile/lib/membership-errors.test.ts:132 (mobile)
+- last seen: 2026-10-09T16:18:26Z
+
+### L-010 - A source-text assertion must match the bare token across every source directory its criterion names, not a quoted form under some of them
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `mobile` · harmful: 0
+- features: tat-191-pending-invite
+- evidence: apps/mobile/lib/invite-copy.test.ts:79 (mobile)
+- last seen: 2026-10-09T16:18:26Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

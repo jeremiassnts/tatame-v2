@@ -32,6 +32,16 @@ The invite does not get a second set of routing rules: `app/(app)/index.tsx` alr
 state, role, membership and membership status and already drives every destination with
 `router.replace`, so this feature changes what those existing rules decide, not where they live.
 
+One thing this does **not** reuse, and the reason belongs here rather than in a commit message:
+`lib/api-error-message.ts#describeApiError` (TAT-186) already turns an `ApiError` into a sentence,
+and `lib/membership-errors.ts` is a second module next to it on purpose. `describeApiError` falls
+back to `error.message` for any uncoded failure that is not in its `TRANSLATED` allowlist, and all
+three membership failures are uncoded - so it would answer `"You already have an active academy
+membership; leave before joining another"`, which is the exact defect AC 43 forbids. More decisive:
+the two 409s are told apart by whether `/users/me` reports a membership, and `describeApiError` sees
+only the error. Widening it to take a second argument would change the sentence on fifteen screens
+that never asked for it.
+
 1. OS URL -> `app/+native-intent.ts` (exists) - `parseInviteLink`, `setPendingInvite`, returns `/`
 2. `lib/pending-invite.ts` (exists, changes) - holds the invite in module state **and** mirrors it
    to AsyncStorage under one key (door 1); exposes a synchronous snapshot, a subscription, and a

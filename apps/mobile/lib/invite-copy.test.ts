@@ -75,8 +75,12 @@ describe("the role labels", () => {
     const screen = readFileSync(USER_TYPE_SCREEN, "utf8");
 
     expect(screen).toContain("ROLE_LABELS");
+
+    // The label text in any form, not only double-quoted: a single-quoted
+    // literal, a template literal, or a bare JSX text node would each be a
+    // second copy that a `"${label}"` search walks straight past.
     for (const label of Object.values(ROLE_LABELS)) {
-      expect(screen, label).not.toContain(`"${label}"`);
+      expect(screen, label).not.toContain(label);
     }
   });
 });

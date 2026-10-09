@@ -286,8 +286,12 @@ describe("resolveGatekeeperRoute", () => {
       }
     };
 
-    walk(join(root, "app"));
-    walk(join(root, "lib"));
+    // Every directory that holds source, not just the two the module happens to
+    // sit between. `components/` already imports `ApiError` from `@/lib/api`,
+    // so it is somewhere a second consumer could plausibly appear.
+    for (const dir of ["app", "components", "constants", "lib", "scripts"]) {
+      walk(join(root, dir));
+    }
 
     expect(importers).toEqual(["app/(app)/index.tsx"]);
   });

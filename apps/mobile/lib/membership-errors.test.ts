@@ -129,6 +129,20 @@ describe("the sentences themselves", () => {
     // Both response statuses now leave by `/(app)`. A second destination in
     // this screen is a second copy of the membership rules.
     const screen = readFileSync(ACADEMY_SCREEN, "utf8");
+
     expect(screen).not.toContain("(joining)/pending-approval");
+
+    // The absence alone was half of AC 44: a screen that navigated nowhere on
+    // success would pass it. `onSuccess` has to carry exactly one destination
+    // and it has to be the app root, with no branch on `data.status`.
+    const onSuccess = screen.slice(
+      screen.indexOf("onSuccess:"),
+      screen.indexOf("onError:"),
+    );
+
+    expect(onSuccess).toContain('router.replace("/(app)")');
+    expect(onSuccess.match(/router\.replace\(/g)).toHaveLength(1);
+    expect(onSuccess).not.toContain("data.status");
+    expect(onSuccess).not.toContain('"active"');
   });
 });
