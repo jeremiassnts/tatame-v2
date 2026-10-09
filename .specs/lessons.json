@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 3,
+  "next_id": 7,
   "lessons": [
     {
       "id": "L-001",
@@ -40,6 +40,78 @@
       ],
       "created": "2026-10-08T21:45:39Z",
       "last_seen": "2026-10-08T21:45:39Z"
+    },
+    {
+      "id": "L-003",
+      "key": "surviving_mutant::a one comparison predicate is still a decision classifying isdownloadlink as instrumentation left its query string strip with no proof and deleting it kept the whole suite green",
+      "text": "A one-comparison predicate is still a decision: classifying isDownloadLink as instrumentation left its query-string strip with no proof, and deleting it kept the whole suite green",
+      "signal": "surviving_mutant",
+      "scope": "apps/mobile",
+      "status": "candidate",
+      "features": [
+        "tat-177-universal-links"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "apps/mobile/lib/invite-link.ts:111 (apps/mobile)"
+      ],
+      "created": "2026-10-09T14:46:33Z",
+      "last_seen": "2026-10-09T14:46:33Z"
+    },
+    {
+      "id": "L-004",
+      "key": "ac_gap::when one function refuses several bad inputs name which guard refuses each c14 s five inputs all died in new url or the segment guard leaving the decodeuricomponent catch unproven",
+      "text": "When one function refuses several bad inputs, name which guard refuses each: C14's five inputs all died in new URL or the segment guard, leaving the decodeURIComponent catch unproven",
+      "signal": "ac_gap",
+      "scope": "apps/mobile",
+      "status": "candidate",
+      "features": [
+        "tat-177-universal-links"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C14 / apps/mobile/lib/invite-link.ts:91 (apps/mobile)"
+      ],
+      "created": "2026-10-09T14:46:33Z",
+      "last_seen": "2026-10-09T14:46:33Z"
+    },
+    {
+      "id": "L-005",
+      "key": "spec_precision_gap::a criterion forbidding two string literals from co occurring in a package is unsatisfiable because the test that asserts the mapping must write both claim the single module instead",
+      "text": "A criterion forbidding two string literals from co-occurring in a package is unsatisfiable, because the test that asserts the mapping must write both; claim the single module instead",
+      "signal": "spec_precision_gap",
+      "scope": "plan",
+      "status": "candidate",
+      "features": [
+        "tat-177-universal-links"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "AC 26 (plan)"
+      ],
+      "created": "2026-10-09T14:46:33Z",
+      "last_seen": "2026-10-09T14:46:33Z"
+    },
+    {
+      "id": "L-006",
+      "key": "spec_deviation::check the premise before writing down a reason for declining a verifier sharpening the claim that gitignore missed apps mobile ios was false and round 2 caught it",
+      "text": "Check the premise before writing down a reason for declining a verifier sharpening: the claim that gitignore missed apps/mobile/ios was false and round 2 caught it",
+      "signal": "spec_deviation",
+      "scope": "verification",
+      "status": "candidate",
+      "features": [
+        "tat-177-universal-links"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        ".gitignore:12 (verification)"
+      ],
+      "created": "2026-10-09T14:46:33Z",
+      "last_seen": "2026-10-09T14:46:33Z"
     }
   ]
 }

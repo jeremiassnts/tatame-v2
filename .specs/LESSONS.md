@@ -26,6 +26,30 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: C13 (web-pages)
 - last seen: 2026-10-08T21:45:39Z
 
+### L-003 - A one-comparison predicate is still a decision: classifying isDownloadLink as instrumentation left its query-string strip with no proof, and deleting it kept the whole suite green
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `apps/mobile` · harmful: 0
+- features: tat-177-universal-links
+- evidence: apps/mobile/lib/invite-link.ts:111 (apps/mobile)
+- last seen: 2026-10-09T14:46:33Z
+
+### L-004 - When one function refuses several bad inputs, name which guard refuses each: C14's five inputs all died in new URL or the segment guard, leaving the decodeURIComponent catch unproven
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `apps/mobile` · harmful: 0
+- features: tat-177-universal-links
+- evidence: C14 / apps/mobile/lib/invite-link.ts:91 (apps/mobile)
+- last seen: 2026-10-09T14:46:33Z
+
+### L-005 - A criterion forbidding two string literals from co-occurring in a package is unsatisfiable, because the test that asserts the mapping must write both; claim the single module instead
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `plan` · harmful: 0
+- features: tat-177-universal-links
+- evidence: AC 26 (plan)
+- last seen: 2026-10-09T14:46:33Z
+
+### L-006 - Check the premise before writing down a reason for declining a verifier sharpening: the claim that gitignore missed apps/mobile/ios was false and round 2 caught it
+- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `verification` · harmful: 0
+- features: tat-177-universal-links
+- evidence: .gitignore:12 (verification)
+- last seen: 2026-10-09T14:46:33Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
