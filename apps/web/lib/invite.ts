@@ -1,22 +1,11 @@
-export type InviteRole = "student" | "instructor" | "guardian";
+import { resolvePapelToRole, type InviteRole } from "@tatame/types";
+
+export type { InviteRole };
 
 export type PublicAcademy = {
   id: string;
   name: string;
   logoUrl: string | null;
-};
-
-/**
- * The link vocabulary, fixed by TAT-175: `?papel=aluno|instrutor|responsavel`.
- * It is Portuguese because the manager pastes the link and the invited person
- * reads it, and it is closed because TAT-177 and TAT-191 parse the same token
- * — once links are circulating in group chats, neither the names nor the
- * spelling can change.
- */
-const PAPEL_TO_ROLE: Record<string, InviteRole> = {
-  aluno: "student",
-  instrutor: "instructor",
-  responsavel: "guardian",
 };
 
 export const ROLE_LABELS: Record<InviteRole, string> = {
@@ -26,17 +15,11 @@ export const ROLE_LABELS: Record<InviteRole, string> = {
 };
 
 /**
- * A suggestion, never a lock: an unrecognised token degrades to "no suggested
- * role" and the invite still works. Matching is exact — the token is always
- * produced by the app, never typed by hand, so accepting `ALUNO` would only
- * widen what the three other tickets have to agree on.
+ * The table and the exact-match rule live in `@tatame/types`, because the
+ * mobile app parses the same token out of the same link (TAT-177). This stays
+ * as the name the page already imports.
  */
-export function resolveInviteRole(
-  papel: string | string[] | undefined,
-): InviteRole | null {
-  if (typeof papel !== "string") return null;
-  return PAPEL_TO_ROLE[papel] ?? null;
-}
+export const resolveInviteRole = resolvePapelToRole;
 
 export type InviteView =
   | { kind: "ok"; academy: PublicAcademy; role: InviteRole | null }

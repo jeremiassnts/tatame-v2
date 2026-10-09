@@ -6,6 +6,49 @@ export const Role = {
 } as const;
 export type Role = (typeof Role)[keyof typeof Role];
 
+/**
+ * The three roles a person can be invited into an academy as. `manager` is
+ * excluded on purpose: a manager owns an academy rather than joining one, so
+ * there is no invite link that could produce one.
+ */
+export type InviteRole = Exclude<Role, typeof Role.Manager>;
+
+/**
+ * The invite-link vocabulary, fixed by TAT-175: `?papel=aluno|instrutor|responsavel`.
+ *
+ * It is Portuguese because the manager pastes the link and the invited person
+ * reads it, and it is closed because the web invite page and the mobile app
+ * both parse it — once links are circulating in group chats, neither the names
+ * nor the spelling can change.
+ *
+ * This table lives here, in exactly one module, rather than once per consumer.
+ * The part that must not drift is not the three pairs, it is the matching rule
+ * below: `ALUNO` is not `aluno`, ` aluno` is not `aluno`, and there are no
+ * aliases. Two copies of the table are two places to decide that again.
+ */
+export const PAPEL_TO_ROLE: Record<string, InviteRole> = {
+  aluno: "student",
+  instrutor: "instructor",
+  responsavel: "guardian",
+};
+
+/**
+ * A suggestion, never a lock: an unrecognised token degrades to "no suggested
+ * role" and the invite still works. Matching is exact — the token is always
+ * produced by the app, never typed by hand, so accepting `ALUNO` would only
+ * widen what every consumer has to agree on.
+ *
+ * `string[]` is accepted because a repeated query parameter (`?papel=a&papel=b`)
+ * arrives as an array in Next's `searchParams`; it resolves to `null` rather
+ * than to whichever half won.
+ */
+export function resolvePapelToRole(
+  papel: string | string[] | null | undefined,
+): InviteRole | null {
+  if (typeof papel !== "string") return null;
+  return PAPEL_TO_ROLE[papel] ?? null;
+}
+
 export const MembershipStatus = {
   Pending: "pending",
   Active: "active",

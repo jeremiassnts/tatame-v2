@@ -10,6 +10,9 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.anonymous.tatame",
+      "associatedDomains": [
+        "applinks:apptatame.com.br"
+      ],
       "icon": "./assets/images/apple-icon.png",
       "infoPlist": {
         "NSCameraUsageDescription": "Este app precisa de acesso à câmera para capturar fotos e vídeos.",
@@ -31,6 +34,28 @@
         "backgroundColor": "#0C0C0C"
       },
       "package": "com.anonymous.tatame",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ],
+          "data": [
+            {
+              "scheme": "https",
+              "host": "apptatame.com.br",
+              "pathPrefix": "/convite/"
+            },
+            {
+              "scheme": "https",
+              "host": "apptatame.com.br",
+              "path": "/baixar"
+            }
+          ]
+        }
+      ],
       "versionCode": 2,
       "permissions": [
         "android.permission.CAMERA"
