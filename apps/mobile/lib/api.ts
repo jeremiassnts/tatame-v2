@@ -66,6 +66,27 @@ export class ApiError extends Error {
   }
 }
 
+export type PublicAcademy = {
+  id: string;
+  name: string;
+  logoUrl: string | null;
+};
+
+/**
+ * The three fields an unauthenticated caller may read, from the route TAT-176
+ * added for the web invite page.
+ *
+ * Used by `(onboarding)/user-type`, which runs before any membership exists:
+ * the authenticated `GET /academies/:academyId` would answer there too, but it
+ * returns the whole row - `pixKey` and the contact details included - and the
+ * screen needs a name.
+ */
+export async function getPublicAcademy(
+  academyId: string,
+): Promise<PublicAcademy> {
+  return request<PublicAcademy>(`/academies/${academyId}/public`);
+}
+
 const MAX_SYNC_RETRIES = 3;
 
 /**
