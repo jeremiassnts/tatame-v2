@@ -1,12 +1,12 @@
 import { FilterTabs } from "@/components/FilterTabs";
+import { InviteHeaderActions } from "@/components/InviteHeaderActions";
 import { InviteRoleSheet } from "@/components/InviteRoleSheet";
 import { MemberCard } from "@/components/MemberCard";
 import { useAcademyContext } from "@/lib/academy-context";
 import { useInviteShare } from "@/lib/hooks/use-invite-share";
 import { useMembers } from "@/lib/hooks/use-membership";
-import { INVITE_LABEL } from "@/lib/invite-share";
 import { useRouter } from "expo-router";
-import { ArrowLeft, Search, Share2, UserPlus } from "lucide-react-native";
+import { ArrowLeft, Search } from "lucide-react-native";
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -121,24 +121,10 @@ export function MembersListContent({
           {/* The two actions are wider than the 40px the title is centred
               against, so the spacer stays for every consumer that has none. */}
           {showInviteActions ? (
-            <View className="flex-row items-center" style={{ gap: 8 }}>
-              <Pressable
-                onPress={invite.shareApp}
-                className="h-10 w-10 items-center justify-center rounded-xl border border-surface-border bg-surface"
-              >
-                <Share2 size={18} color="#FFFFFF" />
-              </Pressable>
-              <Pressable
-                onPress={invite.openPicker}
-                className="h-10 flex-row items-center rounded-xl bg-accent px-3"
-                style={{ gap: 6 }}
-              >
-                <UserPlus size={16} color="#FFFFFF" />
-                <Text className="font-poppins-semibold text-sm text-white">
-                  {INVITE_LABEL}
-                </Text>
-              </Pressable>
-            </View>
+            <InviteHeaderActions
+              onInvitePress={invite.openPicker}
+              onShareAppPress={invite.shareApp}
+            />
           ) : (
             <View className="h-10 w-10" />
           )}

@@ -22,6 +22,7 @@ import {
   type InviteRole,
 } from "@tatame/types";
 import { describe, expect, it, vi } from "vitest";
+import { ROLE_LABELS } from "@/lib/invite-copy";
 import { parseInviteLink } from "@/lib/invite-link";
 import {
   APP_DOWNLOAD_URL,
@@ -57,6 +58,17 @@ describe("the role options", () => {
       "Instrutor",
       "Responsável",
     ]);
+
+    // And from `ROLE_LABELS`, not a second copy of the same three words: the
+    // invited person reads them again on `(onboarding)/user-type` after
+    // following the link, and the two disagreeing is what nobody notices.
+    const module = read("lib/invite-share.ts");
+    expect(module).toContain("ROLE_LABELS.student");
+    expect(module).toContain("ROLE_LABELS.instructor");
+    expect(module).toContain("ROLE_LABELS.guardian");
+    for (const label of Object.values(ROLE_LABELS)) {
+      expect(module, label).not.toContain(label);
+    }
   });
 
   /** C3 */
@@ -296,6 +308,24 @@ const WELCOME_CARD = "components/InviteWelcomeCard.tsx";
 const SELECTION_CARD = "components/SelectionCard.tsx";
 const DEPENDENT_SHEET = "components/DependentSelectionModal.tsx";
 
+const occurrences = (haystack: string, needle: string) =>
+  haystack.split(needle).length - 1;
+
+/**
+ * The manager home's `Ações rápidas` block alone.
+ *
+ * Several assertions below need to say *which* element carries a handler, and
+ * the same handler appears on the welcome card above this block and in the
+ * picker mounted below it. A file-wide `toContain` cannot tell them apart.
+ */
+function quickActionsRegion(home: string): string {
+  const from = home.indexOf("Ações rápidas");
+  const to = home.indexOf("Aulas de hoje");
+  expect(from, "Ações rápidas heading").toBeGreaterThan(-1);
+  expect(to, "Aulas de hoje heading").toBeGreaterThan(from);
+  return home.slice(from, to);
+}
+
 /** Every TypeScript source file the app ships, relative to `apps/mobile`. */
 function sourceFiles(): string[] {
   const found: string[] = [];
@@ -325,6 +355,26 @@ describe("who gets the invite actions", () => {
     expect(read(MANAGER_MEMBERS)).toContain("showInviteActions");
     expect(read(INSTRUCTOR_MEMBERS)).not.toContain("showInviteActions");
     expect(read(STUDENT_MEMBERS)).not.toContain("showInviteActions");
+  });
+
+  /** C26 */
+  it("the actions sit in the true branch of the gate", () => {
+    const members = read(MEMBERS_LIST);
+
+    // `{showInviteActions ? (<InviteHeaderActions` — the leading brace is what
+    // rejects `!showInviteActions`, which contains the positive form as a
+    // substring and would otherwise read identically. Naming the element in
+    // the then-position is what rejects the two branches being swapped. Both
+    // mutations invert AC 4 exactly: actions on the instructor and student
+    // lists, none on the manager's.
+    expect(members).toMatch(
+      /\{showInviteActions \? \(\s*<InviteHeaderActions/,
+    );
+    expect(members).toMatch(/\{showInviteActions \? \(\s*<InviteRoleSheet/);
+    expect(members).not.toContain("!showInviteActions");
+
+    // Exactly the two gate sites, so a third one cannot appear unproven.
+    expect(occurrences(members, "showInviteActions ?")).toBe(2);
   });
 });
 
@@ -366,9 +416,21 @@ describe("the manager home quick actions", () => {
 
   it("the fifth quick action opens the shared picker", () => {
     const home = read(MANAGER_HOME);
+    const quickActions = quickActionsRegion(home);
 
-    expect(home).toContain("INVITE_QUICK_ACTION_LABEL");
-    expect(home).toContain("invite.openPicker");
+    // Scoped to the region, because `invite.openPicker` is also the welcome
+    // card's handler further up the screen — a file-wide `toContain` cannot say
+    // which element carries it.
+    expect(occurrences(quickActions, "invite.openPicker")).toBe(1);
+    expect(occurrences(quickActions, "INVITE_QUICK_ACTION_LABEL")).toBe(1);
+
+    // And on the same `Pressable`: no closing tag may sit between the handler
+    // and the label it belongs to.
+    const handlerAt = quickActions.indexOf("invite.openPicker");
+    const labelAt = quickActions.indexOf("INVITE_QUICK_ACTION_LABEL");
+    expect(handlerAt).toBeLessThan(labelAt);
+    expect(quickActions.slice(handlerAt, labelAt)).not.toContain("</Pressable>");
+
     expect(home).toContain("InviteRoleSheet");
     // Only the hook may reach for the native module.
     expect(home).not.toContain("Share.share");
@@ -438,7 +500,7 @@ describe("the native share module", () => {
   });
 });
 
-/** C22 */
+/** C22, C24 */
 describe("the check-in sheet is untouched", () => {
   it("the check-in sheet passes no description", () => {
     const card = read(SELECTION_CARD);
@@ -447,5 +509,69 @@ describe("the check-in sheet is untouched", () => {
     expect(card).toContain("Icon = User");
 
     expect(read(DEPENDENT_SHEET)).not.toContain("description");
+  });
+
+  it("the card renders the icon it is handed, and a description outranks the belt line", () => {
+    const card = read(SELECTION_CARD);
+
+    // The glyph comes from the prop, not from the hardcoded `User` the card
+    // showed before — swapping it back makes all three picker rows identical.
+    expect(card).toMatch(/<Icon size=\{20\}/);
+    expect(card).not.toMatch(/<User size=/);
+
+    // And the description wins when a row carries both, which is the ternary's
+    // whole content. Swapping the arms puts the belt dot on a role row and
+    // hides every description.
+    expect(card).toMatch(
+      /\{description \? \([\s\S]{0,300}\) : beltSub \? \(/,
+    );
+  });
+});
+
+/** C23 */
+describe("the hook's wiring", () => {
+  it("each action is wired to its own message", () => {
+    const hook = read("lib/hooks/use-invite-share.ts");
+
+    // Swapping the two — the app message going out as the invite — is
+    // invisible to every other assertion in this file.
+    expect(hook).toMatch(
+      /shareApp[\s\S]{0,200}?shareMessage\(\s*APP_SHARE_MESSAGE/,
+    );
+    expect(hook).toMatch(
+      /shareInvite[\s\S]{0,300}?shareMessage\(\s*inviteShareMessage\(/,
+    );
+    expect(hook).toContain("buildInviteUrl(academyId, role)");
+    expect(occurrences(hook, "APP_SHARE_MESSAGE")).toBe(2); // the import and the one use
+    expect(occurrences(hook, "inviteShareMessage")).toBe(2);
+  });
+});
+
+/** C25 */
+describe("the picker's glyphs", () => {
+  it("each role gets its own glyph", () => {
+    const sheet = read(ROLE_SHEET);
+
+    const table = sheet.slice(
+      sheet.indexOf("ROLE_ICONS"),
+      sheet.indexOf("};", sheet.indexOf("ROLE_ICONS")),
+    );
+    const glyphs = ROLES.map((role) => {
+      const match = table.match(new RegExp(`${role}:\\s*(\\w+)`));
+      expect(match, role).not.toBeNull();
+      return match![1];
+    });
+
+    // Three distinct glyphs: one shared avatar across all three rows is the
+    // state the `Icon` prop exists to leave behind.
+    expect(new Set(glyphs).size).toBe(3);
+    for (const glyph of glyphs) {
+      expect(sheet, glyph).toMatch(
+        new RegExp(`import \\{[^}]*\\b${glyph}\\b[^}]*\\} from "lucide-react-native"`),
+      );
+    }
+
+    // And handed to the card rather than decided inside it.
+    expect(sheet).toContain("Icon={ROLE_ICONS[option.role]}");
   });
 });

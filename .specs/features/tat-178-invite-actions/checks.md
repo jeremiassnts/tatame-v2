@@ -3,7 +3,7 @@
 Profile: standard
 Plan: `.specs/features/tat-178-invite-actions/plan.md`
 
-22 checks in 4 slices · 3 one-way doors · 1 open, of which 0 block (1 blocks go-live)
+26 checks in 5 slices · 3 one-way doors · 1 open, of which 0 block (1 blocks go-live)
 
 Every proof below runs from the repository root and assumes `pnpm --filter @tatame/types build`
 has run once, the way CI's `pnpm build` step does before `pnpm test:unit`. Baseline before this
@@ -122,21 +122,48 @@ Proof: `pnpm --filter @tatame/mobile exec vitest run lib/invite-share.test.ts -t
 none, so the check-in sheet is unchanged (Impact row)
 Proof: `pnpm --filter @tatame/mobile exec vitest run lib/invite-share.test.ts -t "the check-in sheet passes no description"`
 
+### S5 - Gaps verification round 1 found · 4 files · 14 KB · ~4k
+
+Added after round 1 reported a surviving mutant and three enumerations with no row. Every claim
+above is unchanged; these close what their proofs left reachable.
+
+**C23** - `lib/hooks/use-invite-share.ts` wires `APP_SHARE_MESSAGE` to the share-app action and
+`inviteShareMessage` to the invite action - not the other way round - and hands `shareMessage`
+only a `message` (door 2)
+Proof: `pnpm --filter @tatame/mobile exec vitest run lib/invite-share.test.ts -t "each action is wired to its own message"`
+
+**C24** - `SelectionCard` renders the `Icon` it is handed, and `description` takes precedence
+over the belt line when a row carries both (Impact row)
+Proof: `pnpm --filter @tatame/mobile exec vitest run lib/invite-share.test.ts -t "the card renders the icon it is handed, and a description outranks the belt line"`
+
+**C25** - `InviteRoleSheet` maps all three roles to three distinct glyphs and hands each one to
+`SelectionCard`, so the rows are not three copies of the same avatar (AC 1)
+Proof: `pnpm --filter @tatame/mobile exec vitest run lib/invite-share.test.ts -t "each role gets its own glyph"`
+
+**C26** - `MembersListContent` renders `InviteHeaderActions` in the **true** branch of the
+`showInviteActions` gate and `InviteRoleSheet` in the true branch of its own, so neither an
+inverted gate nor swapped branches survives (AC 4)
+Proof: `pnpm --filter @tatame/mobile exec vitest run lib/invite-share.test.ts -t "the actions sit in the true branch of the gate"`
+
 ## Coverage
 
 | Set (size) | Member -> proof | Unproven |
 | --- | --- | --- |
 | `InviteRole` -> `papel` token (3) | C18, table-driven over all 3; and `student` C2 · `instructor` C2 · `guardian` C2 | - |
 | role picker rows (3) | `Aluno` C1 · `Instrutor` C1 · `Responsável` C1, C3 | - |
-| entry points (3) | members header C4 · home quick action C10, C11 · welcome card C14 | - |
-| share actions (2) | invite C2, C15 · share-app C5 | - |
+| entry points (3) | members header C4, C26 · home quick action C10, C11 · welcome card C14 | - |
+| share actions (2) | invite C2, C15, C23 · share-app C5, C23 | - |
 | `MembersListContent` consumers (3) | manager C4 · instructor C4 · student C4 | - |
 | share-sheet outcomes (3) | `sharedAction` C9 · `dismissedAction` C6 · rejection C7 | - |
 | welcome-card threshold edges (4) | no data C12 · `1` C13 · `4` C13 · `5` C13 | - |
 | new button labels (3) | `Convidar` C19 · `Compartilhar app` C19 · `Convidar\nmembro` C19 | - |
 | message definitions (2) | invite C15, C16, C17 · app C5, C17 | - |
 | academy-name states in the invite message (4) | named C15 · `""` C16 · `null` C16 · `undefined` C16 | - |
-| one-way doors (3) | door 1 C18 · door 2 C21 · door 3 C20 | - |
+| one-way doors (3) | door 1 C18 · door 2 C9, C23 · door 3 C20 | - |
+| pure-module constraint (1) | `lib/invite-share.ts` imports no native runtime C21 | - |
+| role glyphs in the picker (3) | `student` C25 · `instructor` C25 · `guardian` C25 | - |
+| `SelectionCard`'s new props (2) | `description` C22, C24 · `Icon` C24, C25 | - |
+| `showInviteActions` gate sites (2) | header actions C26 · picker mount C26 | - |
 
 - No check here claims a status code, a route or a response shape: this feature makes no request
   and adds no route (plan `Surface`: `None - nothing consumed outside`). Both URLs it produces are
@@ -171,6 +198,13 @@ Evidence:
   conditional -> **pure presentation**
 - `components/InviteWelcomeCard.tsx`: renders a sentence and two buttons from props, no
   conditional -> **pure presentation**
+- `components/InviteHeaderActions.tsx`: renders two buttons from props, no conditional ->
+  **pure presentation**; it exists as a named element precisely so C26 can pin which branch of
+  the `showInviteActions` gate it sits in
+- `components/SelectionCard.tsx`: 1 new conditional, picking which of two prop-derived lines to
+  render - it changes no outcome and reaches nothing, so **pure presentation**. The precedence
+  it decides is still selector-reachable in principle and nothing in this repo can render it, so
+  it is pinned in source text instead (C24) rather than left under a blanket exemption
 - `app/(app)/(manager)/(home)/index.tsx`: one new conditional, whose predicate is
   `shouldShowInviteWelcome` -> the decision is in the pure module (C12, C13); the screen is
   **instrumentation** and gets the source-text assertion (C14)
@@ -180,7 +214,7 @@ Evidence:
   assertion that stops a screen keeping a second copy of the copy. `lib/invite-link.ts` with 12
   cases is the second.
 
-Cost: 22 proofs in one new test file, 19 of them pure and 7 source-text. Without these rows the
+Cost: 26 proofs in one new test file, 19 of them pure and 14 source-text. Without these rows the
 `papel` table, the threshold boundary and the dismiss-vs-reject branch would be proven only by a
 manual tap on a device, which is the one thing the open question already says no test reaches.
 
