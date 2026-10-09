@@ -1,9 +1,12 @@
 import { FilterTabs } from "@/components/FilterTabs";
+import { InviteRoleSheet } from "@/components/InviteRoleSheet";
 import { MemberCard } from "@/components/MemberCard";
 import { useAcademyContext } from "@/lib/academy-context";
+import { useInviteShare } from "@/lib/hooks/use-invite-share";
 import { useMembers } from "@/lib/hooks/use-membership";
+import { INVITE_LABEL } from "@/lib/invite-share";
 import { useRouter } from "expo-router";
-import { ArrowLeft, Search } from "lucide-react-native";
+import { ArrowLeft, Search, Share2, UserPlus } from "lucide-react-native";
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -45,6 +48,12 @@ type MembersListContentProps = {
   getMemberDetailHref?: (membershipId: string) => string;
   getDependentDetailHref?: (dependentId: string, guardianName?: string | null, guardianMembershipId?: string | null) => string;
   tabs?: { key: string; label: string }[];
+  /**
+   * Manager-only. This component backs the instructor and student member lists
+   * too, and neither of them may offer an invite, so the actions are opt-in
+   * rather than opt-out: a new consumer gets no invite button by default.
+   */
+  showInviteActions?: boolean;
   /** Applied after API results (e.g. hide managers on instructor list). */
   additionalFilter?: (m: MemberWithGraduation) => boolean;
 };
@@ -56,9 +65,11 @@ export function MembersListContent({
   getMemberDetailHref,
   getDependentDetailHref,
   tabs = DEFAULT_TABS,
+  showInviteActions = false,
   additionalFilter,
 }: MembersListContentProps) {
   const router = useRouter();
+  const invite = useInviteShare();
   const { academyId } = useAcademyContext();
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -106,7 +117,31 @@ export function MembersListContent({
           )}
 
           <Text className="font-poppins-bold text-lg text-primary">{title}</Text>
-          <View className="h-10 w-10" />
+
+          {/* The two actions are wider than the 40px the title is centred
+              against, so the spacer stays for every consumer that has none. */}
+          {showInviteActions ? (
+            <View className="flex-row items-center" style={{ gap: 8 }}>
+              <Pressable
+                onPress={invite.shareApp}
+                className="h-10 w-10 items-center justify-center rounded-xl border border-surface-border bg-surface"
+              >
+                <Share2 size={18} color="#FFFFFF" />
+              </Pressable>
+              <Pressable
+                onPress={invite.openPicker}
+                className="h-10 flex-row items-center rounded-xl bg-accent px-3"
+                style={{ gap: 6 }}
+              >
+                <UserPlus size={16} color="#FFFFFF" />
+                <Text className="font-poppins-semibold text-sm text-white">
+                  {INVITE_LABEL}
+                </Text>
+              </Pressable>
+            </View>
+          ) : (
+            <View className="h-10 w-10" />
+          )}
         </View>
 
         <View className="flex-row items-center gap-2.5 rounded-xl border border-surface-border bg-surface px-4">
@@ -171,6 +206,14 @@ export function MembersListContent({
           />
         )}
       </View>
+
+      {showInviteActions ? (
+        <InviteRoleSheet
+          visible={invite.pickerVisible}
+          onClose={invite.closePicker}
+          onSelect={invite.selectRole}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }

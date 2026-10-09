@@ -213,3 +213,15 @@ manual tap on a device, which is the one thing the open question already says no
 - S1 = 20 KB -> ~5k; S2 adds 14 KB -> ~9k; S3 adds 16 KB -> ~13k; S4 adds 11 KB -> ~16k, counting
   `wc -c` over the 9 existing files touched plus the 5 new ones, divided by four. 16k against the
   150k budget - **one builder**, no cut.
+- **Boundary:** C1-C22 closed. All 22 proofs green in `apps/mobile/lib/invite-share.test.ts`
+  (29 tests); the mobile suite went 71 -> 100 tests, 9 files, all passing. `pnpm build` and
+  `pnpm test:unit` green across the monorepo. `npx tsc --noEmit` in `apps/mobile` reports the
+  same 5 pre-existing errors `.specs/STATE.md` already records and none in a file this feature
+  wrote.
+- **Settled mid-build:** the entry-point layout - members header carries both actions, `Ações
+  rápidas` gains one card, the welcome card carries both (the user chose this over putting both
+  in the grid). Nothing else needed a decision.
+- **Abandoned:** nothing. Two early comments had to be reworded rather than the checks relaxed:
+  `lib/invite-share.ts` named `react-native` in prose and `components/InviteRoleSheet.tsx` named
+  `ModalSelect` in prose, and C21 and C8 are whole-file assertions on purpose - a file that never
+  names either module cannot quietly start importing it.

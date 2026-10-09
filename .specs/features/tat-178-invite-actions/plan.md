@@ -28,10 +28,11 @@ WhatsApp group of thirty.
 ## Flow
 
 Reuses rather than duplicates: the link vocabulary is `PAPEL_TO_ROLE` in `@tatame/types` (one
-table, already parsed by `apps/web/lib/invite.ts` and `apps/mobile/lib/invite-link.ts`), the role
-names are `ROLE_LABELS` in `lib/invite-copy.ts`, the sheet shape is `DependentSelectionModal`
-over `SelectionCard`, the academy identity is `useAcademyContext`, and the member count is
-`useAcademyStats`.
+table, already parsed by `apps/web/lib/invite.ts` and `apps/mobile/lib/invite-link.ts`), the host
+is the `APP_HOST` that `lib/invite-link.ts` already declares (exported rather than retyped, so
+producer and parser cannot disagree about it), the role names are `ROLE_LABELS` in
+`lib/invite-copy.ts`, the sheet shape is `DependentSelectionModal` over `SelectionCard`, the
+academy identity is `useAcademyContext`, and the member count is `useAcademyStats`.
 
 1. manager taps an entry point — `components/MembersListContent.tsx` (exists) header,
    `app/(app)/(manager)/(home)/index.tsx` (exists) quick action, or the welcome card on that same
@@ -42,7 +43,8 @@ over `SelectionCard`, the academy identity is `useAcademyContext`, and the membe
    (door 1) as `SelectionCard` (exists, gains an optional `description`) rows — hands one
    `InviteRole` back
 4. `lib/invite-share.ts` (new, no door — placement) builds the URL from `ROLE_TO_PAPEL`
-   (door 1) and the Portuguese message from the academy name — pure, no `react-native` import
+   (door 1) and `APP_HOST` (exists), and the Portuguese message from the academy name — pure, no
+   native-runtime import
 5. out: the OS share sheet carries one `message` string; nothing persists, nothing is sent to the
    API, and `useAcademyStats` (exists) still decides the welcome card on the next render
 
@@ -52,7 +54,7 @@ over `SelectionCard`, the academy identity is `useAcademyContext`, and the membe
 | --- | --- |
 | domain | new term: `ROLE_TO_PAPEL` — the inverse of `PAPEL_TO_ROLE`, role → the Portuguese query token, lives in `packages/types/src/index.ts` beside it. Who reads the token today: `apps/web/lib/invite.ts` and `apps/mobile/lib/invite-link.ts`, both parse-only — neither appears in this diff, and both break if the spelling drifts |
 | domain | existing term: `activeMembers` meant "active memberships in the academy" and still does — but it **includes the manager's own**, so a brand-new academy reads `1`, not `0`. The welcome-card threshold is stated against that meaning (AC 12), not against "members the manager brought in". Who branches on it today: the Membros counter on the manager home |
-| shared component | `SelectionCard` gains an optional `description`. `DependentSelectionModal` is its only consumer today and passes none, so the check-in sheet renders byte-identically |
+| shared component | `SelectionCard` gains an optional `description` and an optional `Icon` defaulting to `User` - the three role rows need a sentence each and three different glyphs. `DependentSelectionModal` is its only other consumer and passes neither, so the check-in sheet renders byte-identically (AC: C22) |
 | shared component | `MembersListContent` gains an opt-in `showInviteActions` prop defaulting to `false`. Its three consumers are the manager, instructor and student member lists; only the manager one passes it, so the other two are unchanged (AC 4) |
 | stored data | nothing to migrate — no entity, no column, no row written, no request made |
 

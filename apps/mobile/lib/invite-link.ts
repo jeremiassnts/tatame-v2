@@ -6,7 +6,7 @@ import { resolvePapelToRole, type InviteRole } from "@tatame/types";
  * on the apex alone, so no other host can ever hand a link to this app — a
  * second accepted host would be a branch nothing could exercise.
  */
-const HOST = "apptatame.com.br";
+export const APP_HOST = "apptatame.com.br";
 
 /** Fixed by TAT-175 and shipped in TAT-176's links; not ours to rename. */
 const INVITE_SEGMENT = "convite";
@@ -57,7 +57,7 @@ function extractLinkPath(url: string | null | undefined): string | null {
   if (parsed.protocol === "https:" || parsed.protocol === "http:") {
     // Exact host, never a suffix match: `apptatame.com.br.evil.com` ends with
     // our domain and is not our domain.
-    if (parsed.hostname !== HOST) return null;
+    if (parsed.hostname !== APP_HOST) return null;
     return `${parsed.pathname}${parsed.search}`;
   }
 
