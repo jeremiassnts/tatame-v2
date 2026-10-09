@@ -305,6 +305,7 @@ const STUDENT_MEMBERS = "app/(app)/(student)/(members)/index.tsx";
 const MANAGER_HOME = "app/(app)/(manager)/(home)/index.tsx";
 const ROLE_SHEET = "components/InviteRoleSheet.tsx";
 const WELCOME_CARD = "components/InviteWelcomeCard.tsx";
+const HEADER_ACTIONS = "components/InviteHeaderActions.tsx";
 const SELECTION_CARD = "components/SelectionCard.tsx";
 const DEPENDENT_SHEET = "components/DependentSelectionModal.tsx";
 
@@ -324,6 +325,44 @@ function quickActionsRegion(home: string): string {
   expect(from, "Ações rápidas heading").toBeGreaterThan(-1);
   expect(to, "Aulas de hoje heading").toBeGreaterThan(from);
   return home.slice(from, to);
+}
+
+/**
+ * Assert that `onPress={handler}` sits on the control `marker` identifies.
+ *
+ * The two handlers these components take do opposite things - one opens the
+ * role picker, the other shares the download page - and swapping the bindings
+ * is invisible to any assertion that only reads the two names. So the pairing
+ * is what gets asserted: the handler, then the glyph, with no closing tag
+ * between them, which is what makes them the same `Pressable`.
+ */
+function handlerOwnsControl(source: string, handler: string, marker: string) {
+  const handlerAt = source.indexOf(`onPress={${handler}}`);
+  expect(handlerAt, `onPress={${handler}}`).toBeGreaterThan(-1);
+  expect(occurrences(source, `onPress={${handler}}`), handler).toBe(1);
+
+  const markerAt = source.indexOf(marker, handlerAt);
+  expect(markerAt, `${marker} after ${handler}`).toBeGreaterThan(-1);
+  expect(
+    source.slice(handlerAt, markerAt),
+    `${handler} and ${marker} in one Pressable`,
+  ).not.toContain("</Pressable>");
+}
+
+/**
+ * The body of a `useCallback` declared as `const <name> = useCallback(`.
+ *
+ * Needed because every wiring proof on this feature reads a *definition*, and
+ * a definition says nothing about what the call site passes. Verification
+ * round 2 found exactly that: `selectRole` calling `shareApp()` instead of
+ * `shareInvite(role)` left every other assertion green.
+ */
+function callbackBody(source: string, name: string): string {
+  const from = source.indexOf(`const ${name} = useCallback(`);
+  expect(from, `const ${name} = useCallback(`).toBeGreaterThan(-1);
+  const to = source.indexOf("  );", from);
+  expect(to, `end of ${name}`).toBeGreaterThan(from);
+  return source.slice(from, to);
 }
 
 /** Every TypeScript source file the app ships, relative to `apps/mobile`. */
@@ -469,12 +508,23 @@ describe("one place keeps the messages", () => {
     ).split("\n\n")[1];
     const appFragment = APP_SHARE_MESSAGE.split("\n\n")[0];
 
-    for (const file of [MEMBERS_LIST, MANAGER_HOME, ROLE_SHEET, WELCOME_CARD]) {
+    for (const file of [
+      MEMBERS_LIST,
+      MANAGER_HOME,
+      ROLE_SHEET,
+      WELCOME_CARD,
+      HEADER_ACTIONS,
+    ]) {
       const source = read(file);
       expect(source, file).not.toContain(inviteFragment);
       expect(source, file).not.toContain(appFragment);
       // A second copy of either URL is the other way the two drift apart.
       expect(source, file).not.toContain("apptatame.com.br");
+      // And every one of them reads from the shared module, directly or through
+      // the hook that wraps it — the claim's "from there", asserted.
+      expect(source, file).toMatch(
+        /from "@\/lib\/(hooks\/use-)?invite-share"/,
+      );
     }
 
     // And each screen that shares goes through the single hook.
@@ -544,6 +594,86 @@ describe("the hook's wiring", () => {
     expect(hook).toContain("buildInviteUrl(academyId, role)");
     expect(occurrences(hook, "APP_SHARE_MESSAGE")).toBe(2); // the import and the one use
     expect(occurrences(hook, "inviteShareMessage")).toBe(2);
+  });
+});
+
+/** C27 */
+describe("the handler bindings", () => {
+  /** Every place this feature mounts one of its own components. */
+  const MOUNTS: [string, string, string][] = [
+    [MEMBERS_LIST, "InviteHeaderActions", "members header"],
+    [MEMBERS_LIST, "InviteRoleSheet", "members picker"],
+    [MANAGER_HOME, "InviteWelcomeCard", "home welcome card"],
+    [MANAGER_HOME, "InviteRoleSheet", "home picker"],
+  ];
+
+  it("every mount hands each action the handler its name promises", () => {
+    for (const [file, element, where] of MOUNTS) {
+      const source = read(file);
+      const open = `<${element}`;
+      expect(occurrences(source, open), `${where}: one mount`).toBe(1);
+
+      const mount = source.slice(
+        source.indexOf(open),
+        source.indexOf("/>", source.indexOf(open)),
+      );
+
+      if (element === "InviteRoleSheet") {
+        // `onSelect` must be the handler that shares the *invite*; pointing it
+        // at `shareApp` would share the download page from the role picker.
+        expect(mount, where).toContain("visible={invite.pickerVisible}");
+        expect(mount, where).toContain("onClose={invite.closePicker}");
+        expect(mount, where).toContain("onSelect={invite.selectRole}");
+      } else {
+        // Swapping these two is the whole gap: `Convidar` would share `/baixar`
+        // and the share icon would open the role picker.
+        expect(mount, where).toContain("onInvitePress={invite.openPicker}");
+        expect(mount, where).toContain("onShareAppPress={invite.shareApp}");
+      }
+    }
+  });
+
+  it("inside each component the handler sits on the control its glyph names", () => {
+    for (const file of [
+      "components/InviteHeaderActions.tsx",
+      "components/InviteWelcomeCard.tsx",
+    ]) {
+      const source = read(file);
+      handlerOwnsControl(source, "onInvitePress", "<UserPlus");
+      handlerOwnsControl(source, "onShareAppPress", "<Share2");
+    }
+  });
+});
+
+/** C28 */
+describe("picking a role", () => {
+  it("picking a role shares the invite, never the app message", () => {
+    const body = callbackBody(read("lib/hooks/use-invite-share.ts"), "selectRole");
+
+    expect(body).toContain("setPickerVisible(false)");
+    expect(body).toContain("shareInvite(role)");
+    // The surviving mutant round 2 found: `void shareApp()` here shares
+    // `/baixar` and the `?papel=` link is never shared at all.
+    expect(body).not.toContain("shareApp");
+  });
+
+  it("the share-app action never reaches for the invite builder", () => {
+    const body = callbackBody(read("lib/hooks/use-invite-share.ts"), "shareApp");
+
+    expect(body).toContain("APP_SHARE_MESSAGE");
+    expect(body).not.toContain("inviteShareMessage");
+    expect(body).not.toContain("buildInviteUrl");
+  });
+
+  it("the invite action never reaches for the app message", () => {
+    const body = callbackBody(
+      read("lib/hooks/use-invite-share.ts"),
+      "shareInvite",
+    );
+
+    expect(body).toContain("inviteShareMessage(");
+    expect(body).toContain("buildInviteUrl(academyId, role)");
+    expect(body).not.toContain("APP_SHARE_MESSAGE");
   });
 });
 

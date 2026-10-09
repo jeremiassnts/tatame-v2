@@ -3,7 +3,7 @@
 Profile: standard
 Plan: `.specs/features/tat-178-invite-actions/plan.md`
 
-26 checks in 5 slices · 3 one-way doors · 1 open, of which 0 block (1 blocks go-live)
+28 checks in 6 slices · 3 one-way doors · 1 open, of which 0 block (1 blocks go-live)
 
 Every proof below runs from the repository root and assumes `pnpm --filter @tatame/types build`
 has run once, the way CI's `pnpm build` step does before `pnpm test:unit`. Baseline before this
@@ -115,7 +115,8 @@ Proof: `pnpm --filter @tatame/mobile exec vitest run lib/invite-share.test.ts -t
 Proof: `pnpm --filter @tatame/mobile exec vitest run lib/invite-share.test.ts -t "one hook is the only importer of Share"`
 
 **C21** - `lib/invite-share.ts` imports nothing from `react-native`, which is what keeps every
-check above runnable under `environment: "node"` (door 2)
+check above runnable under `environment: "node"` (pure-module constraint; door 2 itself is
+proven by C9 and C23)
 Proof: `pnpm --filter @tatame/mobile exec vitest run lib/invite-share.test.ts -t "the share module stays pure"`
 
 **C22** - `SelectionCard`'s new `description` is optional and `DependentSelectionModal` passes
@@ -145,6 +146,28 @@ Proof: `pnpm --filter @tatame/mobile exec vitest run lib/invite-share.test.ts -t
 inverted gate nor swapped branches survives (AC 4)
 Proof: `pnpm --filter @tatame/mobile exec vitest run lib/invite-share.test.ts -t "the actions sit in the true branch of the gate"`
 
+### S6 - Gaps verification round 2 found · 4 files · 16 KB · ~4k
+
+Round 2 named one root cause for both its surviving mutants: every wiring proof above reads a
+**definition** - which message a named function builds, which element sits in which branch - and
+none reads a **call site** or a **prop binding**. These two checks are that surface, and nothing
+above is changed.
+
+**C27** - Every mount this feature writes hands each action the handler its name promises -
+`onInvitePress` the picker opener and `onShareAppPress` the app share, at all four mount sites -
+and inside `InviteHeaderActions` and `InviteWelcomeCard` each handler sits on the control its
+glyph identifies, with no `</Pressable>` between them (AC 1, AC 5)
+Proof: `pnpm --filter @tatame/mobile exec vitest run lib/invite-share.test.ts -t "every mount hands each action the handler its name promises"`
+Proof: `pnpm --filter @tatame/mobile exec vitest run lib/invite-share.test.ts -t "inside each component the handler sits on the control its glyph names"`
+
+**C28** - `selectRole`'s body shares the invite and never the app message, `shareApp`'s body
+never reaches for `inviteShareMessage` or `buildInviteUrl`, and `shareInvite`'s body never
+reaches for `APP_SHARE_MESSAGE` - asserted over each `useCallback` body, not over the module
+(AC 2, AC 5, door 2)
+Proof: `pnpm --filter @tatame/mobile exec vitest run lib/invite-share.test.ts -t "picking a role shares the invite, never the app message"`
+Proof: `pnpm --filter @tatame/mobile exec vitest run lib/invite-share.test.ts -t "the share-app action never reaches for the invite builder"`
+Proof: `pnpm --filter @tatame/mobile exec vitest run lib/invite-share.test.ts -t "the invite action never reaches for the app message"`
+
 ## Coverage
 
 | Set (size) | Member -> proof | Unproven |
@@ -164,6 +187,9 @@ Proof: `pnpm --filter @tatame/mobile exec vitest run lib/invite-share.test.ts -t
 | role glyphs in the picker (3) | `student` C25 · `instructor` C25 · `guardian` C25 | - |
 | `SelectionCard`'s new props (2) | `description` C22, C24 · `Icon` C24, C25 | - |
 | `showInviteActions` gate sites (2) | header actions C26 · picker mount C26 | - |
+| prop bindings at mount sites (4) | header actions in `MembersListContent` C27 · picker in `MembersListContent` C27 · welcome card on the home C27 · picker on the home C27 | - |
+| handler-to-control bindings inside the new components (4) | invite -> `UserPlus` in the header C27 · share-app -> `Share2` in the header C27 · invite -> `UserPlus` in the welcome card C27 · share-app -> `Share2` in the welcome card C27 | - |
+| share call sites in the hook (3) | `selectRole` -> `shareInvite` C28 · `shareApp` -> `APP_SHARE_MESSAGE` C28 · `shareInvite` -> `inviteShareMessage` C28 | - |
 
 - No check here claims a status code, a route or a response shape: this feature makes no request
   and adds no route (plan `Surface`: `None - nothing consumed outside`). Both URLs it produces are
@@ -198,9 +224,13 @@ Evidence:
   conditional -> **pure presentation**
 - `components/InviteWelcomeCard.tsx`: renders a sentence and two buttons from props, no
   conditional -> **pure presentation**
+- `components/MembersListContent.tsx`: 1 new conditional, reached from three screens, plus both
+  prop bindings -> **decides**, and the decision is the gate itself. Nothing in this repo can
+  render it, so the gate's polarity and branch (C26), the bindings (C27) and the three consumers
+  (C4) are each pinned in source text, enumerated rather than exempted
 - `components/InviteHeaderActions.tsx`: renders two buttons from props, no conditional ->
   **pure presentation**; it exists as a named element precisely so C26 can pin which branch of
-  the `showInviteActions` gate it sits in
+  the `showInviteActions` gate it sits in, and C27 which handler each button carries
 - `components/SelectionCard.tsx`: 1 new conditional, picking which of two prop-derived lines to
   render - it changes no outcome and reaches nothing, so **pure presentation**. The precedence
   it decides is still selector-reachable in principle and nothing in this repo can render it, so
@@ -214,7 +244,7 @@ Evidence:
   assertion that stops a screen keeping a second copy of the copy. `lib/invite-link.ts` with 12
   cases is the second.
 
-Cost: 26 proofs in one new test file, 19 of them pure and 14 source-text. Without these rows the
+Cost: 28 proofs in one new test file, 19 of them pure and 19 source-text. Without these rows the
 `papel` table, the threshold boundary and the dismiss-vs-reject branch would be proven only by a
 manual tap on a device, which is the one thing the open question already says no test reaches.
 
@@ -247,8 +277,8 @@ manual tap on a device, which is the one thing the open question already says no
 - S1 = 20 KB -> ~5k; S2 adds 14 KB -> ~9k; S3 adds 16 KB -> ~13k; S4 adds 11 KB -> ~16k, counting
   `wc -c` over the 9 existing files touched plus the 5 new ones, divided by four. 16k against the
   150k budget - **one builder**, no cut.
-- **Boundary:** C1-C22 closed. All 22 proofs green in `apps/mobile/lib/invite-share.test.ts`
-  (29 tests); the mobile suite went 71 -> 100 tests, 9 files, all passing. `pnpm build` and
+- **Boundary:** C1-C28 closed. All 28 proofs green in `apps/mobile/lib/invite-share.test.ts`
+  (38 tests); the mobile suite went 71 -> 109 tests, 9 files, all passing. `pnpm build` and
   `pnpm test:unit` green across the monorepo. `npx tsc --noEmit` in `apps/mobile` reports the
   same 5 pre-existing errors `.specs/STATE.md` already records and none in a file this feature
   wrote.
