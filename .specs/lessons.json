@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 7,
+  "next_id": 12,
   "lessons": [
     {
       "id": "L-001",
@@ -112,6 +112,96 @@
       ],
       "created": "2026-10-09T14:46:33Z",
       "last_seen": "2026-10-09T14:46:33Z"
+    },
+    {
+      "id": "L-007",
+      "key": "ac_gap::give every one way door in the plan a check of its own including a door discovered during the build after the checks were frozen",
+      "text": "Give every one-way door in the plan a check of its own, including a door discovered during the build after the checks were frozen",
+      "signal": "ac_gap",
+      "scope": "planning",
+      "status": "candidate",
+      "features": [
+        "tat-191-pending-invite"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        ".specs/features/tat-191-pending-invite/plan.md Landing door 6 (planning)"
+      ],
+      "created": "2026-10-09T16:18:26Z",
+      "last_seen": "2026-10-09T16:18:26Z"
+    },
+    {
+      "id": "L-008",
+      "key": "ac_gap::never count pnpm lint or pnpm typecheck as a proof for apps mobile both scripts are echo stubs so only its vitest files gate it",
+      "text": "Never count pnpm lint or pnpm typecheck as a proof for apps/mobile: both scripts are echo stubs, so only its vitest files gate it",
+      "signal": "ac_gap",
+      "scope": "mobile",
+      "status": "candidate",
+      "features": [
+        "tat-191-pending-invite"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "apps/mobile/package.json:10 (mobile)"
+      ],
+      "created": "2026-10-09T16:18:26Z",
+      "last_seen": "2026-10-09T16:18:26Z"
+    },
+    {
+      "id": "L-009",
+      "key": "spec_precision_gap::assert the destination a success path navigates to not only the absence of the destination it replaced",
+      "text": "Assert the destination a success path navigates to, not only the absence of the destination it replaced",
+      "signal": "spec_precision_gap",
+      "scope": "mobile",
+      "status": "candidate",
+      "features": [
+        "tat-191-pending-invite"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "apps/mobile/lib/membership-errors.test.ts:132 (mobile)"
+      ],
+      "created": "2026-10-09T16:18:26Z",
+      "last_seen": "2026-10-09T16:18:26Z"
+    },
+    {
+      "id": "L-010",
+      "key": "spec_precision_gap::a source text assertion must match the bare token across every source directory its criterion names not a quoted form under some of them",
+      "text": "A source-text assertion must match the bare token across every source directory its criterion names, not a quoted form under some of them",
+      "signal": "spec_precision_gap",
+      "scope": "mobile",
+      "status": "candidate",
+      "features": [
+        "tat-191-pending-invite"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "apps/mobile/lib/invite-copy.test.ts:79 (mobile)"
+      ],
+      "created": "2026-10-09T16:18:26Z",
+      "last_seen": "2026-10-09T16:18:26Z"
+    },
+    {
+      "id": "L-011",
+      "key": "spec_precision_gap::when a test counts source occurrences exclude comment text and assert the exact count rather than a lower bound",
+      "text": "When a test counts source occurrences, exclude comment text and assert the exact count rather than a lower bound",
+      "signal": "spec_precision_gap",
+      "scope": "mobile",
+      "status": "candidate",
+      "features": [
+        "tat-191-pending-invite"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "apps/mobile/lib/api-error.test.ts:49 (mobile)"
+      ],
+      "created": "2026-10-09T16:33:16Z",
+      "last_seen": "2026-10-09T16:33:16Z"
     }
   ]
 }

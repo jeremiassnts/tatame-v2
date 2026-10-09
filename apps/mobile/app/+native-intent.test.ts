@@ -1,7 +1,21 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { parseInviteLink } from "@/lib/invite-link";
 import { clearPendingInvite, readPendingInvite, setPendingInvite } from "@/lib/pending-invite";
 import { redirectSystemPath } from "./+native-intent";
+
+/**
+ * TAT-191 gave the store an AsyncStorage mirror, and AsyncStorage's entry
+ * imports `react-native`, which cannot load in `environment: "node"`. Nothing
+ * below asserts the mirror — `lib/pending-invite.test.ts` owns that — so this
+ * is the smallest double that keeps the module loadable.
+ */
+vi.mock("@react-native-async-storage/async-storage", () => ({
+  default: {
+    getItem: vi.fn(async () => null),
+    setItem: vi.fn(async () => {}),
+    removeItem: vi.fn(async () => {}),
+  },
+}));
 
 const ID = "11111111-1111-1111-1111-111111111111";
 const INVITE = `https://apptatame.com.br/convite/${ID}?papel=instrutor`;
@@ -12,7 +26,7 @@ const UNKNOWN = "/alguma-coisa";
 const STORED = { academyId: "academy-already-here", role: null } as const;
 
 beforeEach(() => {
-  clearPendingInvite();
+  void clearPendingInvite();
 });
 
 describe("redirectSystemPath", () => {
@@ -36,7 +50,7 @@ describe("redirectSystemPath", () => {
 
   it("leaves a stored invite alone for every other url", () => {
     for (const path of [DOWNLOAD, SSO, UNKNOWN]) {
-      clearPendingInvite();
+      void clearPendingInvite();
       setPendingInvite(STORED);
       redirectSystemPath({ path, initial: false });
       expect(readPendingInvite()).toEqual(STORED);
@@ -66,11 +80,11 @@ describe("redirectSystemPath", () => {
     // through the `url` listener on a resume, and nothing here may branch on
     // which. Both runs are compared against each other, over all four classes.
     for (const path of [INVITE, DOWNLOAD, SSO, UNKNOWN]) {
-      clearPendingInvite();
+      void clearPendingInvite();
       const cold = redirectSystemPath({ path, initial: true });
       const afterCold = readPendingInvite();
 
-      clearPendingInvite();
+      void clearPendingInvite();
       const warm = redirectSystemPath({ path, initial: false });
       const afterWarm = readPendingInvite();
 

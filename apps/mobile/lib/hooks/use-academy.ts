@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useApi } from "@/lib/api";
+import { getPublicAcademy, useApi } from "@/lib/api";
 import type {
   AcademyResponse,
   AcademyStatsResponse,
@@ -13,6 +13,22 @@ export function useAcademy(academyId: string) {
   return useQuery({
     queryKey: ["academy", academyId],
     queryFn: () => api.get<AcademyResponse>(`/academies/${academyId}`),
+  });
+}
+
+/**
+ * The academy's name for the invite headline on `(onboarding)/user-type`.
+ *
+ * `retry: false` because the headline has a perfectly good variant that names
+ * no academy: three retries would hold the sentence incomplete for seconds on
+ * a screen the person can already use.
+ */
+export function usePublicAcademy(academyId: string | undefined) {
+  return useQuery({
+    queryKey: ["academy", "public", academyId],
+    queryFn: () => getPublicAcademy(academyId!),
+    enabled: Boolean(academyId),
+    retry: false,
   });
 }
 
