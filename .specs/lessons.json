@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 11,
+  "next_id": 12,
   "lessons": [
     {
       "id": "L-001",
@@ -184,6 +184,24 @@
       ],
       "created": "2026-10-09T16:18:26Z",
       "last_seen": "2026-10-09T16:18:26Z"
+    },
+    {
+      "id": "L-011",
+      "key": "spec_precision_gap::when a test counts source occurrences exclude comment text and assert the exact count rather than a lower bound",
+      "text": "When a test counts source occurrences, exclude comment text and assert the exact count rather than a lower bound",
+      "signal": "spec_precision_gap",
+      "scope": "mobile",
+      "status": "candidate",
+      "features": [
+        "tat-191-pending-invite"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "apps/mobile/lib/api-error.test.ts:49 (mobile)"
+      ],
+      "created": "2026-10-09T16:33:16Z",
+      "last_seen": "2026-10-09T16:33:16Z"
     }
   ]
 }

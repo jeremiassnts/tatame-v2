@@ -67,8 +67,9 @@ Proof: `pnpm --filter @tatame/mobile exec vitest run lib/gatekeeper.test.ts -t "
 **C14** - A `blocked` membership resolves to `route: null` with `clearInvite: false` (AC 14)
 Proof: `pnpm --filter @tatame/mobile exec vitest run lib/gatekeeper.test.ts -t "leaves a blocked membership where it is today"`
 
-**C15** - Every combination of the 4 auth/role states x 4 membership states x 3 invite states returns a `string | null` route and a boolean, and throws on none of the 48 (AC 15)
+**C15** - Every combination of 2 signed-in states x 5 role states x 2 manager-academy states x 4 membership states x 3 invite states returns a `string | null` route and a boolean, and throws on none of the 240 (AC 15)
 Proof: `pnpm --filter @tatame/mobile exec vitest run lib/gatekeeper.test.ts -t "never throws and always answers"`
+`[round 2]` The claim said 48 where the test asserts 240, so it understated its own proof. Corrected to the cross product the test actually walks; the test is unchanged.
 
 **C16** - Exactly one non-test file under **every** source directory of `apps/mobile` - `app`, `components`, `constants`, `lib`, `scripts` - imports `@/lib/gatekeeper`, and it is `app/(app)/index.tsx` (AC 17)
 Proof: `pnpm --filter @tatame/mobile exec vitest run lib/gatekeeper.test.ts -t "has exactly one importer"`
@@ -350,6 +351,14 @@ M10 não está em nenhum AC e é o que a porta 1 existe para garantir. Vale roda
   by then - the person would have left their academy and landed on `search-academy`, which is the
   screen this epic removes. Opening the link again after leaving is the path, and it works because
   nothing about an invite link is single-use
+- **Carried forward unfixed, on the record:** C46's importer regex matches 12 files, one of which
+  is `lib/api-error.ts` itself - its doc comment at `:10` contains the literal import text - so the
+  real floor is 11 importers against a `>= 10` assertion, and two could migrate away before it
+  fires. Left as written because verification round 2 confirmed the claim as stated is satisfied and
+  C46's decisive half (reference identity plus the re-export line) is exact and was killed twice;
+  tightening it means excluding comments and pinning the count, which is `L-011`'s lesson and a
+  separate change. `already-member.tsx:46-48` also keeps a two-variant sentence inline rather than
+  in `lib/invite-copy.ts`, which `Test policy` row 4 permits because M9 names the observation
 - **Gate:** 972 tests passed, 0 failed - 873 API (incl. 134 integration) · 30 web · 69 mobile, from
   27. `pnpm turbo run typecheck --force` 13/13 clean. `pnpm turbo run lint --force` 0 errors and
   the same 5 pre-existing `apps/web` warnings TAT-177 reported, 0 new. `apps/mobile`'s typecheck is

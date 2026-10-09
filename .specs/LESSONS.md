@@ -74,6 +74,12 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: apps/mobile/lib/invite-copy.test.ts:79 (mobile)
 - last seen: 2026-10-09T16:18:26Z
 
+### L-011 - When a test counts source occurrences, exclude comment text and assert the exact count rather than a lower bound
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `mobile` · harmful: 0
+- features: tat-191-pending-invite
+- evidence: apps/mobile/lib/api-error.test.ts:49 (mobile)
+- last seen: 2026-10-09T16:33:16Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

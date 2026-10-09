@@ -39,8 +39,11 @@ back to `error.message` for any uncoded failure that is not in its `TRANSLATED` 
 three membership failures are uncoded - so it would answer `"You already have an active academy
 membership; leave before joining another"`, which is the exact defect AC 43 forbids. More decisive:
 the two 409s are told apart by whether `/users/me` reports a membership, and `describeApiError` sees
-only the error. Widening it to take a second argument would change the sentence on fifteen screens
-that never asked for it.
+only the error - its `fallback` argument cannot carry it either, because an uncoded 409 returns
+before reaching it. Widening it to take a second argument would change the sentence on **9 files and
+9 call sites** that never asked for it. (Verification round 2 checked all four of these sub-claims
+against the code and found the first three exactly right; the count was written as "fifteen" and is
+corrected here. The constraint this leaves behind is `AD-001` in `.specs/STATE.md`.)
 
 1. OS URL -> `app/+native-intent.ts` (exists) - `parseInviteLink`, `setPendingInvite`, returns `/`
 2. `lib/pending-invite.ts` (exists, changes) - holds the invite in module state **and** mirrors it

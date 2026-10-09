@@ -1,282 +1,243 @@
 # TAT-191 pending invite verification
 
-**Verdict**: FAIL
+**Verdict**: PASS
 **Profile**: standard
-**Diff range**: `origin/jeremiassnts3/tat-175-let-managers-invite-new-members-with-a-shareable-smart..HEAD` (`6be0e7b`)
-**Round**: 1 - full
+**Diff range**: `origin/jeremiassnts3/tat-175-let-managers-invite-new-members-with-a-shareable-smart..HEAD` (`276c586`)
+**Round**: 2 - scoped
 **Verifier**: independent sub-agent (author != verifier)
 
-One gap, and it is a coverage gap rather than a broken check: **all 45 checks pass with located
-evidence, all 5 injected mutants were killed, and the repository gate is green** - but the plan's
-`Landing` carries **six** one-way doors and `checks.md` gave five of them a row. Door 6's
-`lib/api.ts` re-export of `ApiError` has no proof anywhere in the tree, and `apps/mobile`'s
-`lint` **and** `typecheck` scripts are both `echo` stubs, so the repository gate cannot catch its
-removal either.
+Round 1 returned FAIL on four gaps, all of them about the artifacts rather than the code. The fix
+commit `276c586` closes all four, and each fix was **made to fail once** in isolation - including
+the two counterexamples round 1 argued from in prose, which now break the suite: a success handler
+that navigates nowhere, and a single-quoted `'Aluno'` literal on the role step. 46 checks, 47 named
+tests, 6 faults injected and 6 killed.
 
-## Step 1 - binding sources (`standard`: recorded, not enumerated)
+**Scope of this round.** Proofs re-ran **in full at `276c586`** (green is a property of a commit).
+Everything else carries forward from `6be0e7b` with a label, per verify.md's
+`## Re-verifying after a fix`:
 
-The plan marks three sources and all three were opened: **TAT-191** (read in full from Linear -
-the four-row destination table, the AsyncStorage and "the role step cannot be skipped"
-constraints), **TAT-177 / PR #30** (read as the diff of `lib/pending-invite.ts` and
-`app/+native-intent.test.ts` across the range), and **`apps/mobile/vitest.config.ts`**
-(`environment: "node"`, `include: ["{app,lib}/**/*.test.ts", "*.test.ts"]`, `@` -> package root).
-No check contradicts any of them. Two places where the build deliberately departs from the
-ticket's prose were checked and judged sound, not findings:
+| Section | Status |
+| --- | --- |
+| Proofs (all 47 named tests + the repository gate) | **verified at `276c586`** |
+| Citations for `gatekeeper.test.ts` C16, `invite-copy.test.ts` C34, `membership-errors.test.ts` C43 | **refreshed at `276c586`** - lines moved |
+| Citations for C46 | **new at `276c586`** |
+| Citations for C1-C15, C17-C33, C34's first proof, C35-C42, C44, C45 | **carried from `6be0e7b`** - the fix added lines only below them, verified by `git diff` hunk ranges |
+| Coverage: the door-6 row | **recomputed at `276c586`** |
+| Coverage: the other 21 rows | **carried from `6be0e7b`** - the fix touched no authority over them |
+| Test policy rows 1, 4, 5 (classify a touched file or a new evidence bullet) | **re-judged at `276c586`** |
+| Test policy rows 2, 3 | **carried from `6be0e7b`** |
+| Step 1, binding sources | **carried from `6be0e7b`** - the fix touched no interface |
+| Swept rows, C27/C28 TAT-177 regression read | **carried from `6be0e7b`** - `git diff 6be0e7b..276c586` touches neither test file's existing assertions |
 
-- **Door 4.** TAT-191 says "`handleContinue` ... must land on `(joining)/academy/<academyId>`"
-  *and* "Routing decisions stay in `(app)/index.tsx`". The build kept
-  `router.replace("/(app)")` (`app/(onboarding)/user-type.tsx:67`) and lets the gatekeeper decide
-  one hop later. The destination is genuinely identical: after `syncUser(token, selected)` and the
-  `["user","me"]` refetch the person has `activeRole` set, `activeMembership: null` and the invite
-  still held (`clearInvite: false` on the no-role row, C3), which is exactly
-  `gatekeeper.ts:99-108`'s `/(app)/(joining)/academy/${invite.academyId}`.
-- **AC 13 vs the ticket's table.** The ticket collapses "membership `active`" into one row ("a
-  friendly 'you already belong to an academy' screen"); the plan splits it by whether the invite
-  names the same academy. The ticket's own `Cases to cover` draws the same distinction ("already
-  belongs to **that** academy -> a sensible screen, not a duplicate request"), so this is a
-  refinement, not a contradiction.
+## The reuse question - judged
+
+The coordinator asked me to judge the plan's new `Flow` paragraph on
+`lib/api-error-message.ts#describeApiError` the way round 1 judged door 6's row. **The reuse
+rejection is sound and factually true on every load-bearing claim.** One quantity in it is wrong.
+
+| Claim in the paragraph | Verdict against the code |
+| --- | --- |
+| "`describeApiError` falls back to `error.message` for any uncoded failure that is not in its `TRANSLATED` allowlist" | **True.** `lib/api-error-message.ts:55-56` checks the 6-entry `TRANSLATED` map, `:60` returns `error.detail`, `:62` returns `error.message` when it is not a `SCREAMING_CASE` code (`isCode`, `:23-25`). An uncoded failure outside the allowlist reaches `:60`/`:62` and the English string is what comes back either way. |
+| "all three membership failures are uncoded - so it would answer `\"You already have an active academy membership; leave before joining another\"`" | **True, verbatim.** `apps/api/src/modules/membership/membership.service.ts:31-36` throws exactly that string as a two-argument `HttpError(409, …)` with no code; `:43-47` the 403, `:50-51` the second 409, `:26-27` the 404. None is in `TRANSLATED`, none matches `isCode`. This is precisely the defect AC 43 forbids. |
+| "the two 409s are told apart by whether `/users/me` reports a membership, and `describeApiError` sees only the error" | **True by signature.** `describeApiError(error: unknown, fallback: string)`. The `fallback` cannot carry the split either: for an uncoded 409 the function returns at `:60`/`:62` and never reaches the fallback. |
+| "Widening it to take a second argument would change the sentence on fifteen screens that never asked for it" | **The number is wrong.** `describeApiError` is imported by **9** files (8 screens + `components/PixPaymentView.tsx`) and called at **9** sites, not fifteen. The argument survives the correction - widening a shared formatter still reaches nine unrelated call sites - but the figure is inflated. |
+
+**Not a reconstruction.** The decisive half of the rationale (uncoded failures leak the API's
+English sentence; the function cannot see the membership that splits the two 409s) is checkable
+and checks out, and it is the half that makes duplication the right call rather than widening.
+That is the same bar door 6's row passed in round 1. I am recording the "fifteen screens" figure
+as a **precision note in the plan's prose, not a finding**: a `Flow` reuse claim fails when the
+reuse was actually available, and here it was not.
+
+**Can the two modules disagree about the same status?** Yes, and today no user can see it.
+`describeMembershipRequestError(…, false)` answers the Portuguese sentence for 403; `describeApiError`
+answers the English `"Cannot request again for this academy until a manager unblocks you"` for the
+same status. The two are reached from **disjoint file sets**: `grep -rl "membership-errors"` returns
+`app/(app)/(joining)/academy/[academyId].tsx` and its own test, nothing else, and
+`useRequestMembership` has exactly one consumer - that same screen. None of
+`describeApiError`'s 9 consumers requests membership. So no screen can produce both answers for one
+request.
+
+**The latent risk, stated because it is real and nobody owns it:** a future screen that requests
+membership and reaches for `describeApiError` out of habit would leak the English sentence, and
+nothing stops it - C42 constrains only `membership-errors`' own output, and `apps/mobile` has no
+lint. Worth an `AD-` decision row ("membership failures are described by `lib/membership-errors.ts`,
+never by `describeApiError`") rather than a check. Out of scope for this feature's obligations.
+
+One adjacent pre-existing leak, checked and out of scope: `app/(app)/index.tsx:57-58` renders
+`error.message` for a non-401 `ApiError` on the profile load. `git diff` over the whole feature
+range touches neither line, and AC 43 scopes "either screen" to the two S4 screens, both of which
+honour it.
 
 ## Checks
 
-All run by me at `HEAD` in two invocations (45 named tests in one filtered run across four files,
-then `app/+native-intent.test.ts` whole). Every named test appears individually in the output.
+Re-run in full at `276c586` in two invocations: 47 named tests across five files under one `-t`
+alternation (`Tests 47 passed (47)`, every name listed individually), then
+`app/+native-intent.test.ts` whole (`Tests 6 passed (6)`). 47 named tests is exactly the count
+`checks.md` names across its 46 checks. No filter matched nothing.
 
 | Check | Claim | Proof run | Evidence | Result |
 | --- | --- | --- | --- | --- |
-| C1 | signed out -> `/(auth)`, `clearInvite: false`, invite or not | vitest `-t` alternation, 45/45 passed | `lib/gatekeeper.test.ts:38` - `.toEqual({ route: "/(auth)", clearInvite: false })` inside `for (const invite of [null, INVITE_A1])` (:35) | PASS |
-| C2 | user still loading -> `route: null` | same run | `lib/gatekeeper.test.ts:49` - `.toEqual({ route: null, clearInvite: false })` with `user: null` (:46) | PASS |
-| C3 | no `activeRole` -> `/(onboarding)/user-type`, invite kept | same run | `lib/gatekeeper.test.ts:63` - `.toEqual({ route: "/(onboarding)/user-type", clearInvite: false })`, loop over `[null, INVITE_A1]` (:56) | PASS |
-| C4 | manager, no academy -> `/(app)/create-academy`, `clearInvite: true` | same run | `lib/gatekeeper.test.ts:74` - `.toEqual({ route: "/(app)/create-academy", clearInvite: true })` | PASS |
-| C5 | manager with academy -> `/(app)/(manager)/(home)`, spent | same run | `lib/gatekeeper.test.ts:84` - `.toEqual({ route: "/(app)/(manager)/(home)", clearInvite: true })` | PASS |
-| C6 | all 3 member roles, no membership, no invite -> `search-academy` | same run | `lib/gatekeeper.test.ts:96` - `.toEqual({ route: "/(app)/(joining)/search-academy", clearInvite: false })` over `MEMBER_ROLES` (:88) | PASS |
-| C7 | all 3 member roles + invite `"a1"` -> `/(app)/(joining)/academy/a1` | same run | `lib/gatekeeper.test.ts:113` - `.toEqual({ route: "/(app)/(joining)/academy/a1", clearInvite: false })` over `MEMBER_ROLES` (:105) | PASS |
-| C8 | `pending` -> `pending-approval`, spent, invite or not | same run | `lib/gatekeeper.test.ts:128` - `.toEqual({ route: "/(app)/(joining)/pending-approval", clearInvite: true })`, loop `[null, INVITE_A1, INVITE_A2]` (:121) | PASS |
-| C9 | active `student` -> `/(app)/(student)/(home)`, spent | same run | `lib/gatekeeper.test.ts:145` - `.toEqual({ route: "/(app)/(student)/(home)", clearInvite: true })` | PASS |
-| C10 | active `instructor` -> `/(app)/(instructor)/(home)`, spent | same run | `lib/gatekeeper.test.ts:158` - `.toEqual({ route: "/(app)/(instructor)/(home)", clearInvite: true })` | PASS |
-| C11 | active `guardian` -> `/(app)/(guardian)/(home)`, spent | same run | `lib/gatekeeper.test.ts:173` - `.toEqual({ route: "/(app)/(guardian)/(home)", clearInvite: true })` | PASS |
-| C12 | active in `a1` + invite `a2` -> `already-member`, spent, all 3 roles | same run | `lib/gatekeeper.test.ts:185` - `.toEqual({ route: "/(app)/(joining)/already-member", clearInvite: true })` over `MEMBER_ROLES` (:177) | PASS |
-| C13 | active in `a1` + invite `a1` -> that role's home, spent, all 3 roles | same run | `lib/gatekeeper.test.ts:208` - `.toEqual({ route: homes[activeRole], clearInvite: true })`; `homes` literal is in the same test at :194-198, readable at the assertion | PASS |
-| C14 | `blocked` -> `route: null`, invite kept | same run | `lib/gatekeeper.test.ts:222` - `.toEqual({ route: null, clearInvite: false })` | PASS |
-| C15 | the whole cross product answers and never throws | same run | `lib/gatekeeper.test.ts:254-257` - `expect(decision.route === null \|\| typeof decision.route === "string").toBe(true)` + `expect(typeof decision.clearInvite).toBe("boolean")`; `:265` `expect(seen).toBe(2 * 5 * 2 * 4 * 3)` | PASS |
-| C16 | exactly one non-test importer of `@/lib/gatekeeper`, and it is `app/(app)/index.tsx` | same run | `lib/gatekeeper.test.ts:292` - `expect(importers).toEqual(["app/(app)/index.tsx"])` over a recursive `app/` + `lib/` walk (:289-290) | PASS |
-| C17 | invite readable before the write resolves | same run | `lib/pending-invite.test.ts:90-93` - `.toEqual({ invite: A, hydrated: true })` after `setItem` is replaced by a never-settling promise (:86) | PASS |
-| C18 | mirrors to key `tatame.pending-invite` with the exact JSON | same run | `lib/pending-invite.test.ts:100-103` - `expect(storage.setItem).toHaveBeenCalledWith(KEY, '{"academyId":"a1","role":"instructor"}')`; `KEY` is `"tatame.pending-invite"` at :36 | PASS |
-| C19 | a fresh module hydrates the persisted invite | same run | `lib/pending-invite.test.ts:115-118` - `.toEqual({ invite: { academyId: "a1", role: "instructor" }, hydrated: true })`, preceded by `expect(...hydrated).toBe(false)` (:111) | PASS |
-| C20 | clear removes the key and nulls the snapshot | same run | `lib/pending-invite.test.ts:125-127` - `expect(storage.removeItem).toHaveBeenCalledWith(KEY)`, `expect(getPendingInviteSnapshot().invite).toBeNull()`, `expect(storage.items.has(KEY)).toBe(false)` | PASS |
-| C21 | all 7 unusable persisted values hydrate to `invite: null` | same run | `lib/pending-invite.test.ts:151-154` - `.toEqual({ invite: null, hydrated: true })` over the 7-row table at :134-142 | PASS |
-| C22 | a rejecting `getItem` resolves, stays `null`, marks hydrated | same run | `lib/pending-invite.test.ts:162` - `await expect(fresh.hydratePendingInvite()).resolves.toBeUndefined()`; `:166-169` `.toEqual({ invite: null, hydrated: true })` | PASS |
-| C23 | a rejecting `setItem` does not throw, invite stays readable | same run | `lib/pending-invite.test.ts:176` - `expect(() => fresh.setPendingInvite(A)).not.toThrow()`; `:179` `expect(fresh.readPendingInvite()).toEqual(A)` | PASS |
-| C24 | a second hydrate makes no second read | same run | `lib/pending-invite.test.ts:189` - `expect(storage.getItem).toHaveBeenCalledTimes(1)` after two awaited hydrates | PASS |
-| C25 | subscribers notified twice, an unsubscribed one never | same run | `lib/pending-invite.test.ts:203-204` - `expect(kept).toHaveBeenCalledTimes(2)` / `expect(dropped).toHaveBeenCalledTimes(0)` | PASS |
-| C26 | two reads with no write between are identical | same run | `lib/pending-invite.test.ts:213` - `expect(fresh.getPendingInviteSnapshot()).toBe(before)`; `:218` `toBe` after a write; `:221` `expect(afterWrite).not.toBe(before)` | PASS |
-| C27 | TAT-177's three store behaviours hold under persistence | same run (3 named tests) | `lib/pending-invite.test.ts:61` `expect(fresh.readPendingInvite()).toBeNull()`; `:70-71` `toEqual(B)` / `not.toEqual(A)`; `:77` `toBeNull()` after clear | PASS |
-| C28 | `redirectSystemPath` unchanged under the persisted store | `vitest run "app/+native-intent.test.ts"` - 6 passed | `app/+native-intent.test.ts:44` `toBe("/")` for the invite, `:48` `toBe("/")` for `/baixar`, `:74` `toBe(path)` byte for byte, `:91-92` cold == warm | PASS |
-| C29 | role + academy headline | same filtered run | `lib/invite-copy.test.ts:20-22` - `.toBe("Você foi convidado para ser Instrutor na Alliance Centro")` | PASS |
-| C30 | role, no academy name; no `"null"`/`"undefined"` | same run | `lib/invite-copy.test.ts:31-33` - `.toBe("Você foi convidado para ser Instrutor nesta academia")` + `not.toContain("null")` / `not.toContain("undefined")`, over `[null, ""]` (:29) | PASS |
-| C31 | no role, academy named | same run | `lib/invite-copy.test.ts:38-40` - `.toBe("Você foi convidado para entrar na Alliance Centro")` | PASS |
-| C32 | neither | same run | `lib/invite-copy.test.ts:45-47` - `.toBe("Você foi convidado para entrar nesta academia")` + both `not.toContain` | PASS |
-| C33 | the two role-hint sentences | same run | `lib/invite-copy.test.ts:53-56` - `inviteRoleHint` over all 3 roles and `null`; `:58-59` pins the literals `"Você pode escolher outro perfil se preferir."` / `"Selecione o seu perfil para continuar."` | PASS |
-| C34 | `ROLE_LABELS` is the single label table the role step reads | same run (2 named tests) | `lib/invite-copy.test.ts:65-69` - `.toEqual({ student: "Aluno", instructor: "Instrutor", guardian: "Responsável" })`; `:77-80` `expect(screen).toContain("ROLE_LABELS")` + `not.toContain(\`"${label}"\`)` for all three | PASS |
-| C35 | 403 sentence | same run | `lib/membership-errors.test.ts:23-27` - `describeMembershipRequestError(new ApiError(403, API_403), false)` `.toBe("Você não pode solicitar entrada nesta academia novamente até que um gestor libere seu acesso.")` | PASS |
-| C36 | 409 with a membership | same run | `lib/membership-errors.test.ts:31-33` - `new ApiError(409, …), true` `.toBe("Você já faz parte de uma academia. Saia da atual antes de entrar em outra.")` | PASS |
-| C37 | 409 without a membership | same run | `lib/membership-errors.test.ts:40-42` - `new ApiError(409, …), false` `.toBe("Você já tem uma solicitação pendente nesta academia.")` | PASS |
-| C38 | 404 and 400 share one sentence | same run | `lib/membership-errors.test.ts:48-51` - loop `[400, 404]`, `.toBe("Academia não encontrada. Peça um link de convite novo ao gestor.")` | PASS |
-| C39 | unrecognised failures fall back | same run | `lib/membership-errors.test.ts:64-67` - `.toBe("Não foi possível enviar sua solicitação. Tente novamente.")` over `[ApiError(500), Error, string, null]` (:56-61) | PASS |
-| C40 | academy load, 404 and 400 | same run | `lib/membership-errors.test.ts:76-78` - loop `[400, 404]`, `.toBe("Academia não encontrada. O link de convite pode estar inválido.")` | PASS |
-| C41 | academy load, anything else | same run | `lib/membership-errors.test.ts:86-88` - `.toBe("Não foi possível carregar a academia. Verifique sua conexão e tente novamente.")` over `[ApiError(500), Error]` | PASS |
-| C42 | all 7 sentences accented, none leaks the API text | same run | `lib/membership-errors.test.ts:111` `expect(cases).toHaveLength(7)`; `:116` `toMatch(/[áâãàéêíóôõúüç]/i)`; `:123` `not.toContain(words.slice(i, i + 3).join(" "))` over every 3-word window of the API message | PASS |
-| C43 | the academy screen holds no `(joining)/pending-approval` destination | same run | `lib/membership-errors.test.ts:132` - `expect(screen).not.toContain("(joining)/pending-approval")` against the real file bytes (:16-19, :131) | PASS |
-| C44 | the guardian home is byte-identical to the feature base | `git diff --quiet <base> -- "apps/mobile/app/(app)/(guardian)/(home)/index.tsx"` | exit `0`, run by me | PASS |
-| C45 | suite, lint and typecheck stay green | `pnpm turbo run test/lint/typecheck --force` | 972 passed / 0 failed (873 API, 30 web, **69 mobile from 27**); lint 8/8 tasks, 0 errors + the 5 pre-existing `apps/web` warnings; typecheck 13/13 | PASS |
+| C1 | signed out -> `/(auth)`, `clearInvite: false`, invite or not | re-run at `276c586`, passed | carried: `lib/gatekeeper.test.ts:38` - `.toEqual({ route: "/(auth)", clearInvite: false })` inside `for (const invite of [null, INVITE_A1])` (:35) | PASS |
+| C2 | user still loading -> `route: null` | re-run, passed | carried: `lib/gatekeeper.test.ts:49` - `.toEqual({ route: null, clearInvite: false })` with `user: null` (:46) | PASS |
+| C3 | no `activeRole` -> `/(onboarding)/user-type`, invite kept | re-run, passed | carried: `lib/gatekeeper.test.ts:63` - `.toEqual({ route: "/(onboarding)/user-type", clearInvite: false })`, loop over `[null, INVITE_A1]` (:56) | PASS |
+| C4 | manager, no academy -> `/(app)/create-academy`, spent | re-run, passed | carried: `lib/gatekeeper.test.ts:74` - `.toEqual({ route: "/(app)/create-academy", clearInvite: true })` | PASS |
+| C5 | manager with academy -> `/(app)/(manager)/(home)`, spent | re-run, passed | carried: `lib/gatekeeper.test.ts:84` - `.toEqual({ route: "/(app)/(manager)/(home)", clearInvite: true })` | PASS |
+| C6 | all 3 member roles, no membership, no invite -> `search-academy` | re-run, passed | carried: `lib/gatekeeper.test.ts:96` - `.toEqual({ route: "/(app)/(joining)/search-academy", clearInvite: false })` over `MEMBER_ROLES` (:88) | PASS |
+| C7 | all 3 member roles + invite `"a1"` -> `/(app)/(joining)/academy/a1` | re-run, passed | carried: `lib/gatekeeper.test.ts:113` - `.toEqual({ route: "/(app)/(joining)/academy/a1", clearInvite: false })` over `MEMBER_ROLES` (:105) | PASS |
+| C8 | `pending` -> `pending-approval`, spent, invite or not | re-run, passed | carried: `lib/gatekeeper.test.ts:128` - `.toEqual({ route: "/(app)/(joining)/pending-approval", clearInvite: true })`, loop `[null, INVITE_A1, INVITE_A2]` (:121) | PASS |
+| C9 | active `student` -> `/(app)/(student)/(home)`, spent | re-run, passed | carried: `lib/gatekeeper.test.ts:145` - `.toEqual({ route: "/(app)/(student)/(home)", clearInvite: true })` | PASS |
+| C10 | active `instructor` -> `/(app)/(instructor)/(home)`, spent | re-run, passed | carried: `lib/gatekeeper.test.ts:158` - `.toEqual({ route: "/(app)/(instructor)/(home)", clearInvite: true })` | PASS |
+| C11 | active `guardian` -> `/(app)/(guardian)/(home)`, spent | re-run, passed | carried: `lib/gatekeeper.test.ts:173` - `.toEqual({ route: "/(app)/(guardian)/(home)", clearInvite: true })` | PASS |
+| C12 | active in `a1` + invite `a2` -> `already-member`, spent, all 3 roles | re-run, passed | carried: `lib/gatekeeper.test.ts:185` - `.toEqual({ route: "/(app)/(joining)/already-member", clearInvite: true })` over `MEMBER_ROLES` (:177) | PASS |
+| C13 | active in `a1` + invite `a1` -> that role's home, spent, all 3 roles | re-run, passed | carried: `lib/gatekeeper.test.ts:208` - `.toEqual({ route: homes[activeRole], clearInvite: true })`; `homes` literal in the same test at :194-198 | PASS |
+| C14 | `blocked` -> `route: null`, invite kept | re-run, passed | carried: `lib/gatekeeper.test.ts:222` - `.toEqual({ route: null, clearInvite: false })` | PASS |
+| C15 | the whole cross product answers and never throws | re-run, passed | carried: `lib/gatekeeper.test.ts:254-257` - asserts `decision.route` is `null` or a `string` and `typeof decision.clearInvite === "boolean"`; `:265` `expect(seen).toBe(2 * 5 * 2 * 4 * 3)` | PASS |
+| C16 | exactly one non-test importer of `@/lib/gatekeeper` across **every** source directory | re-run, passed | **refreshed**: `lib/gatekeeper.test.ts:296` - `expect(importers).toEqual(["app/(app)/index.tsx"])`, now over `for (const dir of ["app", "components", "constants", "lib", "scripts"])` (:292-294) | PASS |
+| C17 | invite readable before the write resolves | re-run, passed | carried: `lib/pending-invite.test.ts:90-93` - `.toEqual({ invite: A, hydrated: true })` with `setItem` replaced by a never-settling promise (:86) | PASS |
+| C18 | mirrors to key `tatame.pending-invite` with the exact JSON | re-run, passed | carried: `lib/pending-invite.test.ts:100-103` - `toHaveBeenCalledWith(KEY, '{"academyId":"a1","role":"instructor"}')`; `KEY` at :36 | PASS |
+| C19 | a fresh module hydrates the persisted invite | re-run, passed | carried: `lib/pending-invite.test.ts:115-118` - `.toEqual({ invite: { academyId: "a1", role: "instructor" }, hydrated: true })`, after `hydrated` is `false` (:111) | PASS |
+| C20 | clear removes the key and nulls the snapshot | re-run, passed | carried: `lib/pending-invite.test.ts:125-127` - `toHaveBeenCalledWith(KEY)`, `.invite).toBeNull()`, `items.has(KEY)).toBe(false)` | PASS |
+| C21 | all 7 unusable persisted values hydrate to `invite: null` | re-run, passed | carried: `lib/pending-invite.test.ts:151-154` - `.toEqual({ invite: null, hydrated: true })` over the 7-row table at :134-142 | PASS |
+| C22 | a rejecting `getItem` resolves, stays `null`, marks hydrated | re-run, passed | carried: `lib/pending-invite.test.ts:162` `resolves.toBeUndefined()`; `:166-169` `.toEqual({ invite: null, hydrated: true })` | PASS |
+| C23 | a rejecting `setItem` does not throw, invite stays readable | re-run, passed | carried: `lib/pending-invite.test.ts:176` `not.toThrow()`; `:179` `.toEqual(A)` | PASS |
+| C24 | a second hydrate makes no second read | re-run, passed | carried: `lib/pending-invite.test.ts:189` - `toHaveBeenCalledTimes(1)` after two awaited hydrates | PASS |
+| C25 | subscribers notified twice, an unsubscribed one never | re-run, passed | carried: `lib/pending-invite.test.ts:203-204` - `kept` 2, `dropped` 0 | PASS |
+| C26 | two reads with no write between are identical | re-run, passed | carried: `lib/pending-invite.test.ts:213` `toBe(before)`; `:218` `toBe` after a write; `:221` `not.toBe(before)` | PASS |
+| C27 | TAT-177's three store behaviours hold under persistence | re-run (3 named tests), passed | carried: `lib/pending-invite.test.ts:61` `toBeNull()`; `:70-71` `toEqual(B)` / `not.toEqual(A)`; `:77` `toBeNull()` | PASS |
+| C28 | `redirectSystemPath` unchanged under the persisted store | `vitest run "app/+native-intent.test.ts"` at `276c586` - 6 passed | carried: `app/+native-intent.test.ts:44` `toBe("/")` invite, `:48` `toBe("/")` `/baixar`, `:74` `toBe(path)`, `:91-92` cold == warm | PASS |
+| C29 | role + academy headline | re-run, passed | carried: `lib/invite-copy.test.ts:20-22` - `.toBe("Você foi convidado para ser Instrutor na Alliance Centro")` | PASS |
+| C30 | role, no academy name; no `"null"`/`"undefined"` | re-run, passed | carried: `lib/invite-copy.test.ts:31-33` - `.toBe("Você foi convidado para ser Instrutor nesta academia")` + both `not.toContain`, over `[null, ""]` (:29) | PASS |
+| C31 | no role, academy named | re-run, passed | carried: `lib/invite-copy.test.ts:38-40` - `.toBe("Você foi convidado para entrar na Alliance Centro")` | PASS |
+| C32 | neither | re-run, passed | carried: `lib/invite-copy.test.ts:45-47` - `.toBe("Você foi convidado para entrar nesta academia")` + both `not.toContain` | PASS |
+| C33 | the two role-hint sentences | re-run, passed | carried: `lib/invite-copy.test.ts:53-56` over all 3 roles and `null`; `:58-59` pins both literals | PASS |
+| C34 | `ROLE_LABELS` is the one label table, and the screen carries no label text **in any form** | re-run (2 named tests), passed | first proof carried: `lib/invite-copy.test.ts:65-69` `.toEqual({ student: "Aluno", instructor: "Instrutor", guardian: "Responsável" })`. **refreshed**: `:77` `toContain("ROLE_LABELS")` and `:83` `expect(screen, label).not.toContain(label)` - the bare text, no longer `"${label}"` | PASS |
+| C35 | 403 sentence | re-run, passed | carried: `lib/membership-errors.test.ts:23-27` - `.toBe("Você não pode solicitar entrada nesta academia novamente até que um gestor libere seu acesso.")` | PASS |
+| C36 | 409 with a membership | re-run, passed | carried: `lib/membership-errors.test.ts:31-33` - `(…, true)` `.toBe("Você já faz parte de uma academia. Saia da atual antes de entrar em outra.")` | PASS |
+| C37 | 409 without a membership | re-run, passed | carried: `lib/membership-errors.test.ts:40-42` - `(…, false)` `.toBe("Você já tem uma solicitação pendente nesta academia.")` | PASS |
+| C38 | 404 and 400 share one sentence | re-run, passed | carried: `lib/membership-errors.test.ts:48-51` - loop `[400, 404]`, `.toBe("Academia não encontrada. Peça um link de convite novo ao gestor.")` | PASS |
+| C39 | unrecognised failures fall back | re-run, passed | carried: `lib/membership-errors.test.ts:64-67` over `[ApiError(500), Error, string, null]` (:56-61) | PASS |
+| C40 | academy load, 404 and 400 | re-run, passed | carried: `lib/membership-errors.test.ts:76-78` - loop `[400, 404]`, `.toBe("Academia não encontrada. O link de convite pode estar inválido.")` | PASS |
+| C41 | academy load, anything else | re-run, passed | carried: `lib/membership-errors.test.ts:86-88` over `[ApiError(500), Error]` | PASS |
+| C42 | all 7 sentences accented, none leaks the API text | re-run, passed | carried: `lib/membership-errors.test.ts:111` `toHaveLength(7)`; `:116` `toMatch(/[áâãàéêíóôõúüç]/i)`; `:123` `not.toContain` over every 3-word window | PASS |
+| C43 | `onSuccess` carries exactly one `router.replace`, it is `/(app)`, no branch on the status, and the screen holds no `(joining)/pending-approval` | re-run, passed | **refreshed**: `lib/membership-errors.test.ts:133` `not.toContain("(joining)/pending-approval")`; slice `:138-140`; `:143` `toContain('router.replace("/(app)")')`; `:144` `expect(onSuccess.match(/router\.replace\(/g)).toHaveLength(1)`; `:145-146` `not.toContain("data.status")` / `not.toContain('"active"')` | PASS |
+| C44 | the guardian home is byte-identical to the feature base | `git diff --quiet <base> -- "…/(guardian)/(home)/index.tsx"` at `276c586` | exit `0`, run by me; also `--quiet` against `6be0e7b` exit `0`, so the fix did not touch it | PASS |
+| C45 | suite, lint and typecheck stay green | `pnpm turbo run test/lint/typecheck --force` at `276c586` | **974 passed, 0 failed** (873 API · 30 web · **71 mobile, from 69**); lint 8/8, 0 errors; typecheck 13/13 | PASS |
+| C46 | `lib/api.ts`'s `ApiError` is identical by reference to `lib/api-error.ts`'s class, `instanceof` holds both ways, and >= 10 non-test files still import it from `@/lib/api` (door 6) | re-run (2 named tests), passed | **new**: `lib/api-error.test.ts:22` `expect(api.ApiError).toBe(ApiError)`; `:23-24` `instanceof` in both directions; `:58` `expect(importers.length).toBeGreaterThanOrEqual(10)`; `:61` `expect(api).toContain('export { ApiError } from "@/lib/api-error";')` | PASS |
 
-**Proof hygiene.** No proof resolves only to an untouched test: every file cited above is either new
-in the range or modified by it (`git diff --stat` shows all seven). No filter matched nothing - the
-single `-t` alternation reported `Tests 45 passed (45)` with each name listed individually, and
-45 is exactly the number of named tests in `checks.md`.
+**Citation carry-forward is checked, not assumed.** `git diff 6be0e7b..276c586` touches four
+`apps/mobile` files; its hunks start at `gatekeeper.test.ts:286`, `invite-copy.test.ts:75`,
+`membership-errors.test.ts:129`, and `api-error.test.ts` is new. Every carried citation above sits
+above its file's hunk, so no carried line number moved.
 
-**`apps/mobile` typecheck, run by hand** (`pnpm exec tsc --noEmit`): exactly **5 errors**, all
-pre-existing and none in a file this feature touches -
-`app/(app)/(manager)/(members)/[membershipId].tsx` (2), `app/(app)/(student)/register-belt.tsx`,
-`app/_layout.tsx` (`global.css` side-effect import), `components/DependentSelectionModal.tsx`. All
-are `Belt`-indexing or CSS-typing errors unrelated to this feature's symbols. The author's claim
-holds.
+**`apps/mobile` typecheck, re-run by hand at `276c586`**: `pnpm exec tsc --noEmit` reports exactly
+**5 errors**, the same five locations as round 1 -
+`app/(app)/(manager)/(members)/[membershipId].tsx(226,36)` and `(229,23)`,
+`app/(app)/(student)/register-belt.tsx(22,7)`, `app/_layout.tsx(1,8)`,
+`components/DependentSelectionModal.tsx(73,31)`. All pre-existing, none in a file this feature or
+the fix touches. The coordinator's claim holds.
 
 ## Coverage
 
-Recomputed from the authority over each set, not read back from `checks.md`.
-
 | Set (size) | Recomputed from | Member -> proof | Unproven |
 | --- | --- | --- | --- |
-| gatekeeper route outcomes (14) | `lib/gatekeeper.ts:74-126` branch walk - 8 `return` sites, with `MEMBER_HOME` (`:54-64`) expanding one into 3 | C1-C14, one asserted case each | - |
-| `clearInvite` per outcome (14) | same walk; every `return` carries the flag | C1-C14 all assert the whole object with `toEqual`, so the flag is pinned in each | - |
-| member roles reaching the join path (3) | `MEMBER_HOME` keys = `instructor`, `student`, `guardian` | C6 and C7 both iterate `MEMBER_ROLES` (`gatekeeper.test.ts:13`) | - |
-| active-membership home routes (3) | `MEMBER_HOME` keys | C9, C10, C11 individually; C13 re-iterates all three | - |
-| invite academy vs membership academy (2) | `gatekeeper.ts:118` comparison | different C12 · same C13 | - |
-| unusable persisted values (7) | `parsePersistedInvite` rejection branches (`pending-invite.ts:80-100`) | C21, table-driven over all 7 | - |
-| store transitions (6) | Test policy row 3's own list | empty C27 · written C17 · overwritten C27 · cleared C20 · recovered C19 · storage failing C22/C23 | - |
-| storage call surfaces (3) | `getItem`, `setItem`, `removeItem` - the only AsyncStorage calls in the module | read-rejects C22 · write-rejects C23 · `removeItem` shares the single `try/catch` in `mirror()` (`pending-invite.ts:57-69`) that C23 pins | - |
-| subscriber notification (3) | `listeners` set add/delete/emit (`pending-invite.ts:45-55`) | on set, on clear and after unsubscribe, all three in C25's two call counts | - |
-| hydration call count (2) | the `snapshot.hydrated` guard (`pending-invite.ts:148`, re-checked `:159`) | first call reads C19 · second does not C24 | - |
-| headline variants (4) | `inviteHeadline` = 2 `what` x 2 `where` (`invite-copy.ts:35-37`) | C29 · C30 · C31 · C32 | - |
-| role hint sentences (2) | `inviteRoleHint` ternary (`invite-copy.ts:46-48`) | C33 asserts both arms and both literals | - |
-| role labels (3) | `ROLE_LABELS` keys (`invite-copy.ts:16-20`) | C34, `toEqual` over the whole table | - |
-| membership-request failure classes (6) | `describeMembershipRequestError` switch + the `instanceof` guard | 403 C35 · 409+membership C36 · 409 without C37 · 404 C38 · 400 C38 · unrecognised C39 (4 shapes) | - |
-| academy-load failure classes (3) | `describeAcademyLoadError` (`membership-errors.ts:53-64`) | 404 C40 · 400 C40 · unrecognised C41 | - |
-| Portuguese sentences (7) | distinct string literals returned by the two dispatches | C42, table-driven, length pinned at 7 | - |
-| test assemblies needing the AsyncStorage double (2) | `vi.mock(...)` occurrences across the 7 mobile test files | `lib/pending-invite.test.ts:32-34` · `app/+native-intent.test.ts:12-19` - both read directly, not inferred from a green run | - |
-| `+native-intent` outcomes (3) | `redirectSystemPath`'s three return paths | invite C28 · `/baixar` C28 · pass-through C28 | - |
-| approved criteria -> proof (46) | `plan.md` `## Criteria`, AC 1-46 | AC 1-15 C1-C15 · 16 M1 · 17 C16 · 18-26 C17-C26 · 27-32 C29-C34 · 33-35 M2-M4 · 36-40 C35-C39 · 41 C40+M5 · 42 C41+M6 · 43 C42+M7 · 44 C43+M4 · 45 C44+M8 · 46 C45 | - |
-| manually exempted criteria (8) | `checks.md` header's enumeration | 16 M1 · 33 M2 · 34 M3 · 35 M4 · 41 M5 · 42 M6 · 43 M7 · 45 M8. The roteiro enumerates all eight and adds two voluntary rows (M9 for AC 12, M10 for door 1), both of which also hold automated checks. **Not** a blanket exemption | - |
-| **one-way doors (6)** | **`plan.md` `## Landing`, which carries six rows** | door 1 C18/C19/C21 · door 2 C16 · door 3 M1 · door 4 M4 · door 5 the `clearInvite` row | **door 6 - the `lib/api.ts` re-export of `ApiError`** |
+| **one-way doors (6)** - *recomputed at `276c586`* | `plan.md` `## Landing`, six rows | door 1 C18/C19/C21 · door 2 C16 · door 3 M1 · door 4 M4 · door 5 the `clearInvite` row · **door 6 C46** | - |
+| **door 6's two halves (2)** - *recomputed at `276c586`* | door 6's literal shape: the class moved verbatim, **and** the re-export that keeps the importers compiling | one class through both paths `lib/api-error.test.ts:22-24` · the re-export line plus the importer census `:58`, `:61` | - |
+| modules that turn an `ApiError` into a user sentence (2) - *swept at `276c586`* | `grep` for `instanceof ApiError` consumers in `apps/mobile/lib` | `lib/membership-errors.ts` C35-C42 · `lib/api-error-message.ts#describeApiError` pre-existing (TAT-186), untouched by this range, outside this feature's obligations by the `Test policy` evidence bullet | - |
+| gatekeeper route outcomes (14) - *carried from `6be0e7b`* | `lib/gatekeeper.ts:74-126` branch walk, 8 `return` sites, `MEMBER_HOME` expanding one into 3 | C1-C14, one asserted case each | - |
+| `clearInvite` per outcome (14) - *carried* | the same walk; every `return` carries the flag | C1-C14 each assert the whole object with `toEqual` | - |
+| member roles reaching the join path (3) - *carried* | `MEMBER_HOME` keys | C6 and C7 both iterate `MEMBER_ROLES` | - |
+| active-membership home routes (3) - *carried* | `MEMBER_HOME` keys | C9 · C10 · C11; C13 re-iterates all three | - |
+| invite academy vs membership academy (2) - *carried* | `gatekeeper.ts:118` | different C12 · same C13 | - |
+| unusable persisted values (7) - *carried* | `parsePersistedInvite` rejection branches | C21, table-driven over all 7 | - |
+| store transitions (6) - *carried* | Test policy row 3's list | empty C27 · written C17 · overwritten C27 · cleared C20 · recovered C19 · storage failing C22/C23 | - |
+| storage call surfaces (3) - *carried* | `getItem`, `setItem`, `removeItem` | read-rejects C22 · write-rejects C23 · `removeItem` shares the one `try/catch` in `mirror()` that C23 pins | - |
+| subscriber notification (3) - *carried* | the `listeners` set | on set, on clear, after unsubscribe - all three in C25's two counts | - |
+| hydration call count (2) - *carried* | the `snapshot.hydrated` guard | first reads C19 · second does not C24 | - |
+| headline variants (4) - *carried* | 2 `what` x 2 `where` | C29 · C30 · C31 · C32 | - |
+| role hint sentences (2) - *carried* | the `inviteRoleHint` ternary | C33 asserts both arms and both literals | - |
+| role labels (3) - *carried* | `ROLE_LABELS` keys | C34, `toEqual` over the whole table | - |
+| membership-request failure classes (6) - *carried* | the `switch` plus the `instanceof` guard | 403 C35 · 409+membership C36 · 409 without C37 · 404 C38 · 400 C38 · unrecognised C39 | - |
+| academy-load failure classes (3) - *carried* | `describeAcademyLoadError` | 404 C40 · 400 C40 · unrecognised C41 | - |
+| Portuguese sentences (7) - *carried* | the distinct literals the two dispatches return | C42, table-driven, length pinned at 7 | - |
+| test assemblies needing the AsyncStorage double (2) - *carried* | `vi.mock` occurrences across the mobile test files | `lib/pending-invite.test.ts:32-34` · `app/+native-intent.test.ts:12-19` | - |
+| test assemblies needing a `@clerk/clerk-expo` double (1) - *swept at `276c586`* | the new file is the only test that loads `lib/api.ts` | `lib/api-error.test.ts:11-13` - read directly; without it the import throws rather than failing an assertion | - |
+| `+native-intent` outcomes (3) - *carried* | the three return paths | invite C28 · `/baixar` C28 · pass-through C28 | - |
+| approved criteria -> proof (46) - *carried* | `plan.md` AC 1-46 | AC 1-15 C1-C15 · 16 M1 · 17 C16 · 18-26 C17-C26 · 27-32 C29-C34 · 33-35 M2-M4 · 36-40 C35-C39 · 41 C40+M5 · 42 C41+M6 · 43 C42+M7 · 44 C43+M4 · 45 C44+M8 · 46 C45. C46 carries door 6, which no AC names | - |
+| manually exempted criteria (8) - *carried* | `checks.md`'s header enumeration | 16 M1 · 33 M2 · 34 M3 · 35 M4 · 41 M5 · 42 M6 · 43 M7 · 45 M8, all enumerated, plus two voluntary rows. The fix added no exemption | - |
 
-**The door-6 row is the failure.** `checks.md`'s header says "5 one-way doors" and its Coverage
-prose asserts "Every one-way door has a check", listing doors 1-5; the plan carries six. Door 6's
-literal shape has two halves. The first - `ApiError` living in `lib/api-error.ts` - is exercised
-by C35-C42, which import it from `@/lib/api-error` and construct it. The second -
-`export { ApiError } from "@/lib/api-error";` in `lib/api.ts:4`, which is what keeps the ten
-existing `import { ApiError } from "@/lib/api"` sites compiling - has **no proof anywhere**:
-
-- `grep -rn 'from "@/lib/api"' --include="*.test.ts"` over all 7 mobile test files returns nothing,
-  so no test loads the re-export.
-- `apps/mobile/package.json` sets `"typecheck": "echo 'skipped: …'"` **and**
-  `"lint": "echo 'no lint configured'"` (line 10). So `pnpm turbo run typecheck` and
-  `pnpm turbo run lint` - two thirds of C45 - execute nothing at all against `apps/mobile`.
-
-Deleting that one line therefore breaks `app/(app)/index.tsx`, `(manager)/_layout.tsx`,
-`lib/hooks/use-payout-account.ts`, `lib/api-error-message.ts` and six more screens while the whole
-gate stays green. I verified the re-export is present and correct today (`lib/api.ts:2,4`, class
-moved verbatim, same JSDoc), so this is a missing obligation, not a defect.
-
-On door 6's **honesty**, which the brief asked me to attack: the plan's bullet is honest, not a
-reconstruction. It states plainly that the door was recorded after the commit that introduced it,
-names the concrete trigger (`membership-errors.test.ts` would not load) and the concrete
-alternative (duck-typing on `"status" in error`), and its stated reason is independently true -
-`lib/api.ts:1` does `import { useAuth } from "@clerk/clerk-expo"`, which pulls in `react-native`
-and cannot load under `environment: "node"`.
+The round-1 sweep found one set with a member the table had hidden. **That member now has a proof,
+and the proof has been made to fail.** No new set entered with `276c586`: the fix adds one test
+file and strengthens three assertions, and the only new enumerations it introduces - door 6's two
+halves and the `@clerk/clerk-expo` double - have rows above.
 
 ## Test policy rows
 
 | Row | Files it classifies | Required proof | Expectation met |
 | --- | --- | --- | --- |
-| Decides, pure module, no platform import | `lib/gatekeeper.ts`, `lib/invite-copy.ts`, `lib/membership-errors.ts` | one at its own layer, one asserted case per decision row, every rejected input its own member | yes - 14/14 route rows C1-C14, 4+2+3 copy variants C29-C34, 6+3 error classes C35-C41; rejected inputs named individually at `membership-errors.test.ts:56-61` |
-| Decides, behind a platform module the node harness cannot load | none in this diff - the artifact's own evidence assigns `lib/pending-invite.ts` to row 3 | - | yes, vacuously - the row classifies no file here, so there is nothing for it to require |
-| Module-scoped mutable state with a persisted mirror | `lib/pending-invite.ts` | one per transition and one per read path; empty, written, overwritten, cleared, recovered, both storage calls failing | yes - all six listed states have a proof (see Coverage), and both read paths are asserted: `getPendingInviteSnapshot` at `:90`/`:126`/`:213`, `readPendingInvite` at `:61`/`:70`/`:179` |
-| A screen in a package with no renderer | `app/(app)/index.tsx`, `app/(onboarding)/user-type.tsx`, `app/(app)/(joining)/academy/[academyId].tsx`, `app/(app)/(joining)/already-member.tsx` | no proof at its own layer; every decision moved into a pure module; the wiring carries a named manual pass with its expected observation | yes - route to `lib/gatekeeper.ts`, headline to `lib/invite-copy.ts`, sentences to `lib/membership-errors.ts`, and M1-M9 each state an expected observation. One residue noted below: `already-member.tsx:46-48` keeps a two-variant sentence inline; M9 names its observation, which is what the row permits |
-| Instrumentation - a re-export, a hook into a store, a `useQuery` wrapper | `lib/hooks/use-pending-invite.ts`, `lib/api.ts#getPublicAcademy`, `lib/hooks/use-academy.ts#usePublicAcademy`, **and `lib/api.ts`'s `export { ApiError }`** | none of its own; covered by its consumer's proof | the first three: yes - the hook's store is C17-C27, and `getPublicAcademy` -> `usePublicAcademy` -> the headline is observed end to end by M2. The `ApiError` re-export: **not met** - its consumers are ten screens with no proof, and the two gate steps that would have caught it are `echo` stubs |
+| Decides, pure module, no platform import - *re-judged at `276c586`* | `lib/gatekeeper.ts`, `lib/invite-copy.ts`, `lib/membership-errors.ts` | one at its own layer, one asserted case per decision row, every rejected input its own member | yes - 14/14 route rows C1-C14, 4+2+3 copy variants C29-C34, 6+3 error classes C35-C41. The fix strengthened two of these files' tests and weakened none: `git diff` shows additions only |
+| Decides, behind a platform module the node harness cannot load - *carried from `6be0e7b`* | zero files in this diff; the artifact's evidence assigns `lib/pending-invite.ts` to row 3 | - | yes - vacuous here, since the row classifies zero files and therefore requires nothing |
+| Module-scoped mutable state with a persisted mirror - *carried from `6be0e7b`* | `lib/pending-invite.ts` | one per transition and one per read path | yes - all six listed states have a proof, and both read paths are asserted (`getPendingInviteSnapshot` at :90/:126/:213, `readPendingInvite` at :61/:70/:179) |
+| A screen in a package with no renderer - *re-judged at `276c586`* | `app/(app)/index.tsx`, `app/(onboarding)/user-type.tsx`, `app/(app)/(joining)/academy/[academyId].tsx`, `app/(app)/(joining)/already-member.tsx` | no proof at its own layer; every decision moved into a pure module; the wiring carries a named manual pass with its expected observation | yes - and two of these screens are now held to their bytes as well: C43 pins `academy/[academyId].tsx`'s single success destination, C34 pins that `user-type.tsx` carries zero label text. M1-M9 each state an expected observation. The residue stands: `already-member.tsx:46-48` keeps a two-variant sentence inline, which the row permits because M9 names its observation |
+| Instrumentation - a re-export, a hook into a store, a `useQuery` wrapper - *re-judged at `276c586`* | `lib/hooks/use-pending-invite.ts`, `lib/api.ts#getPublicAcademy`, `lib/hooks/use-academy.ts#usePublicAcademy`, `lib/api.ts`'s `export { ApiError }`, and the new evidence bullet's `lib/api-error.ts` | none of its own; covered by its consumer's proof | yes - the first three are covered as before (the store by C17-C27, the public lookup end to end by M2). The `ApiError` re-export is the one round 1 found uncovered, and C46 now covers it directly rather than through a consumer; `checks.md`'s new bullet says why an instrumentation-shaped file earns its own check here, and the reasoning is sound: the package has neither lint nor typecheck, so a consumer's proof does not exist to inherit |
+
+Both new evidence bullets check out. `lib/api-error.ts` is indeed a class with no conditional
+(instrumentation by shape), and the bullet's argument for giving it a check anyway is exactly the
+round-1 finding. `lib/api-error-message.ts`'s bullet - pre-existing, untouched, deliberately not
+reused - is accurate and its reasoning is judged above.
 
 ## Faults injected
 
 Baseline `git status --porcelain` of the real tree: **empty**. Isolation:
-`git worktree add <scratchpad>/mutant HEAD` with the workspace `node_modules` symlinked in; no
+`git worktree add <scratchpad>/mutant2 HEAD` with the workspace `node_modules` symlinked in; no
 `git stash` at any point. After `git worktree remove --force`, the real tree's porcelain is
 **empty again - matches the baseline**.
 
-One fault per distinct assertion surface, five surfaces, five faults.
+Scoped to the surfaces `276c586` touched or created, per verify.md. Five surfaces, six mutations:
+C43's assertion set was **rewritten** in this commit and its two halves - "a destination exists" and
+"exactly one destination, chosen without looking at the status" - are independent, so each was
+mutated once rather than inferring the second from the first. Every other surface got one.
 
 | Mutation | Location | Narrowest covering proof | Killed |
 | --- | --- | --- | --- |
-| `invite.academyId !== activeMembership.academyId` -> `===` (invite-elsewhere test inverted) | `lib/gatekeeper.ts:118` | `-t "sends someone invited elsewhere to the already-a-member screen"` | yes - 1 failed, 15 skipped |
-| dropped the role whitelist: `typeof role !== "string" \|\| !PERSISTABLE_ROLES.has(role)` -> `typeof role !== "string"` | `lib/pending-invite.ts:100` | `-t "refuses every unusable persisted value"` | yes - 1 failed, 12 skipped |
-| headline fallback `"nesta academia"` -> `"na academia"` | `lib/invite-copy.ts:36` | `-t "names the role when the academy has no name yet"` | yes - 1 failed, 6 skipped |
-| flipped the 409 split: `return hasMembership` -> `return !hasMembership` | `lib/membership-errors.ts:38` | `-t "tells a member of another academy to leave it first"` | yes - 1 failed, 8 skipped |
-| re-introduced the removed destination: `router.replace("/(app)")` -> `router.replace("/(app)/(joining)/pending-approval")` | `app/(app)/(joining)/academy/[academyId].tsx:45` | `-t "leaves the destination to the gatekeeper"` | yes - 1 failed, 8 skipped |
+| deleted `export { ApiError } from "@/lib/api-error";` - *the exact regression round 1 said nothing would catch* | `lib/api.ts:4` | C46 `-t "keeps every existing importer compiling"` | yes - 1 failed, 1 skipped |
+| split the class: internal import aliased to `BaseApiError`, `export class ApiError extends BaseApiError {}` in its place | `lib/api.ts:2,4` | C46 `-t "is the same class through lib/api as through lib/api-error"` | yes - 1 failed, 1 skipped. Confirms the reference-identity assertion, which a byte check could not have made |
+| branched the success destination on the response status: `if (data.status === "active") router.replace("/(app)/(student)/(home)")` added above the existing replace | `app/(app)/(joining)/academy/[academyId].tsx:40` | C43 `-t "leaves the destination to the gatekeeper"` | yes - 1 failed, 8 skipped |
+| removed the success navigation entirely, leaving `onSuccess` a no-op - *round 1's counterexample: "a screen that navigated nowhere on success would have passed it"* | `app/(app)/(joining)/academy/[academyId].tsx:45` | C43 `-t "leaves the destination to the gatekeeper"` | yes - 1 failed, 8 skipped |
+| `label: ROLE_LABELS.student` -> `label: 'Aluno'` - *round 1's counterexample: a single-quoted literal the `"${label}"` search walked past* | `app/(onboarding)/user-type.tsx:25` | C34 `-t "is the only place the role step gets its labels"` | yes - 1 failed, 6 skipped. The first assertion still passed, isolating the strengthened one |
+| added `import { resolveGatekeeperRoute } from "@/lib/gatekeeper";` to a `components/` file - *a second consumer in a directory the round-1 walk never entered* | `components/Avatar.tsx:1` | C16 `-t "has exactly one importer"` | yes - 1 failed, 15 skipped |
 
-The fifth fault exists to test the **source-text assertion** surface the brief flagged, and it
-settles it: C43's `not.toContain("(joining)/pending-approval")` is non-vacuous and precise enough
-that the word `pending-approval` sitting in a code comment two lines above (`:43`) does not trip it.
+**All four round-1 gaps are closed by experiment, not by inspection.** Three of the six mutations
+are the literal counterexamples round 1 argued from in prose, and all three now break the suite.
 
-## Source-text assertions - judgement
+## Precision notes (recorded, not verdict-bearing)
 
-The brief asked for a verdict on three checks that assert bytes rather than behaviour. All three
-are non-vacuous (each was or could be made to fail), and all three are narrower than the criterion
-they carry. None is a vacuous pass; all three are recorded as precision gaps.
-
-- **C16** (`gatekeeper.test.ts:268-293`). Settles AC 17 for `app/` and `lib/` only; the walk never
-  enters `components/`, `constants/` or `scripts/`, so an importer there would satisfy the check
-  and violate the criterion. I swept the whole of `apps/mobile` by hand -
-  `grep -rn "lib/gatekeeper" --include="*.ts" --include="*.tsx"` returns `app/(app)/index.tsx:1`
-  plus the test file's own two lines. **Criterion met; scope of the check is narrower than the
-  criterion.**
-- **C34's second proof** (`invite-copy.test.ts:72-81`). Asserts the screen has no
-  **double-quoted** `"Aluno"` / `"Instrutor"` / `"Responsável"`; a single-quoted literal or a bare
-  JSX text node would slip past, and the claim says "any of the three literals". I read
-  `app/(onboarding)/user-type.tsx` in full: the three labels appear only as `ROLE_LABELS.instructor`
-  / `.student` / `.guardian` (`:18`, `:25`, `:31`). **Criterion met; assertion weaker than the
-  claim.**
-- **C43** (`membership-errors.test.ts:128-133`). Asserts only the *absence* of the old destination.
-  AC 44's positive half - "replace to `/(app)` for **both** the `pending` and the `active` response
-  status" - is asserted by nothing; the check would pass if the screen replaced to a role home
-  instead. `academy/[academyId].tsx:40-46` has a single unconditional `router.replace("/(app)")`
-  in `onSuccess`, and M4 names the observation. **Criterion met; half of it is proven only by
-  reading the file and by the manual pass.**
-
-## C27 / C28 - did TAT-177 lose anything?
-
-No. `git diff` of both test files across the range: `app/+native-intent.test.ts` gains the
-AsyncStorage double and changes four `clearPendingInvite()` calls to `void clearPendingInvite()`
-(the function became `async`); **every one of its six tests and every assertion is untouched**, and
-the clear is still synchronous in its visible effect because `emit()` runs before the `await`.
-`lib/pending-invite.test.ts` keeps all three TAT-177 tests with identical assertions
-(`:61`, `:70-71`, `:77`); the only edits are `async`/`await` on the clear and factoring
-`vi.resetModules()` into `freshStore()`. Nothing was weakened and nothing deleted.
-
-## Swept rows resolving to `existing`
-
-Read against the code, not accepted as prose. The `authorization` row is accurate:
-`apps/api/src/modules/membership/membership.routes.ts:97-98` is
-`"/requests", authorize(Role.Instructor, Role.Student, Role.Guardian)` and `:105` takes
-`const role = req.appAuth!.role`; `apps/api/src/modules/academy/academy.routes.ts:57` is
-`get("/:academyId", requireSession, …)` and `:80` `get("/:academyId/public", …)` carries no guard,
-which is what makes the headline lookup legal before a membership exists. The `observability`
-row's `n/a` is policy, and the API side is untouched in this range. One extra contract check:
-`PublicAcademy` in `lib/api.ts` declares `{ id, name, logoUrl }` and
-`academy.service.ts:54` returns exactly `{ id: row.id, name: row.name, logoUrl: row.logoUrl }`.
-
-## Minor notes (not verdict-bearing)
-
-- **C15 understates its own proof.** The claim says "none of the 48"; the test enumerates
-  `2 * 5 * 2 * 4 * 3 = 240`. Over-coverage, recorded so the next reader is not confused.
-- **The `typeof role !== "string"` guard is redundant, not unproven.**
-  `PERSISTABLE_ROLES` is a `Set<string>`, so `has(7)` is already `false` and the module returns
-  `null` with or without the guard. No mutant hides there, which is why the 7-row table is
-  complete rather than missing a non-string-role member.
-- **`already-member.tsx:46-48`** keeps a two-variant sentence (with and without
-  `activeMembership.academyName`) inline rather than in `lib/invite-copy.ts`. No AC covers that
-  copy and M9 names the observation, so it is within Test policy row 4 - but it is the one
-  decision in this feature that did not move into a pure module.
+- **C46's importer census has slack and one false positive.** The regex at `lib/api-error.test.ts:49`
+  matches 12 files, but one of them is `lib/api-error.ts` itself, whose doc comment at `:10` contains
+  the literal text `` `import { ApiError } from "@/lib/api"` ``. So there are **11** real import
+  statements against a floor of `>= 10`: two could migrate away before the assertion fires. The
+  claim as written ("at least 10 non-test files still import `ApiError` from `@/lib/api`") is
+  satisfied either way, and the decisive half of C46 - reference identity plus the re-export line -
+  is exact and proven killable twice. Tightening it would mean excluding comment lines and pinning
+  the count rather than a floor.
+- **The plan's "fifteen screens" is 9 files / 9 call sites.** Judged above; the reuse rejection
+  survives the correction.
+- **C15 still understates its own proof** - the claim says "none of the 48", the test enumerates 240.
+  *Carried from `6be0e7b`.*
+- **`already-member.tsx:46-48`** keeps a two-variant sentence inline rather than in
+  `lib/invite-copy.ts` - the one decision in this feature that did not move into a pure module.
+  Within Test policy row 4 because M9 names the observation. *Carried from `6be0e7b`.*
 
 ## Gate
 
-- `pnpm turbo run test --force` - **972 passed, 0 failed** (8/8 tasks): 873 API across 58 files
-  (134 integration), 30 web, **69 mobile across 7 files**, up from 27.
+Re-run in full at `276c586`:
+
+- `pnpm turbo run test --force` - **974 passed, 0 failed**, 8/8 tasks: 873 API across 58 files,
+  30 web across 10, **71 mobile across 8 files** (from 69 / 7 at `6be0e7b`, and 27 at the feature
+  base). The two new tests are C46's.
 - `pnpm turbo run lint --force` - 8/8 tasks, **0 errors**, 5 warnings, all pre-existing in
-  `apps/web` (`components/ui/beams-background.tsx`, `react-hooks/*`). `apps/mobile` is not linted:
-  its script is `echo 'no lint configured'`.
-- `pnpm turbo run typecheck --force` - 13/13 tasks clean. `apps/mobile`'s task is
-  `echo 'skipped: …'`; run by hand, `tsc --noEmit` gives the same **5 pre-existing** errors, none
-  in a touched file.
+  `apps/web/components/ui/beams-background.tsx`. `apps/mobile` is still not linted
+  (`"lint": "echo 'no lint configured'"`), which is why C46 had to exist.
+- `pnpm turbo run typecheck --force` - 13/13 tasks clean; `apps/mobile`'s task is an `echo`, and by
+  hand `tsc --noEmit` gives the same 5 pre-existing errors as round 1.
 - `git diff --quiet <base> -- "apps/mobile/app/(app)/(guardian)/(home)/index.tsx"` - exit `0`.
-
-## Ranked gaps
-
-1. **Door 6 has no check, and the gate cannot stand in for one.** `plan.md` `## Landing` row 6
-   requires `export { ApiError } from "@/lib/api-error";` in `lib/api.ts` so that every existing
-   `import { ApiError } from "@/lib/api"` keeps working. `checks.md` has no check for it (its
-   header says "5 one-way doors" and its Coverage prose lists doors 1-5), no mobile test imports
-   `ApiError` from `@/lib/api`, and `apps/mobile`'s `lint` and `typecheck` scripts are both `echo`
-   stubs - so removing the line is invisible to the whole gate.
-   `apps/mobile/lib/api.ts:4`, `apps/mobile/package.json:10`.
-   *Smallest fix:* one check asserting the re-export - e.g. `expect(await import("@/lib/api"))` is
-   impossible under `environment: "node"` (that file imports `@clerk/clerk-expo`), so assert the
-   bytes instead, the same technique C16/C43 already use: `lib/api.ts` contains
-   `export { ApiError } from "@/lib/api-error"`. Add the door-6 row to `Coverage` and correct the
-   "5 one-way doors" count.
-2. **C43 proves only half of AC 44** - the absence of the old destination, never the presence of
-   `router.replace("/(app)")` for both response statuses.
-   `apps/mobile/lib/membership-errors.test.ts:132`.
-3. **C34's second proof is weaker than its claim** - it rejects only double-quoted role labels, so
-   a single-quoted literal or a JSX text node would pass a check whose claim is "any of the three
-   literals". `apps/mobile/lib/invite-copy.test.ts:79`.
-4. **C16 sweeps `app/` and `lib/` only**, while AC 17 says `app/(app)/index.tsx` is the *only*
-   importer; `components/`, `constants/` and `scripts/` are outside the walk.
-   `apps/mobile/lib/gatekeeper.test.ts:289-290`.
