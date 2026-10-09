@@ -90,8 +90,14 @@ they are.
 | 4. `user-type`'s `handleContinue` keeps `router.replace("/(app)")` and does **not** navigate to `(joining)/academy/<academyId>` itself | unchanged line `router.replace("/(app)")`, after `syncUser` and the `["user","me"]` refetch | Replacing straight to `(joining)/academy/<id>`, which is what the ticket's prose describes: it puts the academy-vs-search-vs-already-a-member choice in a second file, contradicting the ticket's own "routing decisions stay in `(app)/index.tsx`" criterion. The destination is identical because door 2's table decides it one hop later |
 | 5. The invite's lifetime ends when a membership row exists, with no TTL | cleared when `user.activeMembership !== null`, or when `activeRole === "manager"` | A timestamp plus an expiry window: it adds a second reason an invite can vanish, and the stale-invite case the ticket names ("joined months ago") is already settled by the membership row that joining created |
 
+| 6. `ApiError` lives in `lib/api-error.ts`, imported by anything that decides *what to say* about a failure; `lib/api.ts` re-exports it | `export class ApiError extends Error` moved verbatim into `lib/api-error.ts`, plus `export { ApiError } from "@/lib/api-error";` in `lib/api.ts`, so every existing `import { ApiError } from "@/lib/api"` is unchanged | Duck-typing on `error instanceof Error && "status" in error`: it accepts any object that happens to carry a `status`, so a fetch failure with a `status` field would be classified as an API answer. Keeping the class in `lib/api.ts` was not an option - that file imports `@clerk/clerk-expo`, which imports `react-native`, so an `instanceof` reached through it is a check the node harness cannot run at all |
+
 - Nothing else in this change is hard to reverse. The copy, the error sentences, the new screen's
-  layout and the module boundaries other than door 2 are all settled in the diff.
+  layout and the module boundaries other than doors 2 and 6 are all settled in the diff.
+- **Door 6 was found while building** and is recorded after the commit that introduced it rather
+  than before, which is the one place this build broke its own rule. The alternative above is the
+  one that was actually weighed at the time, not a reconstruction: the split happened because
+  `membership-errors.test.ts` would not load, and duck-typing was the other way out of that.
 
 ## Criteria
 

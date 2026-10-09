@@ -309,3 +309,21 @@ M10 não está em nenhum AC e é o que a porta 1 existe para garantir. Vale roda
   roughly 12 KB written, 44 KB total, divided by four
 - **One builder.** The estimate is 8k against 150k, so there is nothing to cut and no mechanism to
   choose
+
+- **Boundary:** C1-C45 closed at `2e39736`, across four commits - `b7029ce` (S2), `7c963c8` (S1),
+  `b627b9d` (S3), `2e39736` (S4). S5 needed no code: C44's proof is that nothing moved, and C45 is
+  the repository gate
+- **Settled mid-build:** nothing beyond the plan stop. The maintainer's one answer there - manual
+  testing now, a React Native render harness later - is recorded in the plan's `## Assumptions`
+  with `Confirmed? y`, and it is what the `## Manual` roteiro above exists for
+- **Abandoned:** a leave button on `(joining)/already-member`, which would have made "saia da
+  atual primeiro" a one-tap action. Dropped because leaving is destructive and already lives
+  behind its own confirmation in `components/AcademyInfo.tsx`, and because the invite is cleared
+  by then - the person would have left their academy and landed on `search-academy`, which is the
+  screen this epic removes. Opening the link again after leaving is the path, and it works because
+  nothing about an invite link is single-use
+- **Gate:** 972 tests passed, 0 failed - 873 API (incl. 134 integration) · 30 web · 69 mobile, from
+  27. `pnpm turbo run typecheck --force` 13/13 clean. `pnpm turbo run lint --force` 0 errors and
+  the same 5 pre-existing `apps/web` warnings TAT-177 reported, 0 new. `apps/mobile`'s typecheck is
+  still `echo 'skipped'`; run by hand, `tsc --noEmit` reports the same 5 pre-existing errors
+  TAT-177 found, none of them in a file this feature touches
