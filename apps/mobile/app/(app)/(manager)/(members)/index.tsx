@@ -13,6 +13,7 @@ export default function MembersListScreen() {
   return (
     <MembersListContent
       showBackButton
+      showInviteActions
       allowMemberDetails
       tabs={MANAGER_TABS}
       getMemberDetailHref={(membershipId) =>

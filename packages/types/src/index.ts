@@ -33,6 +33,22 @@ export const PAPEL_TO_ROLE: Record<string, InviteRole> = {
 };
 
 /**
+ * The same table read the other way, for the one app that *produces* links.
+ *
+ * Written out rather than inverted at runtime: the inverse of a
+ * `Record<string, InviteRole>` is not typed `Record<InviteRole, string>`, so a
+ * role missing from it would reach a shared URL as `undefined` instead of
+ * failing to compile. The two tables are held together by a round-trip
+ * assertion (`resolvePapelToRole(ROLE_TO_PAPEL[r]) === r`) rather than by one
+ * being derived from the other.
+ */
+export const ROLE_TO_PAPEL: Record<InviteRole, string> = {
+  student: "aluno",
+  instructor: "instrutor",
+  guardian: "responsavel",
+};
+
+/**
  * A suggestion, never a lock: an unrecognised token degrades to "no suggested
  * role" and the invite still works. Matching is exact — the token is always
  * produced by the app, never typed by hand, so accepting `ALUNO` would only
