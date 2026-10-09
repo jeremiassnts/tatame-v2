@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "promote_threshold": 2,
+  "window_days": 45,
+  "quarantine_threshold": 2,
+  "next_id": 3,
+  "lessons": [
+    {
+      "id": "L-001",
+      "key": "surviving_mutant::when a shared component takes a variant prop that maps to styling assert the output of every variant value not only the default one",
+      "text": "When a shared component takes a variant prop that maps to styling, assert the output of every variant value, not only the default one",
+      "signal": "surviving_mutant",
+      "scope": "web-components",
+      "status": "candidate",
+      "features": [
+        "tat-176-public-invite-page"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "apps/web/components/store-buttons.tsx:9 (web-components)"
+      ],
+      "created": "2026-10-08T21:45:35Z",
+      "last_seen": "2026-10-08T21:45:35Z"
+    },
+    {
+      "id": "L-002",
+      "key": "spec_precision_gap::prove that a page renders a shared component by rendering the page not by asserting the component name appears in the page source",
+      "text": "Prove that a page renders a shared component by rendering the page, not by asserting the component name appears in the page source",
+      "signal": "spec_precision_gap",
+      "scope": "web-pages",
+      "status": "candidate",
+      "features": [
+        "tat-176-public-invite-page"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C13 (web-pages)"
+      ],
+      "created": "2026-10-08T21:45:39Z",
+      "last_seen": "2026-10-08T21:45:39Z"
+    }
+  ]
+}

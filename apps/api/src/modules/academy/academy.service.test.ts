@@ -54,6 +54,40 @@ describe("AcademyService", () => {
     ).rejects.toMatchObject({ statusCode: 403 });
   });
 
+  it("projects only the public fields of an academy", async () => {
+    const memRepo = new InMemoryMembershipRepository([]);
+    const acadRows = [
+      makeAcademy({
+        name: "Academia Tatame",
+        logoUrl: "https://cdn.example/logo.png",
+        pixKey: "dojo@example.com",
+        pixKeyType: "email",
+        contactEmail: "contato@example.com",
+        contactPhone: "+5511999999999",
+        address: "Rua Um, 100",
+      }),
+    ];
+    const acadRepo = new InMemoryAcademyRepository(acadRows, memRepo);
+    const svc = new AcademyService(acadRepo, () => memRepo);
+
+    const row = acadRows[0]!;
+    const publicView = await svc.getPublicById(row.id);
+
+    expect(publicView).toEqual({
+      id: row.id,
+      name: "Academia Tatame",
+      logoUrl: "https://cdn.example/logo.png",
+    });
+  });
+
+  it("returns null for an academy that does not exist", async () => {
+    const memRepo = new InMemoryMembershipRepository([]);
+    const acadRepo = new InMemoryAcademyRepository([], memRepo);
+    const svc = new AcademyService(acadRepo, () => memRepo);
+
+    expect(await svc.getPublicById(randomUUID())).toBeNull();
+  });
+
   it("update succeeds for owner", async () => {
     const ownerId = randomUUID();
     const memRepo = new InMemoryMembershipRepository([]);

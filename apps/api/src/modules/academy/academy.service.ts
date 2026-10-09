@@ -41,6 +41,19 @@ export class AcademyService {
     return (await this.academyRepo.findById(academyId)) ?? null;
   }
 
+  /**
+   * What an unauthenticated caller may read. The invite page at
+   * `/convite/<academyId>` has no session, so it cannot use `getById`: that
+   * returns the whole row, `pixKey` and the contact details included, and a
+   * uuid is all anyone would need. Three fields, built explicitly rather than
+   * by omission, so a column added to the table does not join the response.
+   */
+  async getPublicById(academyId: string) {
+    const row = await this.academyRepo.findById(academyId);
+    if (!row) return null;
+    return { id: row.id, name: row.name, logoUrl: row.logoUrl };
+  }
+
   async searchByName(q: string, limit = 50) {
     const term = q.trim();
     if (!term) return [];
