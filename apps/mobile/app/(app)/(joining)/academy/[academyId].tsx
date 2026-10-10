@@ -1,7 +1,11 @@
 import { Avatar } from "@/components/Avatar";
-import { ApiError } from "@/lib/api";
 import { useAcademy } from "@/lib/hooks/use-academy";
 import { useRequestMembership } from "@/lib/hooks/use-membership";
+import { useCurrentUser } from "@/lib/hooks/use-user";
+import {
+  describeAcademyLoadError,
+  describeMembershipRequestError,
+} from "@/lib/membership-errors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, Mail, MapPin, Phone } from "lucide-react-native";
 import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
@@ -19,26 +23,35 @@ export default function AcademyDetailScreen() {
     : params.academyId;
   const router = useRouter();
 
-  const { data: academy, isPending } = useAcademy(academyId ?? "");
+  const {
+    data: academy,
+    isPending,
+    isError,
+    error,
+    refetch,
+  } = useAcademy(academyId ?? "");
+  const { data: user } = useCurrentUser();
   const requestMembership = useRequestMembership();
 
   const handleRequestMembership = () => {
     if (!academyId) return;
 
     requestMembership.mutate(academyId, {
-      onSuccess: (data) => {
-        if (data.status === "active") {
-          router.replace("/(app)");
-        } else {
-          router.replace("/(app)/(joining)/pending-approval");
-        }
+      onSuccess: () => {
+        // Always the app root. `useRequestMembership` has already refetched
+        // `/users/me`, so `(app)/index.tsx` sees the new membership and picks
+        // between pending-approval and the role home — the one file that owns
+        // that choice.
+        router.replace("/(app)");
       },
-      onError: (error) => {
-        const message =
-          error instanceof ApiError
-            ? error.message
-            : "Não foi possível enviar sua solicitação.";
-        Alert.alert("Erro", message);
+      onError: (requestError) => {
+        Alert.alert(
+          "Erro",
+          describeMembershipRequestError(
+            requestError,
+            Boolean(user?.activeMembership),
+          ),
+        );
       },
     });
   };
@@ -49,6 +62,45 @@ export default function AcademyDetailScreen() {
         <Text className="font-poppins text-sm" style={{ color: TEXT_MUTED }}>
           Academia inválida.
         </Text>
+      </SafeAreaView>
+    );
+  }
+
+  // Before TAT-191 this screen rendered the activity indicator forever on a
+  // failed load, which is where an invite with a stale academy id ended up.
+  if (isError) {
+    return (
+      <SafeAreaView
+        className="flex-1 items-center justify-center bg-background"
+        edges={["top", "bottom"]}
+      >
+        <View className="items-center px-6" style={{ gap: 20 }}>
+          <Text
+            className="text-center font-poppins text-sm"
+            style={{ color: TEXT_SECONDARY, lineHeight: 22 }}
+          >
+            {describeAcademyLoadError(error)}
+          </Text>
+
+          <View className="w-full" style={{ gap: 10 }}>
+            <Pressable
+              onPress={() => void refetch()}
+              className="items-center justify-center rounded-xl bg-accent py-3.5"
+            >
+              <Text className="font-poppins-semibold text-sm text-white">
+                Tentar novamente
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => router.replace("/(app)/(joining)/search-academy")}
+              className="items-center justify-center rounded-xl border border-surface-border bg-surface py-3.5"
+            >
+              <Text className="font-poppins-semibold text-sm text-primary">
+                Buscar outra academia
+              </Text>
+            </Pressable>
+          </View>
+        </View>
       </SafeAreaView>
     );
   }

@@ -70,6 +70,29 @@ academyRouter.get("/:academyId", requireSession, async (req, res, next) => {
   }
 });
 
+/**
+ * The only academy route with no session, and deliberately so: the public
+ * invite page at `apptatame.com.br/convite/<academyId>` is opened by someone
+ * who has not installed the app yet. `getPublicById` is what bounds the
+ * exposure — see the service. The `/v1` global limiter in `app.ts` already
+ * covers it.
+ */
+academyRouter.get("/:academyId/public", async (req, res, next) => {
+  try {
+    const params = academyIdParamSchema.safeParse(req.params);
+    if (!params.success) {
+      throw new HttpError(400, "Invalid academy id");
+    }
+    const row = await academyService.getPublicById(params.data.academyId);
+    if (!row) {
+      throw new HttpError(404, "Academy not found");
+    }
+    res.json(row);
+  } catch (e) {
+    next(e);
+  }
+});
+
 academyRouter.get(
   "/:academyId/stats",
   authorize(Role.Manager),

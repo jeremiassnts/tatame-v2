@@ -1,9 +1,13 @@
 import { BELT_COLORS, BELT_LABELS_SHORT } from "@/lib/belts";
-import { User } from "lucide-react-native";
+import { User, type LucideIcon } from "lucide-react-native";
 import { Pressable, Text, View } from "react-native";
 
 export type SelectionCardProps = {
   name: string;
+  /** A line under the name, for rows whose meaning is not obvious from it. */
+  description?: string;
+  /** Defaults to `User`, which is what every person row has always shown. */
+  Icon?: LucideIcon;
   initials?: string;
   avatarBg: string;
   iconColor?: string;
@@ -15,6 +19,8 @@ export type SelectionCardProps = {
 
 export function SelectionCard({
   name,
+  description,
+  Icon = User,
   initials,
   avatarBg,
   iconColor,
@@ -66,7 +72,7 @@ export function SelectionCard({
         {initials ? (
           <Text className="font-poppins-bold text-sm text-white">{initials}</Text>
         ) : (
-          <User size={20} color={iconColor ?? "#FFFFFF"} />
+          <Icon size={20} color={iconColor ?? "#FFFFFF"} />
         )}
       </View>
 
@@ -75,7 +81,11 @@ export function SelectionCard({
         <Text className="font-poppins-semibold text-[15px] text-white" numberOfLines={1}>
           {name}
         </Text>
-        {beltSub ? (
+        {description ? (
+          <Text className="font-poppins text-[13px] text-muted" numberOfLines={3}>
+            {description}
+          </Text>
+        ) : beltSub ? (
           <View className="flex-row items-center" style={{ gap: 6 }}>
             <View
               className="h-2 w-2 rounded-full"
