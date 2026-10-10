@@ -65,6 +65,25 @@ describe("the catalog itself", () => {
     }
   });
 
+  /**
+   * Array equality rather than a `not.toContain`, because the catalogue types
+   * what the code *can* emit and both directions have to show: a reason that
+   * outlived its rail lies about the system, and a reason added without a call
+   * site lies the same way. `NO_PENDING_PIX` was AbacatePay's and went with it
+   * in TAT-187; `NO_PENDING_CHARGE` is the same drop on the Asaas rail.
+   */
+  it("no longer accepts the AbacatePay drop reason", () => {
+    expect(CATALOG["payment.webhook_unhandled"].reasons).toEqual([
+      "NO_PENDING_CHARGE",
+      "MISSING_REFERENCE",
+      "DUPLICATE_MONTH",
+      "FOREIGN_ACCOUNT",
+      "USER_OR_ACADEMY_NOT_FOUND",
+      "OWNER_NOT_FOUND",
+      "UNKNOWN_EVENT_TYPE",
+    ]);
+  });
+
   it("covers the eight P1 domains from the spec, plus payout_account", () => {
     const domains = new Set(Object.values(CATALOG).map((e) => e.domain));
     expect([...domains].sort()).toEqual([

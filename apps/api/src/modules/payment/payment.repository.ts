@@ -84,25 +84,6 @@ export interface IPaymentRepository {
     referenceMonth: string,
   ): Promise<number>;
 
-  createPendingPix(data: {
-    pixQrCodeId: string;
-    subscriptionId: string;
-    userId: string;
-    academyId: string;
-    referenceMonth: string;
-    amountCents: number;
-  }): Promise<void>;
-
-  findPendingPixByQrCodeId(pixQrCodeId: string): Promise<{
-    subscriptionId: string;
-    userId: string;
-    academyId: string;
-    referenceMonth: string;
-    amountCents: number;
-  } | undefined>;
-
-  deletePendingPix(pixQrCodeId: string): Promise<void>;
-
   findByAsaasPaymentId(asaasPaymentId: string): Promise<PaymentRow | undefined>;
 
   /** Idempotent: Asaas can answer a charge creation that already happened. */

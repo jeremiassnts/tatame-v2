@@ -32,11 +32,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
  * from which id they passed and which cache key they invalidated, so every fix
  * had to be made twice; they are route shells around this now.
  *
- * The charge comes from `POST /payments/pix` (Asaas), which differs from the
- * AbacatePay one it replaced in three ways that are all visible here:
- * `encodedImage` is raw base64 rather than a data URI, `expirationDate` is not
- * ISO, and the QR is valid for about a year rather than minutes — so there is a
- * date to show, not a countdown to run.
+ * The charge comes from `POST /payments/pix` (Asaas). Three of its shapes are
+ * visible here and none is the obvious one: `encodedImage` is raw base64 rather
+ * than a data URI, `expirationDate` is not ISO, and the QR is valid for about a
+ * year rather than minutes — so there is a date to show, not a countdown to run.
  */
 
 type Props = {

@@ -19,7 +19,6 @@ import { NotificationDispatcher } from "../notification/notification-dispatcher.
 import { getNotificationQueue } from "../notification/notification.queue.js";
 import { PostgresNotificationRepository } from "../notification/notification.repository.postgres.js";
 import { NotificationService } from "../notification/notification.service.js";
-import { AbacatePayWebhookHandler } from "../payment/abacatepay-webhook.handler.js";
 import { PostgresPaymentRepository } from "../payment/payment.repository.postgres.js";
 import { StripeCheckoutWebhookHandler } from "../payment/stripe-checkout-webhook.handler.js";
 import { PostgresMembershipRepository } from "../membership/membership.repository.postgres.js";
@@ -316,25 +315,7 @@ managerSubscriptionRouter.post(
 export function createWebhookRouter() {
   const webhookRouter = Router();
 
-  // AbacatePay student payments
   const studentSubRepo = new PostgresStudentSubscriptionRepository(db);
-  const abacatePayHandler = new AbacatePayWebhookHandler(
-    paymentRepo,
-    userRepo,
-    acadRepo,
-    emailService,
-    webhookDispatcher,
-    studentSubRepo,
-  );
-
-  webhookRouter.post("/abacatepay", async (req, res, next) => {
-    try {
-      await abacatePayHandler.handleEvent(req.body as Parameters<typeof abacatePayHandler.handleEvent>[0]);
-      res.json({ received: true });
-    } catch (e) {
-      next(e);
-    }
-  });
 
   // Stripe webhooks (student payments + manager subscriptions)
   const stripeCheckoutHandler = new StripeCheckoutWebhookHandler(

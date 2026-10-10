@@ -107,7 +107,7 @@ groups:
       - uid: tatame-api-5xx
         title: API returning 5xx
         # Deliberately the HTTP metric and not the `request.failed` event. The
-        # error handler returns early for `HttpError`, so a 502 from AbacatePay
+        # error handler returns early for `HttpError`, so a 502 from Asaas
         # never emits that event — it is still a 5xx to the caller, and this
         # counter sees every one of them regardless of how it was produced.
         condition: B
@@ -233,11 +233,13 @@ groups:
         # fifteen-minute window keeps a single occurrence above the threshold for
         # fifteen minutes, so one lost payment does send the email.
         #
-        # `NO_PENDING_CHARGE` is the Asaas rail's spelling of `NO_PENDING_PIX`
-        # and has to be here: after the TAT-104 cutover it is the reason a lost
-        # student payment actually reports, so a rule matching only the two
-        # legacy reasons would have gone quiet exactly when the new rail became
-        # the only one the app calls.
+        # `NO_PENDING_CHARGE` is the reason a lost student payment reports since
+        # the TAT-104 cutover. The rail it replaced had its own spelling, and for
+        # one release this query matched only that one — so the rule went quiet
+        # exactly when the new rail became the only one the app calls.
+        # `catalog-coverage.test.ts` reads the `expr:` lines and fails if a money
+        # reason in the catalog is missing from them, which is what would have
+        # caught it. TAT-187 removed the retired spelling from both.
         condition: B
         data:
           - refId: A
@@ -250,7 +252,7 @@ groups:
                 type: loki
                 uid: loki
               editorMode: code
-              expr: sum(count_over_time({service_name="tatame-api"} | event_name="payment.webhook_unhandled" | event_reason=~"NO_PENDING_PIX|NO_PENDING_CHARGE|MISSING_REFERENCE" [15m]))
+              expr: sum(count_over_time({service_name="tatame-api"} | event_name="payment.webhook_unhandled" | event_reason=~"NO_PENDING_CHARGE|MISSING_REFERENCE" [15m]))
               intervalMs: 60000
               maxDataPoints: 43200
               queryType: instant
@@ -281,8 +283,7 @@ groups:
           description: >-
             {{ $value }} paid webhook(s) in fifteen minutes that could not be tied
             to anything of ours — an Asaas charge with no pending row
-            (`NO_PENDING_CHARGE`), the same on the retired AbacatePay rail
-            (`NO_PENDING_PIX`), or a completed Stripe session with no metadata
+            (`NO_PENDING_CHARGE`), or a completed Stripe session with no metadata
             (`MISSING_REFERENCE`). The money is with the provider and the student
             is still marked overdue. Reconcile by hand against the provider
             dashboard. Query, with the ids:

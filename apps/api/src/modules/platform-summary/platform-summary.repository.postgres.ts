@@ -6,7 +6,6 @@ import {
   managerSubscriptions,
   payments,
   pendingAsaasPayments,
-  pendingPixPayments,
   studentSubscriptions,
   subscriptionPlans,
   users,
@@ -231,83 +230,48 @@ export class PostgresPlatformSummaryRepository
   }
 
   async unpaidPixPerAcademy(window: DayWindow): Promise<AcademyAmount[]> {
-    // Two tables, one number. `pending_pix_payments` is AbacatePay's and stops
-    // gaining rows at the cutover — `POST /payments/checkout/pix`, the only
-    // thing that wrote it, was deleted in B9. `pending_asaas_payments` is the
-    // rail that replaced it. Reading only the first would leave this reporting
-    // zero unpaid Pix forever while real ones pile up in the second, which is
-    // worse than not reporting at all: the metric keeps rendering and stops
-    // measuring. Both are read until the AbacatePay rows have drained.
-    const [abacatePay, asaas] = await Promise.all([
-      this.db
-        .select({
-          academyId: pendingPixPayments.academyId,
-          count: count(),
-          amountCents: sum(pendingPixPayments.amountCents),
-        })
-        .from(pendingPixPayments)
-        .where(
-          and(
-            gte(pendingPixPayments.createdAt, window.start),
-            lt(pendingPixPayments.createdAt, window.end),
-            // The webhook records the paid Pix with the QR code id as its
-            // `stripePaymentId`; no such row means the QR was never paid.
-            notExists(
-              this.db
-                .select({ one: sql`1` })
-                .from(payments)
-                .where(
-                  eq(payments.stripePaymentId, pendingPixPayments.pixQrCodeId),
+    // One table since TAT-187. This number used to be two summed together, and
+    // the half that is gone is the one whose rail stopped receiving charges at
+    // the Asaas cutover. The `kind` filter is what keeps the meaning of what is
+    // left: a `checkout` row is a card session, not a Pix,
+    // and counting it would change what the summary reports without changing
+    // its label — the way this metric already broke once, by reading the rail
+    // that had stopped receiving charges.
+    const rows = await this.db
+      .select({
+        academyId: pendingAsaasPayments.academyId,
+        count: count(),
+        amountCents: sum(pendingAsaasPayments.amountCents),
+      })
+      .from(pendingAsaasPayments)
+      .where(
+        and(
+          gte(pendingAsaasPayments.createdAt, window.start),
+          lt(pendingAsaasPayments.createdAt, window.end),
+          eq(pendingAsaasPayments.kind, "payment"),
+          // The pending row's handle *is* the payment id, so a recorded payment
+          // matches it directly. B6 deletes the row when it records the
+          // payment; this is what makes the number right anyway when that
+          // delete is the thing that failed.
+          notExists(
+            this.db
+              .select({ one: sql`1` })
+              .from(payments)
+              .where(
+                eq(
+                  payments.asaasPaymentId,
+                  pendingAsaasPayments.asaasPaymentId,
                 ),
-            ),
+              ),
           ),
-        )
-        .groupBy(pendingPixPayments.academyId),
-      this.db
-        .select({
-          academyId: pendingAsaasPayments.academyId,
-          count: count(),
-          amountCents: sum(pendingAsaasPayments.amountCents),
-        })
-        .from(pendingAsaasPayments)
-        .where(
-          and(
-            gte(pendingAsaasPayments.createdAt, window.start),
-            lt(pendingAsaasPayments.createdAt, window.end),
-            // A `checkout` row is a card session, not a Pix. Counting it would
-            // quietly change what this number means.
-            eq(pendingAsaasPayments.kind, "payment"),
-            // On this rail the pending row's handle *is* the payment id, so a
-            // recorded payment matches it directly. B6 deletes the row when it
-            // records the payment; this is what makes the number right anyway
-            // when that delete is the thing that failed.
-            notExists(
-              this.db
-                .select({ one: sql`1` })
-                .from(payments)
-                .where(
-                  eq(
-                    payments.asaasPaymentId,
-                    pendingAsaasPayments.asaasPaymentId,
-                  ),
-                ),
-            ),
-          ),
-        )
-        .groupBy(pendingAsaasPayments.academyId),
-    ]);
+        ),
+      )
+      .groupBy(pendingAsaasPayments.academyId);
 
-    const perAcademy = new Map<string, { count: number; amountCents: number }>();
-    for (const row of [...abacatePay, ...asaas]) {
-      const sofar = perAcademy.get(row.academyId) ?? { count: 0, amountCents: 0 };
-      perAcademy.set(row.academyId, {
-        count: sofar.count + row.count,
-        amountCents: sofar.amountCents + cents(row.amountCents),
-      });
-    }
-    return [...perAcademy].map(([academyId, totals]) => ({
-      academyId,
-      ...totals,
+    return rows.map((row) => ({
+      academyId: row.academyId,
+      count: row.count,
+      amountCents: cents(row.amountCents),
     }));
   }
 
