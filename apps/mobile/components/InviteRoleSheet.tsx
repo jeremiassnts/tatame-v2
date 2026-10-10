@@ -1,6 +1,6 @@
 import { INVITE_ROLE_OPTIONS } from "@/lib/invite-share";
 import type { InviteRole } from "@tatame/types";
-import { GraduationCap, User, Users } from "lucide-react-native";
+import { GraduationCap, User, Users, UsersRound } from "lucide-react-native";
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SelectionCard } from "./SelectionCard";
@@ -15,7 +15,16 @@ import { SelectionCard } from "./SelectionCard";
  * inside a form, and this is triggered by a button.
  */
 
-const ROLE_ICONS: Record<InviteRole, typeof User> = {
+/**
+ * One glyph per row, including the row that is not a role.
+ *
+ * `general` is keyed by a literal rather than by `null` so the table stays a
+ * `Record` the compiler can check exhaustively: a role added to `InviteRole`
+ * without a glyph here is a type error, which is the only thing stopping four
+ * identical avatars.
+ */
+const ROLE_ICONS: Record<InviteRole | "general", typeof User> = {
+  general: UsersRound,
   student: User,
   instructor: GraduationCap,
   guardian: Users,
@@ -24,7 +33,8 @@ const ROLE_ICONS: Record<InviteRole, typeof User> = {
 export type InviteRoleSheetProps = {
   visible: boolean;
   onClose: () => void;
-  onSelect: (role: InviteRole) => void;
+  /** `null` is the general invite — see `INVITE_ROLE_OPTIONS`. */
+  onSelect: (role: InviteRole | null) => void;
 };
 
 export function InviteRoleSheet({
@@ -68,10 +78,10 @@ export function InviteRoleSheet({
 
             {INVITE_ROLE_OPTIONS.map((option) => (
               <SelectionCard
-                key={option.role}
+                key={option.label}
                 name={option.label}
                 description={option.description}
-                Icon={ROLE_ICONS[option.role]}
+                Icon={ROLE_ICONS[option.role ?? "general"]}
                 avatarBg="rgba(160,120,232,0.125)"
                 iconColor="#A078E8"
                 onPress={() => onSelect(option.role)}

@@ -28,12 +28,22 @@ const INVITE_URL_BASE = `https://${APP_HOST}/convite`;
  * symmetry is asserted rather than assumed, because this is the producer and
  * that is the consumer and nothing else connects them.
  */
-export function buildInviteUrl(academyId: string, role: InviteRole): string {
-  return `${INVITE_URL_BASE}/${encodeURIComponent(academyId)}?papel=${ROLE_TO_PAPEL[role]}`;
+export function buildInviteUrl(
+  academyId: string,
+  role: InviteRole | null,
+): string {
+  const path = `${INVITE_URL_BASE}/${encodeURIComponent(academyId)}`;
+
+  // `null` is the general invite, and it omits the token rather than inventing
+  // one: `papel`'s vocabulary is closed in `@tatame/types`, and an absent token
+  // is the shape both readers already handle — `apps/web` renders the generic
+  // invite and `(onboarding)/user-type` opens with nothing preselected.
+  return role ? `${path}?papel=${ROLE_TO_PAPEL[role]}` : path;
 }
 
 export type InviteRoleOption = {
-  role: InviteRole;
+  /** `null` is the general invite: one link, and the person picks their role. */
+  role: InviteRole | null;
   label: string;
   description: string;
 };
@@ -48,6 +58,18 @@ export type InviteRoleOption = {
  * link, and the two disagreeing is exactly what nobody notices.
  */
 export const INVITE_ROLE_OPTIONS: readonly InviteRoleOption[] = [
+  {
+    // First, because it is the row that corrects what the other three imply.
+    // A picker offering role rows only reads as "invite one person at a time,
+    // by role", and the link is neither per-person nor per-role — the same URL
+    // serves a whole group. (The three labels are not spelt out here, in this
+    // comment or anywhere else in this module: `ROLE_LABELS` is their one
+    // source, and C1 asserts the absence.)
+    role: null,
+    label: "Geral",
+    description:
+      "Um link para a turma toda — cada pessoa escolhe o próprio perfil ao entrar",
+  },
   {
     role: "student",
     label: ROLE_LABELS.student,

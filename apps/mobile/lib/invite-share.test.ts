@@ -47,13 +47,18 @@ const ACCENTED = /[áàâãéêíóôõúüç]/i;
 
 /** C1 */
 describe("the role options", () => {
-  it("lists the three roles in order", () => {
+  it("opens with the general row and then lists the three roles in order", () => {
+    // `null` first, and it is not decoration: a manager who sees only three
+    // role rows reads the feature as "invite them one by one", which is the
+    // misunderstanding this row exists to remove.
     expect(INVITE_ROLE_OPTIONS.map((o) => o.role)).toEqual([
+      null,
       "student",
       "instructor",
       "guardian",
     ]);
     expect(INVITE_ROLE_OPTIONS.map((o) => o.label)).toEqual([
+      "Geral",
       "Aluno",
       "Instrutor",
       "Responsável",
@@ -85,9 +90,20 @@ describe("the role options", () => {
     expect(description).toContain("dependente");
   });
 
+  it("the general row says the choice passes to the invited person", () => {
+    const general = INVITE_ROLE_OPTIONS.find((o) => o.role === null);
+
+    expect(general).toBeDefined();
+    const description = general!.description.toLowerCase();
+    // Both halves, because "link geral" alone does not tell the manager what
+    // happens on the other side — the person picks their own perfil.
+    expect(description).toContain("escolhe");
+    expect(description).toContain("perfil");
+  });
+
   it("gives every option a description, so no row is a bare label", () => {
     for (const option of INVITE_ROLE_OPTIONS) {
-      expect(option.description.length, option.role).toBeGreaterThan(20);
+      expect(option.description.length, option.label).toBeGreaterThan(20);
     }
   });
 });
@@ -104,6 +120,25 @@ describe("the invite url", () => {
     expect(buildInviteUrl("acad-1", "guardian")).toBe(
       "https://apptatame.com.br/convite/acad-1?papel=responsavel",
     );
+  });
+
+  it("builds the general invite with no papel at all", () => {
+    // Not `?papel=geral`: the token vocabulary is closed in `@tatame/types`,
+    // and an absent token is the shape both readers already handle — the web
+    // page renders the generic invite and `user-type` opens unselected.
+    expect(buildInviteUrl("acad-1", null)).toBe(
+      "https://apptatame.com.br/convite/acad-1",
+    );
+    expect(buildInviteUrl("a/b?c", null)).toBe(
+      "https://apptatame.com.br/convite/a%2Fb%3Fc",
+    );
+  });
+
+  it("the general url is one parseInviteLink reads as no suggested role", () => {
+    expect(parseInviteLink(buildInviteUrl("acad-42", null))).toEqual({
+      academyId: "acad-42",
+      role: null,
+    });
   });
 
   it("escapes an academy id that would otherwise change the path", () => {
@@ -686,15 +721,17 @@ describe("the picker's glyphs", () => {
       sheet.indexOf("ROLE_ICONS"),
       sheet.indexOf("};", sheet.indexOf("ROLE_ICONS")),
     );
-    const glyphs = ROLES.map((role) => {
-      const match = table.match(new RegExp(`${role}:\\s*(\\w+)`));
-      expect(match, role).not.toBeNull();
+    const keys = ["general", ...ROLES];
+    const glyphs = keys.map((key) => {
+      const match = table.match(new RegExp(`${key}:\\s*(\\w+)`));
+      expect(match, key).not.toBeNull();
       return match![1];
     });
 
-    // Three distinct glyphs: one shared avatar across all three rows is the
-    // state the `Icon` prop exists to leave behind.
-    expect(new Set(glyphs).size).toBe(3);
+    // Four distinct glyphs: one shared avatar across the rows is the state the
+    // `Icon` prop exists to leave behind, and the general row reusing a role's
+    // glyph is the same defect one row later.
+    expect(new Set(glyphs).size).toBe(4);
     for (const glyph of glyphs) {
       expect(sheet, glyph).toMatch(
         new RegExp(`import \\{[^}]*\\b${glyph}\\b[^}]*\\} from "lucide-react-native"`),
@@ -702,6 +739,7 @@ describe("the picker's glyphs", () => {
     }
 
     // And handed to the card rather than decided inside it.
-    expect(sheet).toContain("Icon={ROLE_ICONS[option.role]}");
+    // `?? "general"` is the whole mapping for the row that is not a role.
+    expect(sheet).toContain('Icon={ROLE_ICONS[option.role ?? "general"]}');
   });
 });

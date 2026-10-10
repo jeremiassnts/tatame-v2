@@ -47,7 +47,7 @@ export function useInviteShare() {
   );
 
   const shareInvite = useCallback(
-    (role: InviteRole) =>
+    (role: InviteRole | null) =>
       shareMessage(
         inviteShareMessage(academyName, buildInviteUrl(academyId, role)),
         share,
@@ -58,7 +58,7 @@ export function useInviteShare() {
 
   /** Pick a role, close the sheet, then open the share sheet over the screen. */
   const selectRole = useCallback(
-    (role: InviteRole) => {
+    (role: InviteRole | null) => {
       setPickerVisible(false);
       void shareInvite(role);
     },
