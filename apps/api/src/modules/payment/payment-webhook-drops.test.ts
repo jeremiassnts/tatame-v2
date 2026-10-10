@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
  * while the route still answered 200. This file exists to keep that from coming
  * back: one test per drop, asserting the event and its reason.
  *
- * The two worth caring about most are NO_PENDING_PIX and MISSING_REFERENCE —
+ * The two worth caring about most are NO_PENDING_CHARGE and MISSING_REFERENCE —
  * both mean the provider took the money and we wrote no payment row, which
  * nothing else in the system reports.
  *
@@ -26,9 +26,6 @@ async function setup() {
   } as unknown as LoggerProvider);
   vi.resetModules();
   vi.stubEnv("LOG_LEVEL", "debug");
-  const { AbacatePayWebhookHandler } = await import(
-    "./abacatepay-webhook.handler.js"
-  );
   const { StripeCheckoutWebhookHandler } = await import(
     "./stripe-checkout-webhook.handler.js"
   );
@@ -40,7 +37,6 @@ async function setup() {
   );
   return {
     emitted,
-    AbacatePayWebhookHandler,
     StripeCheckoutWebhookHandler,
     AsaasPaymentWebhookHandler,
     InMemoryPaymentRepository,
@@ -67,125 +63,6 @@ function reasons(emitted: LogRecord[]): unknown[] {
  */
 const noUsers = { findById: async () => undefined } as never;
 const noAcademies = { findById: async () => undefined } as never;
-
-describe("AbacatePay webhook drops", () => {
-  it("reports an event type it does not handle", async () => {
-    const { emitted, AbacatePayWebhookHandler, InMemoryPaymentRepository } =
-      await setup();
-    const handler = new AbacatePayWebhookHandler(
-      new InMemoryPaymentRepository(),
-      noUsers,
-      noAcademies,
-      null,
-    );
-
-    await handler.handleEvent({ event: "billing.created", data: {} });
-
-    expect(reasons(emitted)).toEqual(["UNKNOWN_EVENT_TYPE"]);
-    expect(emitted[0]?.attributes).toMatchObject({
-      "app.provider": "abacatepay",
-      "app.type": "billing.created",
-    });
-  });
-
-  it("reports a billing.paid with no QR code id", async () => {
-    const { emitted, AbacatePayWebhookHandler, InMemoryPaymentRepository } =
-      await setup();
-    const handler = new AbacatePayWebhookHandler(
-      new InMemoryPaymentRepository(),
-      noUsers,
-      noAcademies,
-      null,
-    );
-
-    await handler.handleEvent({ event: "billing.paid", data: {} });
-
-    expect(reasons(emitted)).toEqual(["MISSING_REFERENCE"]);
-  });
-
-  it("reports a paid Pix with no pending row — money in, nothing recorded", async () => {
-    const { emitted, AbacatePayWebhookHandler, InMemoryPaymentRepository } =
-      await setup();
-    const repo = new InMemoryPaymentRepository();
-    const handler = new AbacatePayWebhookHandler(repo, noUsers, noAcademies, null);
-
-    await handler.handleEvent({
-      event: "billing.paid",
-      data: { pixQrCode: { id: "pix_orphan", amount: 9900, kind: "PIX", status: "PAID" } },
-    });
-
-    expect(reasons(emitted)).toEqual(["NO_PENDING_PIX"]);
-    expect(emitted[0]?.attributes).toMatchObject({ "app.pixQrCodeId": "pix_orphan" });
-    // The drop is the point: no payment was written.
-    expect(await repo.findByStripePaymentId("pix_orphan")).toBeUndefined();
-  });
-
-  it("stays quiet when the provider retries a webhook already handled", async () => {
-    const { emitted, AbacatePayWebhookHandler, InMemoryPaymentRepository } =
-      await setup();
-    const repo = new InMemoryPaymentRepository();
-    await repo.createPendingPix({
-      pixQrCodeId: "pix_1",
-      subscriptionId: "sub_1",
-      userId: "u1",
-      academyId: "a1",
-      referenceMonth: "2026-09-01",
-      amountCents: 9900,
-    });
-    await repo.create({
-      subscriptionId: "sub_1",
-      userId: "u1",
-      academyId: "a1",
-      amountCents: 9900,
-      method: "pix",
-      confirmedBy: null,
-      stripePaymentId: "pix_1",
-      referenceMonth: "2026-09-01",
-      notes: null,
-      paidAt: new Date(),
-    });
-    const handler = new AbacatePayWebhookHandler(repo, noUsers, noAcademies, null);
-
-    await handler.handleEvent({
-      event: "billing.paid",
-      data: { pixQrCode: { id: "pix_1", amount: 9900, kind: "PIX", status: "PAID" } },
-    });
-
-    // Idempotency is the system working, not a drop worth reporting.
-    expect(reasons(emitted)).toEqual([]);
-  });
-
-  it("reports a recorded payment whose student or academy is missing", async () => {
-    const { emitted, AbacatePayWebhookHandler, InMemoryPaymentRepository } =
-      await setup();
-    const repo = new InMemoryPaymentRepository();
-    await repo.createPendingPix({
-      pixQrCodeId: "pix_2",
-      subscriptionId: "sub_1",
-      userId: "u1",
-      academyId: "a1",
-      referenceMonth: "2026-09-01",
-      amountCents: 9900,
-    });
-    const handler = new AbacatePayWebhookHandler(
-      repo,
-      noUsers,
-      noAcademies,
-      // A non-null email service is what makes the handler walk far enough to
-      // look the student up at all.
-      {} as never,
-    );
-
-    await handler.handleEvent({
-      event: "billing.paid",
-      data: { pixQrCode: { id: "pix_2", amount: 9900, kind: "PIX", status: "PAID" } },
-    });
-
-    expect(reasons(emitted)).toEqual(["USER_OR_ACADEMY_NOT_FOUND"]);
-    // Unlike NO_PENDING_PIX, the payment itself did land — only the email is lost.
-    expect(await repo.findByStripePaymentId("pix_2")).toBeDefined();
-  });
-});
 
 describe("Stripe checkout webhook drops", () => {
   /** A completed session carrying whatever metadata the test needs. */

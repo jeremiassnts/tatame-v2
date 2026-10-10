@@ -169,6 +169,13 @@
       "when": 1790870199852,
       "tag": "0023_lame_boomer",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1791476409543,
+      "tag": "0024_drop_pending_pix_payments",
+      "breakpoints": true
     }
   ]
 }

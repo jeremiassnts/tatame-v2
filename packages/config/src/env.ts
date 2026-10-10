@@ -27,7 +27,6 @@ const envSchema = z.object({
   STRIPE_PRO_PRICE_ID: z.string().optional(),
   /** Base URL for the manager web portal (e.g., https://tatame.app/conta) */
   MANAGER_PORTAL_URL: z.string().url().optional(),
-  ABACATEPAY_API_KEY: z.string().optional(),
   /** Asaas root account API key — creates subaccounts and owns every charge. */
   ASAAS_API_KEY: z.string().optional(),
   /** `https://api-sandbox.asaas.com` or `https://api.asaas.com` (no trailing `/v3`). */

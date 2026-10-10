@@ -104,6 +104,18 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: apps/mobile/lib/invite-share.test.ts:339 (apps/mobile)
 - last seen: 2026-10-09T21:01:25Z
 
+### L-016 - Assert both ends of a time-window predicate with their own excluded case, not one row inside the window
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `repo-layer` · harmful: 0
+- features: tat-187-remove-abacatepay-rail
+- evidence: apps/api/src/modules/platform-summary/platform-summary.repository.postgres.ts:250 (fault F1) (repo-layer)
+- last seen: 2026-10-08T17:02:29Z
+
+### L-017 - Recompute a predicate coverage row from the query the code builds, and give every predicate its own excluded case
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `repo-layer` · harmful: 0
+- features: tat-187-remove-abacatepay-rail
+- evidence: checks.md Coverage row: unpaidPixPerAcademy predicates (4) (repo-layer)
+- last seen: 2026-10-08T17:02:34Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

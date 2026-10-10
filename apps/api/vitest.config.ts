@@ -12,7 +12,6 @@ export default defineConfig({
         "src/**/*.repository.ts",
         "src/**/*.routes.ts",
         "src/**/stripe-webhook.handler.ts",
-        "src/**/abacatepay-webhook.handler.ts",
         "src/**/email.worker.ts",
         "src/**/email.queue.ts",
         "src/**/upload.config.ts",

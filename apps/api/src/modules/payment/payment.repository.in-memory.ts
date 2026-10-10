@@ -107,27 +107,6 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
       .reduce((acc, p) => acc + p.amountCents, 0);
   }
 
-  private pendingPix = new Map<string, { subscriptionId: string; userId: string; academyId: string; referenceMonth: string; amountCents: number }>();
-
-  async createPendingPix(data: {
-    pixQrCodeId: string;
-    subscriptionId: string;
-    userId: string;
-    academyId: string;
-    referenceMonth: string;
-    amountCents: number;
-  }): Promise<void> {
-    this.pendingPix.set(data.pixQrCodeId, data);
-  }
-
-  async findPendingPixByQrCodeId(pixQrCodeId: string) {
-    return this.pendingPix.get(pixQrCodeId);
-  }
-
-  async deletePendingPix(pixQrCodeId: string): Promise<void> {
-    this.pendingPix.delete(pixQrCodeId);
-  }
-
   async findByAsaasPaymentId(
     asaasPaymentId: string,
   ): Promise<PaymentRow | undefined> {
