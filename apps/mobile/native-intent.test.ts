@@ -1,7 +1,9 @@
+import { readdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { parseInviteLink } from "@/lib/invite-link";
 import { clearPendingInvite, readPendingInvite, setPendingInvite } from "@/lib/pending-invite";
-import { redirectSystemPath } from "./+native-intent";
+import { redirectSystemPath } from "@/app/+native-intent";
 
 /**
  * TAT-191 gave the store an AsyncStorage mirror, and AsyncStorage's entry
@@ -91,5 +93,30 @@ describe("redirectSystemPath", () => {
       expect(warm).toBe(cold);
       expect(afterWarm).toEqual(afterCold);
     }
+  });
+});
+
+/**
+ * Why this file is not `app/+native-intent.test.ts`, beside the module it
+ * proves, which is where every other test in this package sits.
+ *
+ * expo-router builds its route tree from a `require.context` over `app/` whose
+ * ignore regex exempts exactly `+html`, `+native-intent` and `*+api` — and
+ * anchors each at the extension (`expo-router/_ctx-shared.js`). A `.test.ts`
+ * beside `+native-intent.ts` therefore misses the exemption, enters the route
+ * tree, and `getRoutesCore.js` throws on the leading `+`: the app does not boot
+ * at all, in Expo Go or in a build.
+ *
+ * So the rule is wider than this one file: `app/` holds routes, and nothing
+ * under it may be a test. The case below is what keeps that true.
+ */
+describe("app/ holds routes only", () => {
+  it("has no test file under app/, which expo-router scans as a route", () => {
+    const appDir = fileURLToPath(new URL("./app", import.meta.url));
+    const offenders = readdirSync(appDir, { recursive: true })
+      .map(String)
+      .filter((entry) => /\.test\.[jt]sx?$/.test(entry));
+
+    expect(offenders).toEqual([]);
   });
 });

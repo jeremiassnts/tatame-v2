@@ -9,7 +9,11 @@ export default defineConfig({
     // rendered, so a React Native renderer would only add setup that nothing
     // asserts against.
     environment: "node",
-    include: ["{app,lib}/**/*.test.ts", "*.test.ts"],
+    // `app/` is deliberately absent: every `.ts` under it is scanned as a route
+    // by expo-router, so a test file there stops the app from booting. The
+    // route directory's own tests live at the package root — see
+    // `native-intent.test.ts`, which also asserts the rule.
+    include: ["lib/**/*.test.ts", "*.test.ts"],
   },
   resolve: {
     // Matches the `@/*` -> `./*` paths entry in `apps/mobile/tsconfig.json`,
