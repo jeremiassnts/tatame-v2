@@ -1,14 +1,21 @@
 import { Avatar } from "@/components/Avatar";
 import { ClassCard } from "@/components/ClassCard";
 import { GraduationCard } from "@/components/GraduationCard";
+import { InviteRoleSheet } from "@/components/InviteRoleSheet";
+import { InviteWelcomeCard } from "@/components/InviteWelcomeCard";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useAcademyContext } from "@/lib/academy-context";
 import { useApi } from "@/lib/api";
 import { useAcademy, useAcademyStats } from "@/lib/hooks/use-academy";
 import { useMyGraduation } from "@/lib/hooks/use-graduation";
+import { useInviteShare } from "@/lib/hooks/use-invite-share";
 import { useManagerSubscription } from "@/lib/hooks/use-manager-subscription";
 import { usePayoutAccount } from "@/lib/hooks/use-payout-account";
 import { useCurrentUser } from "@/lib/hooks/use-user";
+import {
+  INVITE_QUICK_ACTION_LABEL,
+  shouldShowInviteWelcome,
+} from "@/lib/invite-share";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { AlertTriangle, Calendar, CreditCard, Megaphone, UserPlus } from "lucide-react-native";
@@ -68,6 +75,7 @@ export default function ManagerDashboard() {
   // warning exists for. Without it the warning would flash on every mount.
   const { data: payoutAccount, isSuccess: payoutLoaded } = usePayoutAccount();
   const { data: graduation } = useMyGraduation();
+  const invite = useInviteShare();
   const [refreshing, setRefreshing] = useState(false);
 
   const dayOfWeek = new Date().getDay();
@@ -268,6 +276,13 @@ export default function ManagerDashboard() {
             }
           />
 
+          {shouldShowInviteWelcome(stats?.activeMembers) ? (
+            <InviteWelcomeCard
+              onInvitePress={invite.openPicker}
+              onShareAppPress={invite.shareApp}
+            />
+          ) : null}
+
           <Text className="font-poppins-semibold text-sm" style={{ color: TEXT_SECONDARY }}>
             Ações rápidas
           </Text>
@@ -341,6 +356,27 @@ export default function ManagerDashboard() {
                 </Text>
               </Pressable>
             </View>
+            <View className="flex-row" style={{ gap: 12 }}>
+              <Pressable
+                onPress={invite.openPicker}
+                className="min-w-0 flex-1 rounded-[14px] border border-surface-border bg-surface"
+                style={{ padding: 16, gap: 10 }}
+              >
+                <View className="h-9 w-9 items-center justify-center rounded-[10px] bg-accent-translucent">
+                  <UserPlus size={18} color="#A078E8" />
+                </View>
+                <Text
+                  className="font-poppins-medium text-xs text-primary"
+                  style={{ lineHeight: 16 }}
+                >
+                  {INVITE_QUICK_ACTION_LABEL}
+                </Text>
+              </Pressable>
+              {/* The grid is two per row and this row has one card. An empty
+                  flex sibling keeps the invite card the same width as the four
+                  above it instead of stretching it across the screen. */}
+              <View className="min-w-0 flex-1" />
+            </View>
           </View>
 
           <Text className="font-poppins-semibold text-sm" style={{ color: TEXT_SECONDARY }}>
@@ -372,6 +408,12 @@ export default function ManagerDashboard() {
           </View>
         </View>
       </ScrollView>
+
+      <InviteRoleSheet
+        visible={invite.pickerVisible}
+        onClose={invite.closePicker}
+        onSelect={invite.selectRole}
+      />
     </SafeAreaView>
   );
 }

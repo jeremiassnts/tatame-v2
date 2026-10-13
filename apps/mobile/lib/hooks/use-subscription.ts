@@ -97,7 +97,7 @@ export function useCreateCheckout() {
 export type PixChargeResponse = {
   /** The Asaas payment id. Not used for polling: the webhook is what records it. */
   paymentId: string;
-  /** Raw base64 PNG, with no `data:` prefix — unlike AbacatePay's. */
+  /** Raw base64 PNG, with no `data:` prefix — `Image` needs one prepended. */
   encodedImage: string;
   /** The copy-and-paste Pix code. */
   payload: string;

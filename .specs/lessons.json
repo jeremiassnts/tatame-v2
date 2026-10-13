@@ -1,0 +1,315 @@
+{
+  "schema": 1,
+  "promote_threshold": 2,
+  "window_days": 45,
+  "quarantine_threshold": 2,
+  "next_id": 18,
+  "lessons": [
+    {
+      "id": "L-001",
+      "key": "surviving_mutant::when a shared component takes a variant prop that maps to styling assert the output of every variant value not only the default one",
+      "text": "When a shared component takes a variant prop that maps to styling, assert the output of every variant value, not only the default one",
+      "signal": "surviving_mutant",
+      "scope": "web-components",
+      "status": "candidate",
+      "features": [
+        "tat-176-public-invite-page"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "apps/web/components/store-buttons.tsx:9 (web-components)"
+      ],
+      "created": "2026-10-08T21:45:35Z",
+      "last_seen": "2026-10-08T21:45:35Z"
+    },
+    {
+      "id": "L-002",
+      "key": "spec_precision_gap::prove that a page renders a shared component by rendering the page not by asserting the component name appears in the page source",
+      "text": "Prove that a page renders a shared component by rendering the page, not by asserting the component name appears in the page source",
+      "signal": "spec_precision_gap",
+      "scope": "web-pages",
+      "status": "candidate",
+      "features": [
+        "tat-176-public-invite-page"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C13 (web-pages)"
+      ],
+      "created": "2026-10-08T21:45:39Z",
+      "last_seen": "2026-10-08T21:45:39Z"
+    },
+    {
+      "id": "L-003",
+      "key": "surviving_mutant::a one comparison predicate is still a decision classifying isdownloadlink as instrumentation left its query string strip with no proof and deleting it kept the whole suite green",
+      "text": "A one-comparison predicate is still a decision: classifying isDownloadLink as instrumentation left its query-string strip with no proof, and deleting it kept the whole suite green",
+      "signal": "surviving_mutant",
+      "scope": "apps/mobile",
+      "status": "candidate",
+      "features": [
+        "tat-177-universal-links"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "apps/mobile/lib/invite-link.ts:111 (apps/mobile)"
+      ],
+      "created": "2026-10-09T14:46:33Z",
+      "last_seen": "2026-10-09T14:46:33Z"
+    },
+    {
+      "id": "L-004",
+      "key": "ac_gap::when one function refuses several bad inputs name which guard refuses each c14 s five inputs all died in new url or the segment guard leaving the decodeuricomponent catch unproven",
+      "text": "When one function refuses several bad inputs, name which guard refuses each: C14's five inputs all died in new URL or the segment guard, leaving the decodeURIComponent catch unproven",
+      "signal": "ac_gap",
+      "scope": "apps/mobile",
+      "status": "candidate",
+      "features": [
+        "tat-177-universal-links"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "C14 / apps/mobile/lib/invite-link.ts:91 (apps/mobile)"
+      ],
+      "created": "2026-10-09T14:46:33Z",
+      "last_seen": "2026-10-09T14:46:33Z"
+    },
+    {
+      "id": "L-005",
+      "key": "spec_precision_gap::a criterion forbidding two string literals from co occurring in a package is unsatisfiable because the test that asserts the mapping must write both claim the single module instead",
+      "text": "A criterion forbidding two string literals from co-occurring in a package is unsatisfiable, because the test that asserts the mapping must write both; claim the single module instead",
+      "signal": "spec_precision_gap",
+      "scope": "plan",
+      "status": "candidate",
+      "features": [
+        "tat-177-universal-links"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "AC 26 (plan)"
+      ],
+      "created": "2026-10-09T14:46:33Z",
+      "last_seen": "2026-10-09T14:46:33Z"
+    },
+    {
+      "id": "L-006",
+      "key": "spec_deviation::check the premise before writing down a reason for declining a verifier sharpening the claim that gitignore missed apps mobile ios was false and round 2 caught it",
+      "text": "Check the premise before writing down a reason for declining a verifier sharpening: the claim that gitignore missed apps/mobile/ios was false and round 2 caught it",
+      "signal": "spec_deviation",
+      "scope": "verification",
+      "status": "candidate",
+      "features": [
+        "tat-177-universal-links"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        ".gitignore:12 (verification)"
+      ],
+      "created": "2026-10-09T14:46:33Z",
+      "last_seen": "2026-10-09T14:46:33Z"
+    },
+    {
+      "id": "L-007",
+      "key": "ac_gap::give every one way door in the plan a check of its own including a door discovered during the build after the checks were frozen",
+      "text": "Give every one-way door in the plan a check of its own, including a door discovered during the build after the checks were frozen",
+      "signal": "ac_gap",
+      "scope": "planning",
+      "status": "candidate",
+      "features": [
+        "tat-191-pending-invite"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        ".specs/features/tat-191-pending-invite/plan.md Landing door 6 (planning)"
+      ],
+      "created": "2026-10-09T16:18:26Z",
+      "last_seen": "2026-10-09T16:18:26Z"
+    },
+    {
+      "id": "L-008",
+      "key": "ac_gap::never count pnpm lint or pnpm typecheck as a proof for apps mobile both scripts are echo stubs so only its vitest files gate it",
+      "text": "Never count pnpm lint or pnpm typecheck as a proof for apps/mobile: both scripts are echo stubs, so only its vitest files gate it",
+      "signal": "ac_gap",
+      "scope": "mobile",
+      "status": "candidate",
+      "features": [
+        "tat-191-pending-invite"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "apps/mobile/package.json:10 (mobile)"
+      ],
+      "created": "2026-10-09T16:18:26Z",
+      "last_seen": "2026-10-09T16:18:26Z"
+    },
+    {
+      "id": "L-009",
+      "key": "spec_precision_gap::assert the destination a success path navigates to not only the absence of the destination it replaced",
+      "text": "Assert the destination a success path navigates to, not only the absence of the destination it replaced",
+      "signal": "spec_precision_gap",
+      "scope": "mobile",
+      "status": "candidate",
+      "features": [
+        "tat-191-pending-invite"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "apps/mobile/lib/membership-errors.test.ts:132 (mobile)"
+      ],
+      "created": "2026-10-09T16:18:26Z",
+      "last_seen": "2026-10-09T16:18:26Z"
+    },
+    {
+      "id": "L-010",
+      "key": "spec_precision_gap::a source text assertion must match the bare token across every source directory its criterion names not a quoted form under some of them",
+      "text": "A source-text assertion must match the bare token across every source directory its criterion names, not a quoted form under some of them",
+      "signal": "spec_precision_gap",
+      "scope": "mobile",
+      "status": "candidate",
+      "features": [
+        "tat-191-pending-invite"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "apps/mobile/lib/invite-copy.test.ts:79 (mobile)"
+      ],
+      "created": "2026-10-09T16:18:26Z",
+      "last_seen": "2026-10-09T16:18:26Z"
+    },
+    {
+      "id": "L-011",
+      "key": "spec_precision_gap::when a test counts source occurrences exclude comment text and assert the exact count rather than a lower bound",
+      "text": "When a test counts source occurrences, exclude comment text and assert the exact count rather than a lower bound",
+      "signal": "spec_precision_gap",
+      "scope": "mobile",
+      "status": "candidate",
+      "features": [
+        "tat-191-pending-invite"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "apps/mobile/lib/api-error.test.ts:49 (mobile)"
+      ],
+      "created": "2026-10-09T16:33:16Z",
+      "last_seen": "2026-10-09T16:33:16Z"
+    },
+    {
+      "id": "L-012",
+      "key": "surviving_mutant::a source text gate assertion must pin the opening brace and the then branch element flag s element because flag contains flag as a substring and a bare tocontain cannot tell an inverted gate from a correct one",
+      "text": "A source-text gate assertion must pin the opening brace and the then-branch element (/\\{flag \\? \\(\\s*<Element/), because '!flag ?' contains 'flag ?' as a substring and a bare toContain cannot tell an inverted gate from a correct one.",
+      "signal": "surviving_mutant",
+      "scope": "apps/mobile",
+      "status": "candidate",
+      "features": [
+        "tat-178-invite-actions"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "apps/mobile/components/MembersListContent.tsx:123 (apps/mobile)"
+      ],
+      "created": "2026-10-09T21:01:25Z",
+      "last_seen": "2026-10-09T21:01:25Z"
+    },
+    {
+      "id": "L-013",
+      "key": "surviving_mutant::in apps mobile a wiring proof that reads a definition proves nothing about the call site assert over the usecallback body and over each prop binding at every mount site or a swapped handler passes with the whole suite green",
+      "text": "In apps/mobile a wiring proof that reads a definition proves nothing about the call site: assert over the useCallback body and over each prop binding at every mount site, or a swapped handler passes with the whole suite green.",
+      "signal": "surviving_mutant",
+      "scope": "apps/mobile",
+      "status": "candidate",
+      "features": [
+        "tat-178-invite-actions"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "apps/mobile/lib/hooks/use-invite-share.ts:63 (apps/mobile)"
+      ],
+      "created": "2026-10-09T21:01:25Z",
+      "last_seen": "2026-10-09T21:01:25Z"
+    },
+    {
+      "id": "L-014",
+      "key": "surviving_mutant::a callback a child hands up onselect option role is a third wiring surface distinct from mount props and call sites pinning what a screen passes down leaves it entirely unproven",
+      "text": "A callback a child hands UP (onSelect(option.role)) is a third wiring surface distinct from mount props and call sites; pinning what a screen passes down leaves it entirely unproven.",
+      "signal": "surviving_mutant",
+      "scope": "apps/mobile",
+      "status": "candidate",
+      "features": [
+        "tat-178-invite-actions"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "apps/mobile/components/InviteRoleSheet.tsx:77 (apps/mobile)"
+      ],
+      "created": "2026-10-09T21:01:25Z",
+      "last_seen": "2026-10-09T21:01:25Z"
+    },
+    {
+      "id": "L-015",
+      "key": "spec_precision_gap::a source text helper that pairs a handler with a glyph by ordinal position asserts order not containment and never covers the label pair with both or the two buttons labels can be swapped undetected",
+      "text": "A source-text helper that pairs a handler with a glyph by ordinal position asserts order, not containment, and never covers the label; pair with both or the two buttons' labels can be swapped undetected.",
+      "signal": "spec_precision_gap",
+      "scope": "apps/mobile",
+      "status": "candidate",
+      "features": [
+        "tat-178-invite-actions"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "apps/mobile/lib/invite-share.test.ts:339 (apps/mobile)"
+      ],
+      "created": "2026-10-09T21:01:25Z",
+      "last_seen": "2026-10-09T21:01:25Z"
+    },
+    {
+      "id": "L-016",
+      "key": "surviving_mutant::assert both ends of a time window predicate with their own excluded case not one row inside the window",
+      "text": "Assert both ends of a time-window predicate with their own excluded case, not one row inside the window",
+      "signal": "surviving_mutant",
+      "scope": "repo-layer",
+      "status": "candidate",
+      "features": [
+        "tat-187-remove-abacatepay-rail"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "apps/api/src/modules/platform-summary/platform-summary.repository.postgres.ts:250 (fault F1) (repo-layer)"
+      ],
+      "created": "2026-10-08T17:02:29Z",
+      "last_seen": "2026-10-08T17:02:29Z"
+    },
+    {
+      "id": "L-017",
+      "key": "ac_gap::recompute a predicate coverage row from the query the code builds and give every predicate its own excluded case",
+      "text": "Recompute a predicate coverage row from the query the code builds, and give every predicate its own excluded case",
+      "signal": "ac_gap",
+      "scope": "repo-layer",
+      "status": "candidate",
+      "features": [
+        "tat-187-remove-abacatepay-rail"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "checks.md Coverage row: unpaidPixPerAcademy predicates (4) (repo-layer)"
+      ],
+      "created": "2026-10-08T17:02:34Z",
+      "last_seen": "2026-10-08T17:02:34Z"
+    }
+  ]
+}

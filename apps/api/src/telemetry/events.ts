@@ -89,10 +89,10 @@ export const CATALOG = {
       // A paid event we cannot tie to anything of ours. The first two mean the
       // payment is lost until someone reconciles by hand; the last two mean the
       // payment *was* recorded and only its emails were skipped.
-      "NO_PENDING_PIX",
-      // The same meaning on the Asaas rail, where a charge is not always a
-      // Pix. `NO_PENDING_PIX` goes with AbacatePay in B9 and this is what is
-      // left.
+      //
+      // A charge Asaas settled with no pending row to attach it to. The rail
+      // that preceded it had the same drop under its own name; both went with
+      // the rail, and this is what is left.
       "NO_PENDING_CHARGE",
       "MISSING_REFERENCE",
       // The month already has a payment — a manual confirmation usually got
@@ -108,7 +108,7 @@ export const CATALOG = {
       "FOREIGN_ACCOUNT",
       "USER_OR_ACADEMY_NOT_FOUND",
       "OWNER_NOT_FOUND",
-      // AbacatePay's and Asaas's. Stripe's unknown types are already reported by
+      // Asaas's. Stripe's unknown types are already reported by
       // `manager_subscription.webhook_unhandled` — see the note at the top of
       // stripe-checkout-webhook.handler.ts.
       "UNKNOWN_EVENT_TYPE",

@@ -1,6 +1,9 @@
 import { FilterTabs } from "@/components/FilterTabs";
+import { InviteHeaderActions } from "@/components/InviteHeaderActions";
+import { InviteRoleSheet } from "@/components/InviteRoleSheet";
 import { MemberCard } from "@/components/MemberCard";
 import { useAcademyContext } from "@/lib/academy-context";
+import { useInviteShare } from "@/lib/hooks/use-invite-share";
 import { useMembers } from "@/lib/hooks/use-membership";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Search } from "lucide-react-native";
@@ -45,6 +48,12 @@ type MembersListContentProps = {
   getMemberDetailHref?: (membershipId: string) => string;
   getDependentDetailHref?: (dependentId: string, guardianName?: string | null, guardianMembershipId?: string | null) => string;
   tabs?: { key: string; label: string }[];
+  /**
+   * Manager-only. This component backs the instructor and student member lists
+   * too, and neither of them may offer an invite, so the actions are opt-in
+   * rather than opt-out: a new consumer gets no invite button by default.
+   */
+  showInviteActions?: boolean;
   /** Applied after API results (e.g. hide managers on instructor list). */
   additionalFilter?: (m: MemberWithGraduation) => boolean;
 };
@@ -56,9 +65,11 @@ export function MembersListContent({
   getMemberDetailHref,
   getDependentDetailHref,
   tabs = DEFAULT_TABS,
+  showInviteActions = false,
   additionalFilter,
 }: MembersListContentProps) {
   const router = useRouter();
+  const invite = useInviteShare();
   const { academyId } = useAcademyContext();
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -106,7 +117,17 @@ export function MembersListContent({
           )}
 
           <Text className="font-poppins-bold text-lg text-primary">{title}</Text>
-          <View className="h-10 w-10" />
+
+          {/* The two actions are wider than the 40px the title is centred
+              against, so the spacer stays for every consumer that has none. */}
+          {showInviteActions ? (
+            <InviteHeaderActions
+              onInvitePress={invite.openPicker}
+              onShareAppPress={invite.shareApp}
+            />
+          ) : (
+            <View className="h-10 w-10" />
+          )}
         </View>
 
         <View className="flex-row items-center gap-2.5 rounded-xl border border-surface-border bg-surface px-4">
@@ -171,6 +192,14 @@ export function MembersListContent({
           />
         )}
       </View>
+
+      {showInviteActions ? (
+        <InviteRoleSheet
+          visible={invite.pickerVisible}
+          onClose={invite.closePicker}
+          onSelect={invite.selectRole}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }

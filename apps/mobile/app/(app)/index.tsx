@@ -1,56 +1,54 @@
+import { resolveGatekeeperRoute } from "@/lib/gatekeeper";
+import { usePendingInvite } from "@/lib/hooks/use-pending-invite";
 import { ApiError } from "@/lib/api";
 import { useCurrentUser } from "@/lib/hooks/use-user";
+import { clearPendingInvite } from "@/lib/pending-invite";
 import { useAuth } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
 export default function AppHomePlaceholder() {
   const router = useRouter();
   const { isLoaded, isSignedIn } = useAuth();
   const { data: user, isPending, isError, error, refetch } = useCurrentUser();
+  const { invite, hydrated } = usePendingInvite();
+
+  /**
+   * One navigation per mount. Clearing the invite emits a new snapshot
+   * synchronously, so without this the effect would re-run with `invite: null`
+   * and bounce the person straight off the screen it had just chosen.
+   */
+  const navigated = useRef(false);
 
   useEffect(() => {
-    if (!isLoaded) return;
-    if (!isSignedIn) {
-      router.replace("/(auth)");
-      return;
-    }
-    if (isPending || !user) return;
+    if (navigated.current) return;
+    // `hydrated` is not cosmetic: deciding before the persisted invite has been
+    // read sends someone who tapped an invite to `search-academy`, which is the
+    // screen this whole feature removes.
+    if (!isLoaded || !hydrated) return;
 
-    if (!user.activeRole) {
-      router.replace("/(onboarding)/user-type");
-      return;
-    }
+    const { route, clearInvite } = resolveGatekeeperRoute({
+      isSignedIn: Boolean(isSignedIn),
+      // Still loading, or the query failed: the resolver is told nothing is
+      // known rather than being handed a half-truth. It answers `null` and the
+      // error UI below takes over.
+      user: isSignedIn && !isPending ? (user ?? null) : null,
+      invite,
+    });
 
-    if (user.activeRole === "manager" && !user.activeAcademy) {
-      router.replace("/(app)/create-academy");
-    } else if (user.activeRole === "manager" && user.activeAcademy) {
-      router.replace("/(app)/(manager)/(home)");
-    } else if (
-      user.activeRole === "instructor" ||
-      user.activeRole === "student" ||
-      user.activeRole === "guardian"
-    ) {
-      if (!user.activeMembership) {
-        router.replace("/(app)/(joining)/search-academy");
-      } else if (user.activeMembership.status === "pending") {
-        router.replace("/(app)/(joining)/pending-approval");
-      } else if (user.activeMembership.status === "active") {
-        if (user.activeRole === "instructor") {
-          router.replace("/(app)/(instructor)/(home)");
-        } else if (user.activeRole === "guardian") {
-          router.replace("/(app)/(guardian)/(home)");
-        } else {
-          router.replace("/(app)/(student)/(home)");
-        }
-      }
-    }
-  }, [isLoaded, isSignedIn, isPending, user, router]);
+    if (!route) return;
+
+    navigated.current = true;
+    if (clearInvite) void clearPendingInvite();
+    router.replace(route as Parameters<typeof router.replace>[0]);
+  }, [isLoaded, isSignedIn, isPending, user, invite, hydrated, router]);
 
   useEffect(() => {
+    if (navigated.current) return;
     if (!isLoaded || !isSignedIn) return;
     if (isError && error instanceof ApiError && error.status === 401) {
+      navigated.current = true;
       router.replace("/(auth)");
     }
   }, [error, isError, isLoaded, isSignedIn, router]);

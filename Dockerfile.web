@@ -8,6 +8,9 @@ WORKDIR /app
 # Copy dependency manifests only (for layer caching)
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/web/package.json apps/web/
+# apps/web depends on @tatame/types (TAT-177), so the workspace package has to be
+# here before install or pnpm cannot link it and `next build` fails to resolve it.
+COPY packages/types/package.json packages/types/
 
 # PaaS (e.g. Coolify) often sets NODE_ENV=production for prod deploys.
 # That makes pnpm skip devDependencies — but they are required to build.
@@ -19,7 +22,10 @@ FROM deps AS build
 
 # Copy source code
 COPY apps/web/ apps/web/
-COPY turbo.json ./
+COPY packages/types/ packages/types/
+# tsconfig.base.json: packages/types/tsconfig.json extends it, and turbo's
+# `dependsOn: ["^build"]` builds the package before the app.
+COPY turbo.json tsconfig.base.json ./
 
 # Build the web app
 RUN pnpm turbo build --filter=@tatame/web
