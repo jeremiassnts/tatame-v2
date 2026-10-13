@@ -74,7 +74,12 @@ export default function AcademyDetailScreen() {
         className="flex-1 items-center justify-center bg-background"
         edges={["top", "bottom"]}
       >
-        <View className="items-center px-6" style={{ gap: 20 }}>
+        {/*
+          `w-full` and not `items-center`: the latter shrinks this column to
+          the width of its widest line, which left "Buscar outra academia"
+          pressed against its own borders.
+        */}
+        <View className="w-full items-stretch px-6" style={{ gap: 20 }}>
           <Text
             className="text-center font-poppins text-sm"
             style={{ color: TEXT_SECONDARY, lineHeight: 22 }}
@@ -82,10 +87,10 @@ export default function AcademyDetailScreen() {
             {describeAcademyLoadError(error)}
           </Text>
 
-          <View className="w-full" style={{ gap: 10 }}>
+          <View style={{ gap: 10 }}>
             <Pressable
               onPress={() => void refetch()}
-              className="items-center justify-center rounded-xl bg-accent py-3.5"
+              className="items-center justify-center rounded-xl bg-accent px-6 py-3.5"
             >
               <Text className="font-poppins-semibold text-sm text-white">
                 Tentar novamente
@@ -93,7 +98,7 @@ export default function AcademyDetailScreen() {
             </Pressable>
             <Pressable
               onPress={() => router.replace("/(app)/(joining)/search-academy")}
-              className="items-center justify-center rounded-xl border border-surface-border bg-surface py-3.5"
+              className="items-center justify-center rounded-xl border border-surface-border bg-surface px-6 py-3.5"
             >
               <Text className="font-poppins-semibold text-sm text-primary">
                 Buscar outra academia
