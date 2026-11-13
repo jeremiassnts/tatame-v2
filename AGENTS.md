@@ -78,8 +78,7 @@ unless something deliberately breaks the implementation and watches the test rea
 
 ### Test policy
 
-Two rules about **what deserves a test and how deeply**, which is a different question from the
-one `docs/superpowers/specs/2026-03-20-api-testing-design.md` answers. That document settles where
+Two rules about **what deserves a test and how deeply**, which is a different question from where
 tests live and how they are built — unit with in-memory repositories, integration against a real
 Postgres through testcontainers. Keying the level to whether a test uses real dependencies decides
 how to *write* a test; read as deciding what *deserves* one, every decision table that touches a

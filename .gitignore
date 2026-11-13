@@ -15,3 +15,7 @@ apps/mobile/**/*.pem
 .windsurf
 .cursor.superpowers/
 insights/
+
+# Agent working docs — kept local, never published
+.specs/
+docs/superpowers/
